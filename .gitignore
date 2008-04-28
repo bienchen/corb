@@ -10,7 +10,7 @@
 Makefile
 Makefile.in
 /aclocal.m4
-.deps/
+.deps
 /config.log
 /config.status
 /configure

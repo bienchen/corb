@@ -17,10 +17,6 @@ Makefile.in
 /src/config.h
 /src/config.h.in
 /src/stamp-h1
-*.elc
-share/misc/emacs/elc-stamp
-share/misc/bin/reformat
-src/libcrbbasic/test_*
 
 # ignore binaries, tarballs made by "make dist"
 /src/corb

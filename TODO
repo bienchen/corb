@@ -72,6 +72,14 @@ Implementation
 - give all external function declarations the prefix extern
 - remove variable names from external declarations
 
+libs:
+libcrbalpha ->  alphabets
+              - predifined DNA, RNA, Protein
+              - general approach
+              - also for compression?
+array stuff: Create internal array class via macros, void* array class/
+             array class with unions for base types?
+
 Files
 -----
 - project files (README, INSTALL...)

@@ -1,6 +1,6 @@
 Build system
 ------------
-test local
+test local test
 - write perl script to assure m4macro style:
   - a) all m4files 2lines start, 2 lines end, 2 lines inbetween?
   - b) m4 style: first line macro name -> ---- -> macro name + params,

@@ -1,0 +1,53 @@
+Last modified: 2007-10-08.19
+
+Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+The copyright statements holds unless stated otherwise.
+
+
+
+---------------------------
+TOC
+---------------------------
+1. Introduction
+2. User Installation
+3. Developer Installation
+
+
+
+---------------------------
+1. Introduction
+---------------------------
+This is a more detailed installation instruction than found in the "README"
+file. It is parted into mainly two sections (beside this intro): The next
+section is intended to carry "first time" users through the installation
+process. These are users which are asumed to have never compiled/ installed
+something using the "GNU build system". Therefore this section will contain
+very much details about how to configure the build system, start it and in the
+end, install the results of the build process. The second part is intended as a
+guide for developers, on how to use this directory tree for conributing to the
+project. But this part is rather short, explaining only how to invoke all the
+little helpers in standard developing tools. A more detailed description of the
+developing system can be found in the documentation.
+
+
+
+---------------------------
+2. User Installation
+---------------------------
+
+
+
+---------------------------
+3. Developer Installation
+---------------------------
+
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "Last modified: "
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:

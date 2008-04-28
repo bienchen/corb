@@ -1,0 +1,376 @@
+#!/bin/sh
+# bootstrap - (re)create build scripts after changes in the build system
+
+
+scriptversion=2008-04-28.14
+scriptname=bootstrap
+maintainermail=bienert@zbh.uni-hamburg.de
+
+# Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+# Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+# See COPYING file in the top level directory of this tree for licence.
+
+# variables - begin
+CONFIGURE_AC="configure.ac";
+ACLOCAL_M4="aclocal.m4";
+CACHE_DIR="autom4te.cache";
+
+# macro directory and sources
+M4_MACRO_DIR=`awk '{ FS = "(\\\(\\\[*|\\\]*\\\))" } \
+              /AC_CONFIG_MACRO_DIR\\(\\[.*\\]\\)/ { print $2 }' \
+              $CONFIGURE_AC`
+
+if test -n $M4_MACRO_DIR; then # macro directory found
+    M4_MACRO_SOURCES=`echo ${M4_MACRO_DIR}/*.m4`;
+else
+    M4_MACRO_SOURCES=
+fi
+
+
+# configuartion header
+CONFIG_H=src/config.h
+CONFIG_H_IN=src/config.h.in
+
+#   makefiles for subdirs - begin
+MAKEFILE_SH_MI_BI="share/misc/bin/Makefile";
+MAKEFILE_SH_MI_EM="share/misc/emacs/Makefile";
+MAKEFILE_SH_MI="share/misc/Makefile";
+MAKEFILE_SH="share/Makefile";
+MAKEFILE_SC_FA="src/libcrbfallback/Makefile";
+MAKEFILE_SC_BA="src/libcrbbasic/Makefile";
+MAKEFILE_SC_BR="src/libcrbbrot/Makefile";
+MAKEFILE_SC_AP="src/libcrbapps/Makefile";
+MAKEFILE_SC="src/Makefile";
+MAKEFILE="Makefile";
+
+MAKEFILES="$MAKEFILE_SC_FA $MAKEFILE_SC_BA $MAKEFILE_SC_BR $MAKEFILE_SC_AP $MAKEFILE_SC $MAKEFILE_SH_MI_EM $MAKEFILE_SH_MI_BI $MAKEFILE_SH_MI $MAKEFILE_SH $MAKEFILE";
+#   makefiles for subdirs - end
+
+CREATED_FILES="configure config.status config.log $ACLOCAL_M4 $CONFIG_H $CONFIG_H_IN $MAKEFILES";
+
+# commands needed for bootstrapping
+AC="autoconf";
+AH="autoheader";
+AL="aclocal";
+AM="automake";
+CMDS="$AC $AM $AL";
+
+TRAP_FILES="${CACHE_DIR}"; # ${ACLOCAL_M4} removed to test if make still runs configure...
+
+# help text
+usage="Usage: $scriptname [OPTIONS]
+
+This script should be used to create the build system using the GNU autotools.
+A makefile is created which targets \"configure\" with all necessary
+dependencies. Therefore this script can also be used to update the build system
+on changes of the configuration files.
+
+Options:
+--reboot, -b      rebuild all generated files of the build system. Deletes also
+                  the files created by \"configure\".
+--reset,  -s      delete all generated files. Deletes also the files created by
+                  \"configure\".
+--with-TOOL PATH  Do not use TOOL from \$PATH but the given PATH. Valid
+                  substitutions for TOOL are: ${CMDS}.
+          -c PATH --with-${AC} PATH
+          -m PATH --with-${AM} PATH
+          -l PATH --with-${AL} PATH
+--help            display this help and exit.
+--version         display version info and exit.
+
+Report bugs to $maintainermail.
+";
+#variables - end
+
+# functions - begin
+# write a message in style scriptname: msg
+report_err()
+{
+    echo "$scriptname: $1" >&2;
+}
+
+report_bug()
+{
+    echo "Bug in $scriptname at line $LINENO: $1" >&2;
+}
+
+# create temporary files
+spwntemp()
+{
+    created=0;
+    tries=0;
+    tmpname=`date "+%S%u%j%V%b%M"`;
+    no=50;
+
+    # try 50 times to create a file which was not there before
+    while test $tries -lt $no;
+    do
+        tries=`expr $tries + 1`;
+        if test -s $tmpname; then           # check if file name is occupied
+            tmpname=`date "+%S%u%j%V%b%M"`;
+        else
+            touch "$tmpname" || return 1;
+            echo $tmpname;
+            return 0;
+        fi
+    done
+
+    report_err "No unique file name found after $no tries.";
+
+    return 1;
+}
+
+# exit bootstrapping script
+exit_failure()
+{
+    echo "...aborting bootstrapping." >&2;
+    exit 1;
+}
+
+# checks if commands are available via path
+check_commands_exist()
+{
+    if test $# -lt 1; then
+        report_bug "check_commands_exist(): No commands specified." >&2;
+        return 1;
+    fi
+
+    found=0;
+
+    while test $# -ne 0; do
+        for i in `echo $PATH | tr ":" " "`; do
+            if test -x $i/$1; then
+                found=1;
+                break;
+            fi
+        done
+        if test $found -eq 0; then
+            report_err "$1 not available in \$PATH.";
+            return 1;
+        fi
+        shift;
+        found=0;
+    done
+
+    return 0;
+}
+# functions - end
+
+# init trap to clean up files created during bootstrapping
+trap ' rm -rf ${TRAP_FILES}' INT QUIT ABRT KILL TERM EXIT;
+
+# check if called with either '--reset' ('-s') or '--reboot' ('-b')
+s_is_set=0;
+b_is_set=0;
+exp_param=0;
+split=0;
+
+while test $# -ne 0; do
+    if test $exp_param -ne 0; then
+        split=0;
+        exp_param=0;
+    fi
+
+    # split option and parameter at "="
+    if test $1="-*=*"; then
+        pos=$1;
+        shift;
+        set -- `echo $pos | awk '{ l=index($1, "="); a=substr($1,0,l-1); \
+                printf("%s",a); b=substr($1,l+1); printf(" %s", b);}'` $@;
+    fi
+
+    # preprocessing
+    case $1 in
+        -[!-?]?*)  # split first option of condensed opt.string
+            pos=$1;
+            shift;
+            set -- `echo $pos | awk '{ a=substr($1,0,2); b=substr($1,3); \
+                                printf("%s %s", a, b); }'` $@;
+            split=1;
+            ;;
+        [!-]*) # rebuild formerly split opt.string
+            if test $split -ne 0; then
+                pos=$1;
+                shift;
+                set -- `echo $pos | awk '{ a=substr($1,0,1); b=substr($1,2); \
+                                    printf("-%s %s"), a, b}'` $@;
+                split=0;
+            fi
+            ;;
+    esac
+
+    # processing options
+    case $1 in
+        --with-${AM}|-m)
+            exp_param=1;
+            param_store=${AM}_path;
+            curr_option="--with-${AM}, -m";
+            shift;
+            ;;
+
+        --with-${AC}|-c)
+            exp_param=1;
+            param_store=${AC}_path;
+            curr_option="--with-${AC}, -c";
+            shift;
+            ;;
+        
+        --with-${AL}|-l)
+            exp_param=1;
+            param_store=${AL}_path;
+            curr_option="--with-${AL}, -l";
+            shift;
+            ;;
+
+        --reset|-s)
+            mode="reset";
+            s_is_set=1;
+            shift;
+            continue;
+            ;;
+
+        --reboot|-b)
+            mode="reboot";
+            b_is_set=1;
+            shift;
+            continue;
+            ;;
+
+        --version)
+            echo "$0 $scriptversion"; exit $?;
+            ;;
+        
+        --help)
+            echo "$usage"; exit $?;
+            ;;
+    esac
+
+    # fetch a parameter to an option
+    if test $exp_param -ne 0; then
+        if test -z $param_store; then
+            report_bug "\"\$param_store\" not set.";
+            exit_failure;
+        fi
+        if test ! $1; then
+            report_err "Option \"${curr_option}\" needs a parameter.";
+            exit_failure;
+        fi    
+        eval $param_store=$1;
+        param_store="";
+        shift;
+        continue;
+    fi
+
+    # fetching unknown options and superfluous parameters
+    case $1 in
+        -*)
+            report_err "Invalid option: $1";
+	    exit_failure;
+            ;;
+        *)
+            report_err "Superfluous argument: $1";
+	    exit_failure;
+            ;;
+    esac
+done
+
+if test $s_is_set -eq 1 && test $b_is_set -eq 1; then
+    report_err "Options \"--reboot, -b\" and \"--reset, -s\" exclude each "\
+               "other.";
+    exit_failure;
+fi
+
+# check existence of hand-made configuration files
+if test ! -e$CONFIGURE_AC; then
+    report_err "Missing file: $CONFIGURE_AC";
+    exit_failure;
+fi
+
+# check all needed programs are available
+for i in $CMDS; do
+    eval cmd_path='$'${i}_path
+    if test "$cmd_path"; then
+        if test ! -x $cmd_path/${i}; then
+            report_err "${i} not available in $cmd_path.";
+            exit_failure;
+        fi
+    else
+        check_commands_exist $i
+        if test $? -ne 0; then
+            exit_failure;
+        fi
+    fi
+done
+
+# create temporary file for the makefile
+tmpfile=`spwntemp`; # create temporary unique file
+
+if test ! $tmpfile; then
+    exit_failure;
+else
+    TRAP_FILES="${TRAP_FILES} ${tmpfile}";
+fi
+
+# create list of makefile.in's
+for i in $MAKEFILES; do
+    MAKEFILE_IN="$MAKEFILE_IN ${i}.in";
+    MAKEFILE_AM="$MAKEFILE_AM ${i}.am";
+done
+
+CREATED_FILES="$CREATED_FILES $MAKEFILE_IN"
+
+# if we are in "reboot" or "reset" mode, delete all created files
+if test "$mode" = "reset" || test "$mode" = "reboot"; then
+    for i in $CREATED_FILES; do
+        if test -e$i; then
+            echo "[ removing $i ]";
+            rm -f $i;
+        fi
+    done
+fi
+
+if test "$mode" != "reset"; then
+    # paste data into makefile
+    cat <<EOF > $tmpfile
+# configure ist abhaengig von /share.../configure.ac!
+all: $ACLOCAL_M4 $CONFIG_H_IN configure $MAKEFILE_IN
+configure: $ACLOCAL_M4 \
+           $MAKEFILE_IN \
+           $CONFIGURE_AC
+	@echo "[ Creating \$@ script ]"
+	@autoconf -o configure $CONFIGURE_AC
+	@rm -rf ${CACHE_DIR}
+$ACLOCAL_M4: $M4_MACRO_SOURCES $CONFIGURE_AC
+	@echo "[ Creating \$@ ]"
+	@${AL} -I $M4_MACRO_DIR
+	@rm -rf ${CACHE_DIR}
+$CONFIG_H_IN:$CONFIGURE_AC
+	@echo "[ Creating $CONFIG_H_IN ]"
+	@${AH}
+	@rm -rf ${CACHE_DIR}
+$MAKEFILE_IN:$MAKEFILE_AM $CONFIG_H_IN $M4_MACRO_SOURCES $CONFIGURE_AC
+	@echo "[ Creating Makefiles ]"
+	@${AM}
+	@rm -rf ${CACHE_DIR}
+#makefile.in abhaengig von makefile.am
+#alle makefiles, etc. aus subdirs einbeziehen
+EOF
+
+    make -s -q -f $tmpfile;
+    if test $? -eq 1; then
+        make -s -f $tmpfile ;
+    else
+        echo "$0: Build system up to date. Nothing to be done.";     
+    fi
+fi
+
+exit 0;
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "scriptversion="
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:

@@ -1,0 +1,18 @@
+package     "brot"
+version     "0.1"
+purpose     "Designing RNA sequences using SCMF."
+usage       "brot [OPTIONS]... STRUCTURE"
+description "Basic RNAsequence Optimisation Tool"
+
+# arguments to gengetopt
+args "--string-parser --func-name=brot_cmdline_parser --file-name=brot_cmdline --include-getopt --unamed-opts=STRUCTURE --arg-struct-name=brot_args_info --no-handle-error"
+
+option "fixed-nuc" n "Preset a nucleotide in a position"
+       details="Use a fixed nucleotide in a position in the sequence during \
+                 the simulation. As NUCLEOTIDE the whole 15 letter RNA \
+                 alphabet is allowed. The position INT has to be in the range \
+                 of the structure."
+       string
+       typestr="NUCLEOTIDE:INT"
+       optional
+       multiple

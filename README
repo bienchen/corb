@@ -1,0 +1,128 @@
+Last modified: 2008-03-02.16
+
+Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+The copyright statements holds unless stated otherwise.
+
+
+
+---------------------------
+TOC
+---------------------------
+1. Introduction
+2. Installation
+3. Project Tree Contents
+4. Documentation
+5. Build System
+6. Directory Structure
+
+
+
+---------------------------
+1. Introduction
+---------------------------
+This is CoRB (german word in bavarian-like pronounciation for "basket"), the
+Collection of RNAanalysis Binaries. This directory holds all components of the
+project together. First of all this is the productive system, the sources and
+the build system of CoRB. Additionally, the directory tree contains the whole
+development system. Beside the sources, this are the configuration files of the
+build system, special tools for maintenance, code documentation...(paste
+whatever you find else here) and some Emacs-lisp files.
+
+
+
+---------------------------
+2. Installation
+---------------------------
+For detailed installation instructions read the file "INSTALL" in this
+directory. For the impatient user perform the holy rule of three:
+
+  ./configure
+  ./make
+  ./make install
+
+For the impatient developer: Read "INSTALL".
+
+
+
+---------------------------
+3. Project Tree Contents
+---------------------------
+Here is a little lineup of the contents of the project tree. For the philosophy
+behind it, read the section "Directory Structure".
+
+/        - tree root, holds "everything". On this level, several components of
+           the build system are located. Mostly important are the configure and
+           the bootstrap script. Most of the remaining files are not there to
+           confuse the user but to make the build system work correctly.
+bin/     - Executable files, the "product". This is mostly for developers, to
+           keep a clean source directory. For usual users, these are the
+           binaries which will be installed by "make install". All maintenance
+           tools are kept under the "share/" sub tree.
+lib/     - Project own libraries. Again only as support for developers.
+share/   - The "everything else" directory. Everything that does not fit into
+           other directories, is kept here. That is all documentation
+           (handbooks, man pages, ...), Emacs-lisp files and many other things.
+           Especially, in "share/misc/config", the maintenance tools for the
+           build system are located. 
+src/     - Source tree.
+
+
+
+---------------------------
+4. Documentation
+---------------------------
+The documentation for this project is split into two parts: The user manuals
+and the software description for developers. Manpages for both can be found in
+"share/man/". The manuals for the programs are located in sub directory "man1/"
+and the descriptions of programming interfaces in "man3/". Further
+documentation is stored in "share/doc/html/" and "share/doc/pdf/". For further
+information on documentation refer to the corresponding directories.
+
+Beside the project documentation, further "README" files can be found in
+several sub directories.
+
+
+---------------------------
+5. Build System
+---------------------------
+The whole project uses the GNU build system for compiling and installing. For
+the standard user, there is the "configure" script in this directory and that
+is all what is needed.
+
+Since the GNU build system is very complex, we will not give any configuration
+information on it here. To keep the system up to date after changes in the
+configuration, there is the script "bootstrap", providing a usage description
+with argument "--help".
+
+A last word on the makefiles. The makefiles which do all the work in the end
+are completely under the control of the GNU build system. The configuration
+makefiles (with suffix "am"), are in our control. As a rule, the makefile.am's
+are stored in the same directory as the data which should be transformed by a
+target rule. E.g. the makefile configuration for building binaries is located
+in the source directory, since binaries are compiled from source files.
+
+
+
+---------------------------
+6. Directory Structure
+---------------------------
+The intention is to loosely follow the File system Hierarchy Standard 2.3 (FHS)
+(http://www.pathname.com/fhs/) without introducing too many files/ directories.
+Additionally some of the recommendations of the GNU coding standards are
+adopted to the directory structure. For example, we do not provide a special
+"etc/" directory for architecture dependent stuff but a few sub directories
+contain makefiles. A special directory is "share/misc/config/". Against the
+FHS, here the executables for the build system are stored. Usually all
+executables should go into "bin/" but this directory is reserved for project
+tools only.
+
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "Last modified: "
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:

@@ -1,0 +1,47 @@
+Last modified: 2008-03-01.10
+
+Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+The copyright statements holds unless stated otherwise.
+
+
+
+---------------------------
+TOC
+---------------------------
+1. Purpose of libcrbfallback
+2. Library header
+3. Replacement/ Fallback index
+
+---------------------------
+1. Purpose of libcrbfallback
+---------------------------
+I.O.U. an explaination what's that fuzz all about.
+
+
+
+---------------------------
+2. Library header
+---------------------------
+libcrbfallback has no own library header. Since the library only provides
+fallback/ replacement functions for special cases, using one cumulative header
+could lead to problems, e.g. unwanted side effects. One example is the function
+snprintf: The mprintf module of libcrbbasic holds a replacement for this
+function and disables the use of it in other parts of the project. If we had a
+library header for libcrbfallback it would include snprintf.h and provide the
+original snprintf function to all including modules.
+
+
+---------------------------
+3. Replacement/ Fallback index
+---------------------------
+
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "Last modified: "
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:

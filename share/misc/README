@@ -1,0 +1,27 @@
+Last modified: 2008-02-29.14
+
+Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+The copyright statements hold unless stated otherwise.
+
+This directory contains miscellaneous stuff for the project
+"RNA Energetics & Sequence Design".
+
+
+ 
+Directory list:
+---------------
+bint/   - 
+config/ - Additional macros and executables for the build system.
+emacs/  - Syntax highlighting extensions and skeletons for Emacs. For an
+          instruction see the developer documentation in "doc/".
+m4/     - M4 macros for autoconf, automake and autoheader.
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "Last modified: "
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:

@@ -1,0 +1,77 @@
+Last modified: 2008-02-29.15
+
+Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+The copyright statements hold unless stated otherwise.
+
+
+
+This directory contains the Emacs C syntax highlighting extensions and
+skeletons for the project "RNA Energetics & Sequence Design".
+
+For the syntax highlighting, just add the following to the .emacs, where
+"HIGHLIGHT" is the extension you want to load and PATH points to the directory:
+
+  ;; HIGHLIGHTS
+(if (file-readable-p "PATH/corb/share/misc/emacs/HIGHLIGHT-font-lock-faces.elc")
+  (load-library "PATH/corb/share/misc/emacs/HIGHLIGHT-font-lock-faces.elc"))
+
+List of extensions
+------------------
+
+
+For access to the C source and header skeletons you first have to load "Emacs'
+little helpers", a set of standard functions used by most of the Emacs
+extensions. Therefore put the following into your .emacs, where PATH points to
+the directory:
+
+
+  ;; standard elisp functions for the whole dev-environment
+(if (file-readable-p "PATH/corb/share/misc/emacs/emacs-l-helpers.elc")
+    (load-library "PATH/corb/share/misc/emacs/emacs-l-helpers.elc")
+  (progn
+    (when (file-readable-p "PATH/corb/share/misc/emacs/emacs-l-helpers.el"))
+    (load-library "PATH/corb/share/misc/emacs/emacs-l-helpers.el")))
+
+
+Before loading the C extensions, you have to announce the project directory to
+the emacs-l-helper library:
+
+
+  ;; set project root
+(elh-set-project-tree-root "PATH/corb")
+
+
+Now you can add loading of the C extensions to the .emacs:
+
+
+  ;; load Cs lil' helpers
+(if (file-readable-p "PATH/corb/share/misc/emacs/c-l-helpers.elc")
+    (load-library "PATH/corb/share/misc/emacs/c-l-helpers.elc")
+  (progn
+    (when (file-readable-p "PATH/corb/share/misc/emacs/c-l-helpers.el"))
+    (load-library "PATH/corb/share/misc/emacs/c-l-helpers.el")))
+
+
+For the C skeletons you can enable the auto-insertion feature of Emacs.
+This will insert the skeletons in source and header files, when you are
+visiting an empty file with extension ".c" or ".h". Just add the following to
+.emacs:
+
+
+  ;; auto-insert for c-source & header files
+(require 'autoinsert)
+(auto-insert-mode 't)
+
+;(setq auto-insert-query nil) ;; Uncomment if you don't want to be prompted
+(define-auto-insert "\\.c$" 'c-source-skeleton)
+(define-auto-insert "\\.h$" 'c-header-skeleton)
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "Last modified: "
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:

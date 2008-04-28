@@ -1,0 +1,12 @@
+package     "CoRB"
+version     "0.1"
+purpose     "RNA analysis"
+usage       "corb [OPTIONS]... APPLICATION [OPTIONS]..."
+description "Collection of RNAanalysis Binaries
+             available tools:
+             brot: Basic RNA Optimisation Tool"
+
+# arguments to gengetopt
+args "--func-name=crb_cmdline_parser --file-name=crb_cmdline --include-getopt \
+      --unamed-opts=APPLICATION STRING --no-handle-error"
+

@@ -1,0 +1,29 @@
+Von skeletons kram: Copyright
+
+  '(setq csbuf (current-buffer))
+  '(if (file-readable-p "../../../pre_copyright")
+       (progn
+         (with-temp-buffer
+           (insert-file-contents "../../../pre_copyright")
+           (goto-char (point-min))
+           (while (not (eobp))
+             (princ '\ *\ Copyright\ \(C\)\  csbuf)
+             (princ (format-time-string "%Y") csbuf)
+             (princ '\  csbuf)
+             (princ (thing-at-point 'line) csbuf)
+             (forward-line)
+             )
+           )
+         )
+     (while (not (string= (
+                    setq v1 (skeleton-read "Copyright holder (none to stop)? ")
+                          ) ""
+                  )
+             )
+       (princ '\ *\ Copyright\ \(C\)\  csbuf)
+       (princ (format-time-string "%Y") csbuf)
+       (princ '\  csbuf)
+       (princ v1 csbuf)
+       (terpri  csbuf)
+       )
+     ) 

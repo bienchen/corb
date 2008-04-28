@@ -1,0 +1,26 @@
+This directory contains the sources for the project
+"RNA Energetics & Sequence Design".
+
+Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
+Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+
+The copyright statements hold unless stated otherwise.
+
+This directory holds all the sources of this project. Executable scripts are
+stored in the ../bin directory. Documentation of the code is in
+../share/notexistingbynow. 
+
+make options in this directory (used with `make option=value target`):
+----------------------------------------------------------------------
+cpu : set CFLAGS according to a certain cpu (supported: pentium4, prescott,
+      powerpc)
+
+As make targets in this directory there are:
+--------------------------------------------
+cflags  : reports the CFLAGS used for compilation
+ldflags : reports the LDFLAGS
+ldlibs  : reports the libraries used for compilation
+
+Directory list:
+---------------
+None

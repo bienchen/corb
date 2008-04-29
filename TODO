@@ -8,7 +8,7 @@ Build system
   - c) all unterstriche bei m4 same length as function name + params?
   - d) params quoted/ unqouted? --> look up in Doku
   - indentation
-  - spellcheck
+  - spellcheck: exclude from autofix...
   - optional args to macros: in []
   - emacs stuff: put to authors & versioning
   - space inbetween macros: 2 lines
@@ -16,6 +16,7 @@ Build system
   - ad mode: only report possibles changes/ recommentdations
              change code automatically
   - ad mode: halt-on-error/ warning
+  - sigtrap: on stop, restore backup file if neccessary?
 
 - make distclean in share/misc/bin doesn't work properly
 - add conditonal compilate to cleanfiles? Just to clean them on every make

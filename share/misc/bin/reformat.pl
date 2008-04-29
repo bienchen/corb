@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-04-29.16
+# Last modified: 2008-04-30.00
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -26,6 +26,7 @@ use File::Basename;
 use File::Copy;
 use Getopt::Long;
 use Pod::Usage;
+# use sigtrap; on aborting signals restore backup file?
 # PERL packages    - END
 
 
@@ -34,19 +35,19 @@ use Pod::Usage;
 
 
 # GLOBALS          - BEGIN
-my %KNOWN_EXTENSIONS   = (
+my %Known_Extensions   = (
                            'm4' => 'M4 macro language',
                          );
-my %FORMAT_PREAMBLE    = (
+my %Format_Preamble    = (
                            'm4' => \&format_preamble_m4,
                          );
-my %DEFINE_PREAMBLE    = (
+my %Define_Preamble    = (
                            'm4' => \&define_preamble_m4,
                          );
-my %DEFINE_CODESECTION = (
+my %Define_Codesection = (
                            'm4' => \&define_codesection_m4,
                          );
-my %DEFINE_END         = (
+my %Define_End         = (
                            'm4' => \&define_end_m4,
                          );
 my $VERBOSE          = 0;
@@ -114,7 +115,7 @@ sub define_codesection_m4(\$ \$ \@)
             {
                 if (! $started)
                 {
-                    $$start_ref = $i+1;
+                    $$start_ref = $i + 1;
                     $started = 1;
                 }
             }
@@ -149,10 +150,10 @@ sub define_end_m4(\$ \$ \@)
 
 # format the preamble of a M4 source file, returns the no. of lines added to
 # the preamble
-#   format_preamble_m4($start, $end, @lines_aryref)
-sub format_preamble_m4($ $ \@)
+#   format_preamble_m4($start, $end, $file, @lines_aryref)
+sub format_preamble_m4($ $ $ \@)
 {
-    my ($start, $end, $lines_aryref) = @_;
+    my ($start, $end, $file, $lines_aryref) = @_;
     my $i;
     my $line;
 
@@ -161,10 +162,29 @@ sub format_preamble_m4($ $ \@)
         $end = $#{$lines_aryref} + 1;
     }
 
+#    a
+# Copyright (C) 2008 Stefan Bienert
+# Copyright (C) 2008 Center for Bioinformatics, University of Hamburg
+#
+# See COPYING file in the top level directory of this tree for licence.
+#
+# Last modified: 2008-04-26.23
+#
+
+    $i = $start;
+    if (@{$lines_aryref}[$i - 1] !~ /^\#$/)
+    {
+        # leading spaces
+        # trailing spaces
+        # empty line
+        # text
+        form_violation_msg("BLA\n", $file, $i, 0);
+    }
+
     for ($i = $start; $i <= $end; $i++)
     {
         $line = @{$lines_aryref}[$i - 1];
-        warning_message (sprintf ("line %*d: $line", $DWIDTH, $i));
+        warning_msg(sprintf ("line %*d: $line", $DWIDTH, $i));
     }
 
     return 0;
@@ -195,7 +215,7 @@ sub cpy_file($ \$)
     my $bck = 1;
 
     # strip directory from file
-    ($filename, $dir,undef) = fileparse($file, qr//);
+    ($filename, $dir, undef) = fileparse($file, qr//);
 
     # search for filename.\d+.bck in dir list
     unless (opendir (DIR, $dir))
@@ -207,14 +227,14 @@ sub cpy_file($ \$)
     {
         if ($_ =~ /$filename\.(\d+)\.$BCKEXT/)
         {
-            verbose_message ("    backup found: \"$_\"\n");
+            verbose_msg("    backup found: \"$_\"\n");
             if ($bck <= $1)
             {
                 $bck = $1 + 1;
             }
         }
     }
-    closedir (DIR);
+    closedir(DIR);
 
     # create copy $filename.$bck.$BCKEXT
     $cpy_name = $file."\.".$bck."\.".$BCKEXT;
@@ -227,24 +247,30 @@ sub cpy_file($ \$)
 }
 
 # write message if in verbose mode
-#   verbose_message(message)
-sub verbose_message($)
+#   verbose_msg(message)
+sub verbose_msg($)
 {
     my ($message) = @_;
 
-    if ($VERBOSE)
-    {
-        print $message;
-    }
+    print $message if $VERBOSE;
 }
 
 # write warning
-#   warning_message(message)
-sub warning_message($)
+#   warning_msg(message)
+sub warning_msg($)
 {
     my ($message) = @_;
 
     print STDERR "WARNING:".$message;
+}
+
+# write message for format violation
+#   form_violation_msg($message, $file, $line, $col)
+sub form_violation_msg($ $ $ $)
+{
+    my ($message, $file, $line, $col) = @_;
+
+    printf(STDERR "${file}:%*d:%2d: $message\n", $DWIDTH, $line, $col);
 }
 
 # check whether a known file format is given
@@ -253,7 +279,7 @@ sub validate_file_format($ \$)
 {
     my ($extension, $error_msgref) = @_;
 
-    if (! defined ($KNOWN_EXTENSIONS{$extension}))
+    if (! defined($Known_Extensions{$extension}))
     {
         $$error_msgref = "Unknwon file format: ${extension}\n";
         return 0;
@@ -272,7 +298,7 @@ sub get_file_format($ \$)
 
     if ($extension ne "")
     {
-        $extension = join ('',(split(/^\./, $extension)));
+        $extension = join('', (split(/^\./, $extension)));
 
         # get extension
         if (validate_file_format($extension, $$error_msgref))
@@ -308,26 +334,19 @@ sub parseargs(\% \$)
     # set defaults
 
     # parse @ARGV
-    $optcatchresult = GetOptions ('format=s' => \$argument_hashref->{format},
-                                  'change!'  => \$argument_hashref->{change},
-                                  'verbose!' => \$VERBOSE,
-                                  'help'     => \$help,
-                                  'man'      => \$man);
+    $optcatchresult = GetOptions(
+                                 'format=s' => \$argument_hashref->{format},
+                                 'auto-fix!'  => \$argument_hashref->{fix},
+                                 'verbose!' => \$VERBOSE,
+                                 'help'     => \$help,
+                                 'man'      => \$man
+                                );
 
-    if ($optcatchresult == 0)
-    {
-	return 0;
-    }
+    if ($optcatchresult == 0) { return 0 }
 
-    if (defined($help))
-    {
-        return 2;
-    }
+    if (defined($help)) { return 2 }
 
-    if (defined($man))
-    {
-        return 3;
-    }
+    if (defined($man)) { return 3 }
 
     # verify options/ arguments
     if (defined $argument_hashref->{format})
@@ -342,9 +361,9 @@ sub parseargs(\% \$)
     # check that at least the file is given
     if ($#ARGV < 0)
     {
-         $$error_msgref =  "At least one name of a source file has to be "
-                          ."given. Try \"-help\" or \"-man\" for more "
-                          ."information.\n";
+         $$error_msgref = "At least one name of a source file has to be ".
+                          "given. Try \"-help\" or \"-man\" for more ".
+                          "information.\n";
         return 0;       
     }
 
@@ -353,11 +372,11 @@ sub parseargs(\% \$)
     {
         if ( ! -r $_)
         {
-            $$error_msgref =  "Source file does not exist or is not readable: "
-                ."$_\n";
+            $$error_msgref = "Source file does not exist or is not readable: ".
+                             "$_\n";
             return 0;
         }
-        push (@{$argument_hashref->{files}}, $_);
+        push(@{$argument_hashref->{files}}, $_);
     }
 
     return 1;
@@ -383,105 +402,98 @@ $ret_val = parseargs(%arg_hash, $error_msg);
 
 if ($ret_val == 0)
 {
-    die ("$0: $error_msg");
+    die("$0: $error_msg");
 }
 elsif ($ret_val > 1)
 {
-    if ($ret_val == 3)
-    {
-        $pod_verbose = 2;
-    }
+    if ($ret_val == 3) { $pod_verbose = 2 }
     pod2usage(-exitval => 0, -verbose => $pod_verbose); 
 }
 
 # for each file
 foreach $current_file (@{$arg_hash{files}})
 {
-    verbose_message ("Processing file \"${current_file}\"...\n");
+    verbose_msg("Processing file \"${current_file}\"...\n");
 
     # determin mime type
-    if (! defined ($arg_hash{format}))
+    if (! defined($arg_hash{format}))
     {
-        verbose_message ("  determining mime type... ");
-        $format = get_file_format ($current_file, $error_msg);
-        if ($format eq "")
-        {
-            die ("$0: $error_msg");
-        }        
+        verbose_msg("  determining mime type... ");
+        $format = get_file_format($current_file, $error_msg);
+
+        if ($format eq "") { die("$0: $error_msg") }        
     }
     else
     {
         $format = $arg_hash{format};
-        verbose_message ("  forced mime type... ");
+        verbose_msg("  forced mime type... ");
     }
-    verbose_message ("${KNOWN_EXTENSIONS{$format}}\n");    
+    verbose_msg("${Known_Extensions{$format}}\n");    
 
     # secure copy of file
-    if ($arg_hash{change})
+    if ($arg_hash{fix})
     {
-        verbose_message ("  creating backup of file...\n");
-        $filecpy = cpy_file ($current_file, $error_msg);
-        if ($filecpy eq "")
-        {
-            die ("$0: $error_msg");
-        }
-        verbose_message ("  new backup: \"$filecpy\"\n");
+        verbose_msg("  creating backup of file...\n");
+        $filecpy = cpy_file($current_file, $error_msg);
+
+        if ($filecpy eq "") { die("$0: $error_msg") }
+        verbose_msg("  new backup: \"$filecpy\"\n");
     }
     
     # load file
-    verbose_message ("  loading \"${current_file}\"...");
-    open (FILE, "<", $current_file) or die ("\n$0: Could not open "
-                                           ."\"${current_file}\"\n");
+    verbose_msg("  loading \"${current_file}\"...");
+    open(FILE, "<", $current_file) or die("\n$0: Could not open ".
+                                          "\"${current_file}\"\n");
     
     @lines = <FILE>;
-    close (FILE);
-    verbose_message (" done\n");
+    close(FILE);
+    verbose_msg(" done\n");
 
-    verbose_message ("  checking format...\n");
+    verbose_msg("  checking format...\n");
 
-    set_dwidth ($#lines + 1);
+    set_dwidth($#lines + 1);
 
     # first determine file structure
     $file_structure{'preamble_start'} = 0;
     $file_structure{'preamble_end'} = 0;
-    &{$DEFINE_PREAMBLE{$format}} (\$file_structure{'preamble_start'},
-                                  \$file_structure{'preamble_end'},
-                                  \@lines);
-    verbose_message ("    found preamble from line "
-                    ."$file_structure{'preamble_start'} to line "
-                    ."$file_structure{'preamble_end'}\n");
+    &{$Define_Preamble{$format}}(\$file_structure{'preamble_start'},
+                                 \$file_structure{'preamble_end'},
+                                 \@lines);
+    verbose_msg("    found preamble from line ".
+                "$file_structure{'preamble_start'} to line ".
+                "$file_structure{'preamble_end'}\n");
 
     $file_structure{'code_start'} = $file_structure{'preamble_end'};
     $file_structure{'code_end'} = 0;
-    &{$DEFINE_CODESECTION{$format}} (\$file_structure{'code_start'},
-                                     \$file_structure{'code_end'},
-                                     \@lines);
-    verbose_message ("    found code section from line "
-                    ."$file_structure{'code_start'} to line "
-                    ."$file_structure{'code_end'}\n");
+    &{$Define_Codesection{$format}}(\$file_structure{'code_start'},
+                                    \$file_structure{'code_end'},
+                                    \@lines);
+    verbose_msg("    found code section from line ".
+                "$file_structure{'code_start'} to line ".
+                "$file_structure{'code_end'}\n");
 
     $file_structure{'end_start'} = $file_structure{'code_end'};
     $file_structure{'end_end'} = 0;
-    &{$DEFINE_END{$format}} (\$file_structure{'end_start'},
-                             \$file_structure{'end_end'},
-                             \@lines);
-    verbose_message ("    found end section from line "
-                    ."$file_structure{'end_start'} to line "
-                    ."$file_structure{'end_end'}\n");
+    &{$Define_End{$format}}(\$file_structure{'end_start'},
+                            \$file_structure{'end_end'},
+                            \@lines);
+    verbose_msg("    found end section from line $file_structure{'end_start'} ".
+                "to line $file_structure{'end_end'}\n");
 
     # check preamble
     if ($file_structure{'preamble_end'} != 0)
     {
-        $extended = &{$FORMAT_PREAMBLE{$format}} (
+        $extended = &{$Format_Preamble{$format}}(
                                               $file_structure{'preamble_start'},
                                               $file_structure{'preamble_end'},
+                                              ${current_file},
                                               \@lines
-                                                  );
+                                                );
     }
 
     # secure storing reformated code as file
 
-    verbose_message ("finished processing file \"${current_file}\"\n");
+    verbose_msg("finished processing file \"${current_file}\"\n");
 }
 
 # MAIN             - END
@@ -491,59 +503,57 @@ __END__
 
 =head1 NAME
 
-reformat - Fix the format (indentation, spacing, ...) of a source.
+reformat - Fix the format (indentation, spacing, ...) of a source file.
 
 =head1 SYNOPSIS
 
- reformat [options] <source file 1> <source file 2> ...
+B<reformat> [options] <source file 1> <source file 2> ...
 
- Options:
-          -format <string>  force <string> to be used as source file format
-          - change          apply recommended changes to the source file
-          -verbose          enable verbose mode
-          -man              display manpage
-          -help             help message
+=head1 DESCRIPTION
+
+B<reformat> checks the formatting of a source file to fit the common style of
+the B<corb> project. With option B<auto-fix>, all issues are corrected in a
+given file. B<THIS MEANS YOUR SOURCE CODE WILL BE AUTOMATICALLY CHANGED>!
+Before any changes are applied, a backup copy of the original file is created.
+This copy is extended by ".bkp" and a number. If anything goes wrong during
+reformatting, just copy the backup to the orignal file name.
+
+- spell check: check spelling, excluded from auto-fix, unknown words have to be
+  put into defined dictionary
 
 =head1 OPTIONS
 
 =over 8
 
-=item B<-format>
+=item B<-f FORMAT, --format>
 
-Define the format of given source files. Without this option, the source code
-format is determine on the file extension. Supported so far: "m4" for the M4
-macro language.
+Format has to be one of "m4". Define the format of given source files. Without
+this option, the source code format is determined on the file extension.
+Supported so far: "m4" for the M4 macro language.
 
-=item B<-change>
+=item B<-a, --auto-fix>
 
-Fix format problems in a source file. With this option, beside making
-considerations on the formattin of code, the changes are written to the file. 
+Fix format problems in a source file automatically. With this option, beside
+making considerations on the formatting of code, the changes are written to
+the file. 
 
-=item B<-verbose>
+=item B<-v, --verbose>
 
 Enables the verbose mode. In this mode, a little bit of information is
 provided as output on each step during reformating.
 
-=item B<-man>
+=item B<-m, --man>
 
 Print a help message plus a description for the program.
 
-=item B<-help>
+=item B<-m, --help>
 
 Print a help message and exit.
 
 =back
 
-=head1 DESCRIPTION
-
-B<reformat> checks the formatting of a source file to fit the common style of
-the B<corb> project. With option B<change>, all issues are corrected in a given
-file. B<THIS MEANS YOUR SOURCE CODE WILL BE AUTOMATICALLY CHANGED>! Before any
-changes are applied, a backup copy of the original file is created. This copy
-is extended by ".bkp" and a number. If anything goes wrong during reformating,
-just copy the backup to the orignal file name.
-
 =cut
+
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

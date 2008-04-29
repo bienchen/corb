@@ -1,6 +1,6 @@
 Build system
 ------------
-test local test
+
 - write perl script to assure m4macro style:
   - a) all m4files 2lines start, 2 lines end, 2 lines inbetween?
   - b) m4 style: first line macro name -> ---- -> macro name + params,
@@ -15,6 +15,7 @@ test local test
   - paramnames in text quoted (interactive mode?)
   - ad mode: only report possibles changes/ recommentdations
              change code automatically
+  - ad mode: halt-on-error/ warning
 
 - make distclean in share/misc/bin doesn't work properly
 - add conditonal compilate to cleanfiles? Just to clean them on every make

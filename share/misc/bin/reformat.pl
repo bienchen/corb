@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-04-27.23
+# Last modified: 2008-04-29.16
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -51,6 +51,7 @@ my %DEFINE_END         = (
                          );
 my $VERBOSE          = 0;
 my $BCKEXT           = "bkp";
+my $DWIDTH           = 1;
 # GLOBALS          - END
 
 
@@ -69,12 +70,13 @@ sub define_preamble_m4(\$ \$ \@)
 
     for (my $i = 0; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^\#\s*|
+        if (@{$lines_ref}[$i] =~ /(^\#\s*$|
                                    Last\s+modified\:|
                                    Copyright\s+\(C\)\s+\d+|
                                    See\s+COPYING\s+file\s+in\s+the\s+top\s+
                                    level\s+directory\s+of\s+this\s+tree\s+for
-                                   \s+licence)/xi)
+                                   \s+licence|
+                                   ^\s*$)/xi)
         {
             # print @{$lines_ref}[$i];
             $started = 1;
@@ -131,82 +133,59 @@ sub define_end_m4(\$ \$ \@)
 
     for (my $i = $$start_ref; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /^\s*dnl\#\s*Local\s+variables\:/i)
+        if (@{$lines_ref}[$i] =~ /(^\s*dnl\#\s*Local\s+variables\:|
+                                   ^\s*$)/xi)
         {
           if (! $started)
           {
-              $$start_ref = $i+1;
+              $$start_ref = $i + 1;
               $started = 1;
           }
         }
-        elsif (@{$lines_ref}[$i] =~ /^\s*dnl\#\s*End\:/i)
-        {
-            $$end_ref = $i + 1;
-            return;
-        }
     }
 
-    $$end_ref = $#{$lines_ref};
+    $$end_ref = $#{$lines_ref} + 1;
 }
 
-# format the preamble of a M4 source file
-#   format_preamble_m4($lineno, @lines_aryref, $error_msgref)
-sub format_preamble_m4($ \@ \$)
+# format the preamble of a M4 source file, returns the no. of lines added to
+# the preamble
+#   format_preamble_m4($start, $end, @lines_aryref)
+sub format_preamble_m4($ $ \@)
 {
-    my ($lineno, $lines_aryref, $error_msgref) = @_;
-    my $line = @$lines_aryref[$lineno];
+    my ($start, $end, $lines_aryref) = @_;
+    my $i;
+    my $line;
 
-    # first check if we are in a comment and format it right
-    if ($line =~ /^\s+(\#.*)$/)
+    if ($end > ($#{$lines_aryref} + 1))
     {
-        @$lines_aryref[$lineno] = $1;
-        $line = $1;
+        $end = $#{$lines_aryref} + 1;
     }
 
-    # m4 sources start with a single '#'
-    if ($lineno == 0)
+    for ($i = $start; $i <= $end; $i++)
     {
-        if ($line !~ /^\#$/)
-        {
-            if ($line =~ /^\#\s*$/)
-            {
-                @$lines_aryref[$lineno] = "\#\n";
-            }
-            else
-            {
-                unshift (@$lines_aryref, "\#\n");
-            }
-            verbose_message ("    fixing line (preamble)\n");
-        }
-    }
-    # copyright holders start on the second line
-    elsif ($lineno >= 1)
-    {
-        if ($line =~ /^\#/)
-        {
-            # check for copyright line/ licence note
-            #if ($line =~)
-            #{
-                
-            #}
-        }
-        else
-        {
-            #check for empty line or other line
-        }
+        $line = @{$lines_aryref}[$i - 1];
+        warning_message (sprintf ("line %*d: $line", $DWIDTH, $i));
     }
 
-    #print "test $line ".@$lines_aryref[$line]."\n";
-
-    return "preamble";
+    return 0;
 }
 
 
 ##########################
 ###   Arb. functions   ###
 ##########################
+# Sets the width of the max. lineno. as default width for writting to stdout.
+#   set_digits(n)
+sub set_dwidth($)
+{
+    my ($n) = @_;
+
+    $n = log($n)/log(10);
+    $DWIDTH =  sprintf("%.0f",($n + 0.5));    
+}
+
 # copy a file with a unique file name or find a file with the same content
-#   cpy_file (filename, error_msgref)
+#   cpy_file(filename, error_msgref)
 sub cpy_file($ \$)
 {
     my ($file, $error_msgref) = @_;
@@ -265,7 +244,7 @@ sub warning_message($)
 {
     my ($message) = @_;
 
-    print STDERR "$0:WARNING:".$message;
+    print STDERR "WARNING:".$message;
 }
 
 # check whether a known file format is given
@@ -330,6 +309,7 @@ sub parseargs(\% \$)
 
     # parse @ARGV
     $optcatchresult = GetOptions ('format=s' => \$argument_hashref->{format},
+                                  'change!'  => \$argument_hashref->{change},
                                   'verbose!' => \$VERBOSE,
                                   'help'     => \$help,
                                   'man'      => \$man);
@@ -394,7 +374,7 @@ my $current_file;
 my $format;
 my $filecpy = "";
 my @lines;
-my $state;
+my $extended = 0;
 my %file_structure;
 my $error_msg;
 
@@ -437,14 +417,17 @@ foreach $current_file (@{$arg_hash{files}})
     verbose_message ("${KNOWN_EXTENSIONS{$format}}\n");    
 
     # secure copy of file
-    verbose_message ("  creating backup of file...\n");
-    $filecpy = cpy_file ($current_file, $error_msg);
-    if ($filecpy eq "")
+    if ($arg_hash{change})
     {
-        die ("$0: $error_msg");
+        verbose_message ("  creating backup of file...\n");
+        $filecpy = cpy_file ($current_file, $error_msg);
+        if ($filecpy eq "")
+        {
+            die ("$0: $error_msg");
+        }
+        verbose_message ("  new backup: \"$filecpy\"\n");
     }
-    verbose_message ("  new backup: \"$filecpy\"\n");
-
+    
     # load file
     verbose_message ("  loading \"${current_file}\"...");
     open (FILE, "<", $current_file) or die ("\n$0: Could not open "
@@ -454,7 +437,10 @@ foreach $current_file (@{$arg_hash{files}})
     close (FILE);
     verbose_message (" done\n");
 
-    verbose_message ("  formatting...\n");
+    verbose_message ("  checking format...\n");
+
+    set_dwidth ($#lines + 1);
+
     # first determine file structure
     $file_structure{'preamble_start'} = 0;
     $file_structure{'preamble_end'} = 0;
@@ -483,11 +469,14 @@ foreach $current_file (@{$arg_hash{files}})
                     ."$file_structure{'end_start'} to line "
                     ."$file_structure{'end_end'}\n");
 
-    # fetch sections: end
-
-    $state = "preamble";
-    for (my $i = 0; $i <= $#lines; $i++)
+    # check preamble
+    if ($file_structure{'preamble_end'} != 0)
     {
+        $extended = &{$FORMAT_PREAMBLE{$format}} (
+                                              $file_structure{'preamble_start'},
+                                              $file_structure{'preamble_end'},
+                                              \@lines
+                                                  );
     }
 
     # secure storing reformated code as file
@@ -510,6 +499,7 @@ reformat - Fix the format (indentation, spacing, ...) of a source.
 
  Options:
           -format <string>  force <string> to be used as source file format
+          - change          apply recommended changes to the source file
           -verbose          enable verbose mode
           -man              display manpage
           -help             help message
@@ -523,6 +513,11 @@ reformat - Fix the format (indentation, spacing, ...) of a source.
 Define the format of given source files. Without this option, the source code
 format is determine on the file extension. Supported so far: "m4" for the M4
 macro language.
+
+=item B<-change>
+
+Fix format problems in a source file. With this option, beside making
+considerations on the formattin of code, the changes are written to the file. 
 
 =item B<-verbose>
 
@@ -541,11 +536,12 @@ Print a help message and exit.
 
 =head1 DESCRIPTION
 
-B<reformat> is supposed to change the formatting of a source file into the
-common style of the B<corb> project. Before any changes are applied, a backup
-copy of the original file is created. This copy is extended by ".bkp" and a
-number. If anything goes wrong during reformating, just copy the backup to the
-orignal file name.
+B<reformat> checks the formatting of a source file to fit the common style of
+the B<corb> project. With option B<change>, all issues are corrected in a given
+file. B<THIS MEANS YOUR SOURCE CODE WILL BE AUTOMATICALLY CHANGED>! Before any
+changes are applied, a backup copy of the original file is created. This copy
+is extended by ".bkp" and a number. If anything goes wrong during reformating,
+just copy the backup to the orignal file name.
 
 =cut
 

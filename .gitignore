@@ -23,6 +23,7 @@ Makefile.in
 share/misc/bin/reformat
 share/misc/emacs/elc-stamp
 src/libcrbbasic/test_*
+*.bkp
 
 # ignore binaries, tarballs made by "make dist"
 /corb-*.tar.gz

@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-05-02.00
+# Last modified: 2008-06-09.10
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -56,6 +56,7 @@ my %Define_End         = (
 my $Verbose          = 0;
 my $Bckext           = "bkp";
 my $Dwidth           = 1;
+
 # GLOBALS          - END
 
 
@@ -74,7 +75,6 @@ sub define_preamble_m4(\$ \$ \@)
 
     for (my $i = 0; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^\s*$M4_COMMENT\s*$|
                                    Last\s+modified\:|
                                    Copyright\s+\(C\)\s+\d+|
                                    See\s+COPYING\s+file\s+in\s+the\s+top\s+
@@ -137,7 +137,7 @@ sub define_end_m4(\$ \$ \@)
 
     for (my $i = $$start_ref; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^\s*dnl$M4_COMMENT\s*Local\s+variables\:|
+        if (@{$lines_ref}[$i] =~ /(^\s*dnl\#\s*Local\s+variables\:|
                                    ^\s*$)/xi)
         {
           if (! $started)
@@ -171,6 +171,7 @@ sub format_preamble_m4($ $ $ $ \@)
     $i = $start;
     $line = @{$lines_aryref}[$i - 1];
     if ($line !~ /^${M4_COMMENT}$/)
+    if ($end > ($#{$lines_aryref} + 1))
     {
         form_violation_msg("Preamble should start with an empty comment line",
                            $file, $i);
@@ -180,11 +181,12 @@ sub format_preamble_m4($ $ $ $ \@)
         check_leading_spaces($line, $M4_COMMENT, $file, $i);
         check_trailing_spaces($line, $file, $i);
         exit(1) if ($exit);
+        $end = $#{$lines_aryref} + 1;
     }
     $i = $i + 1;
 
     # check copyright line
-    for (; $i <= $end; $i++)
+    for ($i = $start; $i <= $end; $i++)
     {
         $width = 0;
         $line = @{$lines_aryref}[$i - 1];
@@ -305,6 +307,7 @@ sub format_preamble_m4($ $ $ $ \@)
             #print $line;
         }
         #warning_msg(sprintf ("line %*d: $line", $Dwidth, $i));
+        warning_message (sprintf ("line %*d: $line", $DWIDTH, $i));
     }
 
     return 0;
@@ -398,7 +401,7 @@ sub set_dwidth($)
     my ($n) = @_;
 
     $n = log($n)/log(10);
-    $Dwidth =  sprintf("%.0f",($n + 0.5));    
+    $DWIDTH =  sprintf("%.0f",($n + 0.5));    
 }
 
 # copy a file with a unique file name or find a file with the same content
@@ -666,6 +669,10 @@ foreach $current_file (@{$arg_hash{files}})
 
     #set_dwidth($#lines + 1);
 
+    verbose_message ("  checking format...\n");
+
+    set_dwidth ($#lines + 1);
+
     # first determine file structure
     $file_structure{'preamble_start'} = 0;
     $file_structure{'preamble_end'} = 0;
@@ -687,20 +694,19 @@ foreach $current_file (@{$arg_hash{files}})
 
     $file_structure{'end_start'} = $file_structure{'code_end'};
     $file_structure{'end_end'} = 0;
-    &{$Define_End{$format}}(\$file_structure{'end_start'},
-                            \$file_structure{'end_end'},
-                            \@lines);
-    verbose_msg("    found end section from line $file_structure{'end_start'} ".
-                "to line $file_structure{'end_end'}\n");
+    &{$DEFINE_END{$format}} (\$file_structure{'end_start'},
+                             \$file_structure{'end_end'},
+                             \@lines);
+    verbose_message ("    found end section from line "
+                    ."$file_structure{'end_start'} to line "
+                    ."$file_structure{'end_end'}\n");
 
     # check preamble
     if ($file_structure{'preamble_end'} != 0)
     {
-        $extended = &{$Format_Preamble{$format}}(
+        $extended = &{$FORMAT_PREAMBLE{$format}} (
                                               $file_structure{'preamble_start'},
                                               $file_structure{'preamble_end'},
-                                              ${current_file},
-                                              $arg_hash{exit_on_error},
                                               \@lines
                                                 );
     }
@@ -725,12 +731,6 @@ B<reformat> [options] <source file 1> <source file 2> ...
 
 =head1 DESCRIPTION
 
-B<reformat> checks the formatting of a source file to fit the common style of
-the B<corb> project. The standard behaviour is to check all given files first
-and then exit 1 on error otherwise 0.
-
-- spell check: check spelling, excluded from auto-fix, unknown words have to be
-  put into defined dictionary
 
 =head1 OPTIONS
 
@@ -745,8 +745,13 @@ Supported so far: "m4" for the M4 macro language.
 =item B<-w, --werror>
 
 Treat warnings as error ;-). And therefore exit on each warning.
+=item B<-change>
 
 =item B<-v, --verbose>
+Fix format problems in a source file. With this option, beside making
+considerations on the formattin of code, the changes are written to the file. 
+
+
 
 Enables the verbose mode. In this mode, a little bit of information is
 provided as output on each step during reformating.
@@ -763,12 +768,6 @@ Print a help message and exit.
 
 =cut
 
-# Docu text for a possible option auto-fix which may be developed later
-#With option B<auto-fix>, all issues are corrected in a
-#given file. B<THIS MEANS YOUR SOURCE CODE WILL BE AUTOMATICALLY CHANGED>!
-#Before any changes are applied, a backup copy of the original file is created.
-#This copy is extended by ".bkp" and a number. If anything goes wrong during
-#reformatting, just copy the backup to the orignal file name.
 
 #=item B<-a, --auto-fix>
 

@@ -24,7 +24,7 @@ share/misc/bin/reformat
 share/misc/emacs/elc-stamp
 src/libcrbbasic/test_*
 autom4te.cache
-
+*.bkp
 # ignore binaries, tarballs made by "make dist"
 /corb-*.tar.gz
 /src/corb

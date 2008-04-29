@@ -14,6 +14,7 @@ Build system
   - paramnames in text quoted (interactive mode?)
   - ad mode: only report possibles changes/ recommentdations
              change code automatically
+  - ad mode: halt-on-error/ warning
 
 - make distclean in share/misc/bin doesn't work properly
 - add conditonal compilate to cleanfiles? Just to clean them on every make

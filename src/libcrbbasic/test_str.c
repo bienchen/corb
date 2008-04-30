@@ -231,7 +231,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    /* delete strings */
    str_delete (test_str);
    str_delete (test_str2);
-   assert (NULL);
+
    FREE_MEMORY_MANAGER;
 
    return EXIT_SUCCESS;

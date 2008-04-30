@@ -555,8 +555,6 @@ int portable_vsnprintf(char *str, size_t str_m, const char *fmt, va_list ap) {
  * that str can be NULL and str_m can be 0.
  * This is more useful than the old:  if (str_m < 1) return -1; */
 
-  fprintf (stderr, "\n\n\n\n\nTEST\n\n\n\n\n");
-
 #if defined(NEED_SNPRINTF_ONLY)
   va_start(ap, fmt);
 #endif

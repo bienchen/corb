@@ -3,6 +3,7 @@
 # @configure_input@
 # Last modified: 2008-06-09.10
 
+
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
 
@@ -35,6 +36,7 @@ use Pod::Usage;
 
 # CONSTANTS        - BEGIN
 my $M4_COMMENT         = "\\#";
+
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
@@ -57,6 +59,7 @@ my $Verbose          = 0;
 my $Bckext           = "bkp";
 my $Dwidth           = 1;
 
+my $Exit_On_Error    = 0;
 # GLOBALS          - END
 
 
@@ -75,6 +78,7 @@ sub define_preamble_m4(\$ \$ \@)
 
     for (my $i = 0; $i <= $#{$lines_ref}; $i++)
     {
+        if (@{$lines_ref}[$i] =~ /(^$M4_COMMENT\s*$|
                                    Last\s+modified\:|
                                    Copyright\s+\(C\)\s+\d+|
                                    See\s+COPYING\s+file\s+in\s+the\s+top\s+
@@ -137,7 +141,7 @@ sub define_end_m4(\$ \$ \@)
 
     for (my $i = $$start_ref; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^\s*dnl\#\s*Local\s+variables\:|
+        if (@{$lines_ref}[$i] =~ /(^\s*dnl$M4_COMMENT\s*Local\s+variables\:|
                                    ^\s*$)/xi)
         {
           if (! $started)
@@ -294,7 +298,6 @@ sub format_preamble_m4($ $ $ $ \@)
             {
                 $state = "licensenote"
             }
-
             if ($line !~ /^${M4_COMMENT}$/)
             {
                 check_leading_spaces($line, $M4_COMMENT, $file, $i);
@@ -308,6 +311,21 @@ sub format_preamble_m4($ $ $ $ \@)
         }
         #warning_msg(sprintf ("line %*d: $line", $Dwidth, $i));
         warning_message (sprintf ("line %*d: $line", $DWIDTH, $i));
+    $i = $start;
+    $line = @{$lines_aryref}[$i - 1];
+    if ($line !~ /^$M4_COMMENT$/)
+    {
+        check_empty_line($line, $file, $i);
+        check_leading_spaces($line, $M4_COMMENT, $file, $i);
+        check_trailing_spaces($line, $file, $i);
+        # text before comment
+        form_violation_msg("BLA", $file, $i, 0);
+    }
+
+    for ($i = $start; $i <= $end; $i++)
+    {
+        $line = @{$lines_aryref}[$i - 1];
+        warning_msg(sprintf ("line %*d: $line", $Dwidth, $i));
     }
 
     return 0;
@@ -401,7 +419,7 @@ sub set_dwidth($)
     my ($n) = @_;
 
     $n = log($n)/log(10);
-    $DWIDTH =  sprintf("%.0f",($n + 0.5));    
+    $Dwidth =  sprintf("%.0f",($n + 0.5));    
 }
 
 # copy a file with a unique file name or find a file with the same content
@@ -481,7 +499,11 @@ sub form_violation_msg($ $ $)
         $msg .= " ";        
     }
 
+
     $msg .= "${message}\n";
+
+
+    die($msg) if ($Exit_On_Error);
 
     print(STDERR $msg);
 
@@ -552,6 +574,7 @@ sub parseargs(\% \$)
     $optcatchresult = GetOptions(
                               'format=s' => \$argument_hashref->{format},
                               'werror!'  => \$argument_hashref->{exit_on_error},
+
                               'verbose!' => \$Verbose,
                               'help'     => \$help,
                               'man'      => \$man
@@ -673,6 +696,7 @@ foreach $current_file (@{$arg_hash{files}})
 
     set_dwidth ($#lines + 1);
 
+
     # first determine file structure
     $file_structure{'preamble_start'} = 0;
     $file_structure{'preamble_end'} = 0;
@@ -731,6 +755,13 @@ B<reformat> [options] <source file 1> <source file 2> ...
 
 =head1 DESCRIPTION
 
+B<reformat> checks the formatting of a source file to fit the common style of
+the B<corb> project. The standard behaviour is to check all given files first
+and then exit 1 on error otherwise 0.
+
+- spell check: check spelling, excluded from auto-fix, unknown words have to be
+  put into defined dictionary
+
 
 =head1 OPTIONS
 
@@ -745,35 +776,6 @@ Supported so far: "m4" for the M4 macro language.
 =item B<-w, --werror>
 
 Treat warnings as error ;-). And therefore exit on each warning.
-=item B<-change>
-
-=item B<-v, --verbose>
-Fix format problems in a source file. With this option, beside making
-considerations on the formattin of code, the changes are written to the file. 
-
-
-
-Enables the verbose mode. In this mode, a little bit of information is
-provided as output on each step during reformating.
-
-=item B<-m, --man>
-
-Print a help message plus a description for the program.
-
-=item B<-m, --help>
-
-Print a help message and exit.
-
-=back
-
-=cut
-
-
-#=item B<-a, --auto-fix>
-
-#Fix format problems in a source file automatically. With this option, beside
-#making considerations on the formatting of code, the changes are written to
-#the file. 
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

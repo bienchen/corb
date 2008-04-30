@@ -15,6 +15,10 @@ Build system
   - ad mode: only report possibles changes/ recommentdations
              change code automatically
   - ad mode: halt-on-error/ warning
+  - sigtrap: on stop, restore backup file if neccessary?
+  - option to exit on the first warning/ first file with warnings -->
+    werror/ werror-file
+  - check for required packages during configure
 
 - make distclean in share/misc/bin doesn't work properly
 - add conditonal compilate to cleanfiles? Just to clean them on every make

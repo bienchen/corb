@@ -214,7 +214,7 @@ add_2_progname (const char* string)
 /** @brief Adds a tool name to the program name.
  *
  * Extend the current program name by @c tool_name delimited by a dash
- * ('-')).\n
+ * (' ')).\n
  * Returns the same values as @c add_2_progname().
  * @param[in] tool_name Input string.
  */
@@ -231,7 +231,7 @@ add_name_2_progname (const char* tool_name)
    }
 
    tmp = XMALLOC (sizeof (char) * (strlen (tool_name) + 2));
-   tmp[0] = '-';
+   tmp[0] = ' ';
    tmp[1] = '\0';
    strcat (tmp, tool_name);
 

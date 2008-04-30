@@ -279,6 +279,7 @@ static PresetArray*
 brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
 {
    /* check input structure */
+
    if (args_info->inputs_num == 1)
    {
       THROW_ERROR_MSG ("RNA Structure required as argument, try "
@@ -334,18 +335,19 @@ brot_main(const char *cmdline)
    /* postprocess arguments */
    if (retval == 0)
    {
-      /* Analyse & transform structure */
-      pairlist = parse_input_structure (brot_args.inputs[1]);
-      if (pairlist == NULL)
+      /* get fixed sites */
+      presets = brot_cmdline_parser_postprocess (&brot_args);
+      if (presets == NULL)
       {
          retval = 1;
       }
    }
+
    if (retval == 0)
    {
-      /* get fixed sites */
-      presets = brot_cmdline_parser_postprocess (&brot_args);
-      if (presets == NULL)
+      /* Analyse & transform structure */
+      pairlist = parse_input_structure (brot_args.inputs[1]);
+      if (pairlist == NULL)
       {
          retval = 1;
       }

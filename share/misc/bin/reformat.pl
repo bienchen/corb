@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-04-30.00
+# Last modified: 2008-04-30.12
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -33,6 +33,9 @@ use Pod::Usage;
 # PRIVATE packages - BEGIN
 # PRIVATE packages - END
 
+# CONSTANTS        - BEGIN
+my $M4_COMMENT         = "\#";
+# CONSTANTS        - END
 
 # GLOBALS          - BEGIN
 my %Known_Extensions   = (
@@ -50,9 +53,10 @@ my %Define_Codesection = (
 my %Define_End         = (
                            'm4' => \&define_end_m4,
                          );
-my $VERBOSE          = 0;
-my $BCKEXT           = "bkp";
-my $DWIDTH           = 1;
+my $Verbose          = 0;
+my $Bckext           = "bkp";
+my $Dwidth           = 1;
+my $Exit_On_Error    = 0;
 # GLOBALS          - END
 
 
@@ -71,7 +75,7 @@ sub define_preamble_m4(\$ \$ \@)
 
     for (my $i = 0; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^\#\s*$|
+        if (@{$lines_ref}[$i] =~ /(^$M4_COMMENT\s*$|
                                    Last\s+modified\:|
                                    Copyright\s+\(C\)\s+\d+|
                                    See\s+COPYING\s+file\s+in\s+the\s+top\s+
@@ -106,7 +110,7 @@ sub define_codesection_m4(\$ \$ \@)
     {
         if (@{$lines_ref}[$i] !~ /^\s*$/)
         {
-            if (@{$lines_ref}[$i] =~ /^\s*dnl\#\s*Local\s+variables\:/i)
+            if (@{$lines_ref}[$i] =~ /^\s*dnl$M4_COMMENT\s*Local\s+variables\:/i)
             {
                $$end_ref = $i;
                return;
@@ -134,7 +138,7 @@ sub define_end_m4(\$ \$ \@)
 
     for (my $i = $$start_ref; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^\s*dnl\#\s*Local\s+variables\:|
+        if (@{$lines_ref}[$i] =~ /(^\s*dnl$M4_COMMENT\s*Local\s+variables\:|
                                    ^\s*$)/xi)
         {
           if (! $started)
@@ -172,19 +176,20 @@ sub format_preamble_m4($ $ $ \@)
 #
 
     $i = $start;
-    if (@{$lines_aryref}[$i - 1] !~ /^\#$/)
+    $line = @{$lines_aryref}[$i - 1];
+    if ($line !~ /^$M4_COMMENT$/)
     {
-        # leading spaces
-        # trailing spaces
-        # empty line
-        # text
-        form_violation_msg("BLA\n", $file, $i, 0);
+        check_empty_line($line, $file, $i);
+        check_leading_spaces($line, $M4_COMMENT, $file, $i);
+        check_trailing_spaces($line, $file, $i);
+        # text before comment
+        form_violation_msg("BLA", $file, $i, 0);
     }
 
     for ($i = $start; $i <= $end; $i++)
     {
         $line = @{$lines_aryref}[$i - 1];
-        warning_msg(sprintf ("line %*d: $line", $DWIDTH, $i));
+        warning_msg(sprintf ("line %*d: $line", $Dwidth, $i));
     }
 
     return 0;
@@ -194,6 +199,47 @@ sub format_preamble_m4($ $ $ \@)
 ##########################
 ###   Arb. functions   ###
 ##########################
+# checks whether a comment line starts with leading whitespaces
+#   check_leading_spaces($line, $comment_symbol, $file, $line_no)
+sub check_leading_spaces($ $ $ $)
+{
+    my ($line, $comment_symbol, $file, $line_no) = @_;
+
+    if ($line =~ /^\s+${comment_symbol}/)
+    {
+        form_violation_msg("Leading spaces before comment", $file, $line_no, 0);
+    }
+}
+
+# checks whether a line ends with whitespaces
+#   check_trailing_spaces($line, $file, $line_no)
+sub check_trailing_spaces($ $ $)
+{
+    my ($line, $file, $line_no) = @_;
+
+    chomp($line);
+
+    if ($line =~ /(\s+)$/)
+    {
+        form_violation_msg("Line ends with whitespaces",
+                           $file,
+                           $line_no, 
+                           length($line) - length($1));
+    }
+}
+
+# checks whether a  line is empty
+#   check_empty_line($line, $file, $line_no)
+sub check_empty_line($ $ $)
+{
+    my ($line, $file, $line_no) = @_;
+
+    if ($line =~ /^\s*$/)
+    {
+        form_violation_msg("Empty line found", $file, $line_no);
+    }
+}
+
 # Sets the width of the max. lineno. as default width for writting to stdout.
 #   set_digits(n)
 sub set_dwidth($)
@@ -201,7 +247,7 @@ sub set_dwidth($)
     my ($n) = @_;
 
     $n = log($n)/log(10);
-    $DWIDTH =  sprintf("%.0f",($n + 0.5));    
+    $Dwidth =  sprintf("%.0f",($n + 0.5));    
 }
 
 # copy a file with a unique file name or find a file with the same content
@@ -225,7 +271,7 @@ sub cpy_file($ \$)
     }
     foreach (readdir(DIR))
     {
-        if ($_ =~ /$filename\.(\d+)\.$BCKEXT/)
+        if ($_ =~ /$filename\.(\d+)\.$Bckext/)
         {
             verbose_msg("    backup found: \"$_\"\n");
             if ($bck <= $1)
@@ -236,8 +282,8 @@ sub cpy_file($ \$)
     }
     closedir(DIR);
 
-    # create copy $filename.$bck.$BCKEXT
-    $cpy_name = $file."\.".$bck."\.".$BCKEXT;
+    # create copy $filename.$bck.$Bckext
+    $cpy_name = $file."\.".$bck."\.".$Bckext;
     unless (copy($file, $cpy_name))
     {
         $$error_msgref = "Could not copy \"$filename\" to \"$cpy_name\"\n";
@@ -252,7 +298,7 @@ sub verbose_msg($)
 {
     my ($message) = @_;
 
-    print $message if $VERBOSE;
+    print $message if $Verbose;
 }
 
 # write warning
@@ -264,13 +310,23 @@ sub warning_msg($)
     print STDERR "WARNING:".$message;
 }
 
-# write message for format violation
-#   form_violation_msg($message, $file, $line, $col)
-sub form_violation_msg($ $ $ $)
+# write message for format violation, ends each message with a newline.
+#   form_violation_msg($message, $file, $line [, $col])
+sub form_violation_msg($ $ $)
 {
     my ($message, $file, $line, $col) = @_;
 
-    printf(STDERR "${file}:%*d:%2d: $message\n", $DWIDTH, $line, $col);
+    my $msg = "${file}:$line:";
+
+    if (defined($col)) { $msg .= "${col}: " }
+
+    $msg .= "${message}\n";
+
+    die($msg) if ($Exit_On_Error);
+
+    print(STDERR $msg);
+
+    #printf(STDERR "${file}:%*d:%2d: $message\n", $Dwidth, $line, $col);
 }
 
 # check whether a known file format is given
@@ -335,11 +391,12 @@ sub parseargs(\% \$)
 
     # parse @ARGV
     $optcatchresult = GetOptions(
-                                 'format=s' => \$argument_hashref->{format},
-                                 'auto-fix!'  => \$argument_hashref->{fix},
-                                 'verbose!' => \$VERBOSE,
-                                 'help'     => \$help,
-                                 'man'      => \$man
+                              'format=s' => \$argument_hashref->{format},
+                              'werror!'  => \$Exit_On_Error,
+                              'verbose!' => \$Verbose,
+                              'help'     => \$help,
+                              'man'      => \$man
+                             #'auto-fix!'  => \$argument_hashref->{fix},
                                 );
 
     if ($optcatchresult == 0) { return 0 }
@@ -430,15 +487,15 @@ foreach $current_file (@{$arg_hash{files}})
     }
     verbose_msg("${Known_Extensions{$format}}\n");    
 
-    # secure copy of file
-    if ($arg_hash{fix})
-    {
-        verbose_msg("  creating backup of file...\n");
-        $filecpy = cpy_file($current_file, $error_msg);
+    # secure copy of file (prob. for auto-fix option)
+    #if ($arg_hash{fix})
+    #{
+    #    verbose_msg("  creating backup of file...\n");
+    #    $filecpy = cpy_file($current_file, $error_msg);
 
-        if ($filecpy eq "") { die("$0: $error_msg") }
-        verbose_msg("  new backup: \"$filecpy\"\n");
-    }
+    #    if ($filecpy eq "") { die("$0: $error_msg") }
+    #    verbose_msg("  new backup: \"$filecpy\"\n");
+    #}
     
     # load file
     verbose_msg("  loading \"${current_file}\"...");
@@ -451,7 +508,7 @@ foreach $current_file (@{$arg_hash{files}})
 
     verbose_msg("  checking format...\n");
 
-    set_dwidth($#lines + 1);
+    #set_dwidth($#lines + 1);
 
     # first determine file structure
     $file_structure{'preamble_start'} = 0;
@@ -512,11 +569,8 @@ B<reformat> [options] <source file 1> <source file 2> ...
 =head1 DESCRIPTION
 
 B<reformat> checks the formatting of a source file to fit the common style of
-the B<corb> project. With option B<auto-fix>, all issues are corrected in a
-given file. B<THIS MEANS YOUR SOURCE CODE WILL BE AUTOMATICALLY CHANGED>!
-Before any changes are applied, a backup copy of the original file is created.
-This copy is extended by ".bkp" and a number. If anything goes wrong during
-reformatting, just copy the backup to the orignal file name.
+the B<corb> project. The standard behaviour is to check all given files first
+and then exit 1 on error otherwise 0.
 
 - spell check: check spelling, excluded from auto-fix, unknown words have to be
   put into defined dictionary
@@ -531,11 +585,9 @@ Format has to be one of "m4". Define the format of given source files. Without
 this option, the source code format is determined on the file extension.
 Supported so far: "m4" for the M4 macro language.
 
-=item B<-a, --auto-fix>
+=item B<-w, --werror>
 
-Fix format problems in a source file automatically. With this option, beside
-making considerations on the formatting of code, the changes are written to
-the file. 
+Treat warnings as error ;-). And therefore exit on each warning.
 
 =item B<-v, --verbose>
 
@@ -554,6 +606,18 @@ Print a help message and exit.
 
 =cut
 
+# Docu text for a possible option auto-fix which may be developed later
+#With option B<auto-fix>, all issues are corrected in a
+#given file. B<THIS MEANS YOUR SOURCE CODE WILL BE AUTOMATICALLY CHANGED>!
+#Before any changes are applied, a backup copy of the original file is created.
+#This copy is extended by ".bkp" and a number. If anything goes wrong during
+#reformatting, just copy the backup to the orignal file name.
+
+#=item B<-a, --auto-fix>
+
+#Fix format problems in a source file automatically. With this option, beside
+#making considerations on the formatting of code, the changes are written to
+#the file. 
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

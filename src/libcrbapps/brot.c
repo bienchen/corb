@@ -135,7 +135,7 @@ static __inline__ char
 transform_base_2_number (const char base)
 {
    /* RNA: "AaUuGgCc" HP: "LlRr" */
-   char* alphabet="LlRr";   /* RrYyMmKkSsWwHhBbVvDdNn */
+   char* alphabet="AaUuGgCc";   /* RrYyMmKkSsWwHhBbVvDdNn */
    size_t alpha_size = strlen (alphabet);
    size_t i;
    unsigned long shift = 0;
@@ -162,7 +162,7 @@ static __inline__ char
 transform_number_2_base (const char base)
 {
    /* RNA: "AUGC" HP: "LR" */
-   char* alphabet="LR";   /* RrYyMmKkSsWwHhBbVvDdNn */
+   char* alphabet="AUGC";   /* RrYyMmKkSsWwHhBbVvDdNn */
    size_t alpha_size = strlen (alphabet);
    
    if ((size_t) base < alpha_size)
@@ -378,7 +378,7 @@ brot_main(const char *cmdline)
    /* simulate */
    if (retval == 0)
    {
-      /* seqmatrix_print_2_stderr (2, sm); */
+      seqmatrix_print_2_stderr (2, sm);
       retval = sequence_matrix_simulate_scmf (10, sm);
    }
 

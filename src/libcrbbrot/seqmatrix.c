@@ -40,7 +40,7 @@
 #include "seqmatrix.h"
 
 /* use until something better is found */
-#define SM_COLS 2               /* HP: 2 letters, RNA: 4 */
+#define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
 
 struct SeqMatrix {
       char* fixed_sites;
@@ -109,13 +109,14 @@ seqmatrix_delete (SeqMatrix* sm)
  * @param[in] sm The sequence matrix
  */
 __inline__ bool
-seqmatrix_is_row_fixed (unsigned long row, SeqMatrix* sm)
+seqmatrix_is_col_fixed (unsigned long col, SeqMatrix* sm)
 {
    assert (sm);
    assert (sm->matrix);
    assert (sm->fixed_sites);
+   /* assert (); */
 
-   if (sm->fixed_sites[(row / CHAR_BIT)] & (1 << (row % CHAR_BIT)))
+   if (sm->fixed_sites[(col / CHAR_BIT)] & (1 << (col % CHAR_BIT)))
    {
       return true;
    }
@@ -142,10 +143,10 @@ seqmatrix_init (const unsigned long* pairs,
                 const PresetArray* presettings,
                 SeqMatrix* sm)
 {
-   unsigned long i;
+   unsigned long i, j;
    unsigned long pslen;
    unsigned long row, col;
-   float init_col[SM_COLS];
+   float init_row[size];
 
    assert (sm);
    assert (sm->fixed_sites == NULL);
@@ -153,8 +154,8 @@ seqmatrix_init (const unsigned long* pairs,
    assert (sm->matrix      == NULL);
 
    /* allocate matrix */
-   sm->rows = size;
-   sm->cols = SM_COLS;
+   sm->rows = SM_ROWS;
+   sm->cols = size;
    sm->matrix = (float**) XMALLOC_2D (sm->rows,sm->cols,sizeof (*(sm->matrix)));
    if (sm->matrix == NULL)
    {
@@ -162,15 +163,15 @@ seqmatrix_init (const unsigned long* pairs,
    }
    
    /* init sm */
-   init_col[0] = 1.0f / SM_COLS;
-   for (i = 1; i < SM_COLS; i++)
+   init_row[0] = 1.0f / SM_ROWS;
+   for (i = 1; i < size; i++)
    {
-      init_col[i] = init_col[0];
+      init_row[i] = init_row[0];
    }
    
-   for (i = 0; i < size; i++)
+   for (i = 0; i < SM_ROWS; i++)
    {
-      memcpy (sm->matrix[i], init_col, sizeof (*(sm->matrix)) * SM_COLS);
+      memcpy (sm->matrix[i], init_row, sizeof (*(sm->matrix)) * size);
    }
 
    /* copy pairlist */
@@ -196,24 +197,30 @@ seqmatrix_init (const unsigned long* pairs,
 
    if (presettings != NULL)
    {
-      init_col[0] = 0.0f;
-      for (i = 1; i < SM_COLS; i++)
-      {
-         init_col[i] = init_col[0];
-      }
+      /* use, if rows are adjacent in memory
+        init_row[0] = 0.0f;
+        for (i = 1; i < SM_ROWS; i++)
+        {
+        init_row[i] = init_row[0];
+        }
+      */
 
       pslen = presetarray_get_length (presettings);
       for (i = 0; i < pslen; i++)
       {
-         row = presetarray_get_ith_pos (i, presettings);
-         col = presetarray_get_ith_base (i, presettings);
+         row = presetarray_get_ith_base (i, presettings);
+         col = presetarray_get_ith_pos (i, presettings);
 
          /* set site as fixed */
-         sm->fixed_sites[(row / CHAR_BIT)] |= 
-            1 << (row % CHAR_BIT);
+         sm->fixed_sites[(col / CHAR_BIT)] |= 
+            1 << (col % CHAR_BIT);
 
          /* set probability in matrix to 1 */
-         memcpy (sm->matrix[row], init_col, sizeof (*(sm->matrix)) * SM_COLS);
+         /* use, if rows are the connected memory areas
+           memcpy (sm->matrix[row], init_row, sizeof (*(sm->matrix)) * SM_ROWS);
+         */
+         for (j = 0; j < SM_ROWS; j++)
+            sm->matrix[j][col] = 0.0f; 
          sm->matrix[row][col] = 1.0f;
       }
    }
@@ -237,7 +244,11 @@ sequence_matrix_update_col_scmf (unsigned long row, SeqMatrix* sm)
    mfprintf (stderr, "R: %lu ", row);
    for (j = 0; j < sm->cols; j++)
    {
-      mfprintf (stderr, "C:%lu ", j);
+      /* check if fixed */
+      if (!seqmatrix_is_col_fixed (j, sm))
+      {
+         mfprintf (stderr, "C:%lu ", j);
+      }
 
       /* update cell */
       
@@ -264,11 +275,7 @@ sequence_matrix_update_row_scmf (SeqMatrix* sm)
    i = 0;
    while ((!error) && (i < sm->rows))
    {
-      /* check if fixed */
-      if (!seqmatrix_is_row_fixed (i, sm))
-      {
-         error = sequence_matrix_update_col_scmf (i, sm);        
-      }
+      error = sequence_matrix_update_col_scmf (i, sm);        
 
       /* update columns */
       i++;

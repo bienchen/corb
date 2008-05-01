@@ -665,7 +665,7 @@ checked_xcalloc (const size_t nmemb,
 /** @brief Allcoate memory for a 2-dimensional matrix
  *
  * Do not call this directly. Use the macro
- * @c XMALLOC_2d(size_t n_rows, size_t n_cols, size_t size) instead. This will
+ * @c XMALLOC_2D(size_t n_rows, size_t n_cols, size_t size) instead. This will
  * asure the memory manager to work properly and set the calling file and line
  * for you.\n
  * Allocates a matrix with @c n_rows and @c n_cols with cells of @c size bytes

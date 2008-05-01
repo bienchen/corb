@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-04-30.12
+# Last modified: 2008-05-02.00
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -34,7 +34,7 @@ use Pod::Usage;
 # PRIVATE packages - END
 
 # CONSTANTS        - BEGIN
-my $M4_COMMENT         = "\#";
+my $M4_COMMENT         = "\\#";
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
@@ -56,7 +56,6 @@ my %Define_End         = (
 my $Verbose          = 0;
 my $Bckext           = "bkp";
 my $Dwidth           = 1;
-my $Exit_On_Error    = 0;
 # GLOBALS          - END
 
 
@@ -65,7 +64,7 @@ my $Exit_On_Error    = 0;
 ###   M4 formatting    ###
 ##########################
 # define the start and end line of a M4 source file preamble
-#   define_preamble_m4($start_ref, $end_ref, @lines_ref)
+#   define_preamble_m4$start_ref, $end_ref, @lines_ref)
 sub define_preamble_m4(\$ \$ \@)
 {
     my ($start_ref, $end_ref, $lines_ref) = @_;
@@ -75,7 +74,7 @@ sub define_preamble_m4(\$ \$ \@)
 
     for (my $i = 0; $i <= $#{$lines_ref}; $i++)
     {
-        if (@{$lines_ref}[$i] =~ /(^$M4_COMMENT\s*$|
+        if (@{$lines_ref}[$i] =~ /(^\s*$M4_COMMENT\s*$|
                                    Last\s+modified\:|
                                    Copyright\s+\(C\)\s+\d+|
                                    See\s+COPYING\s+file\s+in\s+the\s+top\s+
@@ -83,13 +82,13 @@ sub define_preamble_m4(\$ \$ \@)
                                    \s+licence|
                                    ^\s*$)/xi)
         {
-            # print @{$lines_ref}[$i];
+            #print @{$lines_ref}[$i];
             $started = 1;
         }
         else
         {
             if ($started)
-            {   
+            {
                 $$end_ref = $i;
                 return;
             }
@@ -154,17 +153,128 @@ sub define_end_m4(\$ \$ \@)
 
 # format the preamble of a M4 source file, returns the no. of lines added to
 # the preamble
-#   format_preamble_m4($start, $end, $file, @lines_aryref)
-sub format_preamble_m4($ $ $ \@)
+#   format_preamble_m4($start, $end, $file, $exit, @lines_aryref)
+sub format_preamble_m4($ $ $ $ \@)
 {
-    my ($start, $end, $file, $lines_aryref) = @_;
+    my ($start, $end, $file, $exit, $lines_aryref) = @_;
     my $i;
     my $line;
+    my $width;
+    my $state = "copyright";
+    my $retval;
 
     if ($end > ($#{$lines_aryref} + 1))
     {
         $end = $#{$lines_aryref} + 1;
     }
+
+    $i = $start;
+    $line = @{$lines_aryref}[$i - 1];
+    if ($line !~ /^${M4_COMMENT}$/)
+    {
+        form_violation_msg("Preamble should start with an empty comment line",
+                           $file, $i);
+        check_empty_line($line, $file, $i);
+        check_txt_before_comment($line, $M4_COMMENT, $file, $i);
+        check_txt_after_comment($line, $M4_COMMENT, $file, $i);
+        check_leading_spaces($line, $M4_COMMENT, $file, $i);
+        check_trailing_spaces($line, $file, $i);
+        exit(1) if ($exit);
+    }
+    $i = $i + 1;
+
+    # check copyright line
+    for (; $i <= $end; $i++)
+    {
+        $width = 0;
+        $line = @{$lines_aryref}[$i - 1];
+
+        if (   ($state eq "copyright") 
+            && (   ($line !~ /^${M4_COMMENT} Copyright \(C\) \d{4} [^\s+]/)
+                && ($line !~ /^\s*${M4_COMMENT}\s*$/)))
+        {
+            if ($i - $start == 1)
+            {
+                form_violation_msg("Preamble should be followed by copyright ".
+                                   "notes", $file, $i);
+            }
+            else
+            {
+                 form_violation_msg("Copyright notes should be of form \"".
+                                    "\# Copyright \(C\) YYYY name\"",
+                                    $file, $i);
+            }
+
+            check_empty_line($line, $file, $i);
+            check_txt_before_comment($line, $M4_COMMENT, $file, $i);
+            check_leading_spaces($line, $M4_COMMENT, $file, $i);
+            check_trailing_spaces($line, $file, $i);
+
+            # check copyright line
+            if ($line =~ /^${M4_COMMENT}(\s*)(Copyright)(\s*)(\(C\))(\s*)
+                          ([\d\.]+)(\s*)([^\s+])/xi)
+            {
+                $width = 1;
+                # check no. of ws between "#" and "Copyright"
+                check_whitespaces($1, 1, $file, $i, $width);
+                $width += length($1);
+
+                if ($2 ne "Copyright") # check spelling of "Copyright"
+                {
+                    form_violation_msg("\"Copyright\" misspelled \(\"$2\"\)",
+                                       $file, $i, $width);
+                }
+                $width += length($2);
+
+                # check no. of ws between "Copyright" and "(C)"
+                check_whitespaces($3, 1, $file, $i, $width);
+                $width += length($3);
+
+                if ($4 ne "\(C\)") # check spelling of "(C)"
+                {
+                    form_violation_msg("\"\(C\)\" symbol misspelled \(\"$4\"\)",
+                                       $file, $i, $width);
+                }
+                $width += length($4);               
+
+                # check no. of ws between "(C)" and year
+                check_whitespaces($5, 1, $file, $i, $width);
+                $width += length($5);
+
+                if ($6 ne "\d\d\d\d") # check year
+                {
+                    form_violation_msg("Wrong format of year \(\"$6\"\), ".
+                                       "should be \"YYYY\"", $file, $i, $width);
+                }
+                $width += length($6);                
+
+                # check no. of ws between "YYYY" and name
+                check_whitespaces($7, 1, $file, $i, $width);
+                $width += length($7);
+
+                if (length($8) == 0) # check name
+                {
+                    form_violation_msg("No name for copyright holder found",
+                                       $file, $i, $width);
+                }
+                $width += length($8); 
+            }
+
+            exit(1) if ($exit);
+        }
+        elsif (   ($state eq "licensenote") 
+            && (   ($line !~ /^\s*${M4_COMMENT}\sSee\sCOPYING\sfile\sin\sthe\s
+                              top\slevel\sdirectory\sof\sthis\stree\sfor\s
+                              licence\.$/x)
+                && ($line !~ /^\s*${M4_COMMENT}\s*$/)))
+        {
+            if (($i - $start) == 4)
+            {
+                form_violation_msg("Copyright notes should be followed by a ".
+                                   "reference to the licence of form \"See ".
+                                   "COPYING file in the top level directory ".
+                                   "of this tree for licence.\"", $file, $i);
+            }
 
 #    a
 # Copyright (C) 2008 Stefan Bienert
@@ -174,22 +284,27 @@ sub format_preamble_m4($ $ $ \@)
 #
 # Last modified: 2008-04-26.23
 #
+            print $i-$start.":".$line;
+        }
+        elsif ($line =~ /^\s*${M4_COMMENT}\s*$/)
+        {
+            if ($state eq "copyright")
+            {
+                $state = "licensenote"
+            }
 
-    $i = $start;
-    $line = @{$lines_aryref}[$i - 1];
-    if ($line !~ /^$M4_COMMENT$/)
-    {
-        check_empty_line($line, $file, $i);
-        check_leading_spaces($line, $M4_COMMENT, $file, $i);
-        check_trailing_spaces($line, $file, $i);
-        # text before comment
-        form_violation_msg("BLA", $file, $i, 0);
-    }
-
-    for ($i = $start; $i <= $end; $i++)
-    {
-        $line = @{$lines_aryref}[$i - 1];
-        warning_msg(sprintf ("line %*d: $line", $Dwidth, $i));
+            if ($line !~ /^${M4_COMMENT}$/)
+            {
+                check_leading_spaces($line, $M4_COMMENT, $file, $i);
+                check_trailing_spaces($line, $file, $i);
+                exit(1) if ($exit);
+            }
+        }
+        else
+        {
+            #print $line;
+        }
+        #warning_msg(sprintf ("line %*d: $line", $Dwidth, $i));
     }
 
     return 0;
@@ -237,6 +352,42 @@ sub check_empty_line($ $ $)
     if ($line =~ /^\s*$/)
     {
         form_violation_msg("Empty line found", $file, $line_no);
+    }
+}
+
+# checks the number of whitespaces
+#   check_whitespaces($line, $no, $file, $line_no, $pod)
+sub check_whitespaces($ $ $ $ $)
+{
+    my ($line, $no, $file, $line_no, $pos) = @_;
+
+    if (length($line) > $no)
+    {
+        form_violation_msg("Multiple whitespaces found",
+                           $file, $line_no, $pos);
+    }
+}
+# checks if text is written before the start of a comment
+#   check_txt_before_comment($line, $comment_symbol, $file, $line_no)
+sub check_txt_before_comment($ $ $ $)
+{
+    my ($line, $comment_symbol, $file, $line_no) = @_;
+
+    if ($line =~ /(\s*)[^\s]+\s*${comment_symbol}/)
+    {
+        form_violation_msg("Text before comment", $file, $line_no, length($1));
+    }
+}
+
+# checks if text is written after the start of a comment
+#   check_txt_after_comment($line, $comment_symbol, $file, $line_no)
+sub check_txt_after_comment($ $ $ $)
+{
+    my ($line, $comment_symbol, $file, $line_no) = @_;
+
+    if ($line =~ /(${comment_symbol}\s*)[^\s]/)
+    {
+        form_violation_msg("Text after comment", $file, $line_no, length($1));
     }
 }
 
@@ -318,11 +469,16 @@ sub form_violation_msg($ $ $)
 
     my $msg = "${file}:$line:";
 
-    if (defined($col)) { $msg .= "${col}: " }
+    if (defined($col))
+    {
+        $msg .= "${col}: ";
+    }
+    else
+    {
+        $msg .= " ";        
+    }
 
     $msg .= "${message}\n";
-
-    die($msg) if ($Exit_On_Error);
 
     print(STDERR $msg);
 
@@ -392,7 +548,7 @@ sub parseargs(\% \$)
     # parse @ARGV
     $optcatchresult = GetOptions(
                               'format=s' => \$argument_hashref->{format},
-                              'werror!'  => \$Exit_On_Error,
+                              'werror!'  => \$argument_hashref->{exit_on_error},
                               'verbose!' => \$Verbose,
                               'help'     => \$help,
                               'man'      => \$man
@@ -544,6 +700,7 @@ foreach $current_file (@{$arg_hash{files}})
                                               $file_structure{'preamble_start'},
                                               $file_structure{'preamble_end'},
                                               ${current_file},
+                                              $arg_hash{exit_on_error},
                                               \@lines
                                                 );
     }

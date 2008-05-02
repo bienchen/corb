@@ -28,6 +28,7 @@
  *
  */
 
+/* check if option is set: identify via pointer given to store the argument */
 
 #include <config.h>
 #include <inc_strg.h>

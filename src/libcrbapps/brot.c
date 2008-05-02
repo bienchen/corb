@@ -173,6 +173,52 @@ transform_number_2_base (const char base)
    return '?';
 }
 
+static __inline__ float**
+create_scoring_matrix (void)
+{
+   float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (*matrix));
+
+   if (matrix == NULL)
+   {
+      return matrix;
+   }
+
+   matrix[(int) transform_base_2_number ('A')]
+         [(int) transform_base_2_number ('A')] =  0.0f;
+   matrix[(int) transform_base_2_number ('A')]
+         [(int) transform_base_2_number ('U')] = -2.0f;
+   matrix[(int) transform_base_2_number ('A')]
+         [(int) transform_base_2_number ('G')] =  0.0f;
+   matrix[(int) transform_base_2_number ('A')]
+         [(int) transform_base_2_number ('C')] =  0.0f;
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('A')] = -2.0f;
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('U')] =  0.0f;
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('G')] = -1.5f;
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('C')] =  0.0f;
+   matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('A')] =  0.0f;
+   matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('U')] = -1.5f;
+   matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('G')] =  0.0f;
+   matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('C')] = -3.0f;
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('A')] =  0.0f;
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('U')] =  0.0f;
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('G')] = -3.0f;
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('C')] =  0.0f;
+
+   return matrix;
+}
+
 static PresetArray*
 parse_base_presettings (const struct brot_args_info* args_info)
 {
@@ -321,6 +367,7 @@ brot_main(const char *cmdline)
    int retval = 0;
    unsigned long i;
    unsigned long* pairlist = NULL;
+   float** score_matrix;
 
    /* command line parsing */
    brot_cmdline_parser_init (&brot_args);
@@ -375,11 +422,17 @@ brot_main(const char *cmdline)
                                sm);
    }
 
+   score_matrix = create_scoring_matrix ();
+   if (score_matrix == 0)
+   {
+      retval = 1;
+   }
+
    /* simulate */
    if (retval == 0)
    {
       seqmatrix_print_2_stderr (2, sm);
-      retval = sequence_matrix_simulate_scmf (10, sm);
+      retval = sequence_matrix_simulate_scmf (3, sm, score_matrix);
    }
 
    /* output */
@@ -389,6 +442,7 @@ brot_main(const char *cmdline)
    presetarray_delete (presets);
    seqmatrix_delete (sm);
    XFREE (pairlist);
+   XFREE_2D ((void**)score_matrix);
 
    if (retval == 0)
    {

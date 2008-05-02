@@ -694,7 +694,7 @@ xmalloc_2d (const size_t n_rows,
    {
       /* allocate the whole space for matrix cells at once */
       matrix[0] = XOBJ_MALLOC (n_rows * n_cols * size, file, line);
-      
+
       if (matrix[0] != NULL)
       {
          for (i = 1; i < n_rows; i++)

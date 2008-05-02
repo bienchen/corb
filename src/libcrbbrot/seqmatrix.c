@@ -44,7 +44,8 @@
 
 struct SeqMatrix {
       char* fixed_sites;
-      float** matrix;
+      float** matrix[2];
+      short int curr_matrix;
       unsigned long* pairlist;
       size_t rows;
       size_t cols;   
@@ -74,7 +75,9 @@ seqmatrix_new (const char* file, const int line)
    {
       sm->fixed_sites = NULL;
       sm->pairlist    = NULL;
-      sm->matrix      = NULL;
+      sm->matrix[0]   = NULL;
+      sm->matrix[1]   = NULL;
+      sm->curr_matrix = 0;
    }
 
    return sm;
@@ -92,7 +95,8 @@ seqmatrix_delete (SeqMatrix* sm)
    if (sm != NULL)
    {
       XFREE    (sm->fixed_sites);
-      XFREE_2D ((void**)sm->matrix);
+      XFREE_2D ((void**)sm->matrix[0]);
+      XFREE_2D ((void**)sm->matrix[1]);
       XFREE    (sm->pairlist);
       XFREE    (sm);
    }
@@ -112,7 +116,7 @@ __inline__ bool
 seqmatrix_is_col_fixed (unsigned long col, SeqMatrix* sm)
 {
    assert (sm);
-   assert (sm->matrix);
+   assert (sm->matrix[sm->curr_matrix]);
    assert (sm->fixed_sites);
    /* assert (); */
 
@@ -146,32 +150,55 @@ seqmatrix_init (const unsigned long* pairs,
    unsigned long i, j;
    unsigned long pslen;
    unsigned long row, col;
-   float init_row[size];
 
    assert (sm);
    assert (sm->fixed_sites == NULL);
    assert (sm->pairlist    == NULL);
-   assert (sm->matrix      == NULL);
+   assert (sm->matrix[0]   == NULL);
+   assert (sm->matrix[1]   == NULL);
 
    /* allocate matrix */
    sm->rows = SM_ROWS;
    sm->cols = size;
-   sm->matrix = (float**) XMALLOC_2D (sm->rows,sm->cols,sizeof (*(sm->matrix)));
-   if (sm->matrix == NULL)
+
+   /* we allocate both matrices at once: Doubled no. of columns */
+   sm->matrix[0] = (float**) XMALLOC_2D (sm->rows,(sm->cols * 2),
+                                         sizeof (*(sm->matrix[0])));
+   if (sm->matrix[0] == NULL)
    {
       return ERR_SM_ALLOC;
    }
-   
-   /* init sm */
-   init_row[0] = 1.0f / SM_ROWS;
-   for (i = 1; i < size; i++)
+   sm->curr_matrix = 0;
+
+   sm->matrix[1] = (float**) XMALLOC_2D (sm->rows,(sm->cols * 2),
+                                         sizeof (*(sm->matrix[1])));
+   if (sm->matrix[1] == NULL)
    {
-      init_row[i] = init_row[0];
+      return ERR_SM_ALLOC;
    }
-   
-   for (i = 0; i < SM_ROWS; i++)
+
+   /* init sm */
+   if (size > 0)
    {
-      memcpy (sm->matrix[i], init_row, sizeof (*(sm->matrix)) * size);
+      sm->matrix[0][0][0] = 1.0f / SM_ROWS;
+      sm->matrix[1][0][0] = 0.0f;
+      for (i = 1; i < size; i++)
+      {
+         sm->matrix[0][0][i] = sm->matrix[0][0][0];
+         sm->matrix[1][0][i] = sm->matrix[1][0][0];
+      }   
+
+      for (i = 1; i < SM_ROWS; i++)
+      {
+         memcpy (sm->matrix[0][i],
+                 sm->matrix[0][i - 1],
+                 sizeof (*(sm->matrix[0])) * size);
+         memcpy (sm->matrix[1][i],
+                 sm->matrix[1][i - 1],
+                 sizeof (*(sm->matrix[1])) * size);
+      }
+
+
    }
 
    /* copy pairlist */
@@ -181,7 +208,7 @@ seqmatrix_init (const unsigned long* pairs,
    {
       for (i = 0; i < size; i++)
       {
-         sm->pairlist[i] = pairs[i];
+         sm->pairlist[i] = pairs[i]; /* xxx use memcpy instead? */
       }
    }
 
@@ -219,9 +246,13 @@ seqmatrix_init (const unsigned long* pairs,
          /* use, if rows are the connected memory areas
            memcpy (sm->matrix[row], init_row, sizeof (*(sm->matrix)) * SM_ROWS);
          */
-         for (j = 0; j < SM_ROWS; j++)
-            sm->matrix[j][col] = 0.0f; 
-         sm->matrix[row][col] = 1.0f;
+         if (size > 0)
+         {
+            for (j = 0; j < SM_ROWS; j++)
+               sm->matrix[0][j][col] = 0.0f; 
+            sm->matrix[0][row][col] = 1.0f;
+            sm->matrix[1][row][col] = 1.0f;
+         }
       }
    }
 
@@ -229,56 +260,108 @@ seqmatrix_init (const unsigned long* pairs,
 }
 
 
-/** @brief Update a column of a sequence matrix
+/** @brief Update a row of a sequence matrix
  *
- * Update a column of a sequence matrix in a SCMF simulation.
+ * Update a row of a sequence matrix in a SCMF simulation.
  * Returns...
  *
  * @params[in] sm Sequence matrix.
  */
 static __inline__ int
-sequence_matrix_update_col_scmf (unsigned long row, SeqMatrix* sm)
+sequence_matrix_update_row_scmf (unsigned long col,
+                                 SeqMatrix* sm,
+                                 float** scores __attribute__ ((__unused__)))
 {
    unsigned long j;
+   unsigned long l;
+   unsigned long k;
+   short int new_matrix = 0;
+   float tmp;
 
-   mfprintf (stderr, "R: %lu ", row);
-   for (j = 0; j < sm->cols; j++)
+   if (sm->curr_matrix == 0)
    {
-      /* check if fixed */
-      if (!seqmatrix_is_col_fixed (j, sm))
+      new_matrix = 1;
+   }
+
+   mfprintf (stderr, "C: %lu Pairs with %lu\n", col, sm->pairlist[col]);
+
+   for (j = 0; j < sm->rows; j++)
+   {
+      /* update cell */
+      sm->matrix[new_matrix][j][col] = 0.0f;
+      mfprintf (stderr, "   R:%lu ", j);
+
+      /* calculate contribution of wanted interaction (if any) */
+      if (sm->pairlist[col])
       {
-         mfprintf (stderr, "C:%lu ", j);
+         for (l = 0; l < SM_ROWS; l++)
+         {
+            mfprintf (stderr, "%2.2f ", scores[j][l]);
+            sm->matrix[new_matrix][j][col] +=
+              sm->matrix[sm->curr_matrix][l][col] * scores[j][l];
+         }
       }
 
-      /* update cell */
-      
+      /* calculate contribution of unwanted pairs */
+      tmp = 0.0f;
+      for (k = 0; k < sm->cols; k++)
+      {
+         if ((k != col) && ((k + 1) != sm->pairlist[col])) /*without k!=col ?*/
+         {
+            for (l = 0; l < sm->rows; l++)
+            {
+               tmp +=   sm->matrix[sm->curr_matrix][l][k] 
+                  * scores[j][l] * (-1);
+            }
+         }
+      }
+      tmp = tmp / sm->cols;
+      sm->matrix[new_matrix][j][col] += tmp;
+
+      /* calc new cell? */
+
    }
+   mfprintf (stderr, "\n");
 
    return 0;
 }
 
 
-/** @brief Update the rows of a sequence matrix
+/** @brief Update the columns of a sequence matrix
  *
- * Update rows of a sequence matrix in a SCMF simulation.
+ * Update cols of a sequence matrix in a SCMF simulation.
  * Returns...
  *
  * @params[in] sm Sequence matrix.
  */
 static __inline__ int
-sequence_matrix_update_row_scmf (SeqMatrix* sm)
+sequence_matrix_update_col_scmf (SeqMatrix* sm, float** scores)
 {
    unsigned long i;
    int error = 0;
 
-   /* for each row */
+   /* for each col */
    i = 0;
-   while ((!error) && (i < sm->rows))
+   while ((!error) && (i < sm->cols))
    {
-      error = sequence_matrix_update_col_scmf (i, sm);        
-
-      /* update columns */
+      if (!seqmatrix_is_col_fixed (i, sm))
+      {
+         error = sequence_matrix_update_row_scmf (i, sm, scores);        
+      }
+      else
+      {
+         mfprintf (stderr, "C: %lu Pairs with %lu\n", i, sm->pairlist[i]);
+      }
       i++;
+   }
+
+   if (sm->curr_matrix == 0)
+   {
+      sm->curr_matrix = 1;
+   }
+   else
+   {
+      sm->curr_matrix = 0;
    }
 
    return error;
@@ -298,23 +381,28 @@ sequence_matrix_update_row_scmf (SeqMatrix* sm)
  */
 int
 sequence_matrix_simulate_scmf (const unsigned long steps,
-                               SeqMatrix* sm)
+                               SeqMatrix* sm,
+                               float** scores)
 {
    unsigned long t;
    int error= 0;
 
    assert (sm);
+   assert (scores && scores[0]);
 
    /* perform for a certain number of steps */
    t = 0;
    while ((!error) && (t < steps))
    {
-      mfprintf (stderr, "Step %lu: ", t);
+      mfprintf (stderr, "Step %lu:\n", t);
 
       /* update rows */
-      error = sequence_matrix_update_row_scmf (sm);
+      error = sequence_matrix_update_col_scmf (sm, scores);
       t++;
       mfprintf (stderr, "\n");
+
+      seqmatrix_print_2_stderr (2, sm);
+
    }
 
    return error;
@@ -335,6 +423,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    unsigned long i, j;
    int rprec = 0;               /* precision for row number */
    int cprec = 0;               /* precision for cells */
+   float tmp;
    char* string;
    char* string_start;
 
@@ -349,13 +438,24 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    {
       for (j = 0; j < sm->cols; j++)
       {
-         if (sm->matrix[i][j] > 1.0f)
+         if (sm->matrix[sm->curr_matrix][i][j] < 0.0f)
          {
-            rprec = floor (log10 (sm->matrix[i][j]) + 1.0f);
+            tmp = (-1) * sm->matrix[sm->curr_matrix][i][j];
+            rprec = 1;
          }
          else
          {
-            rprec = 1;
+            tmp = sm->matrix[sm->curr_matrix][i][j];
+            rprec = 0;
+         }
+
+         if (tmp > 1.0f)
+         {
+            rprec += floor (log10 (tmp) + 1.0f);
+         }
+         else
+         {
+            rprec += 1;
          }
 
          if (rprec > cprec) 
@@ -393,7 +493,10 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
 
       for (j = 0; j < sm->cols; j++)
       {
-         msprintf (string, " %*.*f |", cprec, p, sm->matrix[i][j]);
+         msprintf (string, " %*.*f |",
+                   cprec,
+                   p,
+                   sm->matrix[sm->curr_matrix][i][j]);
          string += 3 + cprec;
       }
 

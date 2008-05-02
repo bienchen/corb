@@ -69,6 +69,7 @@ Implementation
           - include functionallity of rpl_mallox/ rpl_realloc in memmgr
             --> with rebuilding AC_FUNC_MALLOC
           Set up test for xmalloc2d in memmgr
+          - try to keep 2D matrices as 1 block in comment, not 2 entries
 - re-read when to use #include <> and #include ""
 - give each class (datatype) a sizeof member? -> probably not because
   externally only handled as pointer

@@ -69,7 +69,7 @@ seqmatrix_init (const unsigned long*,
                 SeqMatrix*);
 
 int
-sequence_matrix_simulate_scmf (const unsigned long, SeqMatrix*);
+sequence_matrix_simulate_scmf (const unsigned long, SeqMatrix*, float**);
 
 /*********************************   Output   *********************************/
 

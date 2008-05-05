@@ -16,3 +16,10 @@ option "fixed-nuc" n "Preset a nucleotide in a position"
        typestr="NUCLEOTIDE:INT"
        optional
        multiple
+
+option "steps" s "Number of iterations"
+       details="Iteration steps for the update of site probabilites."
+       long
+       typestr="INT"
+       optional
+

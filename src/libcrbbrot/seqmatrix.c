@@ -30,6 +30,7 @@
 
 
 #include <config.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
@@ -41,6 +42,7 @@
 
 /* use until something better is found */
 #define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
+#define R_GAS 8.314472f
 
 struct SeqMatrix {
       char* fixed_sites;
@@ -150,6 +152,7 @@ seqmatrix_init (const unsigned long* pairs,
    unsigned long i, j;
    unsigned long pslen;
    unsigned long row, col;
+/*    float whobble = -0.3f; */
 
    assert (sm);
    assert (sm->fixed_sites == NULL);
@@ -198,6 +201,14 @@ seqmatrix_init (const unsigned long* pairs,
                  sizeof (*(sm->matrix[1])) * size);
       }
 
+/*       for (j = 0; j < size; j++) */
+/*       { */
+/*          for (i = 0; i < SM_ROWS; i++) */
+/*          { */
+/*             sm->matrix[0][i][j] -= ; */
+/*             /\* whobble = whobble * (-1); *\/ */
+/*          } */
+/*       } */
 
    }
 
@@ -268,9 +279,10 @@ seqmatrix_init (const unsigned long* pairs,
  * @params[in] sm Sequence matrix.
  */
 static __inline__ int
-sequence_matrix_update_row_scmf (unsigned long col,
-                                 SeqMatrix* sm,
-                                 float** scores __attribute__ ((__unused__)))
+sequence_matrix_calc_eeff_row_scmf (unsigned long col,
+                                    SeqMatrix* sm,
+                                    float t,
+                                    float** scores)
 {
    unsigned long j;
    unsigned long l;
@@ -311,15 +323,14 @@ sequence_matrix_update_row_scmf (unsigned long col,
             for (l = 0; l < sm->rows; l++)
             {
                tmp +=   sm->matrix[sm->curr_matrix][l][k] 
-                  * scores[j][l] * (-1);
+                  * scores[j][l];
             }
          }
       }
-      tmp = tmp / sm->cols;
+      tmp = (tmp / sm->cols) * (-1.0f);
       sm->matrix[new_matrix][j][col] += tmp;
-
-      /* calc new cell? */
-
+      sm->matrix[new_matrix][j][col] =
+         (-1.0f) * expf (sm->matrix[new_matrix][j][col]/(R_GAS * t));
    }
    mfprintf (stderr, "\n");
 
@@ -335,7 +346,7 @@ sequence_matrix_update_row_scmf (unsigned long col,
  * @params[in] sm Sequence matrix.
  */
 static __inline__ int
-sequence_matrix_update_col_scmf (SeqMatrix* sm, float** scores)
+sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
 {
    unsigned long i;
    int error = 0;
@@ -346,7 +357,7 @@ sequence_matrix_update_col_scmf (SeqMatrix* sm, float** scores)
    {
       if (!seqmatrix_is_col_fixed (i, sm))
       {
-         error = sequence_matrix_update_row_scmf (i, sm, scores);        
+         error = sequence_matrix_calc_eeff_row_scmf (i, sm, t, scores);        
       }
       else
       {
@@ -386,6 +397,11 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
 {
    unsigned long t;
    int error= 0;
+   unsigned long j, i;
+   float row_sum;
+   float t_init = 1000;/* 310.15f; */
+   float T = t_init;
+   float c_rate = expf ((-1) * ((logf (t_init / 0.01f)) / steps));
 
    assert (sm);
    assert (scores && scores[0]);
@@ -394,14 +410,40 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    t = 0;
    while ((!error) && (t < steps))
    {
-      mfprintf (stderr, "Step %lu:\n", t);
+      /* T = t_init * expf((-1) * c_rate * t); */
+      T = T * c_rate;
 
-      /* update rows */
-      error = sequence_matrix_update_col_scmf (sm, scores);
+      mfprintf (stderr, "Step %lu Temp %3f cool %3.2f:\n", t, T, c_rate);
+      /* calculate Eeff */
+      error = sequence_matrix_calc_eeff_col_scmf (sm, T, scores);
+      seqmatrix_print_2_stderr (5, sm);
+      /* update matrix */
+      /* for all columns */
+      for (j = 0; j < sm->cols; j++)
+      {
+         /* which are not fixed */
+         if (!seqmatrix_is_col_fixed (j, sm))
+         {
+            /* calc sum of col */
+            row_sum = 0.0f;
+            for (i = 0; i < sm->rows; i++)
+            {
+               row_sum += sm->matrix[sm->curr_matrix][i][j];
+            }
+
+            /* for each row */
+            for (i = 0; i < sm->rows; i++)
+            {
+               sm->matrix[sm->curr_matrix][i][j] = 
+                  sm->matrix[sm->curr_matrix][i][j] / row_sum;
+            }               
+         }
+      }
+
       t++;
       mfprintf (stderr, "\n");
 
-      seqmatrix_print_2_stderr (2, sm);
+      seqmatrix_print_2_stderr (5, sm);
 
    }
 

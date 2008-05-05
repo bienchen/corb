@@ -432,7 +432,7 @@ brot_main(const char *cmdline)
    if (retval == 0)
    {
       seqmatrix_print_2_stderr (2, sm);
-      retval = sequence_matrix_simulate_scmf (3, sm, score_matrix);
+      retval = sequence_matrix_simulate_scmf (1000, sm, score_matrix);
    }
 
    /* output */

@@ -9,7 +9,10 @@
 #define BROT_CMDLINE_H
 
 /* If we use autoconf.  */
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h> /* for FILE */
 
 #ifdef __cplusplus
@@ -37,11 +40,15 @@ struct brot_args_info
   int fixed_nuc_min; /**< @brief Preset a nucleotide in a position's minimum occurreces */
   int fixed_nuc_max; /**< @brief Preset a nucleotide in a position's maximum occurreces */
   const char *fixed_nuc_help; /**< @brief Preset a nucleotide in a position help description.  */
+  long steps_arg;	/**< @brief Number of iterations.  */
+  char * steps_orig;	/**< @brief Number of iterations original value given at command line.  */
+  const char *steps_help; /**< @brief Number of iterations help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int fixed_nuc_given ;	/**< @brief Whether fixed-nuc was given.  */
+  unsigned int steps_given ;	/**< @brief Whether steps was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */
@@ -73,7 +80,7 @@ extern const char *brot_args_info_detailed_help[];
  * @param args_info the structure where option information will be stored
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser (int argc, char **argv,
+int brot_cmdline_parser (int argc, char * const *argv,
   struct brot_args_info *args_info);
 
 /**
@@ -87,7 +94,7 @@ int brot_cmdline_parser (int argc, char **argv,
  * @return 0 if everything went fine, NON 0 if an error took place
  * @deprecated use brot_cmdline_parser_ext() instead
  */
-int brot_cmdline_parser2 (int argc, char **argv,
+int brot_cmdline_parser2 (int argc, char * const *argv,
   struct brot_args_info *args_info,
   int override, int initialize, int check_required);
 
@@ -99,7 +106,7 @@ int brot_cmdline_parser2 (int argc, char **argv,
  * @param params additional parameters for the parser
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser_ext (int argc, char **argv,
+int brot_cmdline_parser_ext (int argc, char * const *argv,
   struct brot_args_info *args_info,
   struct brot_cmdline_parser_params *params);
 

@@ -80,7 +80,7 @@ extern const char *brot_args_info_detailed_help[];
  * @param args_info the structure where option information will be stored
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser (int argc, char * const *argv,
+int brot_cmdline_parser (int argc, char **argv,
   struct brot_args_info *args_info);
 
 /**
@@ -94,7 +94,7 @@ int brot_cmdline_parser (int argc, char * const *argv,
  * @return 0 if everything went fine, NON 0 if an error took place
  * @deprecated use brot_cmdline_parser_ext() instead
  */
-int brot_cmdline_parser2 (int argc, char * const *argv,
+int brot_cmdline_parser2 (int argc, char **argv,
   struct brot_args_info *args_info,
   int override, int initialize, int check_required);
 
@@ -106,7 +106,7 @@ int brot_cmdline_parser2 (int argc, char * const *argv,
  * @param params additional parameters for the parser
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser_ext (int argc, char * const *argv,
+int brot_cmdline_parser_ext (int argc, char **argv,
   struct brot_args_info *args_info,
   struct brot_cmdline_parser_params *params);
 

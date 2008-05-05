@@ -62,7 +62,7 @@ static
 void clear_args (struct brot_args_info *args_info);
 
 static int
-brot_cmdline_parser_internal (int argc, char * const *argv, struct brot_args_info *args_info,
+brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args_info,
                         struct brot_cmdline_parser_params *params, const char *additional_error);
 
 static int
@@ -495,13 +495,13 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
   return error;
 }
 int
-brot_cmdline_parser (int argc, char * const *argv, struct brot_args_info *args_info)
+brot_cmdline_parser (int argc, char **argv, struct brot_args_info *args_info)
 {
   return brot_cmdline_parser2 (argc, argv, args_info, 0, 1, 1);
 }
 
 int
-brot_cmdline_parser_ext (int argc, char * const *argv, struct brot_args_info *args_info,
+brot_cmdline_parser_ext (int argc, char **argv, struct brot_args_info *args_info,
                    struct brot_cmdline_parser_params *params)
 {
   int result;
@@ -511,7 +511,7 @@ brot_cmdline_parser_ext (int argc, char * const *argv, struct brot_args_info *ar
 }
 
 int
-brot_cmdline_parser2 (int argc, char * const *argv, struct brot_args_info *args_info, int override, int initialize, int check_required)
+brot_cmdline_parser2 (int argc, char **argv, struct brot_args_info *args_info, int override, int initialize, int check_required)
 {
   int result;
   struct brot_cmdline_parser_params params;
@@ -792,7 +792,7 @@ static void custom_getopt_initialize(struct custom_getopt_data *d)
 #define NONOPTION_P (argv[d->custom_optind][0] != '-' || argv[d->custom_optind][1] == '\0')
 
 /* return: zero: continue, nonzero: return given value to user */
-static int shuffle_argv(int argc, char *const *argv,const struct option *longopts,
+static int shuffle_argv(int argc, char **argv,const struct option *longopts,
 	struct custom_getopt_data *d)
 {
 	/*
@@ -1120,7 +1120,7 @@ static int check_short_opt(int argc, char *const *argv, const char *optstring,
  * '\0'.  This behavior is specific to the GNU `getopt'.
  */
 
-static int getopt_internal_r(int argc, char *const *argv, const char *optstring,
+static int getopt_internal_r(int argc, char **argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		struct custom_getopt_data *d)
 {
@@ -1152,7 +1152,7 @@ static int getopt_internal_r(int argc, char *const *argv, const char *optstring,
 	return check_short_opt(argc, argv, optstring, print_errors, d);
 }
 
-static int custom_getopt_internal(int argc, char *const *argv, const char *optstring,
+static int custom_getopt_internal(int argc, char **argv, const char *optstring,
 	const struct option *longopts, int *longind)
 {
 	int result;
@@ -1169,7 +1169,7 @@ static int custom_getopt_internal(int argc, char *const *argv, const char *optst
 	return result;
 }
 
-static int custom_getopt_long (int argc, char *const *argv, const char *options,
+static int custom_getopt_long (int argc, char **argv, const char *options,
 	const struct option *long_options, int *opt_index)
 {
 	return custom_getopt_internal(argc, argv, options, long_options,
@@ -1416,7 +1416,7 @@ void update_multiple_arg(void *field, char ***orig_field,
 }
 
 int
-brot_cmdline_parser_internal (int argc, char * const *argv, struct brot_args_info *args_info,
+brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args_info,
                         struct brot_cmdline_parser_params *params, const char *additional_error)
 {
   int c;	/* Character of the parsed option.  */

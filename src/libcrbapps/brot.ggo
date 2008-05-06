@@ -21,5 +21,12 @@ option "steps" s "Number of iterations"
        details="Iteration steps for the update of site probabilites."
        long
        typestr="INT"
+       default="1000"
        optional
 
+option "temp" t "Initial temperature"
+       details="Initial temperature of the system."
+       float
+       typestr="FLOAT"
+       default="100"
+       optional

@@ -40,19 +40,15 @@ struct brot_args_info
   int fixed_nuc_min; /**< @brief Preset a nucleotide in a position's minimum occurreces */
   int fixed_nuc_max; /**< @brief Preset a nucleotide in a position's maximum occurreces */
   const char *fixed_nuc_help; /**< @brief Preset a nucleotide in a position help description.  */
-  long steps_arg;	/**< @brief Number of iterations (default='1000').  */
+  long steps_arg;	/**< @brief Number of iterations.  */
   char * steps_orig;	/**< @brief Number of iterations original value given at command line.  */
   const char *steps_help; /**< @brief Number of iterations help description.  */
-  float temp_arg;	/**< @brief Initial temperature (default='100').  */
-  char * temp_orig;	/**< @brief Initial temperature original value given at command line.  */
-  const char *temp_help; /**< @brief Initial temperature help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int fixed_nuc_given ;	/**< @brief Whether fixed-nuc was given.  */
   unsigned int steps_given ;	/**< @brief Whether steps was given.  */
-  unsigned int temp_given ;	/**< @brief Whether temp was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */

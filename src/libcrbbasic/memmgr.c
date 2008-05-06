@@ -690,6 +690,8 @@ xmalloc_2d (const size_t n_rows,
    /* allocate array of pointers */
    matrix = XOBJ_MALLOC (n_rows * sizeof (*matrix), file, line);
 
+   mfprintf (stderr, "Size: %lu\n", (unsigned long) size);
+
    if (matrix != NULL)
    {
       /* allocate the whole space for matrix cells at once */

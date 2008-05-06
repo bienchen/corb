@@ -173,10 +173,10 @@ transform_number_2_base (const char base)
    return '?';
 }
 
-static __inline__ float**
+static float**
 create_scoring_matrix (void)
 {
-   float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (*matrix));
+   float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (float));
 
    if (matrix == NULL)
    {
@@ -339,6 +339,29 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
       return NULL;
    }
 
+   /* check steps */
+   if (args_info->steps_given)
+   {
+      if (args_info->steps_arg < 0)
+      {
+         THROW_ERROR_MSG ("Option \"--steps\" requires positive integer as"
+                          "argument, found: %ld", args_info->steps_arg);
+         return NULL; 
+      }
+   }
+ 
+   /* check temperature */
+   if (args_info->temp_given)
+   {
+      if (args_info->temp_arg < 0)
+      {
+         THROW_ERROR_MSG ("Option \"--temp\" requires positive floating point "
+                          "value as argument, found: %2.2f",
+                          args_info->temp_arg);
+         return NULL; 
+      }
+   }
+  
    return parse_base_presettings (args_info);
 
 }
@@ -432,7 +455,10 @@ brot_main(const char *cmdline)
    if (retval == 0)
    {
       seqmatrix_print_2_stderr (2, sm);
-      retval = sequence_matrix_simulate_scmf (1000, sm, score_matrix);
+      retval = sequence_matrix_simulate_scmf (brot_args.steps_arg,
+                                              brot_args.temp_arg,
+                                              sm,
+                                              score_matrix);
    }
 
    /* output */

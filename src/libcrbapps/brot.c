@@ -454,7 +454,7 @@ brot_main(const char *cmdline)
    /* simulate */
    if (retval == 0)
    {
-      seqmatrix_print_2_stderr (2, sm);
+      seqmatrix_print_2_stderr (3, sm);
       retval = sequence_matrix_simulate_scmf (brot_args.steps_arg,
                                               brot_args.temp_arg,
                                               sm,

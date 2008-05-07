@@ -152,7 +152,7 @@ seqmatrix_init (const unsigned long* pairs,
    unsigned long i, j;
    unsigned long pslen;
    unsigned long row, col;
-   float whobble = 0.05f;
+   /* float whobble = 0.001f; */
 
    assert (sm);
    assert (sm->fixed_sites == NULL);
@@ -182,19 +182,19 @@ seqmatrix_init (const unsigned long* pairs,
    /* init sm */
    if (size > 0)
    {
-      sm->matrix[0][0][0] = 1.0f / SM_ROWS;
+      /* sm->matrix[0][0][0] = 1.0f / SM_ROWS; SB1: even distributed init */
       sm->matrix[1][0][0] = 0.0f;
       for (i = 1; i < size; i++)
       {
-         sm->matrix[0][0][i] = sm->matrix[0][0][0];
+         /* sm->matrix[0][0][i] = sm->matrix[0][0][0]; SB1 */
          sm->matrix[1][0][i] = sm->matrix[1][0][0];
       }
 
       for (i = 1; i < sm->rows; i++)
       {
-         memcpy (sm->matrix[0][i],
-                 sm->matrix[0][i - 1],
-                 sizeof (float/* *(sm->matrix[0]) */) * size);
+/*  SB1     memcpy (sm->matrix[0][i], */
+/*                  sm->matrix[0][i - 1], */
+/*                  sizeof (float/\* *(sm->matrix[0]) *\/) * size); */
          memcpy (sm->matrix[1][i],
                  sm->matrix[1][i - 1],
                  sizeof (float/* *(sm->matrix[1]) */) * size);
@@ -204,11 +204,16 @@ seqmatrix_init (const unsigned long* pairs,
       {
          for (i = 0; i < SM_ROWS; i++)
          {
-            sm->matrix[0][i][j] -= whobble;
-            whobble = whobble * (-1);
+            sm->matrix[0][i][j] = rand(); /* whobble; */
+            /* whobble = whobble * (-1); */
+            sm->matrix[1][0][j] += sm->matrix[0][i][j];
          }
-         whobble = whobble * (-1);
-         /* whobble = (whobble/sm->matrix[0][i][j]); */
+         /* whobble = whobble * (-1); */
+         for (i = 0; i < SM_ROWS; i++)
+         {
+            sm->matrix[0][i][j] = sm->matrix[0][i][j] / sm->matrix[1][0][j];
+         }
+         sm->matrix[1][0][j] = 0.0f;
       }
 
    }
@@ -312,7 +317,7 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
             sm->matrix[new_matrix][j][col] +=
                (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
                 * scores[j][l]);
-            mfprintf (stderr, "(%2.2f*%2.2f:%2.2f) ", scores[j][l],
+            mfprintf (stderr, "(%2.3f*%2.3f:%2.3f) ", scores[j][l],
                       sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
                       sm->matrix[new_matrix][j][col]);
          }
@@ -331,10 +336,9 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
             }
          }
       }
-      /* mfprintf (stderr, "tmp: %2f ", tmp); */
+      mfprintf (stderr, "tmp: %3f ", tmp);
       tmp = (tmp / sm->cols) * (-1.0f);
-/*       mfprintf (stderr, "tmp: %2f ", */
-/*                 expf (sm->matrix[new_matrix][j][col]/(R_GAS * t))); */
+       mfprintf (stderr, "tmp: %3f ", tmp);
       sm->matrix[new_matrix][j][col] += tmp;
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
@@ -410,9 +414,15 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    float row_sum;
    float T = t_init;
    float c_rate = 0.0f;
+   short int m = 0;
 
    assert (sm);
    assert (scores && scores[0]);
+
+   if (sm->curr_matrix == 0)
+   {
+      m = 1;
+   }
 
    if (steps > 0)
    {
@@ -446,8 +456,13 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
             /* for each row */
             for (i = 0; i < sm->rows; i++)
             {
+               /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
                sm->matrix[sm->curr_matrix][i][j] = 
                   sm->matrix[sm->curr_matrix][i][j] / row_sum;
+               /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
+               sm->matrix[sm->curr_matrix][i][j] = 
+                  (0.3 * sm->matrix[sm->curr_matrix][i][j])
+                  + (0.7 * sm->matrix[m][i][j]);
             }               
          }
       }

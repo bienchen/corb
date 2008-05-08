@@ -461,8 +461,8 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
                   sm->matrix[sm->curr_matrix][i][j] / row_sum;
                /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
                sm->matrix[sm->curr_matrix][i][j] = 
-                  (0.3 * sm->matrix[sm->curr_matrix][i][j])
-                  + (0.7 * sm->matrix[m][i][j]);
+                  (0.2 * sm->matrix[sm->curr_matrix][i][j])
+                  + (0.8 * sm->matrix[m][i][j]);
             }               
          }
       }

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2008 Stefan Bienert
  * Copyright (C) 2008 Center for Bioinformatics, University of Hamburg
- *test
+ *
  * See COPYING file in the top level directory of this tree for licence.
  */
 

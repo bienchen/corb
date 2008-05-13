@@ -42,7 +42,7 @@
 
 /* use until something better is found */
 #define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
-#define R_GAS 8.314472
+#define R_GAS 0.091468
 
 struct SeqMatrix {
       char* fixed_sites;
@@ -413,7 +413,8 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    unsigned long j, i;
    float row_sum;
    float T = t_init;
-   float c_rate = 0.0f;
+   float c_rate = 1.0f;
+   float c_port = 0.0f;
    short int m = 0;
 
    assert (sm);
@@ -426,7 +427,8 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
 
    if (steps > 0)
    {
-      c_rate = expf ((-1) * ((logf (t_init / 0.01f)) / (steps - 1)));
+      /* c_rate = expf ((-1) * ((logf (t_init / 0.01f)) / (steps - 1))); */
+      c_port = (-1) * (t_init - 0.01f) / (steps - 1);
    }
 
    /* perform for a certain number of steps */
@@ -435,7 +437,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    {
       /* T = t_init * expf((-1) * c_rate * t); */
 
-      mfprintf (stderr, "Step %lu Temp %3f cool %3.2f:\n", t, T, c_rate);
+      mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port);
       /* calculate Eeff */
       error = sequence_matrix_calc_eeff_col_scmf (sm, T, scores);
       seqmatrix_print_2_stderr (6, sm);
@@ -472,7 +474,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
 
      seqmatrix_print_2_stderr (6, sm);
 
-      T = T * c_rate;
+     T = (T * c_rate) + c_port;
    }
 
    return error;

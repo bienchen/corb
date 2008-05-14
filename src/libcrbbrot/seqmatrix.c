@@ -42,7 +42,7 @@
 
 /* use until something better is found */
 #define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
-#define R_GAS 0.091468
+#define R_GAS 8.314472/* 0.091468 */
 
 struct SeqMatrix {
       char* fixed_sites;
@@ -416,6 +416,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    float c_rate = 1.0f;
    float c_port = 0.0f;
    short int m = 0;
+   float s;
 
    assert (sm);
    assert (scores && scores[0]);
@@ -427,7 +428,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
 
    if (steps > 0)
    {
-      /* c_rate = expf ((-1) * ((logf (t_init / 0.01f)) / (steps - 1))); */
+      /*c_rate = expf ((-1) * ((logf (t_init / 0.01f)) / (steps - 1)));*/
       c_port = (-1) * (t_init - 0.01f) / (steps - 1);
    }
 
@@ -435,7 +436,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    t = 0;
    while ((!error) && (t < steps))
    {
-      /* T = t_init * expf((-1) * c_rate * t); */
+      s = 0.0f;
 
       mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port);
       /* calculate Eeff */
@@ -465,15 +466,21 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
                sm->matrix[sm->curr_matrix][i][j] = 
                   (0.2 * sm->matrix[sm->curr_matrix][i][j])
                   + (0.8 * sm->matrix[m][i][j]);
-            }               
+
+               /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
+               s += (sm->matrix[sm->curr_matrix][i][j]
+                     * logf (sm->matrix[sm->curr_matrix][i][j]));
+            }
          }
       }
+      s = s/sm->cols;
+      mfprintf (stdout, "%3f %3f\n", T, s);
 
       t++;
       mfprintf (stderr, "\n");
 
      seqmatrix_print_2_stderr (6, sm);
-
+      /* if (s > -0.01f) return error; */
      T = (T * c_rate) + c_port;
    }
 

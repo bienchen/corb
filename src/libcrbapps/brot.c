@@ -192,7 +192,7 @@ create_scoring_matrix (void)
    matrix[(int) transform_base_2_number ('A')]
          [(int) transform_base_2_number ('C')] =  0.0f;
    matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('A')] = -2.0f;
+      [(int) transform_base_2_number ('A')] = /* -2.00f; */ -1.99f;
    matrix[(int) transform_base_2_number ('U')]
          [(int) transform_base_2_number ('U')] =  0.0f;
    matrix[(int) transform_base_2_number ('U')]
@@ -202,7 +202,7 @@ create_scoring_matrix (void)
    matrix[(int) transform_base_2_number ('G')]
          [(int) transform_base_2_number ('A')] =  0.0f;
    matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('U')] = -1.5f;
+      [(int) transform_base_2_number ('U')] = /* -1.50f; */ -1.49f;
    matrix[(int) transform_base_2_number ('G')]
          [(int) transform_base_2_number ('G')] =  0.0f;
    matrix[(int) transform_base_2_number ('G')]
@@ -212,7 +212,7 @@ create_scoring_matrix (void)
    matrix[(int) transform_base_2_number ('C')]
          [(int) transform_base_2_number ('U')] =  0.0f;
    matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('G')] = -3.0f;
+      [(int) transform_base_2_number ('G')] =/*  -3.00f;  */-2.99f;
    matrix[(int) transform_base_2_number ('C')]
          [(int) transform_base_2_number ('C')] =  0.0f;
 

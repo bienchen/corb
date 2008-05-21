@@ -42,13 +42,14 @@
 
 /* use until something better is found */
 #define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
-#define R_GAS 8.314472/* 0.091468 */
+#define R_GAS 1 /*8.314472*/
 
 struct SeqMatrix {
       char* fixed_sites;
       float** matrix[2];
       short int curr_matrix;
       unsigned long* pairlist;
+      unsigned long* sequence;
       size_t rows;
       size_t cols;   
 };
@@ -77,6 +78,7 @@ seqmatrix_new (const char* file, const int line)
    {
       sm->fixed_sites = NULL;
       sm->pairlist    = NULL;
+      sm->sequence    = NULL;
       sm->matrix[0]   = NULL;
       sm->matrix[1]   = NULL;
       sm->curr_matrix = 0;
@@ -100,6 +102,7 @@ seqmatrix_delete (SeqMatrix* sm)
       XFREE_2D ((void**)sm->matrix[0]);
       XFREE_2D ((void**)sm->matrix[1]);
       XFREE    (sm->pairlist);
+      XFREE    (sm->sequence);
       XFREE    (sm);
    }
 }
@@ -182,39 +185,37 @@ seqmatrix_init (const unsigned long* pairs,
    /* init sm */
    if (size > 0)
    {
-      /* sm->matrix[0][0][0] = 1.0f / SM_ROWS; SB1: even distributed init */
+      sm->matrix[0][0][0] = 1.0f / SM_ROWS; /* SB1: even distributed init */
       sm->matrix[1][0][0] = 0.0f;
       for (i = 1; i < size; i++)
       {
-         /* sm->matrix[0][0][i] = sm->matrix[0][0][0]; SB1 */
+         sm->matrix[0][0][i] = sm->matrix[0][0][0]; /* SB1: even distri */
          sm->matrix[1][0][i] = sm->matrix[1][0][0];
       }
 
       for (i = 1; i < sm->rows; i++)
       {
-/*  SB1     memcpy (sm->matrix[0][i], */
-/*                  sm->matrix[0][i - 1], */
-/*                  sizeof (float/\* *(sm->matrix[0]) *\/) * size); */
+         memcpy (sm->matrix[0][i],
+                 sm->matrix[0][i - 1],
+                 sizeof (float/* *(sm->matrix[0]) */) * size); /* even distri */
          memcpy (sm->matrix[1][i],
                  sm->matrix[1][i - 1],
                  sizeof (float/* *(sm->matrix[1]) */) * size);
       }
 
-      for (j = 0; j < size; j++)
+      /*for (j = 0; j < size; j++)
       {
          for (i = 0; i < SM_ROWS; i++)
          {
-            sm->matrix[0][i][j] = rand(); /* whobble; */
-            /* whobble = whobble * (-1); */
+            sm->matrix[0][i][j] = rand();
             sm->matrix[1][0][j] += sm->matrix[0][i][j];
          }
-         /* whobble = whobble * (-1); */
          for (i = 0; i < SM_ROWS; i++)
          {
             sm->matrix[0][i][j] = sm->matrix[0][i][j] / sm->matrix[1][0][j];
          }
          sm->matrix[1][0][j] = 0.0f;
-      }
+         }*/
 
    }
 
@@ -314,12 +315,24 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
       {
          for (l = 0; l < sm->rows; l++)
          {
-            sm->matrix[new_matrix][j][col] +=
-               (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
-                * scores[j][l]);
-            mfprintf (stderr, "(%2.3f*%2.3f:%2.3f) ", scores[j][l],
-                      sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
-                      sm->matrix[new_matrix][j][col]);
+            if (col < sm->pairlist[col])
+            {
+               sm->matrix[new_matrix][j][col] +=
+                  (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
+                   * scores[j][l]);
+               mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[j][l],
+                         sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
+                         sm->matrix[new_matrix][j][col]);
+            }
+            else
+            {
+               sm->matrix[new_matrix][j][col] +=
+                  (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
+                   * scores[l][j]);
+               mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[l][j],
+                         sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
+                         sm->matrix[new_matrix][j][col]);          
+            }
          }
       }
 
@@ -331,18 +344,26 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
          {
             for (l = 0; l < sm->rows; l++)
             {
-               tmp +=   sm->matrix[sm->curr_matrix][l][k] 
-                  * scores[j][l];
+               if (col < k)
+               {
+                  tmp +=   sm->matrix[sm->curr_matrix][l][k] 
+                     * scores[j][l];
+               }
+               else
+               {
+                  tmp +=   sm->matrix[sm->curr_matrix][l][k] 
+                     * scores[l][j];
+               }
             }
          }
       }
       mfprintf (stderr, "tmp: %3f ", tmp);
-      tmp = (tmp / sm->cols) * (-1.0f);
+      tmp = (tmp / sm->cols) * (-1.75f);
        mfprintf (stderr, "tmp: %3f ", tmp);
       sm->matrix[new_matrix][j][col] += tmp;
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
-mfprintf (stderr, "\n");
+      mfprintf (stderr, "\n");
    }
    mfprintf (stderr, "\n");
 
@@ -390,6 +411,51 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
    return error;
 }
 
+/** @brief Transform a sequence matrix into a unambigouos sequence.
+ *
+ * Collates all rows of a column to a single representative. Thereby the row
+ * with the highest share is chosen. The sequence is stored in the SeqMatrix
+ * object an can be accessed via...\n
+ * Returns @c ERR_SM_ALLOC on problems allocating memory for the sequence. 0
+ * otherwise.
+ *
+ * @params[in] sm The sequence matrix.
+ */
+static int
+seqmatrix_collate_mv (SeqMatrix* sm)
+{
+   unsigned long i,j;
+   float curr_max_prob;
+
+   assert (sm);
+   assert (sm->sequence == NULL);
+
+   /* try to init sequence */
+   sm->sequence = XMALLOC (sm->cols * sizeof (*(sm->sequence)));
+   if (sm->sequence == NULL)
+   {
+      return ERR_SM_ALLOC;
+   }
+
+
+   /* for all columns */
+   for (j = 0; j < sm->cols; j++)
+   {
+      curr_max_prob = 0.0f;
+      for (i = 0; i < sm->rows; i++)
+      {
+         /* find highest number */
+         if (curr_max_prob < sm->matrix[sm->curr_matrix][i][j])
+         {
+            /* write position to seq */
+            curr_max_prob = sm->matrix[sm->curr_matrix][i][j];
+            sm->sequence[j] = i;
+         }
+      }
+   }
+
+   return 0;
+}
 
 /** @brief Perform a SCMF simulation on a sequence matrix.
  *
@@ -428,8 +494,8 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
 
    if (steps > 0)
    {
-      /*c_rate = expf ((-1) * ((logf (t_init / 0.01f)) / (steps - 1)));*/
-      c_port = (-1) * (t_init - 0.01f) / (steps - 1);
+      c_rate = expf ((-1) * ((logf (t_init / 0.1f)) / (steps - 1)));
+      /* c_port = (-1) * (t_init - 0.1f) / (steps - 1); */
    }
 
    /* perform for a certain number of steps */
@@ -479,13 +545,27 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
       t++;
       mfprintf (stderr, "\n");
 
-     seqmatrix_print_2_stderr (6, sm);
+     seqmatrix_print_2_stderr (0, sm);
       /* if (s > -0.01f) return error; */
      T = (T * c_rate) + c_port;
    }
 
+   /* transform matrix to flat sequence */
+   error = seqmatrix_collate_mv (sm);
+
+   if (!error)
+   {
+      mfprintf (stderr, "\n");
+      for (i = 0; i < sm->cols; i++)
+      {
+         mfprintf (stderr, "%lu ", sm->sequence[i]);
+      }
+      mfprintf (stderr, "\n");
+   }
+
    return error;
 }
+
 
 /*********************************   Output   *********************************/
 

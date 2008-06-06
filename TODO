@@ -18,6 +18,7 @@ Build system
     werror/ werror-file
   - check for required packages during configure
 
+- c warnings settings should recognize distcc
 - make distclean in share/misc/bin doesn't work properly
 - add conditonal compilate to cleanfiles? Just to clean them on every make
   clean? --> if var given {everything OK} else {add to cleanfiles}

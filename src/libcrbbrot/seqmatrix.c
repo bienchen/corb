@@ -185,11 +185,11 @@ seqmatrix_init (const unsigned long* pairs,
    /* init sm */
    if (size > 0)
    {
-      sm->matrix[0][0][0] = 1.0f / SM_ROWS; /* SB1: even distributed init */
+      sm->matrix[0][0][0] = 1.0f / SM_ROWS; /* even distributed init */
       sm->matrix[1][0][0] = 0.0f;
       for (i = 1; i < size; i++)
       {
-         sm->matrix[0][0][i] = sm->matrix[0][0][0]; /* SB1: even distri */
+         sm->matrix[0][0][i] = sm->matrix[0][0][0]; /* even distri */
          sm->matrix[1][0][i] = sm->matrix[1][0][0];
       }
 
@@ -197,13 +197,14 @@ seqmatrix_init (const unsigned long* pairs,
       {
          memcpy (sm->matrix[0][i],
                  sm->matrix[0][i - 1],
-                 sizeof (float/* *(sm->matrix[0]) */) * size); /* even distri */
+                 sizeof (float) * size);/* even distri */
          memcpy (sm->matrix[1][i],
                  sm->matrix[1][i - 1],
-                 sizeof (float/* *(sm->matrix[1]) */) * size);
+                 sizeof (float) * size);
       }
 
-      /*for (j = 0; j < size; j++)
+      /*srand(997654329);
+      for (j = 0; j < size; j++)
       {
          for (i = 0; i < SM_ROWS; i++)
          {
@@ -295,7 +296,12 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
    unsigned long l;
    unsigned long k;
    short int new_matrix = 0;
-   float tmp;
+   float tmp_neg;               /* negative energy contribution */
+   float tmp_het;               /* heterogenity term */
+   float het_count;
+   float het_rate;
+
+   het_rate = expf ((-1) * ((logf (1 / 0.000001f)) / sm->cols));
 
    if (sm->curr_matrix == 0)
    {
@@ -337,7 +343,9 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
       }
 
       /* calculate contribution of unwanted pairs */
-      tmp = 0.0f;
+      tmp_neg = 0.0f;
+      tmp_het = 0.0f;
+      het_count = 0.0f;
       for (k = 0; k < sm->cols; k++)
       {
          if ((k != col) && ((k + 1) != sm->pairlist[col])) /*without k!=col ?*/
@@ -346,43 +354,51 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
             {
                if (col < k)
                {
-                  tmp +=   sm->matrix[sm->curr_matrix][l][k] 
+                  tmp_neg +=   sm->matrix[sm->curr_matrix][l][k] 
                      * scores[j][l];
                }
                else
                {
-                  tmp +=   sm->matrix[sm->curr_matrix][l][k] 
+                  tmp_neg +=   sm->matrix[sm->curr_matrix][l][k] 
                      * scores[l][j];
                }
             }
+            
+            /* heterogenity term */
+            /* static version: use window*/
+            /*   if (  ((k < col)&&(col - k < 4)) *//*3 5*//*
+                ||((k > col)&&(k - col < 4)))
+            {
+              tmp_het += (1.079 * sm->matrix[sm->curr_matrix][j][k]);
+              }*/
+            /* variable version 1: linear decrease
+            tmp_het += (((float)(sm->cols - k) / sm->cols)
+                        * sm->matrix[sm->curr_matrix][j][k]);
+                        het_count += (float)(sm->cols - k) / sm->cols;*/
+
+            /* variable version 2: exp decrease */
+            /* not k u idiot: distance to current position */
+            if (col > k)
+            {
+               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
+                           * powf(het_rate, (col - (k+1))));
+               het_count += (1 * powf(het_rate, (col - (k+1))));
+            }
+            else
+            {
+               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
+                           * powf(het_rate, (k - (col+1))));
+               het_count += (1 * powf(het_rate, (k - (col+1))));               
+            }
          }
       }
-/*3110002002222000000003333022222000000033333000002222200000003333331110020000*/
-/*1000222002222000000003333022222000000033333000002222200000003333333311100000*/
-/*1002222002222000000003333022222000000033333000002222200000003333333331100000*/
-/*1133333330000333333331111300000333333311111333330000033333331111122222003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111133330003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111133330003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*0022222002222000000003333022222000000033333000002222200000003333333333110000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*3311111002222000000003333022222000000033333000002222200000003333300000220000*/
-/*CCUUUUUAAGGGGAAAAAAAACCCCAGGGGGAAAAAAACCCCCAAAAAGGGGGAAAAAAACCCCCAAAAAGGAAAA*/
-/*(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))....*/
-/*3311111002222000000003333022222000000033333000002222200000003333300000220000*/
-/*GCGGAUUUAGCUCAGUUGGGAGAGCGCCAGACUGAAGAUCUGGAGGUCCUGUGUUCGAUCCACAGAAUUCGCACCA*/
-      mfprintf (stderr, "tmp: %3f ", tmp);
-      tmp = (tmp / sm->cols) * (-1.25f); /* 0.925 1.25 1.575 */
-       mfprintf (stderr, "tmp: %3f ", tmp);
-      sm->matrix[new_matrix][j][col] += tmp;
+      tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 0.925 1.25 1.575 */
+       mfprintf (stderr, "tmp_neg: %3f ", tmp_neg);
+       mfprintf (stderr, "tmp_het: %3f %.3f", tmp_het, het_count);
+       tmp_het = (tmp_het / het_count) * 1.5f;
+       mfprintf (stderr, "tmp_het: %3f ", tmp_het);
+      sm->matrix[new_matrix][j][col] += tmp_neg;
+      sm->matrix[new_matrix][j][col] += tmp_het;
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
       mfprintf (stderr, "\n");
@@ -555,19 +571,29 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
                   (0.2 * sm->matrix[sm->curr_matrix][i][j])
                   + (0.8 * sm->matrix[m][i][j]);
 
+               /*              exp      lin     */
+               /* u = 0.2 : 0.108638 : 0.124942 */
+               /* u = 0.5 : 0.122416 : 0.124972 */
+               /* u = 0.75: 0.309568 : 0.312142 */
+               /* u = 0.25: 0.108630 : 0.124844 */
+               /* u = 0.1 : 0.273998 : 0.149869 */
+               /* u = 0.9 : 0.373730 : 0.374576 */
+               /* u = 0.6 : 0.210306 : 0.212655 */
+
                /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
                s += (sm->matrix[sm->curr_matrix][i][j]
                      * logf (sm->matrix[sm->curr_matrix][i][j]));
             }
          }
       }
+
       s = s/sm->cols;
       mfprintf (stdout, "%3f %3f\n", T, s);
 
       t++;
       mfprintf (stderr, "\n");
 
-     seqmatrix_print_2_stderr (0, sm);
+     seqmatrix_print_2_stderr (3, sm);
       /* if (s > -0.01f) return error; */
      T = (T * c_rate) + c_port;
    }
@@ -580,7 +606,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
       mfprintf (stderr, "\n");
       for (i = 0; i < sm->cols; i++)
       {
-         mfprintf (stderr, "%lu ", sm->sequence[i]);
+         mfprintf (stderr, "%lu", sm->sequence[i]);
       }
       mfprintf (stderr, "\n");
    }
@@ -715,3 +741,34 @@ seqmatrix_print_2_stderr (const int p, const SeqMatrix* sm)
 {
    seqmatrix_fprintf (stderr, p, sm);
 }
+
+/*3110002002222000000003333022222000000033333000002222200000003333331110020000*/
+/*1000222002222000000003333022222000000033333000002222200000003333333311100000*/
+/*1002222002222000000003333022222000000033333000002222200000003333333331100000*/
+/*1133333330000333333331111300000333333311111333330000033333331111122222003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111133330003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111133330003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
+/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
+/*0022222002222000000003333022222000000033333000002222200000003333333333110000*/
+/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
+/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
+/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
+/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
+/*3311111002222000000003333022222000000033333000002222200000003333300000220000*/
+/*CCUUUUUAAGGGGAAAAAAAACCCCAGGGGGAAAAAAACCCCCAAAAAGGGGGAAAAAAACCCCCAAAAAGGAAAA*/
+/*(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))....*/
+/*1133220001332300001133220001332100013332201033012213300031132203313322000133*/
+/*3102233002233000133002233002233002130022331000331022300331002331022331020330*/
+/*0320312002312003003003023023023003003023123003001320330033002132030213210300*/
+
+
+
+/*GCGGAUUUAGCUCAGUUGGGAGAGCGCCAGACUGAAGAUCUGGAGGUCCUGUGUUCGAUCCACAGAAUUCGCACCA*/
+/*3102233002233001233002233002231002331002331002331022310302102331022331020310*/
+
+/*100k steps: 3102233002233000133002233002233002130022331000331022300331002331022331020330*/

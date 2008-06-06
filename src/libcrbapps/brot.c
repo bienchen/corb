@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <float.h>
+#include <math.h>
 #include <libcrbbasic/crbbasic.h>
 #include <libcrbbrot/crbbrot.h>
 #include "brot_cmdline.h"
@@ -131,7 +133,7 @@ parse_input_structure (const char* structure)
    return pairlist;
 }
 
-static __inline__ char
+static char
 transform_base_2_number (const char base)
 {
    /* RNA: "AaUuGgCc" HP: "LlRr" */
@@ -158,7 +160,7 @@ transform_base_2_number (const char base)
    return CHAR_UNDEF;
 }
 
-static __inline__ char
+static char
 transform_number_2_base (const char base)
 {
    /* RNA: "AUGC" HP: "LR" */
@@ -192,7 +194,7 @@ create_scoring_matrix (void)
    matrix[(int) transform_base_2_number ('A')]
          [(int) transform_base_2_number ('C')] =  0.0f;
    matrix[(int) transform_base_2_number ('U')]
-      [(int) transform_base_2_number ('A')] = /* -2.00f; */ -1.99f;
+      [(int) transform_base_2_number ('A')] = -2.00f/*-1.99f*//*-1.99f*/;
    matrix[(int) transform_base_2_number ('U')]
          [(int) transform_base_2_number ('U')] =  0.0f;
    matrix[(int) transform_base_2_number ('U')]
@@ -202,7 +204,7 @@ create_scoring_matrix (void)
    matrix[(int) transform_base_2_number ('G')]
          [(int) transform_base_2_number ('A')] =  0.0f;
    matrix[(int) transform_base_2_number ('G')]
-      [(int) transform_base_2_number ('U')] = /* -1.50f; */ -1.49f;
+      [(int) transform_base_2_number ('U')] = -1.50f/*-1.49f*//*-1.49f*/;
    matrix[(int) transform_base_2_number ('G')]
          [(int) transform_base_2_number ('G')] =  0.0f;
    matrix[(int) transform_base_2_number ('G')]
@@ -212,9 +214,50 @@ create_scoring_matrix (void)
    matrix[(int) transform_base_2_number ('C')]
          [(int) transform_base_2_number ('U')] =  0.0f;
    matrix[(int) transform_base_2_number ('C')]
-      [(int) transform_base_2_number ('G')] =/*  -3.00f;  */-2.99f;
+      [(int) transform_base_2_number ('G')] = -3.00f/*-2.99f*//*-2.99f*/;
    matrix[(int) transform_base_2_number ('C')]
          [(int) transform_base_2_number ('C')] =  0.0f;
+
+   /* add random numbers to 3'-5' values */
+   srand(30459);
+   /* U - A */
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('A')] = rand();
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('A')] /=
+       pow (10, (floor (log10 (matrix[(int) transform_base_2_number ('U')]
+                                     [(int) transform_base_2_number ('A')]) 
+                        + 1.0f)) + 2);
+   matrix[(int) transform_base_2_number ('U')]
+         [(int) transform_base_2_number ('A')] +=
+                                  matrix[(int) transform_base_2_number ('A')]
+                                  [(int) transform_base_2_number ('U')];
+
+   /* G - U */
+  matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('U')] = rand();
+   matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('U')] /=
+       pow (10, (floor (log10 (matrix[(int) transform_base_2_number ('G')]
+                                     [(int) transform_base_2_number ('U')]) 
+                        + 1.0f)) + 2);
+   matrix[(int) transform_base_2_number ('G')]
+         [(int) transform_base_2_number ('U')] +=
+                                  matrix[(int) transform_base_2_number ('U')]
+                                  [(int) transform_base_2_number ('G')];
+
+   /* C - G */   
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('G')] = rand();
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('G')] /=
+       pow (10, (floor (log10 (matrix[(int) transform_base_2_number ('C')]
+                                     [(int) transform_base_2_number ('G')]) 
+                        + 1.0f)) + 2);
+   matrix[(int) transform_base_2_number ('C')]
+         [(int) transform_base_2_number ('G')] +=
+                                  matrix[(int) transform_base_2_number ('G')]
+                                  [(int) transform_base_2_number ('C')];
 
    return matrix;
 }

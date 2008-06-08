@@ -1,0 +1,112 @@
+Build system
+------------
+- write perl script to assure m4macro style:
+  - a) all m4files 2lines start, 2 lines end, 2 lines inbetween?
+  - b) m4 style: first line macro name -> ---- -> macro name + params,
+     gap between name and paren
+  - c) all unterstriche bei m4 same length as function name + params?
+  - d) params quoted/ unqouted? --> look up in Doku
+  - indentation
+  - spellcheck
+  - optional args to macros: in []
+  - emacs stuff: put to authors & versioning
+  - space inbetween macros: 2 lines
+  - paramnames in text quoted (interactive mode?)
+  - ad mode: only report possibles changes/ recommentdations
+             change code automatically
+
+- make distclean in share/misc/bin doesn't work properly
+- add conditonal compilate to cleanfiles? Just to clean them on every make
+  clean? --> if var given {everything OK} else {add to cleanfiles}
+- spellcheck on m4 files, bootstrap, makefile.ams, configure.ac, config.h.in
+- README @ libfallback: Take out dummy.c
+- option for all optimisations/ speedups enabled
+- style of compilation: [bla], switch to use traditional
+- check libmath-values in crb_check_libmath.m4 for darwin! Could it be that
+  nothing is needed here, because with macosx libmath is always invoked? Ask
+  Jens
+- write workaround for assert.h, only needed if set?
+- Applications: all stable ones enabled by default, devel branch off by
+  default, first devel app enabled, enables devel app branch
+  instad of packages: --with-app-brot, create own group: apps in the corb?
+- just saying "bootstrap" on darwin creates src/config.h.in
+- use AC_DIAGNOSE and $0 to direct developer to the right syntax for own maros?
+- with-app without-app, with-all-dvl-apps... functionaliyt in configure script.
+  stuck at: AC_LIBSOURCE, source file not conected to library
+- Derive Makefiles from configure.ac
+# bootstrap:
+#   - fill most of the vars from configure.ac
+#     - check under which circumstances aclocal.m4 is updated
+#       - just changes in configure.ac? yes
+#       - changes in the macro files? no
+#       - on new files in macro dir? no
+#       - only on configure.ac if new macros from macro dir included? no
+- why isn't --enable-development expanded by tab?
+- configure option --enable-devel-tools (put to --enable-dev)
+
+
+Emacs
+-----
+- Add own m4 macro names for highlighting?
+- look in elisp file for what todo
+
+Implementation
+--------------
+- all code with emacs versioning
+- bug mesg function
+- unlink errormsgs with lines from NDEBUG
+- memmgr: Check for double frees:
+          - on free, set file&line
+          - on free, set flag "deleted" (bool: true/ false)
+          - on second free: throw error with file&line
+          - circumvent: set pointer to NULL after free
+          Since malloc(0) allocates 1 byte, register this case in memmgr
+          Rpl_malloc
+          - include functionallity of rpl_mallox/ rpl_realloc in memmgr
+            --> with rebuilding AC_FUNC_MALLOC
+          Set up test for xmalloc2d in memmgr
+- re-read when to use #include <> and #include ""
+- give each class (datatype) a sizeof member? -> probably not because
+  externally only handled as pointer
+- change names of array to plural
+- give all external function declarations the prefix extern
+- remove variable names from external declarations
+
+libs:
+libcrbalpha ->  alphabets
+              - predifined DNA, RNA, Protein
+              - general approach
+              - also for compression?
+array stuff: Create internal array class via macros, void* array class/
+             array class with unions for base types?
+
+Files
+-----
+- project files (README, INSTALL...)
+  - check newlines between licence and test and elisp parts
+
+Roadmap
+-------
+- GPLify
+- fix build system
+  - make distclean
+  - bootstrap -b
+  - try configure & build on different systems
+  - try `make dist` and check on different systems
+  - add doxygen support? (just for tryout?)
+- Extend documentation by saying whether a function throws an error message or
+  not
+- check which return values can be const, e.g. char*
+- uniform naming scheme for internal functions -> istr_ but error_internal???
+- Messaging functions: Rename module, format message to fit in Terminal
+- adopt string class into existing classes/ modules
+  - errormsg -> progname
+  - check other modules
+- fix test modules
+  - no output while testing
+  - informative error messages
+- export check for config.h into header
+- output of size_t via (unsigned long) %lu?
+- arg parser
+- check for more GCC keywords in the code
+- invoke librtbfallback

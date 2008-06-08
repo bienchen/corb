@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Last modified: 2008-05-22.12
+# Last modified: 2008-06-08.18
 #
 
 AC_PREREQ(2.60)
@@ -41,14 +41,7 @@ CRB_ARG_WITH_CUM([development], [pc-elisp reformat])
 CRB_ARG_WITH_PC_ELISP
 CRB_ARG_WITH_REFORMAT
 
-# CRB_ARG_WITHOUT([brot], [kleine broetchen], [I need help])
-# CRB_ARG_WITH([kaese], [kleine broetchen], [I need help])
-# CRB_LIBAPPSOBJ([bla])
-
 # Checks for header files
-#AC_CHECK_HEADERS([assert.h float.h limits.h stddef.h], ,
-#                 AC_MSG_ERROR([Mandatory header not found: $ac_header]),
-#                 [AC_INCLUDES_DEFAULT])
 CRB_CHECK_HEADERS([assert.h float.h limits.h stddef.h])
 AC_HEADER_STDBOOL
 gl_SIZE_MAX() # check for SIZE_MAX macro

@@ -4,7 +4,7 @@
 #
 # See COPYING file in the top level directory of this tree for licence.
 #
-# Last modified: 2008-06-08.14
+# Last modified: 2008-06-09.10
 #
 
 # _CRB_SET_CFLAGS_WARNINGS_GCC(compiler, variable)
@@ -67,7 +67,7 @@ AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_SUNCC],
 # compiling. Most of such tests will not work with these compiler settings.
 AC_DEFUN([CRB_SET_CFLAGS_WARNINGS],
 [dnl# macro-body
- _crb_cc_basename=["`expr "//${CC#distcc}" : '.*/\([^/]*\)'`"]
+ _crb_cc_basename=["`expr "//${CC#distcc}" : '.*/[[:space:]]*\([^/]*\)'`"]
  AC_MSG_CHECKING([version of $CC])
  AS_CASE([$_crb_cc_basename],
          [gcc], [_CRB_SET_CFLAGS_WARNINGS_GCC([$CC], [_crb_ver])],

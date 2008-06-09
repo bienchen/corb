@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Last modified: 2008-06-08.18
+# Last modified: 2008-06-09.09
 #
 
 AC_PREREQ(2.60)
@@ -49,7 +49,7 @@ gl_SIZE_MAX() # check for SIZE_MAX macro
 # Checks for libraries.
 CRB_ARG_ENABLE_CHECK_PTHREADS
 CRB_CHECK_LIBMATH
-CRB_CHECK_LIBCAIRO([1.5.1], [cairo_create], [function1 function2])
+#CRB_CHECK_LIBCAIRO([1.5.1], [cairo_create], [function1 function2])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

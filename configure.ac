@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Last modified: 2008-06-09.09
+# Last modified: 2008-06-12.09
 #
 
 AC_PREREQ(2.60)
@@ -122,7 +122,7 @@ AC_MSG_NOTICE(
                        emacs lisp byte code:   $with_pc_elisp
            
            Build settings:
-              Enable pedantic CFLAGS:          $enable_cflags_warnings
+              Enable paranoid CFLAGS:          $enable_cflags_warnings
               Enable memory checking:          $enable_memcheck
               Enable assertions:               $enable_assert
               Enable usage of POSIX threads:   $enable_pthreads

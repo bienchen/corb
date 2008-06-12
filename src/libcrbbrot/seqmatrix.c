@@ -393,10 +393,9 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
          }
       }
       tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 0.925 1.25 1.575 */
-       mfprintf (stderr, "tmp_neg: %3f ", tmp_neg);
-       mfprintf (stderr, "tmp_het: %3f %.3f", tmp_het, het_count);
-       tmp_het = (tmp_het / het_count) * 1.5f;
-       mfprintf (stderr, "tmp_het: %3f ", tmp_het);
+      mfprintf (stderr, "tmp_neg: %3f ", tmp_neg);
+      tmp_het = (tmp_het / sm->cols) * (3.0f); /* 0.1747 */
+      mfprintf (stderr, "tmp_het: %3f ", tmp_het);
       sm->matrix[new_matrix][j][col] += tmp_neg;
       sm->matrix[new_matrix][j][col] += tmp_het;
       sm->matrix[new_matrix][j][col] =

@@ -505,6 +505,11 @@ brot_main(const char *cmdline)
    }
 
    /* output */
+   if (retval == 0)
+   {
+      /* error = seqmatrix_collate_is (0.99, scores, sm); */
+      retval = seqmatrix_collate_mv (sm);
+   }
 
    /* finalise */
    brot_cmdline_parser_free (&brot_args);

@@ -308,13 +308,13 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
       new_matrix = 1;
    }
 
-   mfprintf (stderr, "C: %lu Pairs with %lu\n", col, sm->pairlist[col]);
+  /*  mfprintf (stderr, "C: %lu Pairs with %lu\n", col, sm->pairlist[col]); */
 
    for (j = 0; j < sm->rows; j++)
    {
       /* update cell */
       sm->matrix[new_matrix][j][col] = 0.0f;
-      mfprintf (stderr, "   R:%lu ", j);
+     /*  mfprintf (stderr, "   R:%lu ", j); */
 
       /* calculate contribution of wanted interaction (if any) */
       if (sm->pairlist[col])
@@ -326,18 +326,18 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
                sm->matrix[new_matrix][j][col] +=
                   (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
                    * scores[j][l]);
-               mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[j][l],
-                         sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
-                         sm->matrix[new_matrix][j][col]);
+              /*  mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[j][l], */
+/*                          sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1], */
+/*                          sm->matrix[new_matrix][j][col]); */
             }
             else
             {
                sm->matrix[new_matrix][j][col] +=
                   (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
                    * scores[l][j]);
-               mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[l][j],
-                         sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
-                         sm->matrix[new_matrix][j][col]);          
+              /*  mfprintf(stderr, "(%2.3f*%2.3f:%2.6f) ", scores[l][j], */
+/*                          sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1], */
+/*                          sm->matrix[new_matrix][j][col]); */          
             }
          }
       }
@@ -392,17 +392,17 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
             }
          }
       }
-      tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 0.925 1.25 1.575 */
-      mfprintf (stderr, "tmp_neg: %3f ", tmp_neg);
-      tmp_het = (tmp_het / sm->cols) * (3.0f); /* 0.1747 */
-      mfprintf (stderr, "tmp_het: %3f ", tmp_het);
+      tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 1.25 */
+   /*    mfprintf (stderr, "tmp_neg: %3f ", tmp_neg); */
+      tmp_het = (tmp_het / sm->cols) * (6.0f); /* 0.1747 */
+    /*   mfprintf (stderr, "tmp_het: %3f ", tmp_het); */
       sm->matrix[new_matrix][j][col] += tmp_neg;
       sm->matrix[new_matrix][j][col] += tmp_het;
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
-      mfprintf (stderr, "\n");
+    /*   mfprintf (stderr, "\n"); */
    }
-   mfprintf (stderr, "\n");
+/*    mfprintf (stderr, "\n"); */
 
    return 0;
 }
@@ -429,10 +429,10 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
       {
          error = sequence_matrix_calc_eeff_row_scmf (i, sm, t, scores);        
       }
-      else
-      {
-         mfprintf (stderr, "C: %lu Pairs with %lu\n", i, sm->pairlist[i]);
-      }
+/*       else */
+/*       { */
+/*          mfprintf (stderr, "C: %lu Pairs with %lu\n", i, sm->pairlist[i]); */
+/*       } */
       i++;
    }
 
@@ -448,7 +448,108 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
    return error;
 }
 
-/** @brief Transform a sequence matrix into a unambigouos sequence.
+/** @brief Transform a sequence matrix into an unambigouos sequence.
+ *
+ * Creates a sequence out of a sequence matrix in an iterative simulation
+ * process. As a start, all unambigouos columns are fixed. Then the matrix is
+ * used in a new SCMF process with the "most" unambigouos of the undecided
+ * columns fixed by majority voting. This procedure is repeated until... In
+ * the end the matrix is compressed into a sequence.
+ *
+ * @params[in] sm The sequence matrix.
+ */
+int
+seqmatrix_collate_is (float fthresh, float** scores, SeqMatrix* sm)
+{
+   unsigned long i, j, k, largest_amb_col;
+   float largest_amb = 0.0f;
+   int retval = 0;
+
+   assert (sm);
+   assert (sm->sequence == NULL);
+   assert (fthresh <= 1.0f);
+
+   /* Approach: find unambigouos sites and fixate 'em */
+   /*           find the largest of the ambigouos sites */
+
+   largest_amb_col = sm->cols + 1;
+
+   /* for all columns */
+   for (j = 0; j < sm->cols; j++)
+   {
+      /* for all rows */
+      for (i = 0; i < sm->rows; i++)
+      {
+         if (sm->matrix[sm->curr_matrix][i][j] >= fthresh)
+         {
+            /* unambigouos site found, fixate it */
+            sm->fixed_sites[(j / CHAR_BIT)] |= 
+            1 << (j % CHAR_BIT);
+            /* set remaining pos to 0! */
+            for (k = 0; k < sm->rows; k++)
+               sm->matrix[sm->curr_matrix][k][j] = 0.0f;
+            sm->matrix[sm->curr_matrix][i][j] = 1.0f;
+            i = sm->rows + 1;
+         }
+      }
+   }
+
+   /* find largest ambigouos site */
+   for (j = 0; j < sm->cols; j++)
+   {
+      /* check if site is fixed */
+      if (!seqmatrix_is_col_fixed (j, sm))
+      {
+         for (i = 0; i < sm->rows; i++)
+         {
+            if (sm->matrix[sm->curr_matrix][i][j] > largest_amb)
+            {
+               largest_amb = sm->matrix[sm->curr_matrix][i][j];
+               largest_amb_col = j;
+            }
+         }
+      }
+   }
+
+   /* set site to 1/0 and fixate it */
+   if (largest_amb_col < sm->cols + 1)
+   {
+      sm->fixed_sites[(largest_amb_col / CHAR_BIT)] |= 
+         1 << (largest_amb_col % CHAR_BIT);
+      for (k = 0; k < sm->rows; k++)
+      {
+         if (sm->matrix[sm->curr_matrix][k][largest_amb_col] == largest_amb)
+         {
+            sm->matrix[sm->curr_matrix][k][largest_amb_col] = 1.0f;
+         }
+         else
+         {
+            sm->matrix[sm->curr_matrix][k][largest_amb_col] = 0.0f;
+         }
+      }
+
+      /* simulate */
+      retval = sequence_matrix_simulate_scmf (1,
+                                              10,
+                                              sm,
+                                              scores);
+   }
+
+/*3.0 | -0.056336*/
+/*3302013000322000000003321021302000000031203000002233200000003223320131220000*/
+
+/*5.0 | -0.116815*/
+/*3020213003122000000003302032132000000032032000002133200000003220320313120000*/
+
+   if (! retval)
+   {
+      retval = seqmatrix_collate_mv (sm);
+   }
+
+   return retval;
+}
+
+/** @brief Transform a sequence matrix into an unambigouos sequence.
  *
  * Collates all rows of a column to a single representative. Thereby the row
  * with the highest share is chosen. The sequence is stored in the SeqMatrix
@@ -458,7 +559,7 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
  *
  * @params[in] sm The sequence matrix.
  */
-static int
+int
 seqmatrix_collate_mv (SeqMatrix* sm)
 {
    unsigned long i,j;
@@ -541,7 +642,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    {
       s = 0.0f;
 
-      mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port);
+  /*     mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port); */
       /* calculate Eeff */
       error = sequence_matrix_calc_eeff_col_scmf (sm, T, scores);
       seqmatrix_print_2_stderr (6, sm);
@@ -587,10 +688,10 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
       }
 
       s = s/sm->cols;
-      mfprintf (stdout, "%3f %3f\n", T, s);
+  /*     mfprintf (stdout, "%3f %3f\n", T, s); */
 
       t++;
-      mfprintf (stderr, "\n");
+    /*   mfprintf (stderr, "\n"); */
 
      seqmatrix_print_2_stderr (3, sm);
       /* if (s > -0.01f) return error; */
@@ -598,23 +699,34 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    }
 
    /* transform matrix to flat sequence */
-   error = seqmatrix_collate_mv (sm);
+   /* error = seqmatrix_collate_is (0.99, scores, sm); */
+   /*error = seqmatrix_collate_mv (sm);*/
 
-   if (!error)
+   /*if (!error)
    {
       mfprintf (stderr, "\n");
       for (i = 0; i < sm->cols; i++)
       {
-         mfprintf (stderr, "%lu", sm->sequence[i]);
+         mfprintf (stderr, "%lu|", sm->sequence[i]);
       }
       mfprintf (stderr, "\n");
-   }
+      }*/
 
    return error;
 }
 
 
 /*********************************   Output   *********************************/
+
+/** @brief Print the sequence of a sequence matrix to a stream.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] sm The sequence matrix.
+ */
+void
+seqmatrix_fprintf_sequence ()
+{
+}
 
 /** @brief Print a sequence matrix to a stream.
  *

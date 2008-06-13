@@ -76,6 +76,12 @@ sequence_matrix_simulate_scmf (const unsigned long,
 
 /*********************************   Output   *********************************/
 
+int
+seqmatrix_collate_is (float, float**, SeqMatrix*);
+
+int
+seqmatrix_collate_mv (SeqMatrix*);
+
 void
 seqmatrix_fprintf (FILE*, const int, const SeqMatrix*);
 

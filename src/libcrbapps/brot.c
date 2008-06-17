@@ -507,8 +507,18 @@ brot_main(const char *cmdline)
    /* output */
    if (retval == 0)
    {
-      /* error = seqmatrix_collate_is (0.99, scores, sm); */
+      mfprintf (stderr, "COLLATING\n");
+      /* retval = seqmatrix_collate_is (0.99,
+                                        brot_args.steps_arg / 2,
+                                        brot_args.temp_arg,
+                                        score_matrix, sm); */
       retval = seqmatrix_collate_mv (sm);
+   }
+
+   if (retval == 0)
+   {
+      seqmatrix_printf_sequence (sm);
+      mprintf ("\n");
    }
 
    /* finalise */

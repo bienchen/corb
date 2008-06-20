@@ -4,12 +4,13 @@ Also see files ChangeLog and THANKS
 
 
 Stefan Bienert (bienert):
-        corb.c libcrbapps/brot.[c,h] libcrbbasic/argvprsr.[c,h]
-        libcrbbasic/crbbasic.h libcrbbasic/mprintf_dummy.h
-        libcrbbasic/errormsg.[c,h] libcrbbasic/gcckywrd.h
-        libcrbbasic/inc_pthr.h libcrbbasic/inc_strg.h libcrbbasic/memmgr.[c,h]
-        libcrbbasic/mprintf.[c,h] libcrbbasic/str.[c,h]
+        corb.c libcrbapps/alphabet.[c,h]] libcrbapps/brot.[c,h]
+        libcrbapps/fold.[c,h] libcrbbasic/argvprsr.[c,h]
+        libcrbbasic/crbbasic.h libcrbbasic/errormsg.[c,h]
+        libcrbbasic/gcckywrd.h libcrbbasic/inc_pthr.h libcrbbasic/inc_strg.h
+        libcrbbasic/memmgr.[c,h] libcrbbasic/mprintf.[c,h]
+        libcrbbasic/mprintf_dummy.h libcrbbasic/str.[c,h]
         libcrbbasic/test_argvprsr.c libcrbbasic/test_errormsg.c
         libcrbbasic/test_memmgr.c libcrbbasic/test_mprintf
-        libcrbbasic/test_str. libcrbbasic/undef.h] libcrbbrot/preset.[c,h]
-        libcrbbrot/seqmatrix.[c,h]
+        libcrbbasic/test_str.  libcrbbasic/undef.h] libcrbbrot/preset.[c,h]
+        libcrbbrot/seqmatrix.[c,h

@@ -1,4 +1,4 @@
-# Last modified: 2008-04-22.10
+# Last modified: 2008-06-18.12
 
 # Copyright (c) 2008 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2008 Center for Bioinformatics, University of Hamburg 
@@ -17,12 +17,18 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 noinst_LIBRARIES = libcrbapps.a
 
 libcrbapps_a_SOURCES = \
+	alphabet.c     \
 	brot.c         \
-	brot_cmdline.c
+	brot_cmdline.c \
+	fold.c         \
+        fold_cmdline.c
 
-noinst_HEADERS = \
+noinst_HEADERS =      \
+	alphabet.h    \
 	brot_cmdline.h\
-	brot.h
+	brot.h \
+	fold_cmdline.h\
+        fold.h
 
 
 # Do we need testing here?

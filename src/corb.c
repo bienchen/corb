@@ -33,12 +33,14 @@
 #include <libcrbbasic/crbbasic.h>
 #include "crb_cmdline.h"
 #include <libcrbapps/brot.h>
+#include <libcrbapps/fold.h>
 
 static int
 verify_tool (const Str* tool)
 {
    /* verify name */
-   if (str_compare_cstr (tool, "brot"))
+   if (  (str_compare_cstr (tool, "brot"))
+       &&(str_compare_cstr (tool, "fold")))
    {
       THROW_ERROR_MSG ("Unknown application: \"%s\", try `%s --help` for more "
                        "information.",str_get (tool), get_progname());
@@ -139,7 +141,14 @@ int main(int argc,char *argv[])
    /* start tool */
    if (retval == 0)
    {
-      retval = brot_main(crb_args.inputs[0]/*  + str_length (tool) */);
+      if (str_compare_cstr (tool, "brot") == 0)
+      {
+         retval = brot_main(crb_args.inputs[0]/*  + str_length (tool) */);
+      }
+      else if (str_compare_cstr (tool, "fold") == 0)
+      {
+         retval = fold_main(crb_args.inputs[0]);
+      }
    }
 
    /* finalise */

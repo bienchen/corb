@@ -1,4 +1,4 @@
-# Last modified: 2008-04-22.10
+# Last modified: 2008-06-17.16
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -19,9 +19,9 @@ LDADD =                                 \
 	libcrbfallback/libcrbfallback.a
 
 bin_PROGRAMS = corb
-corb_SOURCES = \
-	corb.c \
-	crb_cmdline.c
+corb_SOURCES =       \
+	crb_cmdline.c\
+	corb.c
 
 
 # Local variables:

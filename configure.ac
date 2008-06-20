@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Last modified: 2008-06-12.09
+# Last modified: 2008-06-19.10
 #
 
 AC_PREREQ(2.60)

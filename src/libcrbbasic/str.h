@@ -67,7 +67,7 @@ str_new_str (const Str*, const char*, const int);
 #define STR_NEW_STR(STR) str_new_str (STR, __FILE__, __LINE__)
 
 extern void
-str_delete (Str* this);
+str_delete (Str*);
 
 
 /********************************   Altering   ********************************/

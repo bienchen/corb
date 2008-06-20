@@ -43,6 +43,14 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    Str* test_str2;
 
    /* test creation */
+   test_str = STR_NEW_CHAR ('.', 1000);
+   if (test_str == NULL)
+   {
+      THROW_ERROR_MSG ("Could not create first string:");
+      return EXIT_FAILURE;
+   }   
+
+   str_delete (test_str);
    test_str = STR_NEW_CSTR ("HELLO WORLD");
    if (test_str == NULL)
    {

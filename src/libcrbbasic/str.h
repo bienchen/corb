@@ -62,6 +62,11 @@ str_new_cstr (const char*, const char*, const int);
 #define STR_NEW_CSTR(CSTR) str_new_cstr (CSTR, __FILE__, __LINE__)
 
 extern Str*
+str_new_char (const char, const unsigned long, const char*, const int);
+
+#define STR_NEW_CHAR(CHAR, L) str_new_char (CHAR, L, __FILE__, __LINE__)
+
+extern Str*
 str_new_str (const Str*, const char*, const int);
 
 #define STR_NEW_STR(STR) str_new_str (STR, __FILE__, __LINE__)

@@ -136,6 +136,48 @@ str_new_cstr (const char* cstr, const char* file, const int line)
 }
 
 
+/** @brief Create a new string object of certain size filled with a single char.
+ *
+ * A constructor an initialiser for @c Str objects. If compiled with enabled
+ * memory checking, @c file and @c line should point to the position where the
+ * function was called. Both parameters are automatically set by using the
+ * macro @c STR_NEW_CHAR. @c cstr is stored as a copy of the input parameter.\n
+ * Returns @c NULL if failed to allocate memory for the object.
+ *
+ * @param[in] c char used to fill the string.
+ * @param[in] l desired length of the string.
+ * @param[in] file fill with name of calling file.
+ * @param[in] line fill with calling line.
+ */
+Str*
+str_new_char (const char c,
+              const unsigned long l,
+              const char* file,
+              const int line)
+{
+   Str* this = str_new (file, line);
+
+   if (this != NULL)
+   {
+      this->size = l + 1;
+      this->data = XMALLOC(this->size * sizeof (char));
+      if (this->data != NULL)
+      {
+         this->len = this->size - 1;
+         memset (this->data, c, sizeof (*(this->data)) * this->len);
+         this->data[this->len] = '\0';
+      }
+      else
+      {
+         XFREE (this);
+         this = NULL;
+      }
+   }
+
+   return this;
+}
+
+
 /** @brief Create a new string object as copy of a string.
  *
  * A constructor an initialiser for @c Str objects. If compiled with enabled

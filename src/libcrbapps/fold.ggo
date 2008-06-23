@@ -1,0 +1,15 @@
+package     "fold"
+version     "0.1"
+purpose     "Predicting the secondary structure of RNA sequences."
+usage       "fold [OPTIONS]... SEQUENCE"
+description "Prediction Tool for RNA Secondary Structures without Pseudoknots"
+
+# arguments to gengetopt
+args "--string-parser --func-name=fold_cmdline_parser --file-name=fold_cmdline --include-getopt --unamed-opts=SEQUENCE --arg-struct-name=fold_args_info --no-handle-error"
+
+option "loop-length" l "Minimal length of loops"
+       details="Sets a threshold for the minimal loop length."
+       long
+       typestr="INT"
+       default="4"
+       optional

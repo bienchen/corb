@@ -50,6 +50,7 @@ enum directions{
    L = 1,                       /* from left */
    B = 2,                       /* from below */
    D = 4,                       /* diagonal (pair) */
+   K = 8,
 };
 
 static int 
@@ -117,9 +118,9 @@ calc_cell_nussinov(const unsigned long i,
 
    if (matrix[i + 1][j].from != 0)
    {
-      if (fabs (matrix[i][j].v - matrix[i + 1][j].v) < 0.000001)
+      if (fabs (matrix[i][j].v - matrix[i + 1][j].v) < 0.0001)
       {
-         matrix[i][j].from |= B;      
+         matrix[i][j].from |= B;
       }
       else if (matrix[i][j].v > matrix[i + 1][j].v)
       {
@@ -130,9 +131,13 @@ calc_cell_nussinov(const unsigned long i,
 
    if (scores[(int)sequence[i]][(int)sequence[j]] != 0)
    {
+      /*mprintf ("(%lu,%lu) %.3f - %.3f + %3.f\n", i, j, matrix[i][j].v,
+                                                matrix[i + 1][j -1 ].v, 
+                                                scores[(int)sequence[i]]
+                                                [(int)sequence[j]]);*/
       if (fabsf (matrix[i][j].v - (  matrix[i + 1][j -1].v 
                                      + scores[(int)sequence[i]]
-                                     [(int)sequence[j]])) < 0.000001)
+                                     [(int)sequence[j]])) < 0.0001)
       {
          if (matrix[i + 1][j - 1].from != 0)
          {
@@ -150,21 +155,36 @@ calc_cell_nussinov(const unsigned long i,
 
    for (k = i + 1; k < j; k++)
    {
-      if ((matrix[i][k - 1].from != 0) && (matrix[i][k - 1].from != 0))
+      if ((matrix[i][k - 1].from != 0) && (matrix[k][j].from != 0))
       {
          if (fabsf (matrix[i][j].v - (matrix[i][k - 1].v + matrix[k][j].v)) 
-             < 0.000001)
+             < 0.0001)
          {
-            matrix[i][j].k = k;
+            if (! matrix[i][j].from & K)
+            {
+               /* mprintf ("K"); */
+               matrix[i][j].k = k;
+               matrix[i][j].from |= K;
+            }
          }
          else if (matrix[i][j].v > (matrix[i][k - 1].v + matrix[k][j].v))
          {
+            /* mprintf ("K"); */
             matrix[i][j].v = matrix[i][k - 1].v + matrix[k][j].v;
+            matrix[i][j].from = K;
             matrix[i][j].k = k;
          }
-
       }
    }
+   /* mprintf ("|"); */
+   /* 2: 8384 */
+   /* 3: 5468 */
+   /* 4:  873 */
+   /* 5:  106 */
+   /* 6:   19 */
+   /* 7:    5 */
+   /* 8:    3 */
+   /* mprintf (" (%lu, %lu): %.3f\n", i, j, matrix[i][j].v); */
 }
 
 static int
@@ -199,11 +219,11 @@ calc_matrix_nussinov (const char* sequence,
       }
    }
 
-   for (i = 0; i < seqlen; i++)
+   /*for (i = 0; i < seqlen; i++)
    {
       for (j = 0; j < seqlen; j++)
       {
-         mprintf ("%.2f ", matrix[i][j].v);
+         mprintf ("%.3f ", matrix[i][j].v);
       }
       mprintf ("\n");
    }
@@ -251,12 +271,17 @@ calc_matrix_nussinov (const char* sequence,
          }
       }
       mprintf (" %c\n", transform_number_2_base (sequence[i]));
-   }
+      }
 
    mprintf ("\n");
    for (i = 0; i < seqlen; i++)
    {
-      mprintf ("%c ", transform_number_2_base (sequence[i]));
+      mprintf ("%2lu ", i);
+   }
+   mprintf ("\n");
+   for (i = 0; i < seqlen; i++)
+   {
+      mprintf (" %c ", transform_number_2_base (sequence[i]));
    }
    mprintf ("\n");
    for (i = 0; i < seqlen; i++)
@@ -265,15 +290,15 @@ calc_matrix_nussinov (const char* sequence,
       {
          if (matrix[i][j].k != ULONG_UNDEF)
          {
-            mprintf ("%lu ", matrix[i][j].k);
+            mprintf ("%2lu ", matrix[i][j].k);
          }
          else
          {
-            mprintf ("x ");
+            mprintf ("xx ");
          }
       }
-      mprintf (" %c\n", transform_number_2_base (sequence[i]));
-      }
+      mprintf (" %c %2lu\n", transform_number_2_base (sequence[i]), i);
+      }*/
 
    return 0;
 }
@@ -287,14 +312,17 @@ traceback_matrix (const unsigned long i, const unsigned long j,
       /* follow diagonals, first */
       if (matrix[i][j].from & B)
       {
+         /* mprintf ("B "); */
          traceback_matrix (i + 1, j, structure, matrix);
       }
       else if (matrix[i][j].from & L)
       {
+         /* mprintf ("L "); */
          traceback_matrix (i, j - 1, structure, matrix);
       }
       else if (matrix[i][j].from & D)
       {
+         /* mprintf ("D "); */
          /* mfprintf (stderr, "PAIR: %lu,%lu\n", i, j); */
          str_at (structure, i, '(');
          str_at (structure, j, ')');
@@ -302,6 +330,7 @@ traceback_matrix (const unsigned long i, const unsigned long j,
       }
       else if (matrix[i][j].k != ULONG_UNDEF)
       {
+         /* mprintf ("K"); */
          traceback_matrix (i, matrix[i][j].k - 1,
                            structure,
                            matrix); 
@@ -309,6 +338,23 @@ traceback_matrix (const unsigned long i, const unsigned long j,
                            structure,
                            matrix);         
       }
+
+      /*  2: 3611 */
+      /*  3:  290 */
+      /*  4:   22 */
+      /*  5:   10 */
+      /*  6:    5 */
+      /*  7:    5 */
+      /*  8:    2 */
+      /*  9:    2 */
+      /* 10:    3 */
+      /* 12:    1 */
+      /* 16:    2 */
+      /* 17:    1 */
+      /* 19:    1 */
+      /* 23:    1 */
+      /* 25:    1 */
+      /* 30:    1 */
    }
 }
 
@@ -324,26 +370,33 @@ traceback_nussinov (const unsigned long i,
 
    if (i < j)
    {
-      if (fabsf(matrix[i][j].v - matrix[i + 1][j].v) < 0.000001)
+      /*mprintf ("(%c%lu,%c%lu) %.4f ", transform_number_2_base(sequence[i]),
+        i, transform_number_2_base(sequence[j]), j, matrix[i][j].v);
+        mprintf ("b:%.3f ", matrix[i + 1][j].v);*/
+      if (fabsf(matrix[i][j].v - matrix[i + 1][j].v) < 0.0001)
       {
+         /*mprintf ("B ");*/
          traceback_nussinov (i + 1, j, structure, sequence, matrix, scores);
       }
       else
       {
-         if (fabsf(matrix[i][j].v - matrix[i][j - 1].v) < 0.000001)
+         /*mprintf ("l:%.3f ", matrix[i][j - 1].v);*/
+         if (fabsf(matrix[i][j].v - matrix[i][j - 1].v) < 0.0001)
          {
+            /*mprintf ("L ");*/
             traceback_nussinov (i, j - 1, structure, sequence, matrix, scores);
          }
          else
          {
 /*         mprintf ("B: %f == %f + %f\n", matrix[i][j].v, matrix[i+1][j-1].v, */
 /*                      scores[(int)sequence[i]][(int)sequence[j]]); */
-            
+            /*mprintf ("d:%.4f ", matrix[i + 1][j - 1].v);*/
             if (fabsf(matrix[i][j].v - (matrix[i + 1][j - 1].v 
                                   + scores[(int)sequence[i]][(int)sequence[j]]))
-                < 0.000001)
+                < 0.0001)
             {
                /* mfprintf (stderr, "PAIR: %lu,%lu\n", i, j); */
+               /*mprintf ("D ");*/
                str_at (structure, i, '(');
                str_at (structure, j, ')');
                traceback_nussinov (i + 1, j - 1,
@@ -357,8 +410,9 @@ traceback_nussinov (const unsigned long i,
                for (k = i + 1; k < j; k++)
                {
                   if (fabsf(  matrix[i][j].v 
-                           - (matrix[i][k - 1].v + matrix[k][j].v)) < 0.000001)
+                           - (matrix[i][k - 1].v + matrix[k][j].v)) < 0.0001)
                   {
+                     /*mprintf ("K%lu ", k);*/
                      traceback_nussinov (i, k - 1,
                                          structure,
                                          sequence,
@@ -372,6 +426,7 @@ traceback_nussinov (const unsigned long i,
                      return;
                   }
                }
+               /*mprintf("N ");*/
             }
          }
       }
@@ -436,8 +491,9 @@ pred_2D_structure_nussinov (const unsigned long l,
    if (seqlen > 0)
    {
       mprintf ("> MFE: %.3f\n", matrix[0][seqlen - 1].v);
-    traceback_nussinov (0, seqlen - 1, structure, sequence, matrix, scores);
-    /*traceback_matrix (0, seqlen - 1, structure, matrix);*/
+    /*traceback_nussinov (0, seqlen - 1, structure, sequence, matrix, scores);*/
+      traceback_matrix (0, seqlen - 1, structure, matrix);
+    /* mprintf ("\n"); */
    }
 
    XFREE_2D ((void**)matrix);

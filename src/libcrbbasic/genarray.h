@@ -86,10 +86,10 @@ extern "C" {
  * @param[in] SIZE size of the array.
  * @param[in] TYPE datatype of the array elements.
  */
-#define ARRAY_INIT(A, SIZE, TYPE)            \
+#define ARRAY_INIT(A, SIZE, TYPE)         \
    A.data = XMALLOC(sizeof (TYPE) * (SIZE)); \
    A.current = 0;                            \
-   A.size = SIZE
+   A.size = (SIZE)
 
 /** @brief Delete an array.
  *
@@ -98,7 +98,6 @@ extern "C" {
  *
  * @param[in] A array.
  * @param[in] SIZE size of the array.
- * @param[in] TYPE datatype of the array elements.
  */
 #define ARRAY_DELETE(A)   \
    if (ARRAY_NOT_NULL(A)) \
@@ -113,31 +112,25 @@ extern "C" {
 /** @brief Add an element to the end of an array.
  *
  * Stores an element in the data component of an array at the current index
- * position. If the index exceeds the size it will be adjusted. It is up to you
- * to check whether the data component was successfully reallocated or not
- * afterwards.
+ * position. If the index exceeds the size it will be adjusted. For a failed
+ * reallocation, there is one argument reserved for a block of own code.
  *
  * @param[in] A array.
  * @param[in] D element to add.
  * @param[in] TYPE datatype of the array elements.
+ * @param[in] FAILURE block of code to be executed if reallocation fails.
  */
-#define ARRAY_PUSH(A, D, TYPE)                                         \
-   assert (A.data != NULL);                                                    \
-   if (A.current < A.size)                                             \
-   {                                                                   \
-      A.data[A.current] = D;                                           \
-      A.current++;                                                     \
-   }                                                                   \
-   else                                                                \
-   {                                                                   \
-      A.data = XREALLOC(A.data, sizeof (TYPE) * ((A.size * 2) + 1));   \
-      if (ARRAY_NOT_NULL(A))                                           \
-      {                                                                \
-         A.size = (A.size * 2) + 1;                                    \
-         A.data[A.current] = D;                                        \
-         A.current++;                                                  \
-      }                                                                \
-   }
+#define ARRAY_PUSH(A, D, TYPE, FAILURE)                  \
+   assert (A.data != NULL);                              \
+   if (A.current >= A.size)                              \
+   {                                                     \
+      A.size = (A.size * 2) + 1;                         \
+      A.data = XREALLOC(A.data, sizeof (TYPE) * A.size); \
+      if (ARRAY_IS_NULL (A))                             \
+         FAILURE                                         \
+   }                                                     \
+   A.data[A.current] = (D);                              \
+   A.current++
 
 /** @brief Pops the last element of an array.
  *
@@ -163,10 +156,20 @@ extern "C" {
  * @param[in] B element.
  * @param[in] IDX position.
  */
-#define ARRAY_SET(A, B, IDX)  \
-   assert (A.current > IDX); \
-   assert (A.data != NULL);     \
-   A.data[IDX] = B
+#define ARRAY_SET(A, B, IDX)   \
+   assert (A.current > (IDX)); \
+   assert (A.data != NULL);    \
+   A.data[(IDX)] = (B)
+
+/** @brief Reset an array.
+ *
+ * Sets the current index of an array to 0.
+ *
+ * @param[in] A array.
+ */
+#define ARRAY_RESET(A) \
+   assert (A.data != NULL); \
+   A.current = 0
 
 
 /*********************************   Access   *********************************/
@@ -203,6 +206,18 @@ extern "C" {
 #define ARRAY_SIZE(A) \
    A.size
 
+/** @brief Access a certain element in an array.
+ *
+ * Provides access to a certain element in an array. Does not check whether the
+ * index in in or out of scope or if the data component exists anyway. 
+ *
+ * @param[in] B container.
+ * @param[in] A array.
+ * @param[in] IDX position.
+ */
+#define ARRAY_ACCESS(A, IDX) \
+   A.data[(IDX)]
+
 
 /*********************************    Misc    *********************************/
 
@@ -223,6 +238,81 @@ extern "C" {
  */
 #define ARRAY_IS_NULL(A) \
    A.data == NULL
+
+
+/*****************************  Standard Arrays   *****************************/
+/**
+ * This is a set of globally available arrays for the C standard data types.
+ * All macros needing TYPE are mirrored here with type set. The macro name
+ * changes to ARRAY_type_... where 'type' is written in uppercase letters.
+ * Add missing standard types here.
+ * Added so far:
+ *  ArrayInt   - int
+ *  ArrayUlong - unsigned long
+ */
+
+/** @brief ArrayUlong.
+ *
+ * Array for unsigned long.
+ *
+ */
+ARRAY_CREATE_CLASS_NAMED(int, Int);
+
+/** @brief Initialise an array for int.
+ *
+ * Allocation of memory for the data component of an array and initial setting
+ * of its size and current index. It is up to you to check whether the data
+ * component was successfully allocated or not afterwards.
+ *
+ * @param[in] A array.
+ * @param[in] SIZE size of the array.
+ */
+#define ARRAY_INT_INIT(A, SIZE) \
+   ARRAY_INIT(A, SIZE, int)
+
+/** @brief Add an element to the end of an array.
+ *
+ * Stores an element in the data component of an array at the current index
+ * position. If the index exceeds the size it will be adjusted. For a failed
+ * reallocation, there is one argument reserved for a block of own code.
+ *
+ * @param[in] A array.
+ * @param[in] D element to add.
+ * @param[in] FAILURE block of code to be executed if reallocation fails.
+ */
+#define ARRAY_INT_PUSH(A, D, FAILURE) \
+   ARRAY_PUSH(A, D, int, FAILURE)
+
+
+/** @brief Array for unsigned long.
+ */
+ARRAY_CREATE_CLASS_NAMED(unsigned long, Ulong);
+
+/** @brief Initialise an array for unsigned long.
+ *
+ * Allocation of memory for the data component of an array and initial setting
+ * of its size and current index. It is up to you to check whether the data
+ * component was successfully allocated or not afterwards.
+ *
+ * @param[in] A array.
+ * @param[in] SIZE size of the array.
+ */
+#define ARRAY_ULONG_INIT(A, SIZE) \
+   ARRAY_INIT(A, SIZE, unsigned long)
+
+/** @brief Add an element to the end of an array.
+ *
+ * Stores an element in the data component of an array at the current index
+ * position. If the index exceeds the size it will be adjusted. For a failed
+ * reallocation, there is one argument reserved for a block of own code.
+ *
+ * @param[in] A array.
+ * @param[in] D element to add.
+ * @param[in] FAILURE block of code to be executed if reallocation fails.
+ */
+#define ARRAY_ULONG_PUSH(A, D, FAILURE) \
+   ARRAY_PUSH(A, D, int, FAILURE)
+
 
 #endif /* GENARRAY_H */
 

@@ -42,5 +42,6 @@
 #include "mprintf.h"  /* printf family replacements */
 #include "str.h"      /* string class */
 #include "undef.h"    /* undefined flags for basic datatypes */
+#include "genarray.h" /* generic array macros */
 
 #endif /* CRBBASIC_H */

@@ -41,9 +41,9 @@
 #include "fold.h"
 
 typedef struct {
-      float v;                  /* value */
-      char from;                /* previous node */
-      unsigned long k;          /* k if no previous node */
+      float v;               /* value */
+      char from;             /* previous node */
+      ArrayUlong k;          /* k if no previous node */
 } struct_cell;
 
 enum directions{
@@ -101,7 +101,7 @@ fold_cmdline_parser_postprocess (const struct fold_args_info* args_info)
    return 0;
 }
 
-void
+int
 calc_cell_nussinov(const unsigned long i,
                    const unsigned long j,
                    const char* sequence,
@@ -160,19 +160,29 @@ calc_cell_nussinov(const unsigned long i,
          if (fabsf (matrix[i][j].v - (matrix[i][k - 1].v + matrix[k][j].v)) 
              < 0.0001)
          {
-            if (! matrix[i][j].from & K)
+            ARRAY_ULONG_PUSH (matrix[i][j].k, k,
+                              {
+                                 return 1;
+                              });
+            matrix[i][j].from |= K;
+            /*if (! matrix[i][j].from & K)
             {
-               /* mprintf ("K"); */
                matrix[i][j].k = k;
                matrix[i][j].from |= K;
-            }
+            }*/
          }
          else if (matrix[i][j].v > (matrix[i][k - 1].v + matrix[k][j].v))
          {
             /* mprintf ("K"); */
+            ARRAY_RESET (matrix[i][j].k);
+            ARRAY_ULONG_PUSH (matrix[i][j].k, k,
+                              {
+                                 return 1;
+                              });           
+            
             matrix[i][j].v = matrix[i][k - 1].v + matrix[k][j].v;
             matrix[i][j].from = K;
-            matrix[i][j].k = k;
+            /* matrix[i][j].k = k; */
          }
       }
    }
@@ -185,6 +195,8 @@ calc_cell_nussinov(const unsigned long i,
    /* 7:    5 */
    /* 8:    3 */
    /* mprintf (" (%lu, %lu): %.3f\n", i, j, matrix[i][j].v); */
+
+   return 0;
 }
 
 static int
@@ -214,7 +226,10 @@ calc_matrix_nussinov (const char* sequence,
          else
          {
             /* mprintf (">l: (i,j) : (%lu,%lu)\n", i, j); */
-            calc_cell_nussinov(i, j, sequence, matrix, scores);
+            if(calc_cell_nussinov(i, j, sequence, matrix, scores))
+            {
+               return 1;
+            }
          }
       }
    }
@@ -328,13 +343,14 @@ traceback_matrix (const unsigned long i, const unsigned long j,
          str_at (structure, j, ')');
          traceback_matrix (i + 1, j - 1, structure, matrix);
       }
-      else if (matrix[i][j].k != ULONG_UNDEF)
+      else if (ARRAY_CURRENT (matrix[i][j].k) != 0)
       {
-         /* mprintf ("K"); */
-         traceback_matrix (i, matrix[i][j].k - 1,
+         /*mprintf ("K");*/
+         /* mprintf ("K: %lu ", ARRAY_SIZE (matrix[i][j].k)); */
+         traceback_matrix (i, ARRAY_ACCESS(matrix[i][j].k, 0) - 1,
                            structure,
                            matrix); 
-         traceback_matrix (matrix[i][j].k, j,
+         traceback_matrix (ARRAY_ACCESS(matrix[i][j].k, 0), j,
                            structure,
                            matrix);         
       }
@@ -438,9 +454,10 @@ pred_2D_structure_nussinov (const unsigned long l,
                             const char* sequence,
                             const unsigned long seqlen)
 {
-   struct_cell** matrix;
-   float** scores;
+   struct_cell** matrix = NULL;
+   float** scores = NULL;
    unsigned long i, j;
+   int error = 0;
    Str* structure = STR_NEW_CHAR ('.', seqlen);
 
    assert (sequence);
@@ -456,48 +473,66 @@ pred_2D_structure_nussinov (const unsigned long l,
                                  sizeof (*matrix[0]));
    if (matrix == NULL)
    {
-      str_delete (structure);
-      return NULL;
+      error = 1;
    }
 
-   for (i = 0; i < seqlen; i++)
+   for (i = 0; (i < seqlen); i++)
    {
       for (j = 0; j < seqlen; j++)
       {
          matrix[i][j].v = 0.0f;
          matrix[i][j].from = 0;
-         matrix[i][j].k = ULONG_UNDEF;
+         ARRAY_ULONG_INIT (matrix[i][j].k, 2);
+         if (ARRAY_IS_NULL (matrix[i][j].k))
+         {
+            i = seqlen;
+            j = seqlen;
+            error = 1;      
+         }
+         /* matrix[i][j].k = ULONG_UNDEF; */
       }
    }
 
    /* fill matrix */
-   scores = create_scoring_matrix ();
-   if (scores == NULL)
+   if (! error)
    {
-      XFREE_2D ((void**)matrix);
-      str_delete (structure);
-      return NULL;
+      scores = create_scoring_matrix ();
+      if (scores == NULL)
+      {
+         error = 1;
+      }
    }
 
-   if (calc_matrix_nussinov (sequence, matrix, seqlen, l, scores))
+   if (! error)
    {
-      XFREE_2D ((void**)matrix);
-      XFREE_2D ((void**)scores);
-      str_delete (structure);
-      return NULL;
+      error = calc_matrix_nussinov (sequence, matrix, seqlen, l, scores);
    }
 
    /* traceback */
-   if (seqlen > 0)
+   if ((! error) && (seqlen > 0))
    {
       mprintf ("> MFE: %.3f\n", matrix[0][seqlen - 1].v);
     /*traceback_nussinov (0, seqlen - 1, structure, sequence, matrix, scores);*/
       traceback_matrix (0, seqlen - 1, structure, matrix);
-    /* mprintf ("\n"); */
+      /* mprintf ("\n"); */
    }
 
+   
+   for (i = 0; (i < seqlen); i++)
+   {
+      for (j = 0; j < seqlen; j++)
+      {
+         ARRAY_DELETE (matrix[i][j].k);
+      }
+   }
    XFREE_2D ((void**)matrix);
    XFREE_2D ((void**)scores);
+
+   if (error)
+   {
+      str_delete (structure);
+      return NULL;
+   }
 
    return structure;
 }

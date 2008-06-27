@@ -58,12 +58,11 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
-   ARRAY_PUSH (test_array, u, tint);
-   if (ARRAY_IS_NULL(test_array))
-   {
-      THROW_ERROR_MSG ("Could not push to test array");
-      return EXIT_FAILURE;
-   }
+   ARRAY_PUSH (test_array, u, tint,
+               {
+                  THROW_ERROR_MSG ("Could not push to test array");
+                  return EXIT_FAILURE;                  
+               });
 
    if (ARRAY_SIZE (test_array) != init_size)
    {
@@ -109,12 +108,11 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
    init_size = ARRAY_SIZE (test_array);
    for (i = 0; i <= init_size; i++)
    {
-      ARRAY_PUSH (test_array, u, tint);
-      if (ARRAY_IS_NULL(test_array))
-      {
-         THROW_ERROR_MSG ("Could not reallocate test array");
-         return EXIT_FAILURE;
-      }
+      ARRAY_PUSH (test_array, u, tint,
+                  {
+                     THROW_ERROR_MSG ("Could not reallocate test array");
+                     return EXIT_FAILURE;                     
+                  });
    }
 
    if (ARRAY_SIZE (test_array) == init_size)

@@ -57,6 +57,7 @@ Emacs
 
 Implementation
 --------------
+- All test programs should set programname
 - all code with emacs versioning
 - bug mesg function
 - unlink errormsgs with lines from NDEBUG

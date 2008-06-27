@@ -35,7 +35,7 @@
 #include "inc_strg.h"
 #include "mprintf.h"
 
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
    size_t written_chars;
    size_t test_msg_len;

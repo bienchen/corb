@@ -1,4 +1,4 @@
-# Last modified: 2008-04-22.10
+# Last modified: 2008-06-26.09
 
 # Copyright (c) 2008 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2008 Center for Bioinformatics, University of Hamburg 
@@ -41,7 +41,8 @@ noinst_HEADERS =                           \
 	argvprsr.h	                   \
 	str.h                              \
         undef.h                            \
-        crbbasic.h
+        crbbasic.h                         \
+        genarray.h
 
 
 # tests for the library
@@ -54,7 +55,8 @@ check_PROGRAMS =                           \
 	test_errormsg                      \
 	test_memmgr                        \
 	test_argvprsr                      \
-	test_str
+	test_str                           \
+        test_genarray
 
 test_memmgr_SOURCES   = test_memmgr.c
 
@@ -65,6 +67,8 @@ test_errormsg_SOURCES = test_errormsg.c
 test_argvprsr_SOURCES = test_argvprsr.c
 
 test_str_SOURCES      = test_str.c
+
+test_genarray_SOURCES = test_genarray.c
 
 # add test for correct failing of functions?
 

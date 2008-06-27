@@ -22,7 +22,7 @@ Makefile
 Makefile.in
 share/misc/bin/reformat
 share/misc/emacs/elc-stamp
-src/libcrbbasic/test_*
+# src/libcrbbasic/test_*
 autom4te.cache
 *.bkp
 

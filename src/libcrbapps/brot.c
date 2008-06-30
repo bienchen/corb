@@ -306,7 +306,7 @@ brot_main(const char *cmdline)
    PresetArray* presets = NULL;
    SeqMatrix* sm = NULL;
    int retval = 0;
-   unsigned long i;
+   /* unsigned long i; */
    unsigned long* pairlist = NULL;
    float** score_matrix;
 
@@ -342,16 +342,16 @@ brot_main(const char *cmdline)
    }
 
    /* do work */
-   if (retval == 0)
+   /*if (retval == 0)
    {
       for (i = 0; i < presetarray_get_length (presets); i++)
       {
          mprintf ("Pos: %.2lu : Base: %c (%d)\n",
-                                         presetarray_get_ith_pos (i, presets),
+                  presetarray_get_ith_pos (i, presets),
                 transform_number_2_base (presetarray_get_ith_base (i, presets)),
                                          presetarray_get_ith_base (i, presets));
       }
-   }
+      }*/
 
    /* init matrix */
    if (retval == 0)
@@ -372,7 +372,7 @@ brot_main(const char *cmdline)
    /* simulate */
    if (retval == 0)
    {
-      seqmatrix_print_2_stderr (3, sm);
+      /* seqmatrix_print_2_stderr (3, sm); */
       retval = sequence_matrix_simulate_scmf (brot_args.steps_arg,
                                               brot_args.temp_arg,
                                               sm,
@@ -382,12 +382,12 @@ brot_main(const char *cmdline)
    /* output */
    if (retval == 0)
    {
-      mfprintf (stderr, "COLLATING\n");
-      /* retval = seqmatrix_collate_is (0.99,
-                                        brot_args.steps_arg / 2,
-                                        brot_args.temp_arg,
-                                        score_matrix, sm); */
-      retval = seqmatrix_collate_mv (sm);
+      /* mfprintf (stderr, "COLLATING\n"); */
+      retval = seqmatrix_collate_is (0.99,
+                                     brot_args.steps_arg / 2,
+                                     brot_args.temp_arg,
+                                     score_matrix, sm);
+      /*retval = seqmatrix_collate_mv (sm);*/
    }
 
    if (retval == 0)

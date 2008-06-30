@@ -303,7 +303,6 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
    float het_count;
    float het_rate;
 
-/*    het_rate = expf ((-1) * ((logf (1 / 0.000001f)) / sm->cols)); */
    het_rate = ((-1) * ((logf (1 / 0.000001f)) / (sm->cols)));
 
    if (sm->curr_matrix == 0)
@@ -311,7 +310,7 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
       new_matrix = 1;
    }
 
-   mfprintf (stderr, "C: %lu Pairs with %lu\n", col, sm->pairlist[col]);
+   /*fprintf (stderr, "C: %lu Pairs with %lu\n", col, sm->pairlist[col]); */
 
    for (j = 0; j < sm->rows; j++)
    {
@@ -329,18 +328,18 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
                sm->matrix[new_matrix][j][col] +=
                   (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
                    * scores[j][l]);
-               mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[j][l],
+               /*mfprintf (stderr, "(%2.3f*%2.3f:%2.6f) ", scores[j][l],
                          sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
-                         sm->matrix[new_matrix][j][col]);
+                         sm->matrix[new_matrix][j][col]);*/
             }
             else
             {
                sm->matrix[new_matrix][j][col] +=
                   (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
                    * scores[l][j]);
-               mfprintf(stderr, "(%2.3f*%2.3f:%2.6f) ", scores[l][j],
+               /*mfprintf(stderr, "(%2.3f*%2.3f:%2.6f) ", scores[l][j],
                          sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1],
-                         sm->matrix[new_matrix][j][col]);          
+                         sm->matrix[new_matrix][j][col]);*/          
             }
          }
       }
@@ -386,29 +385,29 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
                tmp_het += (sm->matrix[sm->curr_matrix][j][k]
                              * expf(het_rate * (col - (k+1))));
                het_count += expf ( (het_rate* (col - (k+1))));
-               mfprintf (stderr, ":%.3f", tmp_het);
+               /* mfprintf (stderr, ":%.3f", tmp_het); */
             }
             else
             {
                tmp_het += (sm->matrix[sm->curr_matrix][j][k]
                             * expf(het_rate * (k - (col+1))));
                het_count += (expf (het_rate * (k - (col+1))));
-               /* mfprintf (stderr, "%lu: %.3f\n", k - (col+1), expf(het_rate* (k - (col+1)))); */
-               mfprintf (stderr, ":%.3f", tmp_het);
+
+               /* mfprintf (stderr, ":%.3f", tmp_het); */
             }
          }
       }
       tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 1.25 */
-      mfprintf (stderr, "tmp_neg: %3f ", tmp_neg);
+      /* mfprintf (stderr, "tmp_neg: %3f ", tmp_neg); */
       tmp_het = (tmp_het / het_count) * (3.0f); /* 0.1747 */
-      mfprintf (stderr, "tmp_het: %3f ", tmp_het);
+      /* mfprintf (stderr, "tmp_het: %3f ", tmp_het); */
       sm->matrix[new_matrix][j][col] += tmp_neg;
       sm->matrix[new_matrix][j][col] += tmp_het;
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
-      mfprintf (stderr, "\n");
+      /* mfprintf (stderr, "\n"); */
    }
-   mfprintf (stderr, "\n");
+   /* mfprintf (stderr, "\n"); */
 
 /*T: 0.100002 S: -0.318406*/
 /*3220130003312003000003022030232000000032312003002133200030003220312013320003*/
@@ -445,10 +444,10 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
       {
          error = sequence_matrix_calc_eeff_row_scmf (i, sm, t, scores);        
       }
-      else
+      /*else
       {
          mfprintf (stderr, "C: %lu Pairs with %lu\n", i, sm->pairlist[i]);
-      }
+         }*/
       i++;
    }
 
@@ -492,7 +491,7 @@ seqmatrix_collate_is (float fthresh,
    /* Approach: find unambigouos sites and fixate 'em */
    /*           find the largest of the ambigouos sites */
    /*           until all sites are fixed */
-   mfprintf (stderr, "IN\n");
+   /* mfprintf (stderr, "IN\n"); */
 
    while ((largest_amb_col != sm->cols + 1) && (! retval))
    {
@@ -528,7 +527,7 @@ seqmatrix_collate_is (float fthresh,
          }
       }
       
-      seqmatrix_print_2_stderr (3, sm);
+      /* seqmatrix_print_2_stderr (3, sm); */
       
       /* find largest ambigouos site */
       for (j = 0; j < sm->cols; j++)
@@ -545,10 +544,10 @@ seqmatrix_collate_is (float fthresh,
                }
             }
          }
-         else
+         /*else
          {
             mfprintf (stderr, "Fixed site: %lu\n", j);
-         }
+         }*/
       }
       
       /* set site to 1/0 and fixate it */
@@ -623,7 +622,8 @@ seqmatrix_collate_mv (SeqMatrix* sm)
          {
             /* write position to seq */
             curr_max_prob = sm->matrix[sm->curr_matrix][i][j];
-            sm->sequence[j] = i;
+            sm->sequence[j] = i; /* transform_number_2_base(i); */
+/*3203211002132030030103203032032001030032132003002303201303003212300321320003*/
          }
       }
    }
@@ -663,7 +663,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
 
    if (sm->curr_matrix == 0)
    {
-      m = 1;
+     m = 1;
    }
 
    if (steps > 0)
@@ -678,10 +678,10 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    {
       s = 0.0f;
 
-      mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port);
+      /* mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port); */
       /* calculate Eeff */
       error = sequence_matrix_calc_eeff_col_scmf (sm, T, scores);
-      seqmatrix_print_2_stderr (6, sm);
+      /* seqmatrix_print_2_stderr (6, sm); */
       /* update matrix */
       /* for all columns */
       for (j = 0; j < sm->cols; j++)
@@ -712,7 +712,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
                      * logf (sm->matrix[sm->curr_matrix][i][j]));
             }
          }
-         else
+         /*else
          {
             mfprintf (stderr, "SFixed site: %lu - ", j);
             for (i = 0; i < sm->rows; i++)
@@ -720,16 +720,16 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
                mfprintf (stderr, "%.3f ", sm->matrix[sm->curr_matrix][i][j]);
             }
             mfprintf (stderr, "\n");
-         }
+            }*/
       }
 
       s = s/sm->cols;
-      mfprintf (stdout, "T: %3f S: %3f\n", T, s);
+      /* mfprintf (stdout, "T: %3f S: %3f\n", T, s); */
 
       t++;
-      mfprintf (stderr, "\n");
+      /* mfprintf (stderr, "\n"); */
 
-     seqmatrix_print_2_stderr (3, sm);
+     /* seqmatrix_print_2_stderr (3, sm); */
       /* if (s > -0.01f) return error; */
      T = (T * c_rate) + c_port;
    }

@@ -55,10 +55,11 @@ enum directions{
 };
 
 static int 
-fold_cmdline_parser_postprocess (const struct fold_args_info* args_info)
+fold_cmdline_parser_postprocess (const struct fold_args_info* args_info,
+                                 unsigned long *seqlen)
 {
    unsigned long i;
-   unsigned long seqlen = 0;
+   *seqlen = 0;
 
    /* check input sequence */
    if (args_info->inputs_num == 1)
@@ -75,8 +76,8 @@ fold_cmdline_parser_postprocess (const struct fold_args_info* args_info)
    }
 
    /* verify sequence */
-   seqlen = strlen (args_info->inputs[1]);
-   for (i = 0; i < seqlen; i++)
+   *seqlen = strlen (args_info->inputs[1]);
+   for (i = 0; i < *seqlen; i++)
    {
        args_info->inputs[1][i] =
           transform_base_2_number (args_info->inputs[1][i]);
@@ -557,15 +558,14 @@ fold_main(const char *cmdline)
    }
 
    /* postprocess arguments */
-   seqlen = strlen (fold_args.inputs[1]);
    if (retval == 0)
-   { 
-      retval = fold_cmdline_parser_postprocess (&fold_args);
+   {
+      retval = fold_cmdline_parser_postprocess (&fold_args, &seqlen);
    }
 
    /* do work */
    if (retval == 0)
-   { 
+   {
       structure = pred_2D_structure_nussinov (fold_args.loop_length_arg,
                                               fold_args.inputs[1],
                                               seqlen);

@@ -119,7 +119,7 @@ istr_new_init (const char* cstr, size_t size, const char* file, const int line)
 
 /** @brief Create a new string object from a char array.
  *
- * A constructor an initialiser for @c Str objects. If compiled with enabled
+ * A constructor and initialiser for @c Str objects. If compiled with enabled
  * memory checking, @c file and @c line should point to the position where the
  * function was called. Both parameters are automatically set by using the
  * macro @c STR_NEW_CSTR. @c cstr is stored as a copy of the input parameter.\n
@@ -138,7 +138,7 @@ str_new_cstr (const char* cstr, const char* file, const int line)
 
 /** @brief Create a new string object of certain size filled with a single char.
  *
- * A constructor an initialiser for @c Str objects. If compiled with enabled
+ * A constructor and initialiser for @c Str objects. If compiled with enabled
  * memory checking, @c file and @c line should point to the position where the
  * function was called. Both parameters are automatically set by using the
  * macro @c STR_NEW_CHAR. @c cstr is stored as a copy of the input parameter.\n
@@ -180,7 +180,7 @@ str_new_char (const char c,
 
 /** @brief Create a new string object as copy of a string.
  *
- * A constructor an initialiser for @c Str objects. If compiled with enabled
+ * A constructor and initialiser for @c Str objects. If compiled with enabled
  * memory checking, @c file and @c line should point to the position where the
  * function was called. Both parameters are automatically set by using the
  * macro @c STR_NEW_STR. @c str is stored as a copy of the input parameter.\n

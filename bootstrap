@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2008-04-28.14
+scriptversion=2008-06-30.15
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 
@@ -39,12 +39,13 @@ MAKEFILE_SH_MI="share/misc/Makefile";
 MAKEFILE_SH="share/Makefile";
 MAKEFILE_SC_FA="src/libcrbfallback/Makefile";
 MAKEFILE_SC_BA="src/libcrbbasic/Makefile";
+MAKEFILE_SC_RN="src/libcrbrna/Makefile";
 MAKEFILE_SC_BR="src/libcrbbrot/Makefile";
 MAKEFILE_SC_AP="src/libcrbapps/Makefile";
 MAKEFILE_SC="src/Makefile";
 MAKEFILE="Makefile";
 
-MAKEFILES="$MAKEFILE_SC_FA $MAKEFILE_SC_BA $MAKEFILE_SC_BR $MAKEFILE_SC_AP $MAKEFILE_SC $MAKEFILE_SH_MI_EM $MAKEFILE_SH_MI_BI $MAKEFILE_SH_MI $MAKEFILE_SH $MAKEFILE";
+MAKEFILES="$MAKEFILE_SC_FA $MAKEFILE_SC_BA $MAKEFILE_SC_RN $MAKEFILE_SC_BR $MAKEFILE_SC_AP $MAKEFILE_SC $MAKEFILE_SH_MI_EM $MAKEFILE_SH_MI_BI $MAKEFILE_SH_MI $MAKEFILE_SH $MAKEFILE";
 #   makefiles for subdirs - end
 
 CREATED_FILES="configure config.status config.log $ACLOCAL_M4 $CONFIG_H $CONFIG_H_IN $MAKEFILES";

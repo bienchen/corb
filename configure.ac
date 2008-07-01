@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Last modified: 2008-06-19.10
+# Last modified: 2008-06-30.15
 #
 
 AC_PREREQ(2.60)
@@ -99,6 +99,7 @@ AC_CONFIG_FILES([
         share/misc/emacs/Makefile
         src/libcrbfallback/Makefile
         src/libcrbbasic/Makefile
+        src/libcrbrna/Makefile
         src/libcrbbrot/Makefile
         src/libcrbapps/Makefile
         src/Makefile

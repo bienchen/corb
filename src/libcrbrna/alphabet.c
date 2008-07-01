@@ -8,35 +8,111 @@
 /*
  ****   Documentation header   ***
  *
- *  @file libcrbapps/alphabet.c
+ *  @file libcrbrna/alphabet.c
  *
  *  @brief RNA alphabet
  *
  *  Module: alphabet
  *
- *  Library: libcrbapps
+ *  Library: libcrbrna
  *
  *  Project: CoRB - Collection of RNAanalysis Binaries
  *
  *  @author Stefan Bienert
  *
- *  @date 2008-06-18
+ *  @date 2008-06-30
  *
  *
  *  Revision History:
- *         - 2008Jun18 bienert: created
+ *         - 2008Jun30 bienert: created
  *
  */
 
 
 #include <config.h>
-#include <stdio.h>
+/* #include <stdio.h> */
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
+/* #include <assert.h> */
 #include <libcrbbasic/crbbasic.h>
 #include "alphabet.h"
 
+
+struct Alphabet {
+      char* upper_case;
+      char* lower_case;
+      unsigned long size;
+};
+
+
+/**********************   Constructors and destructors   **********************/
+
+/** @brief Create a new alphabet object.
+ *
+ * The constructor for @c Alphabet objects. If compiled with enabled
+ * memory checking, @c file and @c line should point to the position where the
+ * function was called. Both parameters are automatically set by using the
+ * macro @c ALPHABET_NEW.\n
+ * Returns @c NULL on error.
+ *
+ * @param[in] file fill with name of calling file.
+ * @param[in] line fill with calling line.
+ */
+Alphabet*
+alphabet_new (const char* file, const int line)
+{
+   /* allocate 1 object */
+   Alphabet* this = XOBJ_MALLOC(sizeof (Alphabet), file, line);
+   
+   if (this != NULL)
+   {
+      this->upper_case = NULL;
+      this->lower_case = NULL;
+      this->size       = 0;
+   }
+
+   return this;
+}
+
+/** @brief Create a new alphabet object from two c strings.
+ *
+ * A constructor for an initialised @c Alphabet object. If compiled with enabled
+ * memory checking, @c file and @c line should point to the position where the
+ * function was called. Both parameters are automatically set by using the
+ * macro @c ALPHABET_NEW_PAIR. @c upper and @lower have to be of same size.
+ * Symbols at equal positions are taken as upper and lower case pendants of the
+ * same symbol in the alphabet.\n
+ * Returns @c NULL on error.
+ *
+ * @param[in] upper alphabet in upper case letters.
+ * @param[in] lower alphabet in lower case letters.
+ * @param[in] file fill with name of calling file.
+ * @param[in] line fill with calling line.
+ */
+/*Alphabet*
+alphabet_new_pair (const char* upper,
+                   const char* lower,
+                   unsigned long size,
+                   const char* file, const int line)
+{
+  Alphabet* this = alphabet_new (file, line);
+
+  if ((this != NULL) && (size != 0))
+  {*/
+     /* copy strings */
+     /* set size */
+/*}
+
+  return this;
+  }*/
+
+/* alpha_new_single */
+
+/********************************   Altering   ********************************/
+/*********************************   Access   *********************************/
+/******************* Size *******************/
+/******************* Searching *******************/
+/******************* Comparison *******************/
 
 char
 transform_base_2_number (const char base)

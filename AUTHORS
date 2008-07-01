@@ -4,7 +4,7 @@ Also see files ChangeLog and THANKS
 
 
 Stefan Bienert (bienert):
-        corb.c libcrbapps/alphabet.[c,h]] libcrbapps/brot.[c,h]
+        corb.c libcrbapps/brot.[c,h]
         libcrbapps/fold.[c,h] libcrbbasic/argvprsr.[c,h]
         libcrbbasic/crbbasic.h libcrbbasic/errormsg.[c,h]
         libcrbbasic/gcckywrd.h libcrbbasic/genarray.hh libcrbbasic/inc_pthr.h
@@ -14,4 +14,4 @@ Stefan Bienert (bienert):
         libcrbbasic/test_errormsg.c libcrbbasic/test_genarray.c,
         libcrbbasic/test_memmgr.c libcrbbasic/test_mprintf
         libcrbbasic/test_str.  libcrbbasic/undef.h] libcrbbrot/preset.[c,h]
-        libcrbbrot/seqmatrix.[c
+        libcrbbrot/seqmatrix.[c,h] libcrbrna/crbrna.h libcrbrna/alphabet.[c,h]

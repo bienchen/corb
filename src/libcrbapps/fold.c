@@ -36,9 +36,10 @@
 #include <float.h>
 #include <math.h>
 #include <libcrbbasic/crbbasic.h>
-#include "alphabet.h"
+#include <libcrbrna/crbrna.h>
 #include "fold_cmdline.h"
 #include "fold.h"
+
 
 typedef struct {
       float v;               /* value */

@@ -1,4 +1,4 @@
-# Last modified: 2008-06-17.16
+# Last modified: 2008-07-01.09
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -15,6 +15,7 @@ noinst_HEADERS = crb_cmdline.h
 LDADD =                                 \
 	libcrbapps/libcrbapps.a         \
 	libcrbbasic/libcrbbasic.a       \
+	libcrbrna/libcrbrna.a           \
 	libcrbbrot/libcrbbrot.a         \
 	libcrbfallback/libcrbfallback.a
 

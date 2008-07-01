@@ -1,4 +1,4 @@
-# Last modified: 2008-06-18.12
+# Last modified: 2008-07-01.09
 
 # Copyright (c) 2008 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2008 Center for Bioinformatics, University of Hamburg 
@@ -17,14 +17,12 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 noinst_LIBRARIES = libcrbapps.a
 
 libcrbapps_a_SOURCES = \
-	alphabet.c     \
 	brot.c         \
 	brot_cmdline.c \
 	fold.c         \
         fold_cmdline.c
 
 noinst_HEADERS =      \
-	alphabet.h    \
 	brot_cmdline.h\
 	brot.h \
 	fold_cmdline.h\

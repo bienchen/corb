@@ -28,6 +28,7 @@
  *
  */
 
+
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,9 +37,10 @@
 #include <math.h>
 #include <libcrbbasic/crbbasic.h>
 #include <libcrbbrot/crbbrot.h>
-#include "alphabet.h"
+#include <libcrbrna/crbrna.h>
 #include "brot_cmdline.h"
 #include "brot.h"
+
 
 static unsigned long*
 parse_input_structure (const char* structure)

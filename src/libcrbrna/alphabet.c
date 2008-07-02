@@ -26,6 +26,9 @@
  *  Revision History:
  *         - 2008Jun30 bienert: created
  *
+ *  ToDo:
+ *      - Add function 'alphabet_new_single'
+ *
  */
 
 
@@ -33,6 +36,7 @@
 /* #include <stdio.h> */
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 /* #include <assert.h> */
 #include <libcrbbasic/crbbasic.h>
 #include "alphabet.h"
@@ -41,6 +45,7 @@
 struct Alphabet {
       char* upper_case;
       char* lower_case;
+      char idx[CHAR_MAX];
       unsigned long size;
 };
 
@@ -61,6 +66,8 @@ struct Alphabet {
 Alphabet*
 alphabet_new (const char* file, const int line)
 {
+   unsigned char i;
+
    /* allocate 1 object */
    Alphabet* this = XOBJ_MALLOC(sizeof (Alphabet), file, line);
    
@@ -69,6 +76,11 @@ alphabet_new (const char* file, const int line)
       this->upper_case = NULL;
       this->lower_case = NULL;
       this->size       = 0;
+
+      for (i = 0; i < CHAR_MAX; i++)
+      {
+         this->idx[i] = CHAR_UNDEF;
+      }
    }
 
    return this;
@@ -89,24 +101,66 @@ alphabet_new (const char* file, const int line)
  * @param[in] file fill with name of calling file.
  * @param[in] line fill with calling line.
  */
-/*Alphabet*
+Alphabet*
 alphabet_new_pair (const char* upper,
                    const char* lower,
-                   unsigned long size,
+                   const unsigned long size,
                    const char* file, const int line)
 {
-  Alphabet* this = alphabet_new (file, line);
+   unsigned long i;
 
-  if ((this != NULL) && (size != 0))
-  {*/
-     /* copy strings */
-     /* set size */
-/*}
+   Alphabet* this = alphabet_new (file, line);
+   
+   if ((this != NULL) && (size != 0))
+   {
+      /* set size */
+      this->size = size;
 
-  return this;
-  }*/
+      /* copy strings */
+      this->upper_case = XMALLOC (this->size * sizeof (this->upper_case[0]));
+      if (this->upper_case == NULL)
+      {
+         alphabet_delete (this);
+         return NULL;
+      }
+      this->lower_case = XMALLOC (this->size * sizeof (this->upper_case[0]));   
+      if (this->upper_case == NULL)
+      {
+         alphabet_delete (this);
+         return NULL;
+      }
+
+      for (i = 0; i < this->size; i++)
+      {
+         this->upper_case[i] = upper[i];
+         this->lower_case[i] = lower[i];
+         this->idx[(unsigned) this->upper_case[i]] = i;
+         this->idx[(unsigned) this->lower_case[i]] = i;
+      }
+   }
+   
+   return this;
+}
 
 /* alpha_new_single */
+
+/** @brief Delete an alphabet.
+ *
+ * The destructor for @c Alphabet objects.
+ *
+ * @param[in] this object to be freed.
+ */
+void
+alphabet_delete (Alphabet* this)
+{
+   if (this != NULL)
+   {
+     XFREE (this->upper_case);
+     XFREE (this->lower_case);
+     XFREE (this);
+   }
+}
+
 
 /********************************   Altering   ********************************/
 /*********************************   Access   *********************************/
@@ -115,7 +169,8 @@ alphabet_new_pair (const char* upper,
 /******************* Comparison *******************/
 
 char
-transform_base_2_number (const char base)
+alphabet_base_2_no (const char base,
+                    const Alphabet* sigma __attribute__((unused)))
 {
    /* RNA: "AaUuGgCc" HP: "LlRr" */
    char* alphabet="AaUuGgCc";   /* RrYyMmKkSsWwHhBbVvDdNn */
@@ -142,7 +197,8 @@ transform_base_2_number (const char base)
 }
 
 char
-transform_number_2_base (const char base)
+alphabet_no_2_base (const char base,
+                    const Alphabet* sigma __attribute__((unused)))
 {
    /* RNA: "AUGC" HP: "LR" */
    char* alphabet="AUGC";   /* RrYyMmKkSsWwHhBbVvDdNn */
@@ -160,7 +216,7 @@ transform_number_2_base (const char base)
 }
 
 float**
-create_scoring_matrix (void)
+create_scoring_matrix (Alphabet* sigma)
 {
    float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (float));
 
@@ -169,79 +225,79 @@ create_scoring_matrix (void)
       return matrix;
    }
 
-   matrix[(int) transform_base_2_number ('A')]
-         [(int) transform_base_2_number ('A')] =  0.0f;
-   matrix[(int) transform_base_2_number ('A')]
-         [(int) transform_base_2_number ('U')] = -2.0f;
-   matrix[(int) transform_base_2_number ('A')]
-         [(int) transform_base_2_number ('G')] =  0.0f;
-   matrix[(int) transform_base_2_number ('A')]
-         [(int) transform_base_2_number ('C')] =  0.0f;
-   matrix[(int) transform_base_2_number ('U')]
-      [(int) transform_base_2_number ('A')] = -2.00f/*-1.99f*//*-1.99f*/;
-   matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('U')] =  0.0f;
-   matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('G')] = -1.5f;
-   matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('C')] =  0.0f;
-   matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('A')] =  0.0f;
-   matrix[(int) transform_base_2_number ('G')]
-      [(int) transform_base_2_number ('U')] = -1.50f/*-1.49f*//*-1.49f*/;
-   matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('G')] =  0.0f;
-   matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('C')] = -3.0f;
-   matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('A')] =  0.0f;
-   matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('U')] =  0.0f;
-   matrix[(int) transform_base_2_number ('C')]
-      [(int) transform_base_2_number ('G')] = -3.00f/*-2.99f*//*-2.99f*/;
-   matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('C')] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('A', sigma)]
+         [(int) alphabet_base_2_no ('A', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('A', sigma)]
+         [(int) alphabet_base_2_no ('U', sigma)] = -2.0f;
+   matrix[(int) alphabet_base_2_no ('A', sigma)]
+         [(int) alphabet_base_2_no ('G', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('A', sigma)]
+         [(int) alphabet_base_2_no ('C', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+      [(int) alphabet_base_2_no ('A', sigma)] = -2.00f/*-1.99f*//*-1.99f*/;
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+         [(int) alphabet_base_2_no ('U', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+         [(int) alphabet_base_2_no ('G', sigma)] = -1.5f;
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+         [(int) alphabet_base_2_no ('C', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('G', sigma)]
+         [(int) alphabet_base_2_no ('A', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('G', sigma)]
+      [(int) alphabet_base_2_no ('U', sigma)] = -1.50f/*-1.49f*//*-1.49f*/;
+   matrix[(int) alphabet_base_2_no ('G', sigma)]
+         [(int) alphabet_base_2_no ('G', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('G', sigma)]
+         [(int) alphabet_base_2_no ('C', sigma)] = -3.0f;
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+         [(int) alphabet_base_2_no ('A', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+         [(int) alphabet_base_2_no ('U', sigma)] =  0.0f;
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+      [(int) alphabet_base_2_no ('G', sigma)] = -3.00f/*-2.99f*//*-2.99f*/;
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+         [(int) alphabet_base_2_no ('C', sigma)] =  0.0f;
 
-   /* add random numbers to 3'-5' values */
+   /* add random nos to 3'-5' values */
    srand(30459);
    /* U - A */
-   matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('A')] = rand();
-   matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('A')] /=
-       pow (10, (floor (log10 (matrix[(int) transform_base_2_number ('U')]
-                                     [(int) transform_base_2_number ('A')]) 
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+         [(int) alphabet_base_2_no ('A', sigma)] = rand();
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+         [(int) alphabet_base_2_no ('A', sigma)] /=
+       pow (10, (floor (log10 (matrix[(int) alphabet_base_2_no ('U', sigma)]
+                                     [(int) alphabet_base_2_no ('A', sigma)]) 
                         + 1.0f)) + 2);
-   matrix[(int) transform_base_2_number ('U')]
-         [(int) transform_base_2_number ('A')] +=
-                                  matrix[(int) transform_base_2_number ('A')]
-                                  [(int) transform_base_2_number ('U')];
+   matrix[(int) alphabet_base_2_no ('U', sigma)]
+         [(int) alphabet_base_2_no ('A', sigma)] +=
+                                  matrix[(int) alphabet_base_2_no ('A', sigma)]
+                                  [(int) alphabet_base_2_no ('U', sigma)];
 
    /* G - U */
-  matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('U')] = rand();
-   matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('U')] /=
-       pow (10, (floor (log10 (matrix[(int) transform_base_2_number ('G')]
-                                     [(int) transform_base_2_number ('U')]) 
+  matrix[(int) alphabet_base_2_no ('G', sigma)]
+         [(int) alphabet_base_2_no ('U', sigma)] = rand();
+   matrix[(int) alphabet_base_2_no ('G', sigma)]
+         [(int) alphabet_base_2_no ('U', sigma)] /=
+       pow (10, (floor (log10 (matrix[(int) alphabet_base_2_no ('G', sigma)]
+                                     [(int) alphabet_base_2_no ('U', sigma)]) 
                         + 1.0f)) + 2);
-   matrix[(int) transform_base_2_number ('G')]
-         [(int) transform_base_2_number ('U')] +=
-                                  matrix[(int) transform_base_2_number ('U')]
-                                  [(int) transform_base_2_number ('G')];
+   matrix[(int) alphabet_base_2_no ('G', sigma)]
+         [(int) alphabet_base_2_no ('U', sigma)] +=
+                                  matrix[(int) alphabet_base_2_no ('U', sigma)]
+                                  [(int) alphabet_base_2_no ('G', sigma)];
 
    /* C - G */   
-   matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('G')] = rand();
-   matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('G')] /=
-       pow (10, (floor (log10 (matrix[(int) transform_base_2_number ('C')]
-                                     [(int) transform_base_2_number ('G')]) 
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+         [(int) alphabet_base_2_no ('G', sigma)] = rand();
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+         [(int) alphabet_base_2_no ('G', sigma)] /=
+       pow (10, (floor (log10 (matrix[(int) alphabet_base_2_no ('C', sigma)]
+                                     [(int) alphabet_base_2_no ('G', sigma)]) 
                         + 1.0f)) + 2);
-   matrix[(int) transform_base_2_number ('C')]
-         [(int) transform_base_2_number ('G')] +=
-                                  matrix[(int) transform_base_2_number ('G')]
-                                  [(int) transform_base_2_number ('C')];
+   matrix[(int) alphabet_base_2_no ('C', sigma)]
+         [(int) alphabet_base_2_no ('G', sigma)] +=
+                                  matrix[(int) alphabet_base_2_no ('G', sigma)]
+                                  [(int) alphabet_base_2_no ('C', sigma)];
 
    return matrix;
 }

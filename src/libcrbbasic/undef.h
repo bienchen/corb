@@ -39,7 +39,9 @@ extern "C" {
 #define UNDEF_H
 
 #define ULONG_UNDEF ULONG_MAX
-#define CHAR_UNDEF CHAR_MAX
+#define CHAR_UNDEF  CHAR_MAX
+#define UCHAR_UNDEF UCHAR_MAX
+
 
 #endif /* UNDEF_H */
 

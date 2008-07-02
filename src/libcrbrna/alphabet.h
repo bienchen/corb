@@ -47,6 +47,8 @@ alphabet_new (const char*, const int);
 
 #define ALPHABET_NEW alphabet_new (__FILE__, __LINE__)
 
+void
+alphabet_delete (Alphabet*);
 
 /********************************   Altering   ********************************/
 /*********************************   Access   *********************************/
@@ -56,13 +58,13 @@ alphabet_new (const char*, const int);
 
 
 char
-transform_base_2_number (const char);
+alphabet_base_2_no (const char, const Alphabet*);
 
 char
-transform_number_2_base (const char);
- 
+alphabet_no_2_base (const char, const Alphabet*);
+
 float**
-create_scoring_matrix (void);
+create_scoring_matrix (Alphabet*);
   
 #endif /* ALPHABET_H */
 

@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-/* #include <assert.h> */
+#include <assert.h>
 #include <libcrbbasic/crbbasic.h>
 #include "alphabet.h"
 
@@ -170,13 +170,15 @@ alphabet_delete (Alphabet* this)
 
 char
 alphabet_base_2_no (const char base,
-                    const Alphabet* sigma __attribute__((unused)))
+                    const Alphabet* sigma)
 {
    /* RNA: "AaUuGgCc" HP: "LlRr" */
    char* alphabet="AaUuGgCc";   /* RrYyMmKkSsWwHhBbVvDdNn */
    size_t alpha_size = strlen (alphabet);
    size_t i;
    unsigned long shift = 0;
+
+   assert (sigma != NULL);
 
    for (i = 0; i < alpha_size; i++)
    {

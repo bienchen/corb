@@ -623,7 +623,7 @@ seqmatrix_collate_mv (SeqMatrix* sm)
          {
             /* write position to seq */
             curr_max_prob = sm->matrix[sm->curr_matrix][i][j];
-            sm->sequence[j] = transform_number_2_base(i);
+            sm->sequence[j] = alphabet_no_2_base(i, sigma);
 /*3203211002132030030103203032032001030032132003002303201303003212300321320003*/
          }
       }

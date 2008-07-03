@@ -47,6 +47,13 @@ alphabet_new (const char*, const int);
 
 #define ALPHABET_NEW alphabet_new (__FILE__, __LINE__)
 
+Alphabet*
+alphabet_new_pair (const char*, const char*, const unsigned long,
+                   const char*, const int);
+
+#define ALPHABET_NEW_PAIR(U, L, S) \
+        alphabet_new_pair (U, L, S, __FILE__, __LINE__)
+
 void
 alphabet_delete (Alphabet*);
 

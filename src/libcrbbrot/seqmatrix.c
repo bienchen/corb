@@ -479,7 +479,8 @@ seqmatrix_collate_is (float fthresh,
                       unsigned long steps,
                       float temp,
                       float** scores,
-                      SeqMatrix* sm)
+                      SeqMatrix* sm,
+                      Alphabet* sigma)
 {
    unsigned long i, j, k, largest_amb_col = 0;
    float largest_amb;
@@ -579,7 +580,7 @@ seqmatrix_collate_is (float fthresh,
 
    if (! retval)
    {
-      retval = seqmatrix_collate_mv (sm);
+      retval = seqmatrix_collate_mv (sm, sigma);
    }
 
    return retval;
@@ -596,7 +597,7 @@ seqmatrix_collate_is (float fthresh,
  * @params[in] sm The sequence matrix.
  */
 int
-seqmatrix_collate_mv (SeqMatrix* sm)
+seqmatrix_collate_mv (SeqMatrix* sm, Alphabet* sigma)
 {
    unsigned long i,j;
    float curr_max_prob;

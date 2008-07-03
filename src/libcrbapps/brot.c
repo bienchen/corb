@@ -138,7 +138,7 @@ parse_input_structure (const char* structure)
 
 
 static PresetArray*
-parse_base_presettings (const struct brot_args_info* args_info)
+parse_base_presettings (const struct brot_args_info* args_info, Alphabet* sigma)
 {
    unsigned long i;
    unsigned long position = 0;
@@ -172,7 +172,7 @@ parse_base_presettings (const struct brot_args_info* args_info)
       if (  (len > 2)
           &&(args_info->fixed_nuc_arg[i][1] == ':'))
       {
-         base = transform_base_2_number (args_info->fixed_nuc_arg[i][0]);
+         base = alphabet_base_2_no (args_info->fixed_nuc_arg[i][0], sigma);
          if (base == CHAR_UNDEF)
          {
             error = 1;
@@ -214,7 +214,7 @@ parse_base_presettings (const struct brot_args_info* args_info)
                           "given), only one base allowed",
                           position,
                           presetarray_get_ith_base (already_set[position]-1,ps),
-                          transform_number_2_base (base));
+                          alphabet_no_2_base (base, sigma));
          error = 1;
       }
 
@@ -240,7 +240,8 @@ parse_base_presettings (const struct brot_args_info* args_info)
 }
 
 static PresetArray* 
-brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
+brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
+                                 Alphabet* sigma)
 {
    /* check input structure */
 
@@ -280,7 +281,7 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
       }
    }
   
-   return parse_base_presettings (args_info);
+   return parse_base_presettings (args_info, sigma);
 
 }
 
@@ -308,7 +309,8 @@ brot_main(const char *cmdline)
    int retval = 0;
    /* unsigned long i; */
    unsigned long* pairlist = NULL;
-   float** score_matrix;
+   float** score_matrix = NULL;
+   Alphabet* sigma = NULL;
 
    /* command line parsing */
    brot_cmdline_parser_init (&brot_args);
@@ -320,11 +322,20 @@ brot_main(const char *cmdline)
       retval = brot_cmdline_parser_required (&brot_args, get_progname());
    }
 
+   if (retval == 0)
+   {
+      sigma = ALPHABET_NEW_PAIR ("AUGC", "augc", 4);
+      if (sigma == NULL)
+      {
+         retval = 1;
+      }
+   }
+
    /* postprocess arguments */
    if (retval == 0)
    {
       /* get fixed sites */
-      presets = brot_cmdline_parser_postprocess (&brot_args);
+      presets = brot_cmdline_parser_postprocess (&brot_args, sigma);
       if (presets == NULL)
       {
          retval = 1;
@@ -363,10 +374,13 @@ brot_main(const char *cmdline)
                                sm);
    }
 
-   score_matrix = create_scoring_matrix ();
-   if (score_matrix == 0)
+   if (retval == 0)
    {
-      retval = 1;
+      score_matrix = create_scoring_matrix (sigma);
+      if (score_matrix == NULL)
+      {
+         retval = 1;
+      }
    }
 
    /* simulate */
@@ -386,7 +400,9 @@ brot_main(const char *cmdline)
       retval = seqmatrix_collate_is (0.99,
                                      brot_args.steps_arg / 2,
                                      brot_args.temp_arg,
-                                     score_matrix, sm);
+                                     score_matrix,
+                                     sm,
+                                     sigma);
       /*retval = seqmatrix_collate_mv (sm);*/
    }
 
@@ -400,6 +416,7 @@ brot_main(const char *cmdline)
    brot_cmdline_parser_free (&brot_args);
    presetarray_delete (presets);
    seqmatrix_delete (sm);
+   alphabet_delete (sigma);
    XFREE (pairlist);
    XFREE_2D ((void**)score_matrix);
 
@@ -412,3 +429,4 @@ brot_main(const char *cmdline)
       return EXIT_FAILURE;
    }
 }
+/*CGACGUUAAGUCGACAACAUACGACACGACGAAUACAACGUCGAACAAGCACGAUCACAACGUGCAACGUCGAAAC*/

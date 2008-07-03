@@ -29,6 +29,9 @@
  */
 
 
+#include <libcrbrna/crbrna.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -83,10 +86,15 @@ void
 seqmatrix_printf_sequence (SeqMatrix*);
 
 int
-seqmatrix_collate_is (float, unsigned long, float, float**, SeqMatrix*);
+seqmatrix_collate_is (float,
+                      unsigned long,
+                      float,
+                      float**,
+                      SeqMatrix*,
+                      Alphabet*);
 
 int
-seqmatrix_collate_mv (SeqMatrix*);
+seqmatrix_collate_mv (SeqMatrix*, Alphabet*);
 
 void
 seqmatrix_fprintf (FILE*, const int, const SeqMatrix*);

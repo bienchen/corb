@@ -134,8 +134,8 @@ alphabet_new_pair (const char* upper,
       {
          this->upper_case[i] = upper[i];
          this->lower_case[i] = lower[i];
-         this->idx[(unsigned) this->upper_case[i]] = i;
-         this->idx[(unsigned) this->lower_case[i]] = i;
+         this->idx[(int) this->upper_case[i]] = i;
+         this->idx[(int) this->lower_case[i]] = i;
       }
    }
    
@@ -173,42 +173,31 @@ alphabet_base_2_no (const char base,
                     const Alphabet* sigma)
 {
    /* RNA: "AaUuGgCc" HP: "LlRr" */
-   char* alphabet="AaUuGgCc";   /* RrYyMmKkSsWwHhBbVvDdNn */
-   size_t alpha_size = strlen (alphabet);
-   size_t i;
-   unsigned long shift = 0;
+   char no;
 
    assert (sigma != NULL);
-
-   for (i = 0; i < alpha_size; i++)
-   {
-      if (base == alphabet[i])
-      {
-         return i - shift;
-      }
-      if (i % 2 == 0)
-      {
-         shift++;
-      }
-   }
+   assert (sigma->idx != NULL);
    
-   THROW_ERROR_MSG ("Not a valid RNA nucleotide identifier: %c",
-                    base);
+   no = sigma->idx[(int) base];
 
-   return CHAR_UNDEF;
+   if (no == CHAR_UNDEF)
+   {
+      THROW_ERROR_MSG ("Not a valid RNA nucleotide identifier: %c", base);
+   }
+
+   return no;
 }
 
 char
 alphabet_no_2_base (const char base,
                     const Alphabet* sigma __attribute__((unused)))
 {
-   /* RNA: "AUGC" HP: "LR" */
-   char* alphabet="AUGC";   /* RrYyMmKkSsWwHhBbVvDdNn */
-   size_t alpha_size = strlen (alphabet);
-   
-   if ((size_t) base < alpha_size)
+   assert (sigma != NULL);
+   assert (sigma->upper_case != NULL);
+
+   if (sigma->size > (unsigned) base)
    {
-      return alphabet[(size_t) base];
+      return sigma->upper_case[(int) base];
    }
 
    THROW_ERROR_MSG ("Not a valid RNA nucleotide identifier: %d",

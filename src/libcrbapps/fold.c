@@ -56,7 +56,7 @@ enum directions{
 
 static int 
 fold_cmdline_parser_postprocess (const struct fold_args_info* args_info,
-                                 unsigned long *seqlen)
+                                 unsigned long *seqlen, Alphabet* sigma)
 {
    unsigned long i;
    *seqlen = 0;
@@ -80,7 +80,7 @@ fold_cmdline_parser_postprocess (const struct fold_args_info* args_info,
    for (i = 0; i < *seqlen; i++)
    {
        args_info->inputs[1][i] =
-          transform_base_2_number (args_info->inputs[1][i]);
+          alphabet_base_2_no (args_info->inputs[1][i], sigma);
 
       if (args_info->inputs[1][i] == CHAR_UNDEF)
       {
@@ -454,7 +454,7 @@ traceback_nussinov (const unsigned long i,
 static Str*
 pred_2D_structure_nussinov (const unsigned long l,
                             const char* sequence,
-                            const unsigned long seqlen)
+                            const unsigned long seqlen, Alphabet* sigma)
 {
    struct_cell** matrix = NULL;
    float** scores = NULL;
@@ -498,7 +498,7 @@ pred_2D_structure_nussinov (const unsigned long l,
    /* fill matrix */
    if (! error)
    {
-      scores = create_scoring_matrix ();
+      scores = create_scoring_matrix (sigma);
       if (scores == NULL)
       {
          error = 1;
@@ -545,6 +545,7 @@ fold_main(const char *cmdline)
    struct fold_args_info fold_args;
    Str* structure;
    unsigned long seqlen, i;
+   Alphabet* sigma = NULL;
    int retval = 0;
 
    /* command line parsing */
@@ -560,7 +561,8 @@ fold_main(const char *cmdline)
    /* postprocess arguments */
    if (retval == 0)
    {
-      retval = fold_cmdline_parser_postprocess (&fold_args, &seqlen);
+      sigma = ALPHABET_NEW_PAIR ("AUGC", "augc", 4);
+      retval = fold_cmdline_parser_postprocess (&fold_args, &seqlen, sigma);
    }
 
    /* do work */
@@ -568,7 +570,8 @@ fold_main(const char *cmdline)
    {
       structure = pred_2D_structure_nussinov (fold_args.loop_length_arg,
                                               fold_args.inputs[1],
-                                              seqlen);
+                                              seqlen,
+                                              sigma);
       if (structure == NULL)
       {
          retval = 1;
@@ -577,7 +580,7 @@ fold_main(const char *cmdline)
       {
          for (i = 0; i < seqlen; i++)
          {
-            mprintf ("%c", transform_number_2_base (fold_args.inputs[1][i]));
+            mprintf ("%c", alphabet_no_2_base (fold_args.inputs[1][i], sigma));
          }
          mprintf ("\n");
          mprintf ("%s\n", str_get (structure));
@@ -588,6 +591,7 @@ fold_main(const char *cmdline)
    if (retval == 0)
    { 
       str_delete (structure);
+      alphabet_delete (sigma);
    }
    fold_cmdline_parser_free (&fold_args);
 

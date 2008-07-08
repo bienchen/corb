@@ -756,8 +756,8 @@ seqmatrix_fprintf_sequence (FILE* stream, SeqMatrix* sm)
 {
    unsigned long i;
 
-   assert (sm);
-   assert (sm->sequence);
+   assert (sm != NULL);
+   assert (sm->sequence != NULL);
 
    /* mfprintf (stream, "%lu\n", (unsigned long) sm->cols); */
    for (i = 0; i < sm->cols; i++)

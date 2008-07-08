@@ -33,13 +33,15 @@
 
 
 #include <config.h>
-/* #include <stdio.h> */
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
 #include <assert.h>
 #include <libcrbbasic/crbbasic.h>
 #include "alphabet.h"
+
+
+#define RNA_STANDARD_LETTERS "AUGCaugc"
 
 
 struct Alphabet {
@@ -165,8 +167,63 @@ alphabet_delete (Alphabet* this)
 /********************************   Altering   ********************************/
 /*********************************   Access   *********************************/
 /******************* Size *******************/
+
+unsigned long
+alphabet_size (Alphabet* this)
+{
+   assert (this != NULL);
+
+   return this->size;
+}
+
+
 /******************* Searching *******************/
 /******************* Comparison *******************/
+
+/** @brief Check if an alphabet is the standard 'AUGC' RNA alphabet.
+ *
+ * Checks if an alphabet contains only the standrad RNA nucleotides 'AUGC'.\n
+ * Returns @c true or @c false.
+ *
+ * @param[in] sigma alphabet to be checked.
+ */
+bool
+alphabet_is_standard_rna (Alphabet* sigma)
+{
+   int i;
+   char* rna = RNA_STANDARD_LETTERS;
+   int a;
+
+   assert (sigma != NULL);
+   assert (sigma->idx != NULL);
+   assert (sigma->upper_case != NULL);
+   assert (sigma->lower_case != NULL);
+
+   /* simplest check: Size of alphabet */
+   if (sigma->size != (strlen (RNA_STANDARD_LETTERS) / 2))
+   {
+      THROW_ERROR_MSG ("Alphabet contains non-standard RNA nucleotides: %s%s",
+                       sigma->upper_case, sigma->lower_case);
+      return false;
+   }
+
+   /* check if an index exists for each nucleotide*/
+   for (i = 0; (unsigned) i < (sigma->size * 2); i++)
+   {
+      a = rna[i];
+      if (sigma->idx[a] == CHAR_UNDEF)
+      {
+         THROW_ERROR_MSG ("Alphabet does not contain standard RNA nucleotide "
+                          "'%c': %s%s", rna[i], sigma->upper_case,
+                          sigma->lower_case);
+         return false;         
+      }
+   }
+
+   return true;
+}
+
+
 
 char
 alphabet_base_2_no (const char base,

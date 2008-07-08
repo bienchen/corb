@@ -32,6 +32,7 @@
 #define CRBRNA_H
 
 #include <config.h>
-#include "alphabet.h" /* RNA related alphabets */
+#include "alphabet.h"  /* RNA related alphabets */
+#include "nn_scores.h" /* Nearest Neighbour model */
 
 #endif /* CRBRNA_H */

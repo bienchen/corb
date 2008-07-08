@@ -60,9 +60,15 @@ alphabet_delete (Alphabet*);
 /********************************   Altering   ********************************/
 /*********************************   Access   *********************************/
 /******************* Size *******************/
+
+unsigned long
+alphabet_size (Alphabet*);
+
 /******************* Searching *******************/
 /******************* Comparison *******************/
 
+bool
+alphabet_is_standard_rna (Alphabet*);
 
 char
 alphabet_base_2_no (const char, const Alphabet*);

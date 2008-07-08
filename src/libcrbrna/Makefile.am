@@ -1,4 +1,4 @@
-# Last modified: 2008-06-30.15
+# Last modified: 2008-07-03.14
 
 # Copyright (c) 2008 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2008 Center for Bioinformatics, University of Hamburg 
@@ -17,11 +17,29 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 noinst_LIBRARIES = libcrbrna.a
 
 libcrbrna_a_SOURCES = \
-	alphabet.c
+	alphabet.c    \
+	nn_scores.c
 
 noinst_HEADERS =      \
 	alphabet.h    \
+	nn_scores.h   \
 	crbrna.h
+
+# tests for the library
+LDADD =                                    \
+	../libcrbbasic/libcrbbasic.a       \
+	../libcrbfallback/libcrbfallback.a \
+	libcrbrna.a
+
+check_PROGRAMS =                           \
+	test_alphabet                      \
+	test_nn_scores
+
+test_alphabet_SOURCES   = test_alphabet.c
+
+test_nn_scores_SOURCES   = test_nn_scores.c
+
+TESTS = $(check_PROGRAMS)
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

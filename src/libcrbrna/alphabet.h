@@ -62,7 +62,7 @@ alphabet_delete (Alphabet*);
 /******************* Size *******************/
 
 unsigned long
-alphabet_size (Alphabet*);
+alphabet_size (const Alphabet*);
 
 /******************* Searching *******************/
 /******************* Comparison *******************/
@@ -77,7 +77,7 @@ char
 alphabet_no_2_base (const char, const Alphabet*);
 
 float**
-create_scoring_matrix (Alphabet*);
+create_scoring_matrix (const Alphabet*);
   
 #endif /* ALPHABET_H */
 

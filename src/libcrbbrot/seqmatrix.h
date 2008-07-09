@@ -77,6 +77,12 @@ sequence_matrix_simulate_scmf (const unsigned long,
                                SeqMatrix*,
                                float**);
 
+int
+sequence_matrix_simulate_scmf_nn (const unsigned long,
+                                  const float,
+                                  SeqMatrix*,
+                                  const NN_scores*);
+
 /*********************************   Output   *********************************/
 
 void
@@ -86,15 +92,15 @@ void
 seqmatrix_printf_sequence (SeqMatrix*);
 
 int
-seqmatrix_collate_is (float,
-                      unsigned long,
-                      float,
+seqmatrix_collate_is (const float,
+                      const unsigned long,
+                      const float,
                       float**,
                       SeqMatrix*,
-                      Alphabet*);
+                      const Alphabet*);
 
 int
-seqmatrix_collate_mv (SeqMatrix*, Alphabet*);
+seqmatrix_collate_mv (SeqMatrix*, const Alphabet*);
 
 void
 seqmatrix_fprintf (FILE*, const int, const SeqMatrix*);

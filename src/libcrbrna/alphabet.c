@@ -169,7 +169,7 @@ alphabet_delete (Alphabet* this)
 /******************* Size *******************/
 
 unsigned long
-alphabet_size (Alphabet* this)
+alphabet_size (const Alphabet* this)
 {
    assert (this != NULL);
 
@@ -264,7 +264,7 @@ alphabet_no_2_base (const char base,
 }
 
 float**
-create_scoring_matrix (Alphabet* sigma)
+create_scoring_matrix (const Alphabet* sigma)
 {
    float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (float));
 

@@ -804,7 +804,9 @@ nn_scores_delete (NN_scores* this)
  * @params[in] sigma Alphabet of the scheme.
  */
 void
-nn_scores_fprintf_G_stack (FILE* stream, NN_scores* scheme, Alphabet* sigma)
+nn_scores_fprintf_G_stack (FILE* stream,
+                           const NN_scores* scheme,
+                           const Alphabet* sigma)
 {
    unsigned long i, j, k, l;
    long tmp;
@@ -940,7 +942,7 @@ nn_scores_fprintf_G_stack (FILE* stream, NN_scores* scheme, Alphabet* sigma)
  * @param[in] line fill with calling line.
  */
 unsigned long
-nn_scores_bp_2_idx (char base1, char base2, Alphabet* sigma)
+nn_scores_bp_2_idx (const char base1, const char base2, const Alphabet* sigma)
 {
    assert (sigma != NULL);
 

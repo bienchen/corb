@@ -290,9 +290,9 @@ seqmatrix_init (const unsigned long* pairs,
  * @params[in] sm Sequence matrix.
  */
 static __inline__ int
-sequence_matrix_calc_eeff_row_scmf (unsigned long col,
+sequence_matrix_calc_eeff_row_scmf (const unsigned long col,
                                     SeqMatrix* sm,
-                                    float t,
+                                    const float t,
                                     float** scores)
 {
    unsigned long j;
@@ -423,6 +423,51 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
    return 0;
 }
 
+/** @brief Update a row of a sequence matrix using the NN
+ *
+ * Update a row of a sequence matrix in a SCMF simulation.
+ * Returns...
+ *
+ * @params[in] sm Sequence matrix.
+ */
+static __inline__ int
+sequence_matrix_calc_eeff_row_scmf_nn (const unsigned long col,
+                                       SeqMatrix* sm,
+                                       const float t __attribute__((unused)),
+                                       const NN_scores* scores __attribute__((unused)))
+{
+   short int new_matrix = 0;    /* matrix to be filled */
+   unsigned long j;             /* current row */
+   unsigned long l;             /* current row of paired base */
+
+   if (sm->curr_matrix == 0)
+   {
+      new_matrix = 1;
+   }
+
+   /* for each row */
+   for (j = 0; j < sm->rows; j++)
+   {
+      sm->matrix[new_matrix][j][col] = 0.0f;
+
+      /* calculate contribution of wanted interaction (if any) */
+      if (sm->pairlist[col])
+      {
+         /* sum over all states of pairing partner */
+         for (l = 0; l < sm->rows; l++)
+         {
+            /* determine direction later */
+            /*sm->matrix[new_matrix][j][col] +=
+                  (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
+                  * scores[j][l]);*/
+         }
+      }
+
+      /* calculate contribution of unwanted pairs */
+   }
+
+   return 0;
+}
 
 /** @brief Update the columns of a sequence matrix
  *
@@ -432,7 +477,9 @@ sequence_matrix_calc_eeff_row_scmf (unsigned long col,
  * @params[in] sm Sequence matrix.
  */
 static __inline__ int
-sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
+sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm,
+                                    const float t,
+                                    float** scores)
 {
    unsigned long i;
    int error = 0;
@@ -464,6 +511,48 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
    return error;
 }
 
+/** @brief Update the columns of a sequence matrix using the NN
+ *
+ * Update cols of a sequence matrix in a SCMF simulation.
+ * Returns...
+ *
+ * @params[in] sm Sequence matrix.
+ */
+static __inline__ int
+sequence_matrix_calc_eeff_col_scmf_nn (SeqMatrix* sm,
+                                       const float t,
+                                       const NN_scores* scores)
+{
+   int error = 0;
+   unsigned long i; 
+
+   /* for each col */
+   i = 0;
+
+   while ((!error) && (i < sm->cols))
+   {
+      /* calculate all rows of a non-fixed column */
+      if (!seqmatrix_is_col_fixed (i, sm))
+      {
+         error = sequence_matrix_calc_eeff_row_scmf_nn (i, sm, t, scores);
+      }
+
+      i++;
+   }
+
+   /* switch matrices */
+   if (sm->curr_matrix == 0)
+   {
+      sm->curr_matrix = 1;
+   }
+   else
+   {
+      sm->curr_matrix = 0;
+   }
+
+   return error;
+}
+
 /** @brief Transform a sequence matrix into an unambigouos sequence.
  *
  * Creates a sequence out of a sequence matrix in an iterative simulation
@@ -475,12 +564,12 @@ sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm, float t, float** scores)
  * @params[in] sm The sequence matrix.
  */
 int
-seqmatrix_collate_is (float fthresh,
-                      unsigned long steps,
-                      float temp,
+seqmatrix_collate_is (const float fthresh,
+                      const unsigned long steps,
+                      const float temp,
                       float** scores,
                       SeqMatrix* sm,
-                      Alphabet* sigma)
+                      const Alphabet* sigma)
 {
    unsigned long i, j, k, largest_amb_col = 0;
    float largest_amb;
@@ -597,7 +686,7 @@ seqmatrix_collate_is (float fthresh,
  * @params[in] sm The sequence matrix.
  */
 int
-seqmatrix_collate_mv (SeqMatrix* sm, Alphabet* sigma)
+seqmatrix_collate_mv (SeqMatrix* sm, const Alphabet* sigma)
 {
    unsigned long i,j;
    float curr_max_prob;
@@ -616,7 +705,7 @@ seqmatrix_collate_mv (SeqMatrix* sm, Alphabet* sigma)
    /* for all columns */
    for (j = 0; j < sm->cols; j++)
    {
-      curr_max_prob = 0.0f;
+      curr_max_prob = -1.0f;
       for (i = 0; i < sm->rows; i++)
       {
          /* find highest number */
@@ -739,6 +828,62 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    /* transform matrix to flat sequence */
    /* error = seqmatrix_collate_is (0.99, scores, sm); */
    /*error = seqmatrix_collate_mv (sm);*/
+
+   return error;
+}
+
+/** @brief Perform a SCMF simulation on a sequence matrix using the NN.
+ *
+ * Calculate the mean force field for a sequence matrix and update cells. This
+ * is done either until the system converges or for a specified number of
+ * steps. For results of the simulation, the matrix itself has to be
+ * interpreted.\n
+ * Returns ...
+ *
+ * @params[in] steps No. of max. simulation steps.
+ * @params[in] sm The sequence matrix.
+ */
+int
+sequence_matrix_simulate_scmf_nn (const unsigned long steps,
+                                  const float t_init,
+                                  SeqMatrix* sm,
+                                  const NN_scores* scores)
+{
+   int error= 0;
+   short int m = 0;             /* matrix to use */
+   float c_rate = 1.0f;         /* cooling factor */
+   float c_port = 0.0f;         /* cooling summand */
+   unsigned long t;             /* time */
+   float T = t_init;            /* current temperature */
+
+   assert (sm);
+   assert (scores);
+
+   if (sm->curr_matrix == 0)
+   {
+     m = 1;
+   }
+
+   /* determine cooling rate */
+   if (steps > 0)
+   {
+      c_rate = expf ((-1) * ((logf (t_init / 0.1f)) / (steps - 1)));
+   }
+
+   mfprintf (stderr, "Using NN model: %lu steps, init. T = %.2f, "
+             "cooling rate = %.2f\n", steps,
+             t_init, c_rate);
+
+   /* perform for a certain number of steps */
+   t = 0;
+   while ((!error) && (t < steps))
+   {
+      /* calculate Eeff */
+      error = sequence_matrix_calc_eeff_col_scmf_nn (sm, T, scores);
+
+      T = (T * c_rate) + c_port;
+      t++;
+   }
 
    return error;
 }

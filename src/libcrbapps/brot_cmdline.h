@@ -29,12 +29,17 @@ extern "C" {
 #define BROT_CMDLINE_PARSER_VERSION "0.1"
 #endif
 
+enum enum_scoring { scoring_arg_NN = 0 , scoring_arg_nussinov };
+
 /** @brief Where the command line options are stored */
 struct brot_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *detailed_help_help; /**< @brief Print help, including all details and hidden options, and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
+  enum enum_scoring scoring_arg;	/**< @brief Choose a different scoring scheme (default='NN').  */
+  char * scoring_orig;	/**< @brief Choose a different scoring scheme original value given at command line.  */
+  const char *scoring_help; /**< @brief Choose a different scoring scheme help description.  */
   char ** fixed_nuc_arg;	/**< @brief Preset a nucleotide in a position.  */
   char ** fixed_nuc_orig;	/**< @brief Preset a nucleotide in a position original value given at command line.  */
   int fixed_nuc_min; /**< @brief Preset a nucleotide in a position's minimum occurreces */
@@ -50,6 +55,7 @@ struct brot_args_info
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
+  unsigned int scoring_given ;	/**< @brief Whether scoring was given.  */
   unsigned int fixed_nuc_given ;	/**< @brief Whether fixed-nuc was given.  */
   unsigned int steps_given ;	/**< @brief Whether steps was given.  */
   unsigned int temp_given ;	/**< @brief Whether temp was given.  */
@@ -220,6 +226,8 @@ int brot_cmdline_parser_string_ext (const char *cmdline, struct brot_args_info *
  */
 int brot_cmdline_parser_required (struct brot_args_info *args_info,
   const char *prog_name);
+
+extern char *brot_cmdline_parser_scoring_values[] ;	/**< @brief Possible values for scoring.  */
 
 
 #ifdef __cplusplus

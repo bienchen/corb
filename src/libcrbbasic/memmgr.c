@@ -761,9 +761,9 @@ checked_xfree (void* ptr)
 void
 xfree_2d (void** matrix)
 {
-   /*if (matrix != NULL)
-     {*/
-   XFREE (*matrix);
-   XFREE (matrix);
-      /*}*/
+   if (matrix != NULL)
+   {
+      XFREE (*matrix);
+      XFREE (matrix);
+   }
 }

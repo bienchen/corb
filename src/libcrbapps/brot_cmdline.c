@@ -30,6 +30,8 @@ const char *brot_args_info_detailed_help[] = {
   "  -h, --help                    Print help and exit",
   "      --detailed-help           Print help, including all details and hidden \n                                  options, and exit",
   "  -V, --version                 Print version and exit",
+  "  -c, --scoring=NAME            Choose a different scoring scheme  (possible \n                                  values=\"NN\", \"nussinov\" default=`NN')",
+  "  Use a certain energy model to score the RNA sequence.                 \n  Possible NAMEs are \"NN\" and \"nussinov\". \"nussinov\" uses                 \n  a Nussinov modle, only counting Hbonds. \"NN\" invokes the                 \n  Nearest Neighbour model.",
   "  -n, --fixed-nuc=NUCLEOTIDE:INT\n                                Preset a nucleotide in a position",
   "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE the whole 15 letter RNA                  \n  alphabet is allowed. The position INT has to be in the range                  \n  of the structure.",
   "  -s, --steps=INT               Number of iterations  (default=`1000')",
@@ -48,16 +50,18 @@ init_help_array(void)
   brot_args_info_help[3] = brot_args_info_detailed_help[3];
   brot_args_info_help[4] = brot_args_info_detailed_help[5];
   brot_args_info_help[5] = brot_args_info_detailed_help[7];
-  brot_args_info_help[6] = 0; 
+  brot_args_info_help[6] = brot_args_info_detailed_help[9];
+  brot_args_info_help[7] = 0; 
   
 }
 
-const char *brot_args_info_help[7];
+const char *brot_args_info_help[8];
 
 typedef enum {ARG_NO
   , ARG_STRING
   , ARG_LONG
   , ARG_FLOAT
+  , ARG_ENUM
 } brot_cmdline_parser_arg_type;
 
 static
@@ -96,6 +100,8 @@ free_cmd_list(void)
 }
 
 
+char *brot_cmdline_parser_scoring_values[] = {"NN", "nussinov", 0} ;	/* Possible values for scoring.  */
+
 static char *
 gengetopt_strdup (const char *s);
 
@@ -105,6 +111,7 @@ void clear_given (struct brot_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->detailed_help_given = 0 ;
   args_info->version_given = 0 ;
+  args_info->scoring_given = 0 ;
   args_info->fixed_nuc_given = 0 ;
   args_info->steps_given = 0 ;
   args_info->temp_given = 0 ;
@@ -113,6 +120,8 @@ void clear_given (struct brot_args_info *args_info)
 static
 void clear_args (struct brot_args_info *args_info)
 {
+  args_info->scoring_arg = scoring_arg_NN;
+  args_info->scoring_orig = NULL;
   args_info->fixed_nuc_arg = NULL;
   args_info->fixed_nuc_orig = NULL;
   args_info->steps_arg = 1000;
@@ -130,11 +139,12 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->help_help = brot_args_info_detailed_help[0] ;
   args_info->detailed_help_help = brot_args_info_detailed_help[1] ;
   args_info->version_help = brot_args_info_detailed_help[2] ;
-  args_info->fixed_nuc_help = brot_args_info_detailed_help[3] ;
+  args_info->scoring_help = brot_args_info_detailed_help[3] ;
+  args_info->fixed_nuc_help = brot_args_info_detailed_help[5] ;
   args_info->fixed_nuc_min = -1;
   args_info->fixed_nuc_max = -1;
-  args_info->steps_help = brot_args_info_detailed_help[5] ;
-  args_info->temp_help = brot_args_info_detailed_help[7] ;
+  args_info->steps_help = brot_args_info_detailed_help[7] ;
+  args_info->temp_help = brot_args_info_detailed_help[9] ;
   
 }
 
@@ -222,6 +232,7 @@ free_string_field (char **s)
 
 /** @brief generic value variable */
 union generic_value {
+    int int_arg;
     long long_arg;
     float float_arg;
     char *string_arg;
@@ -270,6 +281,7 @@ static void
 brot_cmdline_parser_release (struct brot_args_info *args_info)
 {
   unsigned int i;
+  free_string_field (&(args_info->scoring_orig));
   free_multiple_string_field (args_info->fixed_nuc_given, &(args_info->fixed_nuc_arg), &(args_info->fixed_nuc_orig));
   free_string_field (&(args_info->steps_orig));
   free_string_field (&(args_info->temp_orig));
@@ -284,24 +296,66 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   clear_given (args_info);
 }
 
+/**
+ * @param val the value to check
+ * @param values the possible values
+ * @return the index of the matched value:
+ * -1 if no value matched,
+ * -2 if more than one value has matched
+ */
+static int
+check_possible_values(const char *val, char *values[])
+{
+  int i, found, last;
+  size_t len;
+
+  if (!val)   /* otherwise strlen() crashes below */
+    return -1; /* -1 means no argument for the option */
+
+  found = last = 0;
+
+  for (i = 0, len = strlen(val); values[i]; ++i)
+    {
+      if (strncmp(val, values[i], len) == 0)
+        {
+          ++found;
+          last = i;
+          if (strlen(values[i]) == len)
+            return i; /* exact macth no need to check more */
+        }
+    }
+
+  if (found == 1) /* one match: OK */
+    return last;
+
+  return (found ? -2 : -1); /* return many values or none matched */
+}
+
 
 static void
-write_into_file(FILE *outfile, const char *opt, const char *arg)
+write_into_file(FILE *outfile, const char *opt, const char *arg, char *values[])
 {
+  int found = -1;
   if (arg) {
-    fprintf(outfile, "%s=\"%s\"\n", opt, arg);
+    if (values) {
+      found = check_possible_values(arg, values);      
+    }
+    if (found >= 0)
+      fprintf(outfile, "%s=\"%s\" # %s\n", opt, arg, values[found]);
+    else
+      fprintf(outfile, "%s=\"%s\"\n", opt, arg);
   } else {
     fprintf(outfile, "%s\n", opt);
   }
 }
 
 static void
-write_multiple_into_file(FILE *outfile, int len, const char *opt, char **arg)
+write_multiple_into_file(FILE *outfile, int len, const char *opt, char **arg, char *values[])
 {
   int i;
   
   for (i = 0; i < len; ++i)
-    write_into_file(outfile, opt, (arg ? arg[i] : 0));
+    write_into_file(outfile, opt, (arg ? arg[i] : 0), values);
 }
 
 int
@@ -316,16 +370,18 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     }
 
   if (args_info->help_given)
-     write_into_file(outfile, "help", 0);
+    write_into_file(outfile, "help", 0, 0 );
   if (args_info->detailed_help_given)
-    write_into_file(outfile, "detailed-help", 0);
+    write_into_file(outfile, "detailed-help", 0, 0 );
   if (args_info->version_given)
-    write_into_file(outfile, "version", 0);
-  write_multiple_into_file(outfile, args_info->fixed_nuc_given, "fixed-nuc", args_info->fixed_nuc_orig);
+    write_into_file(outfile, "version", 0, 0 );
+  if (args_info->scoring_given)
+    write_into_file(outfile, "scoring", args_info->scoring_orig, brot_cmdline_parser_scoring_values);
+  write_multiple_into_file(outfile, args_info->fixed_nuc_given, "fixed-nuc", args_info->fixed_nuc_orig, 0);
   if (args_info->steps_given)
-    write_into_file(outfile, "steps", args_info->steps_orig);
+    write_into_file(outfile, "steps", args_info->steps_orig, 0);
   if (args_info->temp_given)
-    write_into_file(outfile, "temp", args_info->temp_orig);
+    write_into_file(outfile, "temp", args_info->temp_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -467,15 +523,15 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           if (min == max)
             {
               /* specific occurrences */
-              if (option_given != (unsigned int) min)
+              if (option_given != (unsigned) min)
                 {
                   fprintf (stderr, "%s: %s option occurrences must be %d\n",
                     prog_name, option_desc, min);
                   error = 1;
                 }
             }
-          else if (option_given < (unsigned int) min
-              || option_given > (unsigned int) max)
+          else if (option_given < (unsigned) min
+              || option_given > (unsigned) max)
             {
               /* range occurrences */
               fprintf (stderr, "%s: %s option occurrences must be between %d and %d\n",
@@ -486,7 +542,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
       else if (min >= 0)
         {
           /* at least check */
-           if (option_given < (unsigned int) min)
+          if (option_given < (unsigned) min)
             {
               fprintf (stderr, "%s: %s option occurrences must be at least %d\n",
                 prog_name, option_desc, min);
@@ -496,7 +552,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
       else if (max >= 0)
         {
           /* at most check */
-           if (option_given > (unsigned int) max)
+          if (option_given > (unsigned) max)
             {
               fprintf (stderr, "%s: %s option occurrences must be at most %d\n",
                 prog_name, option_desc, max);
@@ -886,7 +942,7 @@ static int shuffle_argv(int argc, char **argv,const struct option *longopts,
  * This distinction seems to be the most useful approach.
  *
  */
-static int check_long_opt(int argc, char *const *argv, const char *optstring,
+static int check_long_opt(int argc, char **argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		int print_errors, struct custom_getopt_data *d)
 {
@@ -1004,7 +1060,7 @@ static int check_long_opt(int argc, char *const *argv, const char *optstring,
 	return '?';
 }
 
-static int check_short_opt(int argc, char *const *argv, const char *optstring,
+static int check_short_opt(int argc, char **argv, const char *optstring,
 		int print_errors, struct custom_getopt_data *d)
 {
 	char c = *d->nextchar++;
@@ -1213,7 +1269,7 @@ static char *package_name = 0;
 static
 int update_arg(void *field, char **orig_field,
                unsigned int *field_given, unsigned int *prev_given, 
-               char *value, char *possible_values[],
+               char *value, char *possible_values[], const char *default_value,
                brot_cmdline_parser_arg_type arg_type,
                int check_ambiguity, int override,
                int no_free, int multiple_option,
@@ -1241,6 +1297,18 @@ int update_arg(void *field, char **orig_field,
       return 1; /* failure */
     }
 
+  if (possible_values && (found = check_possible_values((value ? value : default_value), possible_values)) < 0)
+    {
+      if (short_opt != '-')
+        fprintf (stderr, "%s: %s argument, \"%s\", for option `--%s' (`-%c')%s\n", 
+          package_name, (found == -2) ? "ambiguous" : "invalid", value, long_opt, short_opt,
+          (additional_error ? additional_error : ""));
+      else
+        fprintf (stderr, "%s: %s argument, \"%s\", for option `--%s'%s\n", 
+          package_name, (found == -2) ? "ambiguous" : "invalid", value, long_opt,
+          (additional_error ? additional_error : ""));
+      return 1; /* failure */
+    }
     
   if (field_given && *field_given && ! override)
     return 0;
@@ -1257,6 +1325,9 @@ int update_arg(void *field, char **orig_field,
     break;
   case ARG_FLOAT:
     if (val) *((float *)field) = (float)strtod (val, &stop_char);
+    break;
+  case ARG_ENUM:
+    if (val) *((int *)field) = found;
     break;
   case ARG_STRING:
     if (val) {
@@ -1309,7 +1380,7 @@ int update_arg(void *field, char **orig_field,
 static
 int update_multiple_arg_temp(struct generic_list **list,
                unsigned int *prev_given, const char *val,
-               char *possible_values[],
+               char *possible_values[], const char *default_value,
                brot_cmdline_parser_arg_type arg_type,
                const char *long_opt, char short_opt,
                const char *additional_error)
@@ -1328,7 +1399,7 @@ int update_multiple_arg_temp(struct generic_list **list,
     {
       add_node (list);
       if (update_arg((void *)&((*list)->arg), &((*list)->orig), 0,
-          prev_given, multi_token, possible_values, 
+          prev_given, multi_token, possible_values, default_value, 
           arg_type, 0, 1, 1, 1, long_opt, short_opt, additional_error)) {
         if (multi_token) free(multi_token);
         return 1; /* failure */
@@ -1383,6 +1454,8 @@ void update_multiple_arg(void *field, char ***orig_field,
     *orig_field = (char **) realloc (*orig_field, (field_given + prev_given) * sizeof (char *));
 
     switch(arg_type) {
+    case ARG_ENUM:
+      *((int **)field) = (int *)realloc (*((int **)field), (field_given + prev_given) * sizeof (int)); break;
     case ARG_LONG:
       *((long **)field) = (long *)realloc (*((long **)field), (field_given + prev_given) * sizeof (long)); break;
     case ARG_FLOAT:
@@ -1402,6 +1475,8 @@ void update_multiple_arg(void *field, char ***orig_field,
           (*((long **)field))[i + field_given] = tmp->arg.long_arg; break;
         case ARG_FLOAT:
           (*((float **)field))[i + field_given] = tmp->arg.float_arg; break;
+        case ARG_ENUM:
+          (*((int **)field))[i + field_given] = tmp->arg.int_arg; break;
         case ARG_STRING:
           (*((char ***)field))[i + field_given] = tmp->arg.string_arg; break;
         default:
@@ -1414,6 +1489,12 @@ void update_multiple_arg(void *field, char ***orig_field,
   } else { /* set the default value */
     if (default_value && ! field_given) {
       switch(arg_type) {
+      case ARG_ENUM:
+        if (! *((int **)field)) {
+          *((int **)field) = (int *)malloc (sizeof (int));
+          (*((int **)field))[0] = default_value->int_arg; 
+        }
+        break;
       case ARG_LONG:
         if (! *((long **)field)) {
           *((long **)field) = (long *)malloc (sizeof (long));
@@ -1482,6 +1563,7 @@ brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args
         { "help",	0, NULL, 'h' },
         { "detailed-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
+        { "scoring",	1, NULL, 'c' },
         { "fixed-nuc",	1, NULL, 'n' },
         { "steps",	1, NULL, 's' },
         { "temp",	1, NULL, 't' },
@@ -1493,7 +1575,7 @@ brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVn:s:t:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVc:n:s:t:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1514,10 +1596,22 @@ brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args
           brot_cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
+        case 'c':	/* Choose a different scoring scheme.  */
+        
+        
+          if (update_arg( (void *)&(args_info->scoring_arg), 
+               &(args_info->scoring_orig), &(args_info->scoring_given),
+              &(local_args_info.scoring_given), optarg, brot_cmdline_parser_scoring_values, "NN", ARG_ENUM,
+              check_ambiguity, override, 0, 0,
+              "scoring", 'c',
+              additional_error))
+            goto failure;
+        
+          break;
         case 'n':	/* Preset a nucleotide in a position.  */
         
           if (update_multiple_arg_temp(&fixed_nuc_list, 
-              &(local_args_info.fixed_nuc_given), optarg, 0, ARG_STRING,
+              &(local_args_info.fixed_nuc_given), optarg, 0, 0, ARG_STRING,
               "fixed-nuc", 'n',
               additional_error))
             goto failure;
@@ -1528,7 +1622,7 @@ brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args
         
           if (update_arg( (void *)&(args_info->steps_arg), 
                &(args_info->steps_orig), &(args_info->steps_given),
-              &(local_args_info.steps_given), optarg, 0, ARG_LONG,
+              &(local_args_info.steps_given), optarg, 0, "1000", ARG_LONG,
               check_ambiguity, override, 0, 0,
               "steps", 's',
               additional_error))
@@ -1540,7 +1634,7 @@ brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args
         
           if (update_arg( (void *)&(args_info->temp_arg), 
                &(args_info->temp_orig), &(args_info->temp_given),
-              &(local_args_info.temp_given), optarg, 0, ARG_FLOAT,
+              &(local_args_info.temp_given), optarg, 0, "100", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "temp", 't',
               additional_error))

@@ -300,6 +300,78 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
   - output
 */
 
+static int
+simulate_using_nn_scoring (struct brot_args_info* brot_args,
+                           Alphabet* sigma,
+                           SeqMatrix* sm)
+{
+   int error = 0;
+   NN_scores* scores = NN_SCORES_NEW_INIT(sigma);
+
+   if (scores == NULL)
+   {
+      error = 1;
+   }
+
+   /* simulate */
+   if (!error)
+   {
+      error = sequence_matrix_simulate_scmf_nn (brot_args->steps_arg,
+                                                brot_args->temp_arg,
+                                                sm,
+                                                scores);      
+   }
+
+   /* collate */
+   if (!error)
+   {
+      error = seqmatrix_collate_mv (sm, sigma);
+   }
+
+   nn_scores_delete (scores);
+
+   return error;
+}
+
+static int
+simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
+                                 const Alphabet* sigma,
+                                 SeqMatrix* sm)
+{
+   int error = 0;
+   float** score_matrix = NULL;
+
+   score_matrix = create_scoring_matrix (sigma);
+   if (score_matrix == NULL)
+   {
+      error = 1;
+   }
+
+   /* simulate */
+   if (!error)
+   {
+      error = sequence_matrix_simulate_scmf (brot_args->steps_arg,
+                                             brot_args->temp_arg,
+                                             sm,
+                                             score_matrix);
+   }
+
+   if (!error)
+   {
+      error = seqmatrix_collate_is (0.99,
+                                    brot_args->steps_arg / 2,
+                                    brot_args->temp_arg,
+                                    score_matrix,
+                                    sm,
+                                    sigma);
+      /* error = seqmatrix_collate_mv (sm, sigma); */
+   }
+   
+   XFREE_2D ((void**)score_matrix);
+
+   return error;
+}
+
 int
 brot_main(const char *cmdline)
 {
@@ -309,7 +381,6 @@ brot_main(const char *cmdline)
    int retval = 0;
    /* unsigned long i; */
    unsigned long* pairlist = NULL;
-   float** score_matrix = NULL;
    Alphabet* sigma = NULL;
 
    /* command line parsing */
@@ -376,36 +447,30 @@ brot_main(const char *cmdline)
 
    if (retval == 0)
    {
-      score_matrix = create_scoring_matrix (sigma);
-      if (score_matrix == NULL)
+      if (brot_args.scoring_arg == scoring_arg_NN)
       {
-         retval = 1;
+
+         /* special to NN usage: structure has to be of size >= 2 */
+         if (strlen (brot_args.inputs[1]) > 1)
+         {
+            retval = simulate_using_nn_scoring (&brot_args, sigma, sm);
+         }
+         else
+         {
+            THROW_ERROR_MSG ("Nearest Neighbour model can only be used with "
+                             "structures of size greater than 1, size of "
+                             "given structure (\"%s\"): %lu",
+                             brot_args.inputs[1], 
+                             (unsigned long) strlen (brot_args.inputs[1]));
+            retval = 1;
+         }
+      }
+      else if (brot_args.scoring_arg == scoring_arg_nussinov)
+      {
+         retval = simulate_using_nussinov_scoring (&brot_args, sigma, sm);
       }
    }
-
-   /* simulate */
-   if (retval == 0)
-   {
-      /* seqmatrix_print_2_stderr (3, sm); */
-      retval = sequence_matrix_simulate_scmf (brot_args.steps_arg,
-                                              brot_args.temp_arg,
-                                              sm,
-                                              score_matrix);
-   }
-
-   /* output */
-   if (retval == 0)
-   {
-      /* mfprintf (stderr, "COLLATING\n"); */
-      retval = seqmatrix_collate_is (0.99,
-                                     brot_args.steps_arg / 2,
-                                     brot_args.temp_arg,
-                                     score_matrix,
-                                     sm,
-                                     sigma);
-      /*retval = seqmatrix_collate_mv (sm);*/
-   }
-
+  
    if (retval == 0)
    {
       seqmatrix_printf_sequence (sm);
@@ -418,7 +483,6 @@ brot_main(const char *cmdline)
    seqmatrix_delete (sm);
    alphabet_delete (sigma);
    XFREE (pairlist);
-   XFREE_2D ((void**)score_matrix);
 
    if (retval == 0)
    {

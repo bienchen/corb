@@ -56,6 +56,11 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
+   mprintf ("Allowed base pairs:\n");
+   nn_scores_fprintf_bp_allowed (stdout, scores, sigma);
+   mprintf ("Base pair indeces:\n");
+   nn_scores_fprintf_bp_idx (stdout, scores, sigma);
+   mprintf ("Stacking energies:\n");
    nn_scores_fprintf_G_stack (stdout, scores, sigma);
 
    alphabet_delete (sigma);

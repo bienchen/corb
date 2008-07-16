@@ -35,10 +35,17 @@
 #include "alphabet.h"
 #include "nn_scores.h"
 
+/* no. of canonical base pairs + whobble GU */
+#define NO_ALLOWED_BP 6
 
 struct NN_scores {
-      long** G_stack;
+      long** G_stack;                /* stacking energies */
+      long** G_mm_stack;             /* stacks with one mismatch */
       unsigned long G_stack_size;
+      unsigned long G_mm_stack_size;
+      char** bp_allowed;             /* canonical base pairs + whobble GU */
+      unsigned long bp_allowed_size;
+      char** bp_idx;                 /* indeces for base pairs */
 };
 
 
@@ -63,8 +70,12 @@ nn_scores_new (const char* file, const int line)
    
    if (this != NULL)
    {
-      this->G_stack      = NULL;
-      this->G_stack_size = 0;
+      this->G_stack         = NULL;
+      this->G_stack_size    = 0;
+      this->G_mm_stack      = NULL;
+      this->G_mm_stack_size = 0;
+      this->bp_idx          = NULL;
+      this->bp_allowed      = NULL;
    }
 
    return this;
@@ -105,6 +116,65 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
          return NULL;
       }
 
+      /* create list of allowed base pairs */
+      this->bp_allowed_size = NO_ALLOWED_BP;
+      this->bp_allowed = (char**) XMALLOC_2D (this->bp_allowed_size, 2,
+                                              sizeof (char));
+      if (this->bp_allowed == NULL)
+      {
+         nn_scores_delete (this);
+         return NULL;        
+      }
+
+      a = alphabet_base_2_no('A', sigma);
+      u = alphabet_base_2_no('U', sigma);
+      g = alphabet_base_2_no('G', sigma);
+      c = alphabet_base_2_no('C', sigma);
+
+      this->bp_allowed[0][0] = c; this->bp_allowed[0][1] = g; /* CG */
+      this->bp_allowed[1][0] = g; this->bp_allowed[1][1] = c; /* GC */
+      this->bp_allowed[2][0] = g; this->bp_allowed[2][1] = u; /* GU */
+      this->bp_allowed[3][0] = u; this->bp_allowed[3][1] = g; /* UG */
+      this->bp_allowed[4][0] = a; this->bp_allowed[4][1] = u; /* AU */
+      this->bp_allowed[5][0] = u; this->bp_allowed[5][1] = a; /* UA */
+
+      /* create base pair indeces */
+      this->bp_idx = (char**) XMALLOC_2D (alphabet_size (sigma),
+                                              alphabet_size (sigma),
+                                              sizeof (char));
+      if (this->bp_idx == NULL)
+      {
+         nn_scores_delete (this);
+         return NULL;        
+      }
+
+      for (i = 0; i < this->bp_allowed_size; i++)
+      {
+         this->bp_idx[(int) this->bp_allowed[i][0]]
+                     [(int) this->bp_allowed[i][1]] = i;
+      }
+
+      this->bp_idx[(int) a][(int) a] = i; /* AA */
+      i++;
+      this->bp_idx[(int) a][(int) g] = i; /* AG */
+      i++;
+      this->bp_idx[(int) a][(int) c] = i; /* AC */
+      i++;
+      this->bp_idx[(int) u][(int) u] = i; /* UU */
+      i++;
+      this->bp_idx[(int) u][(int) c] = i; /* UC */
+      i++;
+      this->bp_idx[(int) g][(int) a] = i; /* GA */
+      i++;
+      this->bp_idx[(int) g][(int) g] = i; /* GG */
+      i++;
+      this->bp_idx[(int) c][(int) a] = i; /* CA */
+      i++;
+      this->bp_idx[(int) c][(int) u] = i; /* CU */
+      i++;
+      this->bp_idx[(int) c][(int) c] = i; /* CC */
+      i++;
+
       /* prepare table for stacking energies */
       this->G_stack_size = alphabet_size (sigma);
       for (i = 1; i < (alphabet_size (sigma) / 2); i++)
@@ -116,17 +186,18 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
                                            sizeof (long));
       this->G_stack_size *= this->G_stack_size;
 
+      if (this->G_stack == NULL)
+      {
+         nn_scores_delete (this);
+         return NULL;        
+      }
+
       for (i = 0; i < this->G_stack_size; i++)
       {
          this->G_stack[0][i] = 0;
       }
 
       /* set stacking energies (DG) */
-      a = alphabet_base_2_no('A', sigma);
-      u = alphabet_base_2_no('U', sigma);
-      g = alphabet_base_2_no('G', sigma);
-      c = alphabet_base_2_no('C', sigma);
-
       /* 5' - ip - 3' */
       /* 3' - jq - 5' --> i < p < q < j */
       /*    = ij qp    */
@@ -135,219 +206,219 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
       /* AU AU */
       /* 5'- AU 
              UA -5' */
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (a, u, sigma)] = -110;
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)u]] = -110;
 
       /* AU UA */
       /* 5'- AA
              UU -5' */
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (u, a, sigma)] = -90;
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)a]] = -90;
 
       /* AU UG */
       /* 5'- AG
              UU -5' */
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (u, g, sigma)] = -60;
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)g]] = -60;
      
 
       /* AU GU */
       /* 5'- AU
              UG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (g, u, sigma)] = -140;      
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)u]] = -140;      
 
       /* AU CG */
       /* 5'- AG
              UC -5'*/
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (c, g, sigma)] = -210;        
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)g]] = -210;        
 
       /* AU GC */
       /* 5'- AC
              UG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (g, c, sigma)] = -220; 
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)c]] = -220; 
 
       /* UA AU */
       /* 5'- UU 
              AA  -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (a, u, sigma)] = -90;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)a][(int)u]] = -90;
 
       /* UA UA */
       /* 5'- UA
              AU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (u, a, sigma)] = -130;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)u][(int)a]] = -130;
 
       /* UA UG */
       /* 5'- UG
              AU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (u, g, sigma)] = -100;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)u][(int)g]] = -100;
 
       /* UA GU */
       /* 5'- UU
              AG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (g, u, sigma)] = -130;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)g][(int)u]] = -130;
 
       /* UA CG */
       /* 5'- UG
              AC -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (c, g, sigma)] = -210;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)c][(int)g]] = -210;
 
       /* UA GC */
       /* 5'- UC
              AG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (g, c, sigma)] = -240;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)g][(int)c]] = -240;
       
       /* UG AU */
       /* 5'- UU
              GA -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (a, u, sigma)] = -60;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)u]] = -60;
 
       /* UG UA */
       /* 5'- UA 
              GU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (u, a, sigma)] = -100;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)a]] = -100;
 
       /* UG UG */
       /* 5'- UG 
              GU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (u, g, sigma)] = 30;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)g]] = 30;
 
       /* UG GU*/
       /* 5'- UU 
              GG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (g, u, sigma)] = -50;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)u]] = -50;
 
       /* UG CG */
       /* 5'- UG 
              GC -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (c, g, sigma)] = -140;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)g]] = -140;
 
       /* UG GC */
       /* 5'- UC 
              GG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (g, c, sigma)] = -150;
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)c]] = -150;
 
       /* GU AU */
       /* 5'- GU 
              UA -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (a, u, sigma)] = -140;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)u]] = -140;
 
       /* GU UA */
       /* 5'- GA 
              UU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (u, a, sigma)] = -130;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)a]] = -130;
 
       /* GU UG */
       /* 5'- GG 
              UU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (u, g, sigma)] = -50;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)g]] = -50;
 
       /* GU GU */
       /* 5'- GU 
              UG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (g, u, sigma)] = 130;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)u]] = 130;
 
       /* GU CG */
       /* 5'- GG 
              UC -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (c, g, sigma)] = -210;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)g]] = -210;
 
       /* GU GC */
       /* 5'- GC 
              UG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (g, c, sigma)] = -250;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)c]] = -250;
 
       /* CG AU */
       /* 5'- C
              G -5'*/
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (a, u, sigma)] = -210;
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)u]] = -210;
 
       /* CG UA */
       /* 5'- CA
              GU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (u, a, sigma)] = -210;
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)a]] = -210;
 
       /* CG UG */
       /* 5'- CG
              GU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (u, g, sigma)] = -140;
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)g]] = -140;
 
       /* CG GU */
       /* 5'- CU
              GG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (g, u, sigma)] = -210;
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)u]] = -210;
 
       /* CG CG */
       /* 5'- CG
              GC -5'*/
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (c, g, sigma)] = -240;
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)g]] = -240;
 
       /* CG GC */
       /* 5'- CC
              GG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (g, c, sigma)] = -330;
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)c]] = -330;
 
       /* GC AU */
       /* 5'- GU
              CA -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (a, u, sigma)] = -220;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)a][(int)u]] = -220;
 
       /* GC UA */
       /* 5'- GA
              CU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (u, a, sigma)] = -240;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)u][(int)a]] = -240;
 
       /* GC UG */
       /* 5'- GG
              CU -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (u, g, sigma)] = -150;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)u][(int)g]] = -150;
 
       /* GC GU */
       /* 5'- GU
              CG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (g, u, sigma)] = -250;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)g][(int)u]] = -250;
 
       /* GC CG */
       /* 5'- GG
              CC -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (c, g, sigma)] = -330;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)c][(int)g]] = -330;
 
       /* GC GC */
       /* 5'- GC
              CG -5'*/
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (g, c, sigma)] = -340;
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)g][(int)c]] = -340;
 
       /* stacks containing a mismatch */
       /* mi: param from mismatch_interior table */
@@ -356,423 +427,423 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
 
       /* CG AA */
       /* mi: 0 mh: -150 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (a, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (a, a, sigma)] = -75;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)a][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)a]] = -75;
 
       /* CG AC */
       /* mi: 0 mh: -150 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (a, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (a, c, sigma)] = -75;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)c]] = -75;
 
       /* CG AG */
       /* mi: -110 mh: -140 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (a, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (a, g, sigma)] = -125;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)g]] = -125;
 
       /* CG CA */
       /* mi: 0 mh: -100 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (c, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (c, a, sigma)] = -50;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)a]] = -50;
 
       /* CG CC */
       /* mi: 0 mh: -90 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (c, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (c, c, sigma)] = -45;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)c]] = -45;
 
       /* CG CU */
       /* mi: 0 mh: -80 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (c, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (c, u, sigma)] = -40;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)u]] = -40;
 
       /* CG GA */
       /* mi: -110 mh: -220 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (g, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (g, a, sigma)] = -165;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)a]] = -165;
 
       /* CG GG */
       /* mi: 0 mh: -160 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (g, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (g, g, sigma)] = -80;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)g]] = -80;
 
       /* CG UC */
       /* mi: 0 mh: -140 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (u, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (u, c, sigma)] = -70;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)c]] = -70;
 
       /* CG UU */
       /* mi: -70 mh: -200 */
-      assert (this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                           [nn_scores_bp_2_idx (u, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (c, g, sigma)]
-                   [nn_scores_bp_2_idx (u, u, sigma)] = -135;
+      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)u]] = -135;
 
       /* GC AA */
       /* mi: 0 mh: -110 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (a, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (a, a, sigma)] = -55;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)a][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)a][(int)a]] = -55;
 
       /* GC AC */
       /* mi: 0 mh: -150 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (a, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (a, c, sigma)] = -75;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)a][(int)c]] = -75;
 
       /* GC AG */
       /* mi: -110 mh: -130 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (a, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (a, g, sigma)] = -120;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)a][(int)g]] = -120;
 
       /* GC CA */
       /* mi: 0 mh: -110 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (c, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (c, a, sigma)] = -55;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)c][(int)a]] = -55;
      
       /* GC CC */
       /* mi: 0 mh: -70 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (c, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (c, c, sigma)] = -35;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)c][(int)c]] = -35;
 
       /* GC CU */
       /* mi: 0 mh: -50 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (c, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (c, u, sigma)] = -25;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)c][(int)u]] = -25;
 
       /* GC GA */
       /* mi: -110 mh: -240 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (g, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (g, a, sigma)] = -175;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)g][(int)a]] = -175;
 
       /* GC GG */
       /* mi: 0 mh: -140 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (g, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (g, g, sigma)] = -70;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)g][(int)g]] = -70;
 
       /* GC UC */
       /* mi: 0 mh: -100 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (u, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (u, c, sigma)] = -50;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)u][(int)c]] = -50;
 
       /* GC UU */
       /* mi: -70 mh: -150 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                           [nn_scores_bp_2_idx (u, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, c, sigma)]
-                   [nn_scores_bp_2_idx (u, u, sigma)] = -110;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                   [(int) this->bp_idx[(int)u][(int)u]] = -110;
 
       /* GU AA */
       /* mi: 70 mh: 20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (a, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (a, a, sigma)] = 45;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)a][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)a]] = 45;
 
       /* GU AC */
       /* mi: 70 mh: -50 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (a, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (a, c, sigma)] = 10;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)c]] = 10;
 
       /* GU AG */
       /* mi: -40 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (a, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (a, g, sigma)] = -35;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)g]] = -35;
 
       /* GU CA */
       /* mi: 70 mh: -10 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (c, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (c, a, sigma)] = 30;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)a]] = 30;
 
       /* GU CC */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (c, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (c, c, sigma)] = 25;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)c]] = 25;
 
       /* GU CU */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (c, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (c, u, sigma)] = 25;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)u]] = 25;
 
       /* GU GA */
       /* mi: -40 mh: -90 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (g, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (g, a, sigma)] = -65;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)a]] = -65;
 
       /* GU GG */
       /* mi: 70 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (g, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (g, g, sigma)] = 20;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)g]] = 20;
 
       /* GU UC */
       /* mi: 70 mh: -30 */     
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (u, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (u, c, sigma)] = 20;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)c]] = 20;
 
       /* GU UU */
       /* mi: 0 mh: -110 */
-      assert (this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                           [nn_scores_bp_2_idx (u, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (g, u, sigma)]
-                   [nn_scores_bp_2_idx (u, u, sigma)] = -55;
+      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)u]] = -55;
 
       /* UG AA */
       /* mi: 70 mh: -50 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (a, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (a, a, sigma)] = 10;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int)this->bp_idx[(int)a][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)a]] = 10;
 
       /* UG AC */
       /* mi: 70 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (a, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (a, c, sigma)] = 20;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)c]] = 20;
 
       /* UG AG */
       /* mi: -40 mh: -60 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (a, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (a, g, sigma)] = -50;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)a][(int)g]] = -50;
 
       /* UG CA */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (c, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (c, a, sigma)] = 25;      
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)a]] = 25;      
 
       /* UG CC */
       /* mi: 70 mh: -10 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (c, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (c, c, sigma)] = 30;   
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)c]] = 30;   
 
       /* UG CU */
       /* mi: 70 mh: 0 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (c, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (c, u, sigma)] = 35;   
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)c][(int)u]] = 35;   
 
       /* UG GA */
       /* mi: -40 mh: -80 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (g, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (g, a, sigma)] = -60; 
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)a]] = -60; 
 
       /* UG GG */
       /* mi: 70 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (g, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (g, g, sigma)] = 20; 
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)g][(int)g]] = 20; 
 
       /* UG UC */
       /* mi: 70 mh: -10 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (u, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (u, c, sigma)] = 30;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)c]] = 30;
 
       /* UG UU */
       /* mi: 0 mh: -80 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                           [nn_scores_bp_2_idx (u, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, g, sigma)]
-                   [nn_scores_bp_2_idx (u, u, sigma)] = -40;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                   [(int) this->bp_idx[(int)u][(int)u]] = -40;
 
       /* AU AA */
       /* mi: 70 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (a, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (a, a, sigma)] = 20;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int)this->bp_idx[(int)a][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)a]] = 20;
 
       /* AU AC */
       /* mi: 70 mh: -50 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (a, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (a, c, sigma)] = 10;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)c]] = 10;
 
       /* AU AG */
       /* mi: -40 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (a, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (a, g, sigma)] = -35;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)a][(int)g]] = -35;
 
       /* AU CA */
       /* mi: 70 mh: -10 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (c, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (c, a, sigma)] = 30;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)a]] = 30;
 
       /* AU CC */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (c, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (c, c, sigma)] = 25;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)c]] = 25;
 
       /* AU CU */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (c, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (c, u, sigma)] = 25;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)c][(int)u]] = 25;
 
       /* AU GA */
       /* mi: -40 mh: -110 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (g, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (g, a, sigma)] = -75;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)a]] = -75;
 
       /* AU GG */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (g, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (g, g, sigma)] = 25;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)g][(int)g]] = 25;
 
       /* AU UC */
       /* mi: 70 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (u, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (u, c, sigma)] = 20;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)c]] = 20;
 
       /* AU UU */
       /* mi: 0 mh: -110 */
-      assert (this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                           [nn_scores_bp_2_idx (u, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (a, u, sigma)]
-                   [nn_scores_bp_2_idx (u, u, sigma)] = -55;
+      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                   [(int) this->bp_idx[(int)u][(int)u]] = -55;
 
       /* UA AA */
       /* mi: 70 mh: -50 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (a, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (a, a, sigma)] = 10;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int)this->bp_idx[(int)a][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)a][(int)a]] = 10;
 
       /* UA AC */
       /* mi: 70 mh: -30 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (a, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (a, c, sigma)] = 20;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)a][(int)c]] = 20;
 
       /* UA AG */
       /* mi: -40 mh: -60 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (a, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (a, g, sigma)] = -50;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)a][(int)g]] = -50;
 
       /* UA CA */
       /* mi: 70 mh: -20 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (c, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (c, a, sigma)] = 25;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)c][(int)a]] = 25;
 
       /* UA CC */
       /* mi: 70 mh: -10 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (c, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (c, c, sigma)] = 30;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)c][(int)c]] = 30;
 
       /* UA CU */
       /* mi: 70 mh: 0 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (c, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (c, u, sigma)] = 35;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)c][(int)u]] = 35;
 
       /* UA GA */
       /* mi: -40 mh: -140 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (g, a, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (g, a, sigma)] = -90;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)g][(int)a]] = -90;
 
       /* UA GG */
       /* mi: 70 mh: -70 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (g, g, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (g, g, sigma)] = 0;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)g][(int)g]] = 0;
 
       /* UA UC */
       /* mi: 70 mh: -10 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (u, c, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (u, c, sigma)] = 30;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)u][(int)c]] = 30;
 
       /* UA UU */
       /* mi: 0 mh: -80 */
-      assert (this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                           [nn_scores_bp_2_idx (u, u, sigma)] == 0);
-      this->G_stack[nn_scores_bp_2_idx (u, a, sigma)]
-                   [nn_scores_bp_2_idx (u, u, sigma)] = -40;
+      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
+      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                   [(int) this->bp_idx[(int)u][(int)u]] = -40;
    }
 
    return this;
@@ -790,12 +861,132 @@ nn_scores_delete (NN_scores* this)
    if (this != NULL)
    {
      XFREE_2D ((void**)this->G_stack);
+     XFREE_2D ((void**)this->G_mm_stack);
+     XFREE_2D ((void**)this->bp_idx);
+     XFREE_2D ((void**)this->bp_allowed);
      XFREE (this);
    }
 }
 
 
 /*********************************   Output   *********************************/
+
+/** @brief Print the allowed base pairs of a scoring scheme to a stream.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma Alphabet of the scheme.
+ */
+void
+nn_scores_fprintf_bp_allowed (FILE* stream,
+                              const NN_scores* scheme,
+                              const Alphabet* sigma)
+{
+   unsigned long i;
+   char* string;
+   char* string_start;
+
+   assert (scheme != NULL);
+   assert (scheme->bp_allowed != NULL);
+   assert (sigma != NULL);
+
+   /* alloc memory for the string */
+   string = XMALLOC (sizeof (char) * ((scheme->bp_allowed_size * 3) + 1));
+   if (string == NULL)
+   {
+      return;
+   }   
+   string_start = string;
+
+   for (i = 0; i < scheme->bp_allowed_size; i++)
+   {
+      msprintf (string, "%c%c\n",
+                alphabet_no_2_base (scheme->bp_allowed[i][0], sigma),
+                alphabet_no_2_base (scheme->bp_allowed[i][1], sigma));
+      string += 3;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+}
+
+/** @brief Print the indeces of base pairs of a scoring scheme to a stream.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma Alphabet of the scheme.
+ */
+void
+nn_scores_fprintf_bp_idx (FILE* stream,
+                          const NN_scores* scheme,
+                          const Alphabet* sigma)
+{
+   unsigned long pline_width = 0;
+   char* string;
+   char* string_start;
+   unsigned long alpha_size = alphabet_size (sigma);
+   unsigned long i, j;
+   int rprec;
+
+   assert (scheme != NULL);
+   assert (scheme->bp_idx != NULL);
+   assert (sigma != NULL);
+
+   /* widest cell can be determined by the size of the alphabet */
+   rprec = alpha_size * alpha_size;
+   rprec = floor (log10 (rprec) + 1);
+   
+   /* calculate linewidth */
+   pline_width = rprec;
+   pline_width += 3;            /* \s|\s */
+   pline_width *= alpha_size;
+   pline_width += 2;            /* N\n */
+
+   string = XMALLOC (sizeof (char) *
+                     ((pline_width * (alpha_size + 1)) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+
+   string_start = string;
+
+   /* print base pairs horizontally */
+   msprintf (string, " "); /*skip first "N"*/
+   string += 1;
+
+   for (i = 0; i < alpha_size; i++)
+   {
+      msprintf (string, " | %*c", rprec, alphabet_no_2_base (i, sigma));
+      string += (rprec + 3);      
+   }
+   string[0] = '\n';
+   string++;
+
+   /* print index lines */
+   for (i = 0; i < alpha_size; i++)
+   {
+      msprintf (string, "%c", alphabet_no_2_base (i, sigma));
+      string++;
+      
+      for (j = 0; j < alpha_size; j++)
+      {
+         msprintf (string, " | %*d", rprec, scheme->bp_idx[i][j]);
+         string += (rprec + 3);         
+      }
+
+      string[0] = '\n';
+      string++;
+   }
+
+   /* print matrix */
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+}
 
 /** @brief Print the stacking energies of a scoring scheme to a stream.
  *
@@ -909,8 +1100,8 @@ nn_scores_fprintf_G_stack (FILE* stream,
                string += 3;
 
                msprintf (string, "%*ld", rprec,
-                         scheme->G_stack[nn_scores_bp_2_idx (i, j, sigma)]
-                                        [nn_scores_bp_2_idx (k, l, sigma)]);
+                         scheme->G_stack[(int) scheme->bp_idx[(int)i][(int)j]]
+                                        [(int) scheme->bp_idx[(int)k][(int)l]]);
                string += rprec;
             }
          }         
@@ -942,13 +1133,13 @@ nn_scores_fprintf_G_stack (FILE* stream,
  * @param[in] line fill with calling line.
  */
 unsigned long
-nn_scores_bp_2_idx (const char base1, const char base2, const Alphabet* sigma)
+nn_scores_bp_2_idx (const char base1, const char base2, const NN_scores* scheme)
 {
-   assert (sigma != NULL);
+   assert (scheme != NULL);
 
    /*mprintf ("(%c,%c) = %lu\n", alphabet_no_2_base(base1, sigma),
                                alphabet_no_2_base(base2, sigma),
                                base1 * alphabet_size (sigma) + base2);*/
 
-   return base1 * alphabet_size (sigma) + base2;
+   return scheme->bp_idx[(int)base1][(int)base2];
 }

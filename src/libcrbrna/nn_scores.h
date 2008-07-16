@@ -59,12 +59,16 @@ nn_scores_delete (NN_scores*);
 /******************************   Miscellaneous   *****************************/
 
 unsigned long
-nn_scores_bp_2_idx (const char, const char, const Alphabet*);
+nn_scores_bp_2_idx (const char, const char, const NN_scores*);
 
 void
-nn_scores_fprintf_G_stack (FILE* stream,
-                           const NN_scores* scheme,
-                           const Alphabet* sigma);
+nn_scores_fprintf_bp_allowed (FILE*, const NN_scores*, const Alphabet*);
+
+void
+nn_scores_fprintf_bp_idx (FILE*, const NN_scores*, const Alphabet*);
+
+void
+nn_scores_fprintf_G_stack (FILE*, const NN_scores*, const Alphabet*);
 
 #endif /* NN_SCORES_H */
 

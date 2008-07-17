@@ -176,11 +176,8 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
       i++;
 
       /* prepare table for stacking energies */
-      this->G_stack_size = alphabet_size (sigma);
-      for (i = 1; i < (alphabet_size (sigma) / 2); i++)
-      {
-         this->G_stack_size *= alphabet_size (sigma);
-      }
+      this->G_stack_size = this-> bp_allowed_size;
+
       this->G_stack = (long**) XMALLOC_2D (this->G_stack_size,
                                            this->G_stack_size,
                                            sizeof (long));
@@ -427,423 +424,423 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
 
       /* CG AA */
       /* mi: 0 mh: -150 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)a][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)a]] = -75;
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)a][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)a][(int)a]] = -75; */
 
-      /* CG AC */
-      /* mi: 0 mh: -150 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)c]] = -75;
+/*       /\* CG AC *\/ */
+/*       /\* mi: 0 mh: -150 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)a][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)a][(int)c]] = -75; */
 
-      /* CG AG */
-      /* mi: -110 mh: -140 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)g]] = -125;
+/*       /\* CG AG *\/ */
+/*       /\* mi: -110 mh: -140 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)a][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)a][(int)g]] = -125; */
 
-      /* CG CA */
-      /* mi: 0 mh: -100 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = -50;
+/*       /\* CG CA *\/ */
+/*       /\* mi: 0 mh: -100 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)c][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)c][(int)a]] = -50; */
 
-      /* CG CC */
-      /* mi: 0 mh: -90 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)c]] = -45;
+/*       /\* CG CC *\/ */
+/*       /\* mi: 0 mh: -90 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)c][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)c][(int)c]] = -45; */
 
-      /* CG CU */
-      /* mi: 0 mh: -80 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)u]] = -40;
+/*       /\* CG CU *\/ */
+/*       /\* mi: 0 mh: -80 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)c][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)c][(int)u]] = -40; */
 
-      /* CG GA */
-      /* mi: -110 mh: -220 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)a]] = -165;
+/*       /\* CG GA *\/ */
+/*       /\* mi: -110 mh: -220 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)g][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)g][(int)a]] = -165; */
 
-      /* CG GG */
-      /* mi: 0 mh: -160 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)g]] = -80;
+/*       /\* CG GG *\/ */
+/*       /\* mi: 0 mh: -160 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)g][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)g][(int)g]] = -80; */
 
-      /* CG UC */
-      /* mi: 0 mh: -140 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)c]] = -70;
+/*       /\* CG UC *\/ */
+/*       /\* mi: 0 mh: -140 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)u][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)u][(int)c]] = -70; */
 
-      /* CG UU */
-      /* mi: -70 mh: -200 */
-      assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)u]] = -135;
+/*       /\* CG UU *\/ */
+/*       /\* mi: -70 mh: -200 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                            [(int) this->bp_idx[(int)u][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)c][(int)g]] */
+/*                    [(int) this->bp_idx[(int)u][(int)u]] = -135; */
 
-      /* GC AA */
-      /* mi: 0 mh: -110 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)a][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)a][(int)a]] = -55;
+/*       /\* GC AA *\/ */
+/*       /\* mi: 0 mh: -110 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)a][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)a][(int)a]] = -55; */
 
-      /* GC AC */
-      /* mi: 0 mh: -150 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)a][(int)c]] = -75;
+/*       /\* GC AC *\/ */
+/*       /\* mi: 0 mh: -150 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)a][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)a][(int)c]] = -75; */
 
-      /* GC AG */
-      /* mi: -110 mh: -130 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)a][(int)g]] = -120;
+/*       /\* GC AG *\/ */
+/*       /\* mi: -110 mh: -130 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)a][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)a][(int)g]] = -120; */
 
-      /* GC CA */
-      /* mi: 0 mh: -110 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = -55;
+/*       /\* GC CA *\/ */
+/*       /\* mi: 0 mh: -110 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)c][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)c][(int)a]] = -55; */
      
-      /* GC CC */
-      /* mi: 0 mh: -70 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)c][(int)c]] = -35;
+/*       /\* GC CC *\/ */
+/*       /\* mi: 0 mh: -70 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)c][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)c][(int)c]] = -35; */
 
-      /* GC CU */
-      /* mi: 0 mh: -50 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)c][(int)u]] = -25;
+/*       /\* GC CU *\/ */
+/*       /\* mi: 0 mh: -50 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)c][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)c][(int)u]] = -25; */
 
-      /* GC GA */
-      /* mi: -110 mh: -240 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)g][(int)a]] = -175;
+/*       /\* GC GA *\/ */
+/*       /\* mi: -110 mh: -240 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)g][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)g][(int)a]] = -175; */
 
-      /* GC GG */
-      /* mi: 0 mh: -140 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)g][(int)g]] = -70;
+/*       /\* GC GG *\/ */
+/*       /\* mi: 0 mh: -140 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)g][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)g][(int)g]] = -70; */
 
-      /* GC UC */
-      /* mi: 0 mh: -100 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)u][(int)c]] = -50;
+/*       /\* GC UC *\/ */
+/*       /\* mi: 0 mh: -100 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)u][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)u][(int)c]] = -50; */
 
-      /* GC UU */
-      /* mi: -70 mh: -150 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)u][(int)u]] = -110;
+/*       /\* GC UU *\/ */
+/*       /\* mi: -70 mh: -150 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                            [(int) this->bp_idx[(int)u][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)c]] */
+/*                    [(int) this->bp_idx[(int)u][(int)u]] = -110; */
 
-      /* GU AA */
-      /* mi: 70 mh: 20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)a][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)a]] = 45;
+/*       /\* GU AA *\/ */
+/*       /\* mi: 70 mh: 20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)a][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)a][(int)a]] = 45; */
 
-      /* GU AC */
-      /* mi: 70 mh: -50 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)c]] = 10;
+/*       /\* GU AC *\/ */
+/*       /\* mi: 70 mh: -50 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)a][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)a][(int)c]] = 10; */
 
-      /* GU AG */
-      /* mi: -40 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)g]] = -35;
+/*       /\* GU AG *\/ */
+/*       /\* mi: -40 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)a][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)a][(int)g]] = -35; */
 
-      /* GU CA */
-      /* mi: 70 mh: -10 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = 30;
+/*       /\* GU CA *\/ */
+/*       /\* mi: 70 mh: -10 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)c][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)c][(int)a]] = 30; */
 
-      /* GU CC */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)c]] = 25;
+/*       /\* GU CC *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)c][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)c][(int)c]] = 25; */
 
-      /* GU CU */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)u]] = 25;
+/*       /\* GU CU *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)c][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)c][(int)u]] = 25; */
 
-      /* GU GA */
-      /* mi: -40 mh: -90 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)a]] = -65;
+/*       /\* GU GA *\/ */
+/*       /\* mi: -40 mh: -90 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)g][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)g][(int)a]] = -65; */
 
-      /* GU GG */
-      /* mi: 70 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)g]] = 20;
+/*       /\* GU GG *\/ */
+/*       /\* mi: 70 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)g][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)g][(int)g]] = 20; */
 
-      /* GU UC */
-      /* mi: 70 mh: -30 */     
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)c]] = 20;
+/*       /\* GU UC *\/ */
+/*       /\* mi: 70 mh: -30 *\/      */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)u][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)u][(int)c]] = 20; */
 
-      /* GU UU */
-      /* mi: 0 mh: -110 */
-      assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)u]] = -55;
+/*       /\* GU UU *\/ */
+/*       /\* mi: 0 mh: -110 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                            [(int) this->bp_idx[(int)u][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)g][(int)u]] */
+/*                    [(int) this->bp_idx[(int)u][(int)u]] = -55; */
 
-      /* UG AA */
-      /* mi: 70 mh: -50 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int)this->bp_idx[(int)a][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)a]] = 10;
+/*       /\* UG AA *\/ */
+/*       /\* mi: 70 mh: -50 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int)this->bp_idx[(int)a][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)a][(int)a]] = 10; */
 
-      /* UG AC */
-      /* mi: 70 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)c]] = 20;
+/*       /\* UG AC *\/ */
+/*       /\* mi: 70 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)a][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)a][(int)c]] = 20; */
 
-      /* UG AG */
-      /* mi: -40 mh: -60 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)g]] = -50;
+/*       /\* UG AG *\/ */
+/*       /\* mi: -40 mh: -60 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)a][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)a][(int)g]] = -50; */
 
-      /* UG CA */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = 25;      
+/*       /\* UG CA *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)c][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)c][(int)a]] = 25;       */
 
-      /* UG CC */
-      /* mi: 70 mh: -10 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)c]] = 30;   
+/*       /\* UG CC *\/ */
+/*       /\* mi: 70 mh: -10 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)c][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)c][(int)c]] = 30;    */
 
-      /* UG CU */
-      /* mi: 70 mh: 0 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)u]] = 35;   
+/*       /\* UG CU *\/ */
+/*       /\* mi: 70 mh: 0 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)c][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)c][(int)u]] = 35;    */
 
-      /* UG GA */
-      /* mi: -40 mh: -80 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)a]] = -60; 
+/*       /\* UG GA *\/ */
+/*       /\* mi: -40 mh: -80 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)g][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)g][(int)a]] = -60;  */
 
-      /* UG GG */
-      /* mi: 70 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)g]] = 20; 
+/*       /\* UG GG *\/ */
+/*       /\* mi: 70 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)g][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)g][(int)g]] = 20;  */
 
-      /* UG UC */
-      /* mi: 70 mh: -10 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)c]] = 30;
+/*       /\* UG UC *\/ */
+/*       /\* mi: 70 mh: -10 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)u][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)u][(int)c]] = 30; */
 
-      /* UG UU */
-      /* mi: 0 mh: -80 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)u]] = -40;
+/*       /\* UG UU *\/ */
+/*       /\* mi: 0 mh: -80 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                            [(int) this->bp_idx[(int)u][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)g]] */
+/*                    [(int) this->bp_idx[(int)u][(int)u]] = -40; */
 
-      /* AU AA */
-      /* mi: 70 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int)this->bp_idx[(int)a][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)a]] = 20;
+/*       /\* AU AA *\/ */
+/*       /\* mi: 70 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int)this->bp_idx[(int)a][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)a][(int)a]] = 20; */
 
-      /* AU AC */
-      /* mi: 70 mh: -50 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)c]] = 10;
+/*       /\* AU AC *\/ */
+/*       /\* mi: 70 mh: -50 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)a][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)a][(int)c]] = 10; */
 
-      /* AU AG */
-      /* mi: -40 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)g]] = -35;
+/*       /\* AU AG *\/ */
+/*       /\* mi: -40 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)a][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)a][(int)g]] = -35; */
 
-      /* AU CA */
-      /* mi: 70 mh: -10 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = 30;
+/*       /\* AU CA *\/ */
+/*       /\* mi: 70 mh: -10 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)c][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)c][(int)a]] = 30; */
 
-      /* AU CC */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)c]] = 25;
+/*       /\* AU CC *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)c][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)c][(int)c]] = 25; */
 
-      /* AU CU */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)u]] = 25;
+/*       /\* AU CU *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)c][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)c][(int)u]] = 25; */
 
-      /* AU GA */
-      /* mi: -40 mh: -110 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)a]] = -75;
+/*       /\* AU GA *\/ */
+/*       /\* mi: -40 mh: -110 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)g][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)g][(int)a]] = -75; */
 
-      /* AU GG */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)g]] = 25;
+/*       /\* AU GG *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)g][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)g][(int)g]] = 25; */
 
-      /* AU UC */
-      /* mi: 70 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)c]] = 20;
+/*       /\* AU UC *\/ */
+/*       /\* mi: 70 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)u][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)u][(int)c]] = 20; */
 
-      /* AU UU */
-      /* mi: 0 mh: -110 */
-      assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)u]] = -55;
+/*       /\* AU UU *\/ */
+/*       /\* mi: 0 mh: -110 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                            [(int) this->bp_idx[(int)u][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)a][(int)u]] */
+/*                    [(int) this->bp_idx[(int)u][(int)u]] = -55; */
 
-      /* UA AA */
-      /* mi: 70 mh: -50 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int)this->bp_idx[(int)a][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)a][(int)a]] = 10;
+/*       /\* UA AA *\/ */
+/*       /\* mi: 70 mh: -50 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int)this->bp_idx[(int)a][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)a][(int)a]] = 10; */
 
-      /* UA AC */
-      /* mi: 70 mh: -30 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)a][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)a][(int)c]] = 20;
+/*       /\* UA AC *\/ */
+/*       /\* mi: 70 mh: -30 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)a][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)a][(int)c]] = 20; */
 
-      /* UA AG */
-      /* mi: -40 mh: -60 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)a][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)a][(int)g]] = -50;
+/*       /\* UA AG *\/ */
+/*       /\* mi: -40 mh: -60 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)a][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)a][(int)g]] = -50; */
 
-      /* UA CA */
-      /* mi: 70 mh: -20 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)c][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = 25;
+/*       /\* UA CA *\/ */
+/*       /\* mi: 70 mh: -20 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)c][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)c][(int)a]] = 25; */
 
-      /* UA CC */
-      /* mi: 70 mh: -10 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)c][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)c][(int)c]] = 30;
+/*       /\* UA CC *\/ */
+/*       /\* mi: 70 mh: -10 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)c][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)c][(int)c]] = 30; */
 
-      /* UA CU */
-      /* mi: 70 mh: 0 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)c][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)c][(int)u]] = 35;
+/*       /\* UA CU *\/ */
+/*       /\* mi: 70 mh: 0 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)c][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)c][(int)u]] = 35; */
 
-      /* UA GA */
-      /* mi: -40 mh: -140 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)g][(int)a]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)g][(int)a]] = -90;
+/*       /\* UA GA *\/ */
+/*       /\* mi: -40 mh: -140 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)g][(int)a]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)g][(int)a]] = -90; */
 
-      /* UA GG */
-      /* mi: 70 mh: -70 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)g][(int)g]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)g][(int)g]] = 0;
+/*       /\* UA GG *\/ */
+/*       /\* mi: 70 mh: -70 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)g][(int)g]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)g][(int)g]] = 0; */
 
-      /* UA UC */
-      /* mi: 70 mh: -10 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)u][(int)c]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)u][(int)c]] = 30;
+/*       /\* UA UC *\/ */
+/*       /\* mi: 70 mh: -10 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)u][(int)c]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)u][(int)c]] = 30; */
 
-      /* UA UU */
-      /* mi: 0 mh: -80 */
-      assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                           [(int) this->bp_idx[(int)u][(int)u]] == 0);
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)u][(int)u]] = -40;
+/*       /\* UA UU *\/ */
+/*       /\* mi: 0 mh: -80 *\/ */
+/*       assert (this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                            [(int) this->bp_idx[(int)u][(int)u]] == 0); */
+/*       this->G_stack[(int) this->bp_idx[(int)u][(int)a]] */
+/*                    [(int) this->bp_idx[(int)u][(int)u]] = -40; */
    }
 
    return this;
@@ -999,25 +996,26 @@ nn_scores_fprintf_G_stack (FILE* stream,
                            const NN_scores* scheme,
                            const Alphabet* sigma)
 {
-   unsigned long i, j, k, l;
+   unsigned long i, j;
+   int d5, u5, d3, u3;
    long tmp;
    int rprec;
    unsigned long pline_width = 0;
-   unsigned long matrix_width;
-   unsigned long alpha_size = alphabet_size (sigma);
+   unsigned long matrix_edge;
    char* string;
    char* string_start;
 
    assert (scheme != NULL);
    assert (scheme->G_stack != NULL);
+   assert (scheme->bp_allowed != NULL);
    assert (sigma != NULL);
 
-   matrix_width = alpha_size * alpha_size;
+   matrix_edge = scheme->bp_allowed_size;
 
    /* dermine widest cell */
-   for (i = 0; i < matrix_width; i++)
+   for (i = 0; i < matrix_edge; i++)
    {
-      for (j = 0; j < matrix_width; j++)
+      for (j = 0; j < matrix_edge; j++)
       {
          rprec = 0;
          tmp = scheme->G_stack[i][j];
@@ -1040,18 +1038,18 @@ nn_scores_fprintf_G_stack (FILE* stream,
          {
             pline_width = rprec;
          } 
-      } 
+      }
    }
    rprec = pline_width;
 
    /* add up components of a line */
    pline_width += 3;            /*\s|\s*/
-   pline_width *= matrix_width;
+   pline_width *= matrix_edge;
    pline_width += 2;            /* + NN */
    pline_width += 1;            /* + \n */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * ((pline_width * (matrix_width + 1)) + 1));
+   string = XMALLOC (sizeof (char) * ((pline_width * (matrix_edge + 1)) + 1));
    if (string == NULL)
    {
       return;
@@ -1068,46 +1066,45 @@ nn_scores_fprintf_G_stack (FILE* stream,
       rprec--; /* lower cell width because we print 2 nucleotides */
    }
 
-   for (i = 0; i < alpha_size; i++)
+   for (i = 0; i < scheme->bp_allowed_size; i++)
    {
-      for (j = 0; j < alpha_size; j++)
-      {
-         msprintf (string, " | %*c%c", rprec, alphabet_no_2_base (i, sigma),
-                                              alphabet_no_2_base (j, sigma));
-         string += (rprec + 4);
-      }
+      msprintf (string, " | %*c%c", rprec,
+                alphabet_no_2_base (scheme->bp_allowed[i][0], sigma),
+                alphabet_no_2_base (scheme->bp_allowed[i][1], sigma));
+      string += (rprec + 4);
    }
+
    string[0] = '\n';
    string++;
    rprec++; /* restore cell width */
 
    /* print matrix */
-   for (i = 0; i < alpha_size; i++)
+   for (i = 0; i < scheme->bp_allowed_size; i++)
    {   
-      for (j = 0; j < alpha_size; j++)
-      {
-         /* column id */
-         msprintf (string, "%c%c", alphabet_no_2_base (i, sigma),
-                                   alphabet_no_2_base (j, sigma));
-         string += 2;
+      /* column id */
+      msprintf (string, "%c%c", 
+                alphabet_no_2_base (scheme->bp_allowed[i][0], sigma),
+                alphabet_no_2_base (scheme->bp_allowed[i][1], sigma));
+      string += 2;
+      
+      /* values for (i,j) */
+      for (j = 0; j < scheme->bp_allowed_size; j++)
+      {   
+            msprintf (string, " | ");
+            string += 3;
 
-         /* values for (i,j) (k, l) */
-         for (k = 0; k < alpha_size; k++)
-         {   
-            for (l = 0; l < alpha_size; l++)
-            {
-               msprintf (string, " | ");
-               string += 3;
+            u5 = scheme->bp_allowed[i][0];
+            d5 = scheme->bp_allowed[i][1];
+            u3 = scheme->bp_allowed[j][0];
+            d3 = scheme->bp_allowed[j][1];
 
-               msprintf (string, "%*ld", rprec,
-                         scheme->G_stack[(int) scheme->bp_idx[(int)i][(int)j]]
-                                        [(int) scheme->bp_idx[(int)k][(int)l]]);
-               string += rprec;
-            }
-         }         
-         string[0] = '\n';
-         string++;
-      }
+            msprintf (string, "%*ld", rprec,
+                      scheme->G_stack[(int) scheme->bp_idx[u5][d5]]
+                                     [(int) scheme->bp_idx[u3][d3]]);
+            string += rprec;
+      }       
+      string[0] = '\n';
+      string++;
    }
   
    /* print matrix */

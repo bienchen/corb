@@ -70,6 +70,9 @@ nn_scores_fprintf_bp_idx (FILE*, const NN_scores*, const Alphabet*);
 void
 nn_scores_fprintf_G_stack (FILE*, const NN_scores*, const Alphabet*);
 
+void
+nn_scores_fprintf_mm_G_stack (FILE*, const NN_scores*, const Alphabet*);
+
 #endif /* NN_SCORES_H */
 
 #ifdef __cplusplus

@@ -433,7 +433,7 @@ brot_main(const char *cmdline)
                 transform_number_2_base (presetarray_get_ith_base (i, presets)),
                                          presetarray_get_ith_base (i, presets));
       }
-      }*/
+   }*/
 
    /* init matrix */
    if (retval == 0)
@@ -449,7 +449,6 @@ brot_main(const char *cmdline)
    {
       if (brot_args.scoring_arg == scoring_arg_NN)
       {
-
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
@@ -473,6 +472,7 @@ brot_main(const char *cmdline)
   
    if (retval == 0)
    {
+      seqmatrix_print_2_stdout (2, sm);
       seqmatrix_printf_sequence (sm);
       mprintf ("\n");
    }

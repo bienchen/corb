@@ -114,7 +114,7 @@ extern char
 str_get_i (const Str*, const unsigned long);
 
 
-/******************* Size *******************/
+/*********************************    Size    *********************************/
 
 extern unsigned long
 str_length (const Str*);

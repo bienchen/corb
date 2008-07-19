@@ -877,6 +877,43 @@ nn_scores_delete (NN_scores* this)
 }
 
 
+/*********************************   Access   *********************************/
+
+/** @brief Return number of allowed base pairs in a schoring scheme.
+ *
+ * @params[in]  i position of base pair.
+ * @params[out] b5 5' base of the pair.
+ * @params[out] b3 3' base of the pair.
+ * @params[in] scheme The scoring scheme.
+ */
+void
+nn_scores_get_allowed_basepair (const unsigned i,
+                                char* b5,
+                                char* b3,
+                                const NN_scores* scheme)
+{
+   assert (scheme);
+   assert (i < scheme->bp_allowed_size);
+
+   b5[0] = scheme->bp_allowed[i][0];
+   b3[0] = scheme->bp_allowed[i][1];
+}
+
+
+/*********************************    Size    *********************************/
+
+/** @brief Return number of allowed base pairs in a schoring scheme.
+ *
+ * @params[in] scheme The scoring scheme.
+ */
+unsigned long
+nn_scores_no_allowed_basepairs (const NN_scores* scheme)
+{
+   assert (scheme);
+
+   return scheme->bp_allowed_size;
+}
+
 /*********************************   Output   *********************************/
 
 /** @brief Print the allowed base pairs of a scoring scheme to a stream.

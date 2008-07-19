@@ -56,10 +56,18 @@ void
 nn_scores_delete (NN_scores*);
 
 
-/******************************   Miscellaneous   *****************************/
+/*********************************   Access   *********************************/
+
+void
+nn_scores_get_allowed_basepair (unsigned, char*, char*, const NN_scores*);
+
+
+/*********************************    Size    *********************************/
 
 unsigned long
-nn_scores_bp_2_idx (const char, const char, const NN_scores*);
+nn_scores_no_allowed_basepairs (const NN_scores*);
+
+/*********************************   Output   *********************************/
 
 void
 nn_scores_fprintf_bp_allowed (FILE*, const NN_scores*, const Alphabet*);
@@ -72,6 +80,13 @@ nn_scores_fprintf_G_stack (FILE*, const NN_scores*, const Alphabet*);
 
 void
 nn_scores_fprintf_mm_G_stack (FILE*, const NN_scores*, const Alphabet*);
+
+
+/******************************   Miscellaneous   *****************************/
+
+unsigned long
+nn_scores_bp_2_idx (const char, const char, const NN_scores*);
+
 
 #endif /* NN_SCORES_H */
 

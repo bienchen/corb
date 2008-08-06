@@ -32,7 +32,6 @@
 #define CRBBROT_H
 
 #include <config.h>
-#include "preset.h"    /* Store fixed sites for SCMF */
 #include "seqmatrix.h" /* Sequence matrix for SCMF */
 
 #endif /* CRBBROT_H */

@@ -61,6 +61,13 @@ nn_scores_delete (NN_scores*);
 void
 nn_scores_get_allowed_basepair (unsigned, char*, char*, const NN_scores*);
 
+long
+nn_scores_get_G_stack (const char, const char, const char, const char,
+                       const NN_scores*);
+
+long
+nn_scores_get_G_mm_stack (const char, const char, const char, const char,
+                          const NN_scores*);
 
 /*********************************    Size    *********************************/
 

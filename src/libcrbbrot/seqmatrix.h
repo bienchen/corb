@@ -59,17 +59,23 @@ seqmatrix_delete (SeqMatrix*);
 
 /*********************************   Access   *********************************/
 
-/*__inline__*/ bool
-seqmatrix_is_row_fixed (unsigned long, SeqMatrix*);
+bool
+seqmatrix_is_col_fixed (const unsigned long, const SeqMatrix*);
 
+unsigned long
+seqmatrix_get_width (const SeqMatrix*);
 
 /********************************   Altering   ********************************/
 
 int
 seqmatrix_init (const unsigned long*,
                 const unsigned long,
-                const PresetArray*,
                 SeqMatrix*);
+
+void
+seqmatrix_fix_col (const unsigned long,
+                   const unsigned long,
+                   SeqMatrix*);
 
 int
 sequence_matrix_simulate_scmf (const unsigned long,
@@ -81,7 +87,7 @@ int
 sequence_matrix_simulate_scmf_nn (const unsigned long,
                                   const float,
                                   SeqMatrix*,
-                                  const NN_scores*);
+                                  const NN_scores*, const Alphabet*);
 
 /*********************************   Output   *********************************/
 
@@ -98,6 +104,14 @@ seqmatrix_collate_is (const float,
                       float**,
                       SeqMatrix*,
                       const Alphabet*);
+
+int
+seqmatrix_collate_is_nn (const float,
+                         const unsigned long,
+                         const float,
+                         const NN_scores*,
+                         SeqMatrix*,
+                         const Alphabet*);
 
 int
 seqmatrix_collate_mv (SeqMatrix*, const Alphabet*);

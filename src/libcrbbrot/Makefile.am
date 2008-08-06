@@ -1,4 +1,4 @@
-# Last modified: 2008-04-22.10
+# Last modified: 2008-08-05.18
 
 # Copyright (c) 2008 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2008 Center for Bioinformatics, University of Hamburg 
@@ -18,11 +18,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 noinst_LIBRARIES = libcrbbrot.a
 
 libcrbbrot_a_SOURCES = \
-	preset.c       \
 	seqmatrix.c
 
 noinst_HEADERS =       \
-	preset.h       \
 	seqmatrix.h    \
 	crbbrot.h
 

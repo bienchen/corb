@@ -26,6 +26,7 @@
  *  Revision History:
  *         - 2008Mar05 bienert: created
  *
+ * ToDo: seqmatrix_init via macro because it allocates memory!!!
  */
 
 
@@ -38,12 +39,12 @@
 #include <math.h>
 #include <libcrbbasic/crbbasic.h>
 #include <libcrbrna/crbrna.h>
-#include "preset.h"
 #include "seqmatrix.h"
 
 /* use until something better is found */
 #define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
-#define R_GAS 1 /*8.314472*/
+#define R_GAS 1 
+#define R_GAS_NN 8.314472
 
 /* matrix orders */
 enum seqmatrix_matrix_no{
@@ -127,16 +128,18 @@ seqmatrix_delete (SeqMatrix* sm)
 
 
 /*********************************   Access   *********************************/
-/** @brief Check if a row is set as 'fixed'.
+
+/** @brief Check if a column is set as 'fixed'.
  *
- * Check if a certain row of a sequence matrix is preempted with a fixed site.\n
+ * Check if a certain column of a sequence matrix is preempted with a fixed
+ * site.\n
  * Returns 'true', if the site is set, 'false' otherwise.
  *
- * @param[in] row The row to check.
+ * @param[in] col The column to check.
  * @param[in] sm The sequence matrix
  */
 __inline__ bool
-seqmatrix_is_col_fixed (unsigned long col, SeqMatrix* sm)
+seqmatrix_is_col_fixed (const unsigned long col, const SeqMatrix* sm)
 {
    assert (sm);
    assert (sm->matrix[sm->curr_matrix]);
@@ -151,8 +154,56 @@ seqmatrix_is_col_fixed (unsigned long col, SeqMatrix* sm)
    return false;
 }
 
+/** @brief get the width of a sequence matrix.
+ *
+ * Returns the number of columns of a sequence matrix.
+ *
+ * @param[in] sm sequence matrix.
+ */
+unsigned long
+seqmatrix_get_width (const SeqMatrix* sm)
+{
+   assert (sm);
+
+   return sm->cols;
+}
 
 /********************************   Altering   ********************************/
+
+/** @brief Fix a certain column in a sequence matrix.
+ *
+ * Sets a certain cell of a sequenc ematrix to 1 and marks it to be preserved.
+ * 
+ * @param[in] row row to be fixed.
+ * @param[in] col column to be fixed.
+ * @param[in] sm sequence matrix.
+ */
+void
+seqmatrix_fix_col (const unsigned long row, const unsigned long col,
+                   SeqMatrix* sm)
+{
+   unsigned long i;
+
+   assert (sm);
+   assert (sm->fixed_sites);
+   assert (col < sm->cols);
+   assert (row < sm->rows);
+
+   /* fix site */
+   sm->fixed_sites[(col / CHAR_BIT)] |= 1 << (col % CHAR_BIT);
+
+   /* set everything to 0 */
+   for (i = 0; i < sm->rows; i++)
+   {
+      sm->matrix[F_Mtrx][i][col] = 0.0f;
+      sm->matrix[S_Mtrx][i][col] = 0.0f;
+   }
+
+   /* set demand to 1 */
+   sm->matrix[F_Mtrx][row][col] = 1.0f;
+   sm->matrix[S_Mtrx][row][col] = 1.0f;
+}
+
 
 /** @brief Initialise a sequence matrix.
  *
@@ -160,19 +211,16 @@ seqmatrix_is_col_fixed (unsigned long col, SeqMatrix* sm)
  * set of sites can be fixed to exclude them from the simulation.\n
  * Returns 0 on success, @c ERR_SM_ALLOC indicating memory problems.
  *
+ * @param[in] pairs base pairs.
  * @param[in] size Size of the structure.
- * @param[in] presettings List of fixed sites.
  * @param[in] sm Sequence matrix to initialise.
  */
 int
 seqmatrix_init (const unsigned long* pairs,
                 const unsigned long size,
-                const PresetArray* presettings,
                 SeqMatrix* sm)
 {
-   unsigned long i, j;
-   unsigned long pslen;
-   unsigned long row, col;
+   unsigned long i/* , j */;
    /* float whobble = 0.001f; */
 
    assert (sm);
@@ -257,42 +305,6 @@ seqmatrix_init (const unsigned long* pairs,
    if (sm->fixed_sites == NULL)
    {
       return ERR_SM_ALLOC;
-   }
-
-   if (presettings != NULL)
-   {
-      /* use, if rows are adjacent in memory
-        init_row[0] = 0.0f;
-        for (i = 1; i < SM_ROWS; i++)
-        {
-        init_row[i] = init_row[0];
-        }
-      */
-
-      pslen = presetarray_get_length (presettings);
-      for (i = 0; i < pslen; i++)
-      {
-         row = presetarray_get_ith_base (i, presettings);
-         col = presetarray_get_ith_pos (i, presettings);
-
-         /* set site as fixed */
-         sm->fixed_sites[(col / CHAR_BIT)] |= 
-            1 << (col % CHAR_BIT);
-
-         /* set probability in matrix to 1 */
-         /* use, if rows are the connected memory areas
-           memcpy (sm->matrix[row], init_row, sizeof (*(sm->matrix)) * SM_ROWS);
-         */
-         if (size > 0)
-         {
-            for (j = 0; j < SM_ROWS; j++)
-            {
-               sm->matrix[F_Mtrx][j][col] = 0.0f;
-            }
-            sm->matrix[F_Mtrx][row][col] = 1.0f;
-            sm->matrix[S_Mtrx][row][col] = 1.0f;
-         }
-      }
    }
 
    return 0;
@@ -409,26 +421,12 @@ sequence_matrix_calc_eeff_row_scmf (const unsigned long col,
          }
       }
       tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 1.25 */
-      /* mfprintf (stderr, "tmp_neg: %3f ", tmp_neg); */
       tmp_het = (tmp_het / het_count) * (3.0f); /* 0.1747 */
-      /* mfprintf (stderr, "tmp_het: %3f ", tmp_het); */
       sm->matrix[new_matrix][j][col] += tmp_neg;
       sm->matrix[new_matrix][j][col] += tmp_het;
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
-      /* mfprintf (stderr, "\n"); */
    }
-   /* mfprintf (stderr, "\n"); */
-
-/*T: 0.100002 S: -0.318406*/
-/*3220130003312003000003022030232000000032312003002133200030003220312013320003*/
-
-/*3.0 | -0.056336*/
-/*3302013000322000000003321021302000000031203000002233200000003223320131220000*/
-
-/*6.0 | -0.116815*/
-/*3020213003122000000003302032132000000032032000002133200000003220320313120000*/
-
 
    return 0;
 }
@@ -449,11 +447,21 @@ sequence_matrix_calc_eeff_row_scmf_nn (const unsigned long col,
 {
    short int new_matrix = F_Mtrx;    /* matrix to be filled */
    unsigned long j;                  /* current row */
-   unsigned long l;                  /* current row of paired base */
+   unsigned long l, k, m;            /* current allowed base pair */
    unsigned long bp_allowed;         /* no. of allowed base pairs */
-   char bi, bj;                      /* container for bases i and j */
+   unsigned long alpha_size;         /* size of the alphabet */
+   char bi, bj, bip1, bjm1;          /* container for bases i and j */
+   float tmp_neg;                    /* negative interaction term */
+   float tmp_het;                    /* heterogenity term */
+   float het_rate;                   /* decrease of influence */
+   float het_count;
+   long G_stack_score;
+   float update_prob;
+
+   het_rate = ((-1) * ((logf (1 / 0.000001f)) / (sm->cols)));
 
    bp_allowed = nn_scores_no_allowed_basepairs (scores);
+   alpha_size = alphabet_size (sigma);
 
    if (sm->curr_matrix == F_Mtrx)
    {
@@ -469,6 +477,8 @@ sequence_matrix_calc_eeff_row_scmf_nn (const unsigned long col,
       /* calculate contribution of wanted interaction (if any) */
       if (sm->pairlist[col])
       {
+         /* mfprintf (stderr, "Current: %lu %c\n", col, */
+/*                    alphabet_no_2_base (j,sigma)); */
          if (col < sm->pairlist[col])
          {  /* we are at the "i part" of a base pair */
             /* 5' - ii+1
@@ -484,31 +494,270 @@ sequence_matrix_calc_eeff_row_scmf_nn (const unsigned long col,
                /* for all allowed base pairs */
                for (l = 0; l < bp_allowed; l++)
                {
-                  /* does pair match with current base? */
                   nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-                  alphabet_no_2_base (bi, sigma);
-                 /*  if () */
-/*                   { */
-/*                   } */
-                  /* pair each pair with all allowed pairs */
-                  /* count, how many interactions are used */
-                  /* normalise value */
+                  /* does pair match with current base? */
+                  if (j == (unsigned) bi)
+                  {
+                     /* pair each pair with all allowed pairs */
+                     for (k = 0; k < bp_allowed; k++)
+                     {
+                        nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
+                                                        scores);
+                        G_stack_score = nn_scores_get_G_stack (bi, bj,
+                                                               bjm1, bip1,
+                                                               scores);
+                        update_prob =
+                 sm->matrix[sm->curr_matrix][(int)bj][sm->pairlist[col] - 1]
+               * sm->matrix[sm->curr_matrix][(int)bip1][col + 1]
+               * sm->matrix[sm->curr_matrix][(int)bjm1][sm->pairlist[col] - 2];
+                        /*mfprintf (stderr, "  count: %c%c, %c%c; "
+                                          "score: %ld; "
+                                          "uprob: %f; "
+                                          "cscore: %.2f\n",
+                                  alphabet_no_2_base (bi, sigma),
+                                  alphabet_no_2_base (bj, sigma),
+                                  alphabet_no_2_base (bjm1, sigma),
+                                  alphabet_no_2_base (bip1, sigma),
+                                  G_stack_score,
+                                  update_prob,
+                                  sm->matrix[new_matrix][j][col]);*/
+                        sm->matrix[new_matrix][j][col] +=
+                        (update_prob * G_stack_score);
+                     }
+                  }
                }
             }
-            else
+            else /* use mismatch stacking params */
             {
-               /* use mismatch stacking params */
+               /* for all allowed base pairs */
+               for (l = 0; l < bp_allowed; l++)
+               {
+                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
+                  /* does pair match with current base? */
+                  if (j == (unsigned) bi)
+                  {
+                     /* pair with each possible pair */
+                     for (k = 0; k < alpha_size; k++)
+                     {
+                        for (m = 0; m < alpha_size; m++)
+                        {
+                           G_stack_score = nn_scores_get_G_mm_stack (bi, bj,
+                                                                     m, k,
+                                                                     scores);
+                           update_prob =
+                sm->matrix[sm->curr_matrix][(int)bj][sm->pairlist[col] - 1]
+              * sm->matrix[sm->curr_matrix][k][col+1]
+              * sm->matrix[sm->curr_matrix][m][sm->pairlist[col] - 2];
+                           /*mfprintf (stderr, "  count: %c%c, %c%c; "
+                                     "score: %ld; "
+                                     "uprob: %f; "
+                                     "cscore: %.2f\n",
+                                     alphabet_no_2_base (bi, sigma),
+                                     alphabet_no_2_base (bj, sigma),
+                                     alphabet_no_2_base (m, sigma),
+                                     alphabet_no_2_base (k, sigma),
+                                     G_stack_score,
+                                     update_prob,
+                                     sm->matrix[new_matrix][j][col]);*/
+                           sm->matrix[new_matrix][j][col] +=
+                              (update_prob * G_stack_score);
+                        }
+                     }
+                  }
+               }
             }
          }
-         else
-         {  /* we are at the "j part" of a base pair */
-            /* 5' - i-1i
-                    j-1j - 3' */
+         else /* we are at the "j part" of a base pair */
+         {
             /* decide if we got to pairs or one and a mismatch */
+            if (sm->pairlist[col-1] == (sm->pairlist[col] + 1))
+            {
+               /* for all allowed base pairs */
+               for (l = 0; l < bp_allowed; l++)
+               {
+                   nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
+                   /* does pair match with current base? */
+                   if (j == (unsigned) bj)
+                   {
+                      /* pair each pair with all allowed pairs */
+                      for (k = 0; k < bp_allowed; k++)
+                      {
+                         nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
+                                                         scores);
+                         G_stack_score = nn_scores_get_G_stack (bi,bj,
+                                                                bjm1,bip1,
+                                                                scores);
+                         update_prob =
+                     sm->matrix[sm->curr_matrix][(int)bi][sm->pairlist[col] - 1]
+                   * sm->matrix[sm->curr_matrix][(int)bip1][sm->pairlist[col]]
+                   * sm->matrix[sm->curr_matrix][(int)bjm1][col - 1];
+                         /*mfprintf (stderr, "  count: %c%c, %c%c "
+                           "score: %ld; "
+                           "uprob: %f; "
+                           "cscore: %.2f\n",
+                           alphabet_no_2_base (bi, sigma),
+                           alphabet_no_2_base (bj, sigma),
+                           alphabet_no_2_base (bjm1, sigma),
+                           alphabet_no_2_base (bip1, sigma),
+                           G_stack_score,
+                           update_prob,
+                           sm->matrix[new_matrix][j][col]);*/
+                         sm->matrix[new_matrix][j][col] +=
+                            (update_prob * G_stack_score);
+                     }
+                  }
+               }
+            }
+            else /* use mismatch stacking params */
+            {
+               /* for all allowed base pairs */
+               for (l = 0; l < bp_allowed; l++)
+               {
+                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
+                  /* does pair match with current base? */
+                  if (j == (unsigned) bj)
+                  {
+                     /* pair with each possible pair */
+                     for (k = 0; k < alpha_size; k++)
+                     {
+                        for (m = 0; m < alpha_size; m++)
+                        {
+                           G_stack_score = nn_scores_get_G_mm_stack (bi, bj,
+                                                                     m, k,
+                                                                     scores);
+                           update_prob =
+                   sm->matrix[sm->curr_matrix][(int)bi][sm->pairlist[col] - 1]
+                 * sm->matrix[sm->curr_matrix][k][sm->pairlist[col]]
+                 * sm->matrix[sm->curr_matrix][m][col - 1];
+                           /*mfprintf (stderr, "  count: %c%c, %c%c "
+                                     "score: %ld; "
+                                     "uprob: %f "
+                                     "cscore: %.2f\n",
+                                     alphabet_no_2_base (bi, sigma),
+                                     alphabet_no_2_base (bj, sigma),
+                                     alphabet_no_2_base (m, sigma),
+                                     alphabet_no_2_base (k, sigma),
+                                     G_stack_score,
+                                     update_prob,
+                                     sm->matrix[new_matrix][j][col]);*/
+                           sm->matrix[new_matrix][j][col] += 
+                              (update_prob * G_stack_score);
+                        }
+                     }
+                  }
+               }
+            }
          }
       }
 
       /* calculate contribution of unwanted pairs */
+      tmp_neg   = 0.0f;
+      tmp_het   = 0.0f;
+      het_count = 0.0f;
+      for (k = 0; k < sm->cols; k++)
+      {
+         if ((k != col) && ((k + 1) != sm->pairlist[col]))
+         {
+            if (col < k)        /* col is i, k is j (base pair is i < j) */
+            {
+               /* we only consider allowe base pairs */
+               for (l = 0; l < bp_allowed; l++)
+               {
+                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
+                  
+                  /* does pair match with current base? */
+                  if (j == (unsigned) bi)
+                  {
+                     for (m = 0; m < bp_allowed; m++)
+                     {
+                       nn_scores_get_allowed_basepair (m, &bip1, &bjm1, scores);
+                       update_prob =
+                 sm->matrix[sm->curr_matrix][(int)bj][k]
+               * sm->matrix[sm->curr_matrix][(int)bip1][col+1]
+               * sm->matrix[sm->curr_matrix][(int)bjm1][k-1];
+                       tmp_neg += (nn_scores_get_G_stack (bi, bj,
+                                                          bjm1, bip1,
+                                                          scores)
+                                   * update_prob);
+                       /*mfprintf (stderr, "col: %lu j: %c k: %lu bp: %c%c, "
+                                 "%c%c up: %f ne: %f\n",
+                                 col,
+                                 alphabet_no_2_base (j, sigma),
+                                 k,
+                                 alphabet_no_2_base (bi, sigma),
+                                 alphabet_no_2_base (bj, sigma), 
+                                 alphabet_no_2_base (bip1, sigma),
+                                 alphabet_no_2_base (bjm1, sigma),
+                                 update_prob,
+                                 tmp_neg);*/
+                     }
+                  }
+               }
+            }
+            else /* k is i, col is j */
+            {
+               /* we only consider allowe base pairs */
+               for (l = 0; l < bp_allowed; l++)
+               {
+                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
+
+                  if (j == (unsigned) bj)
+                  {
+                     for (m = 0; m < bp_allowed; m++)
+                     {
+                       nn_scores_get_allowed_basepair (m, &bip1, &bjm1, scores);
+                       update_prob =
+                            sm->matrix[sm->curr_matrix][(int)bi][k]
+                          * sm->matrix[sm->curr_matrix][(int)bip1][k+1]
+                          * sm->matrix[sm->curr_matrix][(int)bjm1][col-1];
+                       tmp_neg += (nn_scores_get_G_stack (bi, bj,
+                                                          bjm1, bip1,
+                                                          scores)
+                                   * update_prob);
+                       /*mfprintf (stderr, "col: %lu j: %c k: %lu bp: %c%c, "
+                                "%c%c up: %f ne: %f\n",
+                                col,
+                                alphabet_no_2_base (j, sigma),
+                                k,
+                                alphabet_no_2_base (bi, sigma),
+                                alphabet_no_2_base (bj, sigma),
+                                alphabet_no_2_base (bip1, sigma),
+                                alphabet_no_2_base (bjm1, sigma),
+                                update_prob,
+                                tmp_neg);*/
+                     }
+                  }
+               }            
+            }
+
+            /* heterogenity term */
+            if (col > k)
+            {
+               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
+                           * expf(het_rate * (col - (k+1))));
+               het_count += expf ( (het_rate* (col - (k+1))));
+            }
+            else
+            {
+               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
+                           * expf(het_rate * (k - (col+1))));
+               het_count += (expf (het_rate * (k - (col+1))));
+            }
+         }        
+      }
+
+      /* calculate ??? */
+      tmp_neg = (tmp_neg / sm->cols) * (-1.25f);
+      /* mfprintf (stderr, "het: %f ", tmp_het); */
+      tmp_het = (tmp_het ) * (3.0f);
+      /* tmp_het = tmp_het * 10.0; */ /* 10: to large */
+      /*mfprintf (stdout, "%lu:%c sm: %f neg: %f het: %f\n",
+        col, alphabet_no_2_base (j, sigma), sm->matrix[new_matrix][j][col],
+        tmp_neg, tmp_het);*/
+      sm->matrix[new_matrix][j][col] += tmp_neg;
+      sm->matrix[new_matrix][j][col] += tmp_het;
+      sm->matrix[new_matrix][j][col] =
+        expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS_NN * t)));
    }
 
    return 0;
@@ -580,7 +829,7 @@ sequence_matrix_calc_eeff_col_scmf_nn (SeqMatrix* sm,
       /* calculate all rows of a non-fixed column */
       if (!seqmatrix_is_col_fixed (i, sm))
       {
-         error = sequence_matrix_calc_eeff_row_scmf_nn (i, sm, t, scores, sigma);
+        error = sequence_matrix_calc_eeff_row_scmf_nn (i, sm, t, scores, sigma);
       }
 
       i++;
@@ -617,7 +866,7 @@ seqmatrix_collate_is (const float fthresh,
                       SeqMatrix* sm,
                       const Alphabet* sigma)
 {
-   unsigned long i, j, k, largest_amb_col = 0;
+   unsigned long i, j, /* k, */ largest_amb_col = 0, largest_amb_row = 0;
    float largest_amb;
    int retval = 0;
 
@@ -645,19 +894,9 @@ seqmatrix_collate_is (const float fthresh,
             {
                if (sm->matrix[sm->curr_matrix][i][j] >= fthresh)
                {
-                  /* mfprintf (stderr, "GT: %lu %lu %.3f\n", i, j, */
-/*                   sm->matrix[sm->curr_matrix][i][j]); */
                   /* unambigouos site found, fixate it */
-                  sm->fixed_sites[(j / CHAR_BIT)] |= 
-                     1 << (j % CHAR_BIT);
-                  /* set remaining pos to 0! */
-                  for (k = 0; k < sm->rows; k++)
-                  {
-                     sm->matrix[F_Mtrx][k][j] = 0.0f;
-                     sm->matrix[S_Mtrx][k][j] = 0.0f;
-                  }
-                  sm->matrix[F_Mtrx][i][j] = 1.0f;
-                  sm->matrix[S_Mtrx][i][j] = 1.0f;
+                  seqmatrix_fix_col (i, j, sm);
+
                   i = sm->rows + 1;
                }
             }
@@ -678,33 +917,18 @@ seqmatrix_collate_is (const float fthresh,
                {
                   largest_amb = sm->matrix[sm->curr_matrix][i][j];
                   largest_amb_col = j;
+                  largest_amb_row = i;
                }
             }
          }
-         /*else
-         {
-            mfprintf (stderr, "Fixed site: %lu\n", j);
-         }*/
+
       }
       
       /* set site to 1/0 and fixate it */
       if (largest_amb_col < sm->cols + 1)
       {
-         sm->fixed_sites[(largest_amb_col / CHAR_BIT)] |=
-            1 << (largest_amb_col % CHAR_BIT);
-         for (k = 0; k < sm->rows; k++)
-         {
-            if (sm->matrix[sm->curr_matrix][k][largest_amb_col] == largest_amb)
-            {
-               sm->matrix[F_Mtrx][k][largest_amb_col] = 1.0f;
-               sm->matrix[S_Mtrx][k][largest_amb_col] = 1.0f;
-            }
-            else
-            {
-               sm->matrix[F_Mtrx][k][largest_amb_col] = 0.0f;
-               sm->matrix[S_Mtrx][k][largest_amb_col] = 0.0f;
-            }
-         }
+         seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm);
+
          /* simulate */
          retval = sequence_matrix_simulate_scmf (steps,
                                                  temp,
@@ -720,6 +944,89 @@ seqmatrix_collate_is (const float fthresh,
 
    return retval;
 }
+
+int
+seqmatrix_collate_is_nn (const float fthresh,
+                      const unsigned long steps,
+                      const float temp,
+                      const NN_scores* scores,
+                      SeqMatrix* sm,
+                      const Alphabet* sigma)
+{
+   unsigned long i, j, /* k, */ largest_amb_col = 0, largest_amb_row = 0;
+   float largest_amb;
+   int retval = 0;
+
+   assert (sm);
+   assert (sm->sequence == NULL);
+   assert (fthresh <= 1.0f);
+
+   while ((largest_amb_col != sm->cols + 1) && (! retval))
+   {
+      largest_amb_col = sm->cols + 1;
+      largest_amb = 0.0f;
+
+      /* for all columns */
+      for (j = 0; j < sm->cols; j++)
+      {
+         if (!seqmatrix_is_col_fixed (j, sm))
+         {
+            /* for all rows */
+            for (i = 0; i < sm->rows; i++)
+            {
+               if (sm->matrix[sm->curr_matrix][i][j] >= fthresh)
+               {
+                  /* unambigouos site found, fixate it */
+                  seqmatrix_fix_col (i, j, sm);
+
+                  i = sm->rows + 1;
+               }
+            }
+         }
+      }
+      
+      /* find largest ambigouos site */
+      for (j = 0; j < sm->cols; j++)
+      {
+         /* check if site is fixed */
+         if (!seqmatrix_is_col_fixed (j, sm))
+         {
+            for (i = 0; i < sm->rows; i++)
+            {
+               if (sm->matrix[sm->curr_matrix][i][j] > largest_amb)
+               {
+                  largest_amb = sm->matrix[sm->curr_matrix][i][j];
+                  largest_amb_col = j;
+                  largest_amb_row = i;
+               }
+            }
+         }
+      }
+      
+      /* set site to 1/0 and fixate it */
+      if (largest_amb_col < sm->cols + 1)
+      {
+         seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm);
+/*UGCGCACUAGGACAAUACACAGUCCAGGGGGAAAUAGACCCCCAGAUAGGGGCAUAGAAAGCCCCGUGCGCAAAGA
+ */
+
+         /* simulate */
+         retval = sequence_matrix_simulate_scmf_nn (steps,
+                                                    temp,
+                                                    sm,
+                                                    scores,
+                                                    sigma);
+      }
+   }
+
+   if (! retval)
+   {
+      retval = seqmatrix_collate_mv (sm, sigma);
+   }
+
+   return retval;
+}
+
 
 /** @brief Transform a sequence matrix into an unambigouos sequence.
  *
@@ -751,6 +1058,7 @@ seqmatrix_collate_mv (SeqMatrix* sm, const Alphabet* sigma)
    /* for all columns */
    for (j = 0; j < sm->cols; j++)
    {
+      sm->sequence[j] = 0;
       curr_max_prob = -1.0f;
       for (i = 0; i < sm->rows; i++)
       {
@@ -788,7 +1096,7 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    unsigned long t;
    int error= 0;
    unsigned long j, i;
-   float row_sum;
+   float col_sum;
    float T = t_init;
    float c_rate = 1.0f;
    float c_port = 0.0f;
@@ -815,10 +1123,9 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
    {
       s = 0.0f;
 
-      /* mfprintf (stderr, "Step %lu Temp %3f cool %3f:\n", t, T, c_port); */
       /* calculate Eeff */
       error = sequence_matrix_calc_eeff_col_scmf (sm, T, scores);
-      /* seqmatrix_print_2_stderr (6, sm); */
+
       /* update matrix */
       /* for all columns */
       for (j = 0; j < sm->cols; j++)
@@ -827,18 +1134,17 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
          if (!seqmatrix_is_col_fixed (j, sm))
          {
             /* calc sum of col */
-            row_sum = 0.0f;
+            col_sum = 0.0f;
             for (i = 0; i < sm->rows; i++)
             {
-               row_sum += sm->matrix[sm->curr_matrix][i][j];
+               col_sum += sm->matrix[sm->curr_matrix][i][j];
             }
 
             /* for each row */
             for (i = 0; i < sm->rows; i++)
             {
-               /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
                sm->matrix[sm->curr_matrix][i][j] = 
-                  sm->matrix[sm->curr_matrix][i][j] / row_sum;
+                  sm->matrix[sm->curr_matrix][i][j] / col_sum;
                /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
                sm->matrix[sm->curr_matrix][i][j] = 
                   (0.2 * sm->matrix[sm->curr_matrix][i][j])
@@ -849,26 +1155,14 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
                      * logf (sm->matrix[sm->curr_matrix][i][j]));
             }
          }
-         /*else
-         {
-            mfprintf (stderr, "SFixed site: %lu - ", j);
-            for (i = 0; i < sm->rows; i++)
-            {
-               mfprintf (stderr, "%.3f ", sm->matrix[sm->curr_matrix][i][j]);
-            }
-            mfprintf (stderr, "\n");
-            }*/
       }
 
       s = s/sm->cols;
-      /* mfprintf (stdout, "T: %3f S: %3f\n", T, s); */
 
       t++;
-      /* mfprintf (stderr, "\n"); */
 
-     /* seqmatrix_print_2_stderr (3, sm); */
       /* if (s > -0.01f) return error; */
-     T = (T * c_rate) + c_port;
+      T = (T * c_rate) + c_port;
    }
 
    return error;
@@ -897,7 +1191,10 @@ sequence_matrix_simulate_scmf_nn (const unsigned long steps,
    float c_rate = 1.0f;         /* cooling factor */
    float c_port = 0.0f;         /* cooling summand */
    unsigned long t;             /* time */
+   unsigned long i, j;          /* iterator */
    float T = t_init;            /* current temperature */
+   float s;                     /* matrix entropy */
+   float col_sum;               
 
    assert (sm);
    assert (scores);
@@ -910,24 +1207,66 @@ sequence_matrix_simulate_scmf_nn (const unsigned long steps,
    /* determine cooling rate */
    if (steps > 0)
    {
-      c_rate = expf ((-1) * ((logf (t_init / 0.1f)) / (steps - 1)));
+      c_rate = expf ((-1) * ((logf (t_init / 1.0f)) / (steps - 1)));
    }
 
-   mfprintf (stderr, "Using NN model: %lu steps, init. T = %.2f, "
+   /*mfprintf (stderr, "Using NN model: %lu steps, init. T = %.2f, "
              "cooling rate = %f\n", steps,
-             t_init, c_rate);
+             t_init, c_rate);*/
 
    /* perform for a certain number of steps */
    t = 0;
    while ((!error) && (t < steps))
    {
+      s = 0.0f;
+
       /* calculate Eeff */
       error = sequence_matrix_calc_eeff_col_scmf_nn (sm, T, scores, sigma);
+
+      /* update matrix */
+      /* for all columns */      
+      for (j = 0; j < sm->cols; j++)
+      {
+         /* which are not fixed */
+         if (!seqmatrix_is_col_fixed (j, sm))
+         {
+            /* calc sum of col */
+            col_sum = 0.0f;
+            for (i = 0; i < sm->rows; i++)
+            {
+               col_sum += sm->matrix[sm->curr_matrix][i][j];
+            }
+
+            /* for each row */
+            for (i = 0; i < sm->rows; i++)
+            {
+               sm->matrix[sm->curr_matrix][i][j] = 
+                  sm->matrix[sm->curr_matrix][i][j] / col_sum;
+               /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
+               sm->matrix[sm->curr_matrix][i][j] = 
+                  (0.6 * sm->matrix[sm->curr_matrix][i][j])
+                  + (0.4 * sm->matrix[m][i][j]);
+
+               /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
+               s += (sm->matrix[sm->curr_matrix][i][j]
+                     * logf (sm->matrix[sm->curr_matrix][i][j]));
+            }
+         }
+      }
+
+      s = (s / sm->cols) * (-1.0f);
+
+      if (s < 0.05f) 
+      {
+         mfprintf (stdout, "Entropy dropout: %f\n", s);
+         return error;
+      }
+
+      /* mfprintf (stdout, "%lu %f\n", t, s); */
 
       T = (T * c_rate) + c_port;
       t++;
    }
-
    return error;
 }
 
@@ -1109,6 +1448,8 @@ seqmatrix_print_2_stderr (const int p, const SeqMatrix* sm)
 /*3311111002222000000003333022222000000033333000002222200000003333300000220000*/
 /*CCUUUUUAAGGGGAAAAAAAACCCCAGGGGGAAAAAAACCCCCAAAAAGGGGGAAAAAAACCCCCAAAAAGGAAAA*/
 /*(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))....*/
+/*UGCGCACUAGGACAAUACACAGUCCAGGGGCAAAUAGAGCCCCAGAUAGGGGCAUAGAAAGCCCCGUGCGCAAAGA*/
+
 /*3203211002132030030103203032032001030032132003002303201303003212300321320003*/
 /*1133220001332300001133220001332100013332201033012213300031132203313322000133*/
 /*3102233002233000133002233002233002130022331000331022300331002331022331020330*/
@@ -1120,3 +1461,16 @@ seqmatrix_print_2_stderr (const int p, const SeqMatrix* sm)
 /*3102233002233001233002233002231002331002331002331022310302102331022331020310*/
 
 /*100k steps: 3102233002233000133002233002233002130022331000331022300331002331022331020330*/
+
+/*
+
+match with blastn, refseq_rna
+UGCGCACUAGGACAAUACACAGUCCAGGGGCAAAUAGAGCCCCAGATAGGGGCATAGAAAGCCCCGTGCGCAAAGA
+
+ACGCGTGATCCTGTTATGTGTCAGGTCCCCGTTTATCTCGGGGTCTATCCCCGTATCTTTCGGGGCACGCGTTTCT
+
+
+Ref seq
+GCGGAUUUAGCUCAGUUGGGAGAGCGCCAGACUGAAGAUCUGGAGGUCCUGUGUUCGAUCCACAGAAUUCGCACCA
+
+*/

@@ -25,10 +25,6 @@
  *
  *  Revision History:
  *         - 2008Jun30 bienert: created
- *
- *  ToDo:
- *      - Add function 'alphabet_new_single'
- *
  */
 
 
@@ -39,9 +35,6 @@
 #include <assert.h>
 #include <libcrbbasic/crbbasic.h>
 #include "alphabet.h"
-
-
-#define RNA_STANDARD_LETTERS "AUGCaugc"
 
 
 struct Alphabet {
@@ -100,6 +93,7 @@ alphabet_new (const char* file, const int line)
  *
  * @param[in] upper alphabet in upper case letters.
  * @param[in] lower alphabet in lower case letters.
+ * @param[in] size no. of elements of the alphabet.
  * @param[in] file fill with name of calling file.
  * @param[in] line fill with calling line.
  */
@@ -110,9 +104,10 @@ alphabet_new_pair (const char* upper,
                    const char* file, const int line)
 {
    unsigned long i;
-
    Alphabet* this = alphabet_new (file, line);
-   
+
+   assert ((size % 2) == 0);
+
    if ((this != NULL) && (size != 0))
    {
       /* set size */
@@ -144,7 +139,35 @@ alphabet_new_pair (const char* upper,
    return this;
 }
 
-/* alpha_new_single */
+/** @brief Create a new alphabet object from a single c string.
+ *
+ * A constructor for an initialised @c Alphabet object. If compiled with enabled
+ * memory checking, @c file and @c line should point to the position where the
+ * function was called. Both parameters are automatically set by using the
+ * macro @c ALPHABET_NEW_SINGLE. @c alphabet must contain an even number of
+ * elements. The string has to consist of corresponding pairs (e.g. ACGUacgu)\n
+ * Returns @c NULL on error.
+ *
+ * @param[in] alphabet alphabet string.
+ * @param[in] size no. of elements of the alphabet.
+ * @param[in] format format of the alphabet, either 
+ * @param[in] file fill with name of calling file.
+ * @param[in] line fill with calling line.
+ */
+Alphabet*
+alphabet_new_single (const char* alphabet,
+                     const unsigned long size,
+                     const char* file, const int line)
+{
+   Alphabet* this;
+
+   this = alphabet_new_pair (alphabet,
+                             alphabet + size,
+                             size,
+                             file, line);
+
+   return this;
+}
 
 /** @brief Delete an alphabet.
  *
@@ -191,7 +214,7 @@ bool
 alphabet_is_standard_rna (Alphabet* sigma)
 {
    int i;
-   char* rna = RNA_STANDARD_LETTERS;
+   char* rna = RNA_ALPHABET;
    int a;
 
    assert (sigma != NULL);
@@ -200,7 +223,7 @@ alphabet_is_standard_rna (Alphabet* sigma)
    assert (sigma->lower_case != NULL);
 
    /* simplest check: Size of alphabet */
-   if (sigma->size != (strlen (RNA_STANDARD_LETTERS) / 2))
+   if (sigma->size != (strlen (RNA_ALPHABET) / 2))
    {
       THROW_ERROR_MSG ("Alphabet contains non-standard RNA nucleotides: %s%s",
                        sigma->upper_case, sigma->lower_case);

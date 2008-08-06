@@ -46,6 +46,7 @@ struct NN_scores {
       char** bp_allowed;             /* canonical base pairs + whobble GU */
       unsigned long bp_allowed_size;
       char** bp_idx;                 /* indeces for base pairs */
+      unsigned long bp_idx_size;
 };
 
 
@@ -76,6 +77,7 @@ nn_scores_new (const char* file, const int line)
       this->G_mm_stack_size = 0;
       this->bp_idx          = NULL;
       this->bp_allowed      = NULL;
+      this->bp_allowed_size = 0;
    }
 
    return this;
@@ -140,13 +142,14 @@ nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
 
       /* create base pair indeces */
       this->bp_idx = (char**) XMALLOC_2D (alphabet_size (sigma),
-                                              alphabet_size (sigma),
-                                              sizeof (char));
+                                          alphabet_size (sigma),
+                                          sizeof (char));
       if (this->bp_idx == NULL)
       {
          nn_scores_delete (this);
          return NULL;        
       }
+      this->bp_idx_size = alphabet_size (sigma) * alphabet_size (sigma);
 
       for (i = 0; i < this->bp_allowed_size; i++)
       {
@@ -897,6 +900,64 @@ nn_scores_get_allowed_basepair (const unsigned i,
 
    b5[0] = scheme->bp_allowed[i][0];
    b3[0] = scheme->bp_allowed[i][1];
+}
+
+/** @brief Return the stacking score for a set of paired bases.
+ *
+ * @params[in] i i component of the upstream pair of the stack (5' end).
+ * @params[in] j j component of the upstream pair of the stack (pairs with i).
+ * @params[in] jm1 j-1 component of the downstream pair (pairs with ip1).
+ * @params[in] ip1 i+1 component of the downstream pair.
+ * @params[in] scheme The scoring scheme.
+ */
+long
+nn_scores_get_G_stack (const char i, const char j,
+                       const char jm1, const char ip1,
+                       const NN_scores* scheme)
+{
+   assert (scheme);
+   assert (scheme->G_stack);
+   assert (scheme->bp_idx);
+   assert ((unsigned)   i < sqrtf (scheme->bp_idx_size));
+   assert ((unsigned)   j < sqrtf (scheme->bp_idx_size));
+   assert ((unsigned) ip1 < sqrtf (scheme->bp_idx_size));
+   assert ((unsigned) jm1 < sqrtf (scheme->bp_idx_size));
+   assert (  (unsigned) scheme->bp_idx[(int)i][(int)j] 
+           < sqrtf (scheme->G_stack_size));
+   assert (  (unsigned) scheme->bp_idx[(int)jm1][(int)ip1]
+           < sqrtf (scheme->G_stack_size));
+   
+   return scheme->G_stack[(int) scheme->bp_idx[(int)i][(int)j]]
+                         [(int) scheme->bp_idx[(int)jm1][(int)ip1]];
+}
+
+/** @brief Return the mismatch stacking score for a set of bases.
+ *
+ * @params[in] i i component of the upstream pair of the stack (5' end).
+ * @params[in] j j component of the upstream pair of the stack (pairs with i).
+ * @params[in] k position j-1.
+ * @params[in] l position i+1.
+ * @params[in] scheme The scoring scheme.
+ */
+long
+nn_scores_get_G_mm_stack (const char i, const char j,
+                          const char k, const char l,
+                          const NN_scores* scheme)
+{
+   assert (scheme);
+   assert (scheme->G_mm_stack);
+   assert (scheme->bp_idx);
+   assert ((unsigned) i < sqrtf (scheme->bp_idx_size));
+   assert ((unsigned) j < sqrtf (scheme->bp_idx_size));
+   assert ((unsigned) k < sqrtf (scheme->bp_idx_size));
+   assert ((unsigned) l < sqrtf (scheme->bp_idx_size));
+   assert (  (unsigned) scheme->bp_idx[(int)i][(int)j] 
+           < scheme->bp_allowed_size);
+   assert (  (unsigned) scheme->bp_idx[(int)k][(int)l]
+             < (scheme->G_mm_stack_size / scheme->bp_allowed_size));
+   
+   return scheme->G_mm_stack[(int) scheme->bp_idx[(int)i][(int)j]]
+                            [(int) scheme->bp_idx[(int)k][(int)l]];
 }
 
 

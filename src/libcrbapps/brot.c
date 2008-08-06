@@ -136,126 +136,22 @@ parse_input_structure (const char* structure)
    return pairlist;
 }
 
-
-static PresetArray*
-parse_base_presettings (const struct brot_args_info* args_info, Alphabet* sigma)
-{
-   unsigned long i;
-   unsigned long position = 0;
-   unsigned long* already_set;
-   PresetArray* ps;
-   char* endptr;
-   char base = CHAR_UNDEF;
-   size_t struct_len;
-   size_t len;
-   int error = 0;
-
-   struct_len = strlen (args_info->inputs[1]);
-
-   /* allocate presettings */
-   ps = PRESETARRAY_NEW_SIZE (args_info->fixed_nuc_given);
-   if (ps == NULL)
-   {
-      return ps;
-   }
-
-   already_set = XMALLOC (sizeof (unsigned long) * struct_len);
-   already_set = memset (already_set, 0, sizeof (unsigned long) * struct_len);
-
-   /* check presettings */
-   /* for (i = 0; i < args_info->fixed_nuc_given; i++) */
-   i = 0;
-   while ((i < args_info->fixed_nuc_given) && (!error))
-   {
-      /* check alphabet */
-      len = strlen (args_info->fixed_nuc_arg[i]);
-      if (  (len > 2)
-          &&(args_info->fixed_nuc_arg[i][1] == ':'))
-      {
-         base = alphabet_base_2_no (args_info->fixed_nuc_arg[i][0], sigma);
-         if (base == CHAR_UNDEF)
-         {
-            error = 1;
-         }
-      }
-      else
-      {
-         THROW_ERROR_MSG ("Found fixed base of wrong format: \'%s\'. Try "
-                          "`%s --help` for more information.", 
-                          args_info->fixed_nuc_arg[i], get_progname());
-         error = 1;
-      }
-
-      if (!error)
-      {
-         position = strtoul (args_info->fixed_nuc_arg[i] + 2, &endptr, 10);
-         if (*endptr != '\0')
-         {
-            THROW_ERROR_MSG ("Fixed bases require a positive integer as "
-                             "position, found: %s. Try `%s --help` for more "
-                             "information.", 
-                             args_info->fixed_nuc_arg[i], get_progname());
-            error = 1;
-         }
-      }
-
-      if ((position >= struct_len) && (!error))
-      {
-         THROW_ERROR_MSG ("Preset position (%lu) larger than or equal to "
-                          "structure length (%zu)", 
-                          position, struct_len);
-         error = 1;        
-      }
-
-      /* check whether position is already set */
-      if ((already_set[position] > 0) && (!error))
-      {
-         THROW_ERROR_MSG ("Presetting conflict for position %lu (%c and %c "
-                          "given), only one base allowed",
-                          position,
-                          presetarray_get_ith_base (already_set[position]-1,ps),
-                          alphabet_no_2_base (base, sigma));
-         error = 1;
-      }
-
-      if (!error)
-      {
-         /* transform base characters to numbers */
-         error = presetarray_add (base, position, ps);
-         already_set[position] = presetarray_get_length (ps);
-      }
-
-      i++;
-   }
-
-   XFREE (already_set);
-
-   if (error)
-   {
-      presetarray_delete (ps);
-      return NULL;
-   }
-
-   return ps;
-}
-
-static PresetArray* 
+static int
 brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
-                                 Alphabet* sigma)
+                                 Alphabet* sigma __attribute__((unused)))
 {
    /* check input structure */
-
    if (args_info->inputs_num == 1)
    {
       THROW_ERROR_MSG ("RNA structure required as argument, try "
                        "`%s --help` for more information.", get_progname());
-      return NULL;
+      return 1;
    }
    if (args_info->inputs_num != 2)
    {
       THROW_ERROR_MSG ("Only one RNA structure allowed as argument, try "
                        "`%s --help` for more information.", get_progname());
-      return NULL;
+      return 1;
    }
 
    /* check steps */
@@ -265,7 +161,7 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
       {
          THROW_ERROR_MSG ("Option \"--steps\" requires positive integer as"
                           "argument, found: %ld", args_info->steps_arg);
-         return NULL; 
+         return 1; 
       }
    }
  
@@ -277,12 +173,80 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
          THROW_ERROR_MSG ("Option \"--temp\" requires positive floating point "
                           "value as argument, found: %2.2f",
                           args_info->temp_arg);
-         return NULL; 
+         return 1; 
       }
    }
   
-   return parse_base_presettings (args_info, sigma);
+   return 0;
 
+}
+
+static int
+adopt_site_presettings (const struct brot_args_info* args_info,
+                        Alphabet* sigma,
+                        SeqMatrix* sm)
+{
+   unsigned long i;
+   unsigned long position = 0;
+   unsigned long struct_len;
+   char base = CHAR_UNDEF;
+   char* endptr;
+
+   assert (sm);
+
+   struct_len = seqmatrix_get_width (sm);
+
+   /* check presettings */
+   for (i = 0; i < args_info->fixed_nuc_given; i++)
+   {
+      /* check format & alphabet */
+      if (  (strlen (args_info->fixed_nuc_arg[i]) > 2)
+          &&(args_info->fixed_nuc_arg[i][1] == ':'))
+      {
+         base = alphabet_base_2_no (args_info->fixed_nuc_arg[i][0], sigma);
+         if (base == CHAR_UNDEF)
+         {
+            return 1;
+         }
+      }
+      else
+      {
+         THROW_ERROR_MSG ("Found fixed base of wrong format: \'%s\'. Try "
+                          "`%s --help` for more information.", 
+                          args_info->fixed_nuc_arg[i], get_progname());
+         return 1;
+      }
+
+      position = strtoul (args_info->fixed_nuc_arg[i] + 2, &endptr, 10);
+      if (*endptr != '\0')
+      {
+         THROW_ERROR_MSG ("Fixed bases require a positive integer as "
+                          "position, found: %s. Try `%s --help` for more "
+                          "information.", 
+                          args_info->fixed_nuc_arg[i], get_progname());
+         return 1;
+      }
+
+      if (position >= struct_len)
+      {
+         THROW_ERROR_MSG ("Preset position (%lu) larger than or equal to "
+                          "structure length (%lu) for presetting \"%s\"", 
+                          position, struct_len, args_info->fixed_nuc_arg[i]);
+         return 1;        
+      }
+
+      if (seqmatrix_is_col_fixed (position, sm))
+      {
+         THROW_ERROR_MSG ("Presetting conflict for position %lu (\"%c\"): "
+                          "Already set", position,
+                          alphabet_no_2_base (base, sigma));
+         return 1;
+      }
+
+      seqmatrix_fix_col (base, position, sm);      
+   }
+
+   return 0;
 }
 
 /*
@@ -319,13 +283,20 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       error = sequence_matrix_simulate_scmf_nn (brot_args->steps_arg,
                                                 brot_args->temp_arg,
                                                 sm,
-                                                scores);      
+                                                scores, sigma);
    }
 
    /* collate */
    if (!error)
    {
-      error = seqmatrix_collate_mv (sm, sigma);
+      /* seqmatrix_print_2_stdout (2, sm); */
+      /*error = seqmatrix_collate_mv (sm, sigma);*/
+      error = seqmatrix_collate_is_nn (0.99,
+                                       brot_args->steps_arg / 2,
+                                       brot_args->temp_arg,
+                                       scores,
+                                       sm,
+                                       sigma);
    }
 
    nn_scores_delete (scores);
@@ -376,12 +347,10 @@ int
 brot_main(const char *cmdline)
 {
    struct brot_args_info brot_args;
-   PresetArray* presets = NULL;
-   SeqMatrix* sm = NULL;
-   int retval = 0;
-   /* unsigned long i; */
+   SeqMatrix* sm           = NULL;
+   int retval              = 0;
    unsigned long* pairlist = NULL;
-   Alphabet* sigma = NULL;
+   Alphabet* sigma         = NULL;
 
    /* command line parsing */
    brot_cmdline_parser_init (&brot_args);
@@ -395,7 +364,7 @@ brot_main(const char *cmdline)
 
    if (retval == 0)
    {
-      sigma = ALPHABET_NEW_PAIR ("AUGC", "augc", 4);
+      sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, sizeof (RNA_ALPHABET)/2);
       if (sigma == NULL)
       {
          retval = 1;
@@ -405,12 +374,7 @@ brot_main(const char *cmdline)
    /* postprocess arguments */
    if (retval == 0)
    {
-      /* get fixed sites */
-      presets = brot_cmdline_parser_postprocess (&brot_args, sigma);
-      if (presets == NULL)
-      {
-         retval = 1;
-      }
+      retval = brot_cmdline_parser_postprocess (&brot_args, sigma);
    }
 
    if (retval == 0)
@@ -423,26 +387,27 @@ brot_main(const char *cmdline)
       }
    }
 
-   /* do work */
-   /*if (retval == 0)
-   {
-      for (i = 0; i < presetarray_get_length (presets); i++)
-      {
-         mprintf ("Pos: %.2lu : Base: %c (%d)\n",
-                  presetarray_get_ith_pos (i, presets),
-                transform_number_2_base (presetarray_get_ith_base (i, presets)),
-                                         presetarray_get_ith_base (i, presets));
-      }
-   }*/
-
    /* init matrix */
    if (retval == 0)
    {
       sm = SEQMATRIX_NEW;
-      retval = seqmatrix_init (pairlist,
-                               strlen (brot_args.inputs[1]),
-                               presets,
-                               sm);
+      if (sm != NULL)
+      {
+         retval = seqmatrix_init (pairlist,
+                                  strlen (brot_args.inputs[1]),
+                                  sm);
+         /*seqmatrix_print_2_stdout (2, sm);*/
+      }
+      else
+      {
+         retval = 1;
+      }
+   }
+
+   /* fix certain sites in the matrix */
+   if (retval == 0)
+   {
+      retval = adopt_site_presettings (&brot_args, sigma, sm);
    }
 
    if (retval == 0)
@@ -472,14 +437,13 @@ brot_main(const char *cmdline)
   
    if (retval == 0)
    {
-      seqmatrix_print_2_stdout (2, sm);
+      /* seqmatrix_print_2_stdout (2, sm); */
       seqmatrix_printf_sequence (sm);
       mprintf ("\n");
    }
 
    /* finalise */
    brot_cmdline_parser_free (&brot_args);
-   presetarray_delete (presets);
    seqmatrix_delete (sm);
    alphabet_delete (sigma);
    XFREE (pairlist);
@@ -493,4 +457,3 @@ brot_main(const char *cmdline)
       return EXIT_FAILURE;
    }
 }
-/*CGACGUUAAGUCGACAACAUACGACACGACGAAUACAACGUCGAACAAGCACGAUCACAACGUGCAACGUCGAAAC*/

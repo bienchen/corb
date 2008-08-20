@@ -100,7 +100,7 @@ nn_scores_new (const char* file, const int line)
  * @param[in] line fill with calling line.
  */
 NN_scores*
-nn_socres_new_init (Alphabet* sigma, const char* file, const int line)
+nn_scores_new_init (Alphabet* sigma, const char* file, const int line)
 {
    NN_scores* this;
    unsigned long i;

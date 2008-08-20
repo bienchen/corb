@@ -1,4 +1,4 @@
-# Last modified: 2008-04-22.10
+# Last modified: 2008-08-18.11
 
 # Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
@@ -11,8 +11,8 @@ ACLOCAL_AMFLAGS = -I share/misc/m4
 dist_noinst_LISP=\
 	libgtcore-font-lock-faces.el \
 	pdb-font-lock-faces.el \
-	emacs-l-helpers.el \
-	c-l-helpers.el
+	emacs-l-helpers.el
+#  c-l-helpers.el SB: Commented out while testing
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

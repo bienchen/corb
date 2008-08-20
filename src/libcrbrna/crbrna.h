@@ -34,5 +34,6 @@
 #include <config.h>
 #include "alphabet.h"  /* RNA related alphabets */
 #include "nn_scores.h" /* Nearest Neighbour model */
+#include "rna.h"       /* RNA datastructure */
 
 #endif /* CRBRNA_H */

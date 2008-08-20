@@ -77,6 +77,7 @@ Implementation
 - change names of array to plural
 - give all external function declarations the prefix extern
 - remove variable names from external declarations
+- instead of macros for strings use global constants!
 
 libs:
 libcrbalpha ->  alphabets

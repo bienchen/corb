@@ -33,5 +33,6 @@
 
 #include <config.h>
 #include "seqmatrix.h" /* Sequence matrix for SCMF */
+#include "scmf_rna_opt.h" /* functions to perform a scmf RNA seq optimisation */
 
 #endif /* CRBBROT_H */

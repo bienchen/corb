@@ -99,7 +99,7 @@ istr_new_init (const char* cstr, size_t size, const char* file, const int line)
    if (this != NULL)
    {
       this->size = size;
-      this->data = XMALLOC(sizeof (char) * this->size);
+      this->data = XOBJ_MALLOC(sizeof (char) * this->size, file, line);
       if (this->data != NULL)
       {
          this->len = this->size - 1;
@@ -160,7 +160,7 @@ str_new_char (const char c,
    if (this != NULL)
    {
       this->size = l + 1;
-      this->data = XMALLOC(this->size * sizeof (char));
+      this->data = XOBJ_MALLOC(this->size * sizeof (char), file, line);
       if (this->data != NULL)
       {
          this->len = this->size - 1;

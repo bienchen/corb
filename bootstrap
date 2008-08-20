@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2008-06-30.15
+scriptversion=2008-08-14.11
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 
@@ -32,21 +32,27 @@ fi
 CONFIG_H=src/config.h
 CONFIG_H_IN=src/config.h.in
 
-#   makefiles for subdirs - begin
-MAKEFILE_SH_MI_BI="share/misc/bin/Makefile";
-MAKEFILE_SH_MI_EM="share/misc/emacs/Makefile";
-MAKEFILE_SH_MI="share/misc/Makefile";
-MAKEFILE_SH="share/Makefile";
-MAKEFILE_SC_FA="src/libcrbfallback/Makefile";
-MAKEFILE_SC_BA="src/libcrbbasic/Makefile";
-MAKEFILE_SC_RN="src/libcrbrna/Makefile";
-MAKEFILE_SC_BR="src/libcrbbrot/Makefile";
-MAKEFILE_SC_AP="src/libcrbapps/Makefile";
-MAKEFILE_SC="src/Makefile";
-MAKEFILE="Makefile";
-
-MAKEFILES="$MAKEFILE_SC_FA $MAKEFILE_SC_BA $MAKEFILE_SC_RN $MAKEFILE_SC_BR $MAKEFILE_SC_AP $MAKEFILE_SC $MAKEFILE_SH_MI_EM $MAKEFILE_SH_MI_BI $MAKEFILE_SH_MI $MAKEFILE_SH $MAKEFILE";
-#   makefiles for subdirs - end
+# gather makefiles
+MAKEFILES=`awk '{ 
+                  if (/AC_CONFIG_FILES/) 
+                  { 
+                    p = 1 
+                  } 
+                  else 
+                  {
+                    if (/])/) 
+                    {
+                      p = 0
+                    }
+                  }
+                  if (p != 0) 
+                  {
+                    if (/Makefile/) 
+                    {
+                      printf "%s", $0
+                    }
+                  } 
+                }' p=0 $CONFIGURE_AC`
 
 CREATED_FILES="configure config.status config.log $ACLOCAL_M4 $CONFIG_H $CONFIG_H_IN $MAKEFILES";
 
@@ -324,7 +330,7 @@ CREATED_FILES="$CREATED_FILES $MAKEFILE_IN"
 # if we are in "reboot" or "reset" mode, delete all created files
 if test "$mode" = "reset" || test "$mode" = "reboot"; then
     for i in $CREATED_FILES; do
-        if test -e$i; then
+        if test -e $i; then
             echo "[ removing $i ]";
             rm -f $i;
         fi
@@ -351,11 +357,9 @@ $CONFIG_H_IN:$CONFIGURE_AC
 	@${AH}
 	@rm -rf ${CACHE_DIR}
 $MAKEFILE_IN:$MAKEFILE_AM $CONFIG_H_IN $M4_MACRO_SOURCES $CONFIGURE_AC
-	@echo "[ Creating Makefiles ]"
+	@echo "[ Creating Makefile.in's ]"
 	@${AM}
 	@rm -rf ${CACHE_DIR}
-#makefile.in abhaengig von makefile.am
-#alle makefiles, etc. aus subdirs einbeziehen
 EOF
 
     make -s -q -f $tmpfile;

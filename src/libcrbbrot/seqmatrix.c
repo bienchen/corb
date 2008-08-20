@@ -26,7 +26,8 @@
  *  Revision History:
  *         - 2008Mar05 bienert: created
  *
- * ToDo: seqmatrix_init via macro because it allocates memory!!!
+ *  ToDo:
+ *      - remove pairlist from data structure
  */
 
 
@@ -38,13 +39,7 @@
 #include <float.h>
 #include <math.h>
 #include <libcrbbasic/crbbasic.h>
-#include <libcrbrna/crbrna.h>
 #include "seqmatrix.h"
-
-/* use until something better is found */
-#define SM_ROWS 4               /* HP: 2 letters, RNA: 4 */
-#define R_GAS 1 
-#define R_GAS_NN 8.314472
 
 /* matrix orders */
 enum seqmatrix_matrix_no{
@@ -54,13 +49,24 @@ enum seqmatrix_matrix_no{
 };
 
 struct SeqMatrix {
-      char* fixed_sites;
-      float** matrix[No_Of_Mtrx];
-      short int curr_matrix;
-      unsigned long* pairlist;
-      char* sequence;
+      char* fixed_sites;          /* list of fixed sites in the matrix */
+      float** matrix[No_Of_Mtrx]; /* current and future matrices */
+      short int curr_matrix;      /* index of current matrix */
+      unsigned long* pairlist;    /* interacting sites */
       size_t rows;
-      size_t cols;   
+      size_t cols;
+      float gas_constant;
+      int (*calc_eeff_col) (SeqMatrix*,
+                            const float,
+                            void*);
+      int (*calc_eeff_row) (const unsigned long,
+                            SeqMatrix*,
+                            const float,
+                            void*);
+      float (*calc_cell_energy) (const unsigned long, const unsigned long,
+                                 void*,
+                                 SeqMatrix*);
+      int (*transform_row) (const unsigned long, const unsigned long, void*);
 };
 
 /**********************   Constructors and destructors   **********************/
@@ -86,13 +92,18 @@ seqmatrix_new (const char* file, const int line)
 
    if (sm != NULL)
    {
-      sm->fixed_sites  = NULL;
-      sm->pairlist     = NULL;
-      sm->sequence     = NULL;
+      sm->fixed_sites      = NULL;
+      sm->pairlist         = NULL;
+      sm->calc_eeff_col    = NULL;
+      sm->calc_eeff_row    = NULL;
+      sm->calc_cell_energy = NULL;
+      sm->transform_row    = NULL;
+
+      sm->gas_constant  = 1;
 
       for (i = 0; i < No_Of_Mtrx; i++)
       {
-         sm->matrix[i] = NULL;
+         sm->matrix[i]  = NULL;
       }
       sm->curr_matrix = F_Mtrx;
    }
@@ -115,7 +126,6 @@ seqmatrix_delete (SeqMatrix* sm)
    {
       XFREE    (sm->fixed_sites);
       XFREE    (sm->pairlist);
-      XFREE    (sm->sequence);
 
       for (i = 0; i < No_Of_Mtrx; i++)
       {
@@ -154,6 +164,24 @@ seqmatrix_is_col_fixed (const unsigned long col, const SeqMatrix* sm)
    return false;
 }
 
+/** @brief Get interacting sites.
+ *
+ * Returns the no. of the column interactiong with @c col + 1. If there is no
+ * interaction defined for the site at column @c col, 0 is returned.
+ *
+ * @param[in] col Column to check interaction.
+ * @param[in] sm Sequence matrix.
+ */
+unsigned long
+seqmatrix_col_interacts_with (const unsigned long col, const SeqMatrix* sm)
+{
+   assert (sm);
+   assert (sm->pairlist);
+   assert (col < sm->cols);
+
+   return sm->pairlist[col];
+}
+
 /** @brief get the width of a sequence matrix.
  *
  * Returns the number of columns of a sequence matrix.
@@ -166,6 +194,39 @@ seqmatrix_get_width (const SeqMatrix* sm)
    assert (sm);
 
    return sm->cols;
+}
+
+/** @brief get the no. of rows of a sequence matrix.
+ *
+ * Returns the number of rows of a sequence matrix.
+ *
+ * @param[in] sm sequence matrix.
+ */
+unsigned long
+seqmatrix_get_rows (const SeqMatrix* sm)
+{
+   assert (sm);
+
+   return sm->rows;
+}
+
+/** @brief Get the probability of a certain site and state of a sequenc ematrix.
+ *
+ * Retruns the value of a certain cell of the sequenc ematrix.
+ *
+ * @params[in] row Row.
+ * @params[in] col Column.
+ * @params[in] sm Sequence matrix.
+ */
+float
+seqmatrix_get_probability (const unsigned long row, const unsigned long col,
+                           const SeqMatrix* sm)
+{
+   assert (sm);
+   assert (row < sm->rows);
+   assert (col < sm->cols);
+
+   return sm->matrix[sm->curr_matrix][row][col]; 
 }
 
 /********************************   Altering   ********************************/
@@ -204,6 +265,88 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
    sm->matrix[S_Mtrx][row][col] = 1.0f;
 }
 
+/** @brief Update the columns of a sequence matrix
+ *
+ * Update cols of a sequence matrix in a SCMF simulation.
+ * Returns...
+ *
+ * @params[in] sm Sequence matrix.
+ */
+static __inline__ int
+seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
+                              const float t,
+                              void* sco)
+{
+   unsigned long i;
+   int error = 0;
+   float** scores = (float**) sco;
+
+   assert (sm);
+   assert (sm->calc_eeff_row);
+
+   /* assert (sigma); */
+
+   /* for each col */
+   i = 0;
+   while ((!error) && (i < sm->cols))
+   {
+      if (!seqmatrix_is_col_fixed (i, sm))
+      {
+         /* error = seqmatrix_calc_eeff_row_scmf (i, sm, t, scores, NULL); */
+         error = sm->calc_eeff_row (i, sm, t, scores);
+      }
+
+      i++;
+   }
+
+   if (sm->curr_matrix == F_Mtrx)
+   {
+      sm->curr_matrix = S_Mtrx;
+   }
+   else
+   {
+      sm->curr_matrix = F_Mtrx;
+   }
+   /*exit(1);*/
+   return error;
+}
+
+/** @brief Update a row of a sequence matrix
+ *
+ * Update a row of a sequence matrix in a SCMF simulation.
+ * Returns...
+ *
+ * @params[in] sm Sequence matrix.
+ */
+static __inline__ int
+seqmatrix_calc_eeff_row_scmf (const unsigned long col,
+                              SeqMatrix* sm,
+                              const float t,
+                              void* sco)
+{
+   short int new_matrix = F_Mtrx;
+   unsigned long j;
+   float** scores = (float**) sco;
+
+   assert (sm);
+   assert (sm->calc_cell_energy);
+
+   if (sm->curr_matrix == F_Mtrx)
+   {
+      new_matrix = S_Mtrx;
+   }
+
+   for (j = 0; j < sm->rows; j++)
+   {
+      sm->matrix[new_matrix][j][col] = sm->calc_cell_energy (j, col,
+                                                             scores,
+                                                             sm);
+      sm->matrix[new_matrix][j][col] =
+         expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(sm->gas_constant*t)));
+   }
+
+   return 0;
+}
 
 /** @brief Initialise a sequence matrix.
  *
@@ -217,8 +360,10 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
  */
 int
 seqmatrix_init (const unsigned long* pairs,
-                const unsigned long size,
-                SeqMatrix* sm)
+                const unsigned long rows,
+                const unsigned long width,
+                SeqMatrix* sm,
+                const char* file, const int line)
 {
    unsigned long i/* , j */;
    /* float whobble = 0.001f; */
@@ -229,31 +374,35 @@ seqmatrix_init (const unsigned long* pairs,
    assert (sm->matrix[F_Mtrx]   == NULL);
    assert (sm->matrix[S_Mtrx]   == NULL);
 
-   /* allocate matrix */
-   sm->rows = SM_ROWS;
-   sm->cols = size;
+   /* set standard functions */
+   sm->calc_eeff_col = seqmatrix_calc_eeff_col_scmf;
+   sm->calc_eeff_row = seqmatrix_calc_eeff_row_scmf;
 
-   sm->matrix[F_Mtrx] = (float**) XMALLOC_2D (sm->rows,sm->cols,
-                                              sizeof (float));
+   /* allocate matrix */
+   sm->rows = rows;
+   sm->cols = width;
+
+   sm->matrix[F_Mtrx] = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
+                                                  sizeof (float), file, line);
    if (sm->matrix[F_Mtrx] == NULL)
    {
       return ERR_SM_ALLOC;
    }
    sm->curr_matrix = F_Mtrx;
 
-   sm->matrix[S_Mtrx] = (float**) XMALLOC_2D (sm->rows,sm->cols,
-                                         sizeof (float));
+   sm->matrix[S_Mtrx] = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
+                                                  sizeof (float), file, line);
    if (sm->matrix[S_Mtrx] == NULL)
    {
       return ERR_SM_ALLOC;
    }
 
    /* init sm */
-   if (size > 0)
+   if (width > 0)
    {
-      sm->matrix[F_Mtrx][0][0] = 1.0f / SM_ROWS; /* even distributed init */
+      sm->matrix[F_Mtrx][0][0] = 1.0f / sm->rows; /* even distributed init */
       sm->matrix[S_Mtrx][0][0] = 0.0f;
-      for (i = 1; i < size; i++)
+      for (i = 1; i < width; i++)
       {
          sm->matrix[F_Mtrx][0][i] = sm->matrix[F_Mtrx][0][0]; /* even distri */
          sm->matrix[S_Mtrx][0][i] = sm->matrix[S_Mtrx][0][0];
@@ -263,10 +412,10 @@ seqmatrix_init (const unsigned long* pairs,
       {
          memcpy (sm->matrix[F_Mtrx][i],
                  sm->matrix[F_Mtrx][i - 1],
-                 sizeof (float) * size);/* even distri */
+                 sizeof (float) * width);/* even distri */
          memcpy (sm->matrix[S_Mtrx][i],
                  sm->matrix[S_Mtrx][i - 1],
-                 sizeof (float) * size);
+                 sizeof (float) * width);
       }
 
       /*srand(997654329);
@@ -287,11 +436,11 @@ seqmatrix_init (const unsigned long* pairs,
    }
 
    /* copy pairlist */
-   sm->pairlist = XCALLOC (size, sizeof (*(sm->pairlist)));
+   sm->pairlist = XOBJ_CALLOC (width, sizeof (*(sm->pairlist)), file, line);
 
    if (pairs != NULL)
    {
-      for (i = 0; i < size; i++)
+      for (i = 0; i < width; i++)
       {
          sm->pairlist[i] = pairs[i]; /* xxx use memcpy instead? */
       }
@@ -299,7 +448,7 @@ seqmatrix_init (const unsigned long* pairs,
 
    /* run over list of presettings and set sites */
    /* allocate memory & init fixed sites */
-   sm->fixed_sites = XCALLOC ((size / (sizeof(*(sm->fixed_sites))*CHAR_BIT))+1,
+   sm->fixed_sites = XCALLOC ((width / (sizeof(*(sm->fixed_sites))*CHAR_BIT))+1,
                               sizeof(*(sm->fixed_sites)));
 
    if (sm->fixed_sites == NULL)
@@ -310,542 +459,88 @@ seqmatrix_init (const unsigned long* pairs,
    return 0;
 }
 
-
-/** @brief Update a row of a sequence matrix
+/** @brief Set a value for a certain cell of a matrix.
  *
- * Update a row of a sequence matrix in a SCMF simulation.
- * Returns...
- *
- * @params[in] sm Sequence matrix.
+ * @param[in] value Value to be set.
+ * @param[in] row Row index.
+ * @param[in] cell Cell index.
+ * @param[in] sm Sequence matrix.
  */
-static __inline__ int
-sequence_matrix_calc_eeff_row_scmf (const unsigned long col,
-                                    SeqMatrix* sm,
-                                    const float t,
-                                    float** scores)
+void
+seqmatrix_set_cell (const float value,
+                    const unsigned long row, const unsigned long col,
+                    SeqMatrix* sm)
 {
-   unsigned long j;
-   unsigned long l;
-   unsigned long k;
-   short int new_matrix = F_Mtrx;
-   float tmp_neg;               /* negative energy contribution */
-   float tmp_het;               /* heterogenity term */
-   float het_count;
-   float het_rate;
+   assert (sm);
+   assert (row < sm->rows);
+   assert (col < sm->cols);
 
-   het_rate = ((-1) * ((logf (1 / 0.000001f)) / (sm->cols)));
-
-   if (sm->curr_matrix == F_Mtrx)
-   {
-      new_matrix = S_Mtrx;
-   }
-
-   /*fprintf (stderr, "C: %lu Pairs with %lu\n", col, sm->pairlist[col]); */
-
-   for (j = 0; j < sm->rows; j++)
-   {
-      /* update cell */
-      sm->matrix[new_matrix][j][col] = 0.0f;
-
-      /* calculate contribution of wanted interaction (if any) */
-      if (sm->pairlist[col])
-      {
-         for (l = 0; l < sm->rows; l++)
-         {
-            if (col < sm->pairlist[col])
-            {
-               sm->matrix[new_matrix][j][col] +=
-                  (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
-                   * scores[j][l]);
-            }
-            else
-            {
-               sm->matrix[new_matrix][j][col] +=
-                  (sm->matrix[sm->curr_matrix][l][sm->pairlist[col] - 1] 
-                   * scores[l][j]);
-            }
-         }
-      }
-
-      /* calculate contribution of unwanted pairs */
-      tmp_neg = 0.0f;
-      tmp_het = 0.0f;
-      het_count = 0.0f;
-      for (k = 0; k < sm->cols; k++)
-      {
-         if ((k != col) && ((k + 1) != sm->pairlist[col])) /*without k!=col ?*/
-         {
-            for (l = 0; l < sm->rows; l++)
-            {
-               if (col < k)
-               {
-                  tmp_neg +=   sm->matrix[sm->curr_matrix][l][k] 
-                     * scores[j][l];
-               }
-               else
-               {
-                  tmp_neg +=   sm->matrix[sm->curr_matrix][l][k] 
-                     * scores[l][j];
-               }
-            }
-            
-            /* heterogenity term */
-            /* static version: use window*/
-            /*   if (  ((k < col)&&(col - k < 4)) *//*3 5*//*
-                ||((k > col)&&(k - col < 4)))
-            {
-              tmp_het += (1.079 * sm->matrix[sm->curr_matrix][j][k]);
-              }*/
-            /* variable version 1: linear decrease
-            tmp_het += (((float)(sm->cols - k) / sm->cols)
-                        * sm->matrix[sm->curr_matrix][j][k]);
-                        het_count += (float)(sm->cols - k) / sm->cols;*/
-
-            /* variable version 2: exp decrease */
-            /* not k u idiot: distance to current position */
-            if (col > k)
-            {
-               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
-                             * expf(het_rate * (col - (k+1))));
-               het_count += expf ( (het_rate* (col - (k+1))));
-               /* mfprintf (stderr, ":%.3f", tmp_het); */
-            }
-            else
-            {
-               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
-                            * expf(het_rate * (k - (col+1))));
-               het_count += (expf (het_rate * (k - (col+1))));
-
-               /* mfprintf (stderr, ":%.3f", tmp_het); */
-            }
-         }
-      }
-      tmp_neg = (tmp_neg / sm->cols) * (-1.25f); /* 1.25 */
-      tmp_het = (tmp_het / het_count) * (3.0f); /* 0.1747 */
-      sm->matrix[new_matrix][j][col] += tmp_neg;
-      sm->matrix[new_matrix][j][col] += tmp_het;
-      sm->matrix[new_matrix][j][col] =
-         expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS * t)));
-   }
-
-   return 0;
+   sm->matrix[sm->curr_matrix][row][col] = value;
 }
 
-/** @brief Update a row of a sequence matrix using the NN
+/** @brief Set gas constant.
  *
- * Update a row of a sequence matrix in a SCMF simulation.
- * Returns...
- *
+ * @params[in] r Gas constant.
  * @params[in] sm Sequence matrix.
  */
-static __inline__ int
-sequence_matrix_calc_eeff_row_scmf_nn (const unsigned long col,
-                                       SeqMatrix* sm,
-                                       const float t __attribute__((unused)),
-                                       const NN_scores* scores,
-                                       const Alphabet* sigma)
+void
+seqmatrix_set_gas_constant (const float r, SeqMatrix* sm)
 {
-   short int new_matrix = F_Mtrx;    /* matrix to be filled */
-   unsigned long j;                  /* current row */
-   unsigned long l, k, m;            /* current allowed base pair */
-   unsigned long bp_allowed;         /* no. of allowed base pairs */
-   unsigned long alpha_size;         /* size of the alphabet */
-   char bi, bj, bip1, bjm1;          /* container for bases i and j */
-   float tmp_neg;                    /* negative interaction term */
-   float tmp_het;                    /* heterogenity term */
-   float het_rate;                   /* decrease of influence */
-   float het_count;
-   long G_stack_score;
-   float update_prob;
+   assert (sm);
 
-   het_rate = ((-1) * ((logf (1 / 0.000001f)) / (sm->cols)));
-
-   bp_allowed = nn_scores_no_allowed_basepairs (scores);
-   alpha_size = alphabet_size (sigma);
-
-   if (sm->curr_matrix == F_Mtrx)
-   {
-      new_matrix = S_Mtrx;
-   }
-
-   /* for each row */
-   for (j = 0; j < sm->rows; j++)
-   {
-      /* update cell */
-      sm->matrix[new_matrix][j][col] = 0.0f;
-
-      /* calculate contribution of wanted interaction (if any) */
-      if (sm->pairlist[col])
-      {
-         /* mfprintf (stderr, "Current: %lu %c\n", col, */
-/*                    alphabet_no_2_base (j,sigma)); */
-         if (col < sm->pairlist[col])
-         {  /* we are at the "i part" of a base pair */
-            /* 5' - ii+1
-                    jj-1 - 3' */
-            /* decide if we got to pairs or one and a mismatch */
-            /* Ask Andrew: All this does not work properly for immedeate base
-               pairs: ()!!! */
-            /* We do not need to check here if i+1 has a base pair at all
-               because sm->pairlist[col] >= 2 (pairs with pos 1),
-               thus sm->pairlist[col+1] == 0 never matches anything */
-            if (sm->pairlist[col+1] == (sm->pairlist[col] - 1))
-            {
-               /* for all allowed base pairs */
-               for (l = 0; l < bp_allowed; l++)
-               {
-                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-                  /* does pair match with current base? */
-                  if (j == (unsigned) bi)
-                  {
-                     /* pair each pair with all allowed pairs */
-                     for (k = 0; k < bp_allowed; k++)
-                     {
-                        nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
-                                                        scores);
-                        G_stack_score = nn_scores_get_G_stack (bi, bj,
-                                                               bjm1, bip1,
-                                                               scores);
-                        update_prob =
-                 sm->matrix[sm->curr_matrix][(int)bj][sm->pairlist[col] - 1]
-               * sm->matrix[sm->curr_matrix][(int)bip1][col + 1]
-               * sm->matrix[sm->curr_matrix][(int)bjm1][sm->pairlist[col] - 2];
-                        /*mfprintf (stderr, "  count: %c%c, %c%c; "
-                                          "score: %ld; "
-                                          "uprob: %f; "
-                                          "cscore: %.2f\n",
-                                  alphabet_no_2_base (bi, sigma),
-                                  alphabet_no_2_base (bj, sigma),
-                                  alphabet_no_2_base (bjm1, sigma),
-                                  alphabet_no_2_base (bip1, sigma),
-                                  G_stack_score,
-                                  update_prob,
-                                  sm->matrix[new_matrix][j][col]);*/
-                        sm->matrix[new_matrix][j][col] +=
-                        (update_prob * G_stack_score);
-                     }
-                  }
-               }
-            }
-            else /* use mismatch stacking params */
-            {
-               /* for all allowed base pairs */
-               for (l = 0; l < bp_allowed; l++)
-               {
-                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-                  /* does pair match with current base? */
-                  if (j == (unsigned) bi)
-                  {
-                     /* pair with each possible pair */
-                     for (k = 0; k < alpha_size; k++)
-                     {
-                        for (m = 0; m < alpha_size; m++)
-                        {
-                           G_stack_score = nn_scores_get_G_mm_stack (bi, bj,
-                                                                     m, k,
-                                                                     scores);
-                           update_prob =
-                sm->matrix[sm->curr_matrix][(int)bj][sm->pairlist[col] - 1]
-              * sm->matrix[sm->curr_matrix][k][col+1]
-              * sm->matrix[sm->curr_matrix][m][sm->pairlist[col] - 2];
-                           /*mfprintf (stderr, "  count: %c%c, %c%c; "
-                                     "score: %ld; "
-                                     "uprob: %f; "
-                                     "cscore: %.2f\n",
-                                     alphabet_no_2_base (bi, sigma),
-                                     alphabet_no_2_base (bj, sigma),
-                                     alphabet_no_2_base (m, sigma),
-                                     alphabet_no_2_base (k, sigma),
-                                     G_stack_score,
-                                     update_prob,
-                                     sm->matrix[new_matrix][j][col]);*/
-                           sm->matrix[new_matrix][j][col] +=
-                              (update_prob * G_stack_score);
-                        }
-                     }
-                  }
-               }
-            }
-         }
-         else /* we are at the "j part" of a base pair */
-         {
-            /* decide if we got to pairs or one and a mismatch */
-            if (sm->pairlist[col-1] == (sm->pairlist[col] + 1))
-            {
-               /* for all allowed base pairs */
-               for (l = 0; l < bp_allowed; l++)
-               {
-                   nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-                   /* does pair match with current base? */
-                   if (j == (unsigned) bj)
-                   {
-                      /* pair each pair with all allowed pairs */
-                      for (k = 0; k < bp_allowed; k++)
-                      {
-                         nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
-                                                         scores);
-                         G_stack_score = nn_scores_get_G_stack (bi,bj,
-                                                                bjm1,bip1,
-                                                                scores);
-                         update_prob =
-                     sm->matrix[sm->curr_matrix][(int)bi][sm->pairlist[col] - 1]
-                   * sm->matrix[sm->curr_matrix][(int)bip1][sm->pairlist[col]]
-                   * sm->matrix[sm->curr_matrix][(int)bjm1][col - 1];
-                         /*mfprintf (stderr, "  count: %c%c, %c%c "
-                           "score: %ld; "
-                           "uprob: %f; "
-                           "cscore: %.2f\n",
-                           alphabet_no_2_base (bi, sigma),
-                           alphabet_no_2_base (bj, sigma),
-                           alphabet_no_2_base (bjm1, sigma),
-                           alphabet_no_2_base (bip1, sigma),
-                           G_stack_score,
-                           update_prob,
-                           sm->matrix[new_matrix][j][col]);*/
-                         sm->matrix[new_matrix][j][col] +=
-                            (update_prob * G_stack_score);
-                     }
-                  }
-               }
-            }
-            else /* use mismatch stacking params */
-            {
-               /* for all allowed base pairs */
-               for (l = 0; l < bp_allowed; l++)
-               {
-                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-                  /* does pair match with current base? */
-                  if (j == (unsigned) bj)
-                  {
-                     /* pair with each possible pair */
-                     for (k = 0; k < alpha_size; k++)
-                     {
-                        for (m = 0; m < alpha_size; m++)
-                        {
-                           G_stack_score = nn_scores_get_G_mm_stack (bi, bj,
-                                                                     m, k,
-                                                                     scores);
-                           update_prob =
-                   sm->matrix[sm->curr_matrix][(int)bi][sm->pairlist[col] - 1]
-                 * sm->matrix[sm->curr_matrix][k][sm->pairlist[col]]
-                 * sm->matrix[sm->curr_matrix][m][col - 1];
-                           /*mfprintf (stderr, "  count: %c%c, %c%c "
-                                     "score: %ld; "
-                                     "uprob: %f "
-                                     "cscore: %.2f\n",
-                                     alphabet_no_2_base (bi, sigma),
-                                     alphabet_no_2_base (bj, sigma),
-                                     alphabet_no_2_base (m, sigma),
-                                     alphabet_no_2_base (k, sigma),
-                                     G_stack_score,
-                                     update_prob,
-                                     sm->matrix[new_matrix][j][col]);*/
-                           sm->matrix[new_matrix][j][col] += 
-                              (update_prob * G_stack_score);
-                        }
-                     }
-                  }
-               }
-            }
-         }
-      }
-
-      /* calculate contribution of unwanted pairs */
-      tmp_neg   = 0.0f;
-      tmp_het   = 0.0f;
-      het_count = 0.0f;
-      for (k = 0; k < sm->cols; k++)
-      {
-         if ((k != col) && ((k + 1) != sm->pairlist[col]))
-         {
-            if (col < k)        /* col is i, k is j (base pair is i < j) */
-            {
-               /* we only consider allowe base pairs */
-               for (l = 0; l < bp_allowed; l++)
-               {
-                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-                  
-                  /* does pair match with current base? */
-                  if (j == (unsigned) bi)
-                  {
-                     for (m = 0; m < bp_allowed; m++)
-                     {
-                       nn_scores_get_allowed_basepair (m, &bip1, &bjm1, scores);
-                       update_prob =
-                 sm->matrix[sm->curr_matrix][(int)bj][k]
-               * sm->matrix[sm->curr_matrix][(int)bip1][col+1]
-               * sm->matrix[sm->curr_matrix][(int)bjm1][k-1];
-                       tmp_neg += (nn_scores_get_G_stack (bi, bj,
-                                                          bjm1, bip1,
-                                                          scores)
-                                   * update_prob);
-                       /*mfprintf (stderr, "col: %lu j: %c k: %lu bp: %c%c, "
-                                 "%c%c up: %f ne: %f\n",
-                                 col,
-                                 alphabet_no_2_base (j, sigma),
-                                 k,
-                                 alphabet_no_2_base (bi, sigma),
-                                 alphabet_no_2_base (bj, sigma), 
-                                 alphabet_no_2_base (bip1, sigma),
-                                 alphabet_no_2_base (bjm1, sigma),
-                                 update_prob,
-                                 tmp_neg);*/
-                     }
-                  }
-               }
-            }
-            else /* k is i, col is j */
-            {
-               /* we only consider allowe base pairs */
-               for (l = 0; l < bp_allowed; l++)
-               {
-                  nn_scores_get_allowed_basepair (l, &bi, &bj, scores);
-
-                  if (j == (unsigned) bj)
-                  {
-                     for (m = 0; m < bp_allowed; m++)
-                     {
-                       nn_scores_get_allowed_basepair (m, &bip1, &bjm1, scores);
-                       update_prob =
-                            sm->matrix[sm->curr_matrix][(int)bi][k]
-                          * sm->matrix[sm->curr_matrix][(int)bip1][k+1]
-                          * sm->matrix[sm->curr_matrix][(int)bjm1][col-1];
-                       tmp_neg += (nn_scores_get_G_stack (bi, bj,
-                                                          bjm1, bip1,
-                                                          scores)
-                                   * update_prob);
-                       /*mfprintf (stderr, "col: %lu j: %c k: %lu bp: %c%c, "
-                                "%c%c up: %f ne: %f\n",
-                                col,
-                                alphabet_no_2_base (j, sigma),
-                                k,
-                                alphabet_no_2_base (bi, sigma),
-                                alphabet_no_2_base (bj, sigma),
-                                alphabet_no_2_base (bip1, sigma),
-                                alphabet_no_2_base (bjm1, sigma),
-                                update_prob,
-                                tmp_neg);*/
-                     }
-                  }
-               }            
-            }
-
-            /* heterogenity term */
-            if (col > k)
-            {
-               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
-                           * expf(het_rate * (col - (k+1))));
-               het_count += expf ( (het_rate* (col - (k+1))));
-            }
-            else
-            {
-               tmp_het += (sm->matrix[sm->curr_matrix][j][k]
-                           * expf(het_rate * (k - (col+1))));
-               het_count += (expf (het_rate * (k - (col+1))));
-            }
-         }        
-      }
-
-      /* calculate ??? */
-      tmp_neg = (tmp_neg / sm->cols) * (-1.25f);
-      /* mfprintf (stderr, "het: %f ", tmp_het); */
-      tmp_het = (tmp_het ) * (3.0f);
-      /* tmp_het = tmp_het * 10.0; */ /* 10: to large */
-      /*mfprintf (stdout, "%lu:%c sm: %f neg: %f het: %f\n",
-        col, alphabet_no_2_base (j, sigma), sm->matrix[new_matrix][j][col],
-        tmp_neg, tmp_het);*/
-      sm->matrix[new_matrix][j][col] += tmp_neg;
-      sm->matrix[new_matrix][j][col] += tmp_het;
-      sm->matrix[new_matrix][j][col] =
-        expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(R_GAS_NN * t)));
-   }
-
-   return 0;
+   sm->gas_constant = r;
 }
 
-/** @brief Update the columns of a sequence matrix
+/** @brief Set the function for calculating columns for the effective energy
  *
- * Update cols of a sequence matrix in a SCMF simulation.
- * Returns...
- *
- * @params[in] sm Sequence matrix.
+ * @params[in] calc_eeff_col Function to use.
+ * @params[in] sm Sequence matrix to store the function in.  
  */
-static __inline__ int
-sequence_matrix_calc_eeff_col_scmf (SeqMatrix* sm,
-                                    const float t,
-                                    float** scores)
+void
+seqmatrix_set_func_calc_eeff_col (int (*calc_eeff_col) (SeqMatrix*,
+                                                        const float,
+                                                        void*),
+                                  SeqMatrix* sm)
 {
-   unsigned long i;
-   int error = 0;
-
-   /* for each col */
-   i = 0;
-   while ((!error) && (i < sm->cols))
-   {
-      if (!seqmatrix_is_col_fixed (i, sm))
-      {
-         error = sequence_matrix_calc_eeff_row_scmf (i, sm, t, scores);        
-      }
-      /*else
-      {
-         mfprintf (stderr, "C: %lu Pairs with %lu\n", i, sm->pairlist[i]);
-         }*/
-      i++;
-   }
-
-   if (sm->curr_matrix == F_Mtrx)
-   {
-      sm->curr_matrix = S_Mtrx;
-   }
-   else
-   {
-      sm->curr_matrix = F_Mtrx;
-   }
-
-   return error;
+   assert (sm);
+   sm->calc_eeff_col = calc_eeff_col;
 }
 
-/** @brief Update the columns of a sequence matrix using the NN
+/** @brief Set the function for calculating rows for the effective energy
  *
- * Update cols of a sequence matrix in a SCMF simulation.
- * Returns...
- *
- * @params[in] sm Sequence matrix.
+ * @params[in] calc_eeff_row Function to use.
+ * @params[in] sm Sequence matrix to store the function in.  
  */
-static __inline__ int
-sequence_matrix_calc_eeff_col_scmf_nn (SeqMatrix* sm,
-                                       const float t,
-                                       const NN_scores* scores,
-                                       const Alphabet* sigma)
+void
+seqmatrix_set_func_calc_eeff_row (int (*calc_eeff_row) (const unsigned long,
+                                                        SeqMatrix*,
+                                                        const float,
+                                                        void*),
+                                  SeqMatrix* sm)
 {
-   int error = 0;
-   unsigned long i; 
+   assert (sm);
+   sm->calc_eeff_row = calc_eeff_row;
+}
 
-   /* for each col */
-   i = 0;
+void
+seqmatrix_set_func_calc_cell_energy (float (*calc_cell_energy)
+                                     (const unsigned long, const unsigned long,
+                                      void*,
+                                      SeqMatrix*),
+                                     SeqMatrix* sm)
+{
+   assert (sm);
+   sm->calc_cell_energy = calc_cell_energy;
+}
 
-   while ((!error) && (i < sm->cols))
-   {
-      /* calculate all rows of a non-fixed column */
-      if (!seqmatrix_is_col_fixed (i, sm))
-      {
-        error = sequence_matrix_calc_eeff_row_scmf_nn (i, sm, t, scores, sigma);
-      }
-
-      i++;
-   }
-
-   /* switch matrices */
-   if (sm->curr_matrix == F_Mtrx)
-   {
-      sm->curr_matrix = S_Mtrx;
-   }
-   else
-   {
-      sm->curr_matrix = F_Mtrx;
-   }
-
-   return error;
+void
+seqmatrix_set_transform_row (int (*transform_row) (const unsigned long,
+                                                   const unsigned long,
+                                                   void*),
+                             SeqMatrix* sm)
+{
+   assert (sm);
+   sm->transform_row = transform_row;
 }
 
 /** @brief Transform a sequence matrix into an unambigouos sequence.
@@ -862,104 +557,23 @@ int
 seqmatrix_collate_is (const float fthresh,
                       const unsigned long steps,
                       const float temp,
-                      float** scores,
+                      const float c_rate,
+                      const float c_port,
+                      const float lambda,
+                      const float s_thresh,
                       SeqMatrix* sm,
-                      const Alphabet* sigma)
+                      void* data)
 {
-   unsigned long i, j, /* k, */ largest_amb_col = 0, largest_amb_row = 0;
+   unsigned long i, j, largest_amb_col = 0, largest_amb_row = 0;
    float largest_amb;
    int retval = 0;
 
    assert (sm);
-   assert (sm->sequence == NULL);
    assert (fthresh <= 1.0f);
 
    /* Approach: find unambigouos sites and fixate 'em */
    /*           find the largest of the ambigouos sites */
    /*           until all sites are fixed */
-   /* mfprintf (stderr, "IN\n"); */
-
-   while ((largest_amb_col != sm->cols + 1) && (! retval))
-   {
-      largest_amb_col = sm->cols + 1;
-      largest_amb = 0.0f;
-
-      /* for all columns */
-      for (j = 0; j < sm->cols; j++)
-      {
-         if (!seqmatrix_is_col_fixed (j, sm))
-         {
-            /* for all rows */
-            for (i = 0; i < sm->rows; i++)
-            {
-               if (sm->matrix[sm->curr_matrix][i][j] >= fthresh)
-               {
-                  /* unambigouos site found, fixate it */
-                  seqmatrix_fix_col (i, j, sm);
-
-                  i = sm->rows + 1;
-               }
-            }
-         }
-      }
-      
-      /* seqmatrix_print_2_stderr (3, sm); */
-      
-      /* find largest ambigouos site */
-      for (j = 0; j < sm->cols; j++)
-      {
-         /* check if site is fixed */
-         if (!seqmatrix_is_col_fixed (j, sm))
-         {
-            for (i = 0; i < sm->rows; i++)
-            {
-               if (sm->matrix[sm->curr_matrix][i][j] > largest_amb)
-               {
-                  largest_amb = sm->matrix[sm->curr_matrix][i][j];
-                  largest_amb_col = j;
-                  largest_amb_row = i;
-               }
-            }
-         }
-
-      }
-      
-      /* set site to 1/0 and fixate it */
-      if (largest_amb_col < sm->cols + 1)
-      {
-         seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm);
-
-         /* simulate */
-         retval = sequence_matrix_simulate_scmf (steps,
-                                                 temp,
-                                                 sm,
-                                                 scores);
-      }
-   }
-
-   if (! retval)
-   {
-      retval = seqmatrix_collate_mv (sm, sigma);
-   }
-
-   return retval;
-}
-
-int
-seqmatrix_collate_is_nn (const float fthresh,
-                      const unsigned long steps,
-                      const float temp,
-                      const NN_scores* scores,
-                      SeqMatrix* sm,
-                      const Alphabet* sigma)
-{
-   unsigned long i, j, /* k, */ largest_amb_col = 0, largest_amb_row = 0;
-   float largest_amb;
-   int retval = 0;
-
-   assert (sm);
-   assert (sm->sequence == NULL);
-   assert (fthresh <= 1.0f);
 
    while ((largest_amb_col != sm->cols + 1) && (! retval))
    {
@@ -1001,32 +615,33 @@ seqmatrix_collate_is_nn (const float fthresh,
                }
             }
          }
+
       }
       
       /* set site to 1/0 and fixate it */
       if (largest_amb_col < sm->cols + 1)
       {
          seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm);
-/*UGCGCACUAGGACAAUACACAGUCCAGGGGGAAAUAGACCCCCAGAUAGGGGCAUAGAAAGCCCCGUGCGCAAAGA
- */
 
          /* simulate */
-         retval = sequence_matrix_simulate_scmf_nn (steps,
-                                                    temp,
-                                                    sm,
-                                                    scores,
-                                                    sigma);
+         retval = seqmatrix_simulate_scmf (steps,
+                                           temp,
+                                           c_rate,
+                                           c_port,
+                                           lambda,
+                                           s_thresh,
+                                           sm,
+                                           data);
       }
    }
 
    if (! retval)
    {
-      retval = seqmatrix_collate_mv (sm, sigma);
+      retval = seqmatrix_collate_mv (sm, data);
    }
 
    return retval;
 }
-
 
 /** @brief Transform a sequence matrix into an unambigouos sequence.
  *
@@ -1039,26 +654,18 @@ seqmatrix_collate_is_nn (const float fthresh,
  * @params[in] sm The sequence matrix.
  */
 int
-seqmatrix_collate_mv (SeqMatrix* sm, const Alphabet* sigma)
+seqmatrix_collate_mv (SeqMatrix* sm, void* data)
 {
    unsigned long i,j;
    float curr_max_prob;
+   unsigned long max_row = 0;
+   /* Alphabet* sigma = (Alphabet*) data; */
 
    assert (sm);
-   assert (sm->sequence == NULL);
-
-   /* try to init sequence */
-   sm->sequence = XMALLOC (sm->cols * sizeof (*(sm->sequence)));
-   if (sm->sequence == NULL)
-   {
-      return ERR_SM_ALLOC;
-   }
-
 
    /* for all columns */
    for (j = 0; j < sm->cols; j++)
    {
-      sm->sequence[j] = 0;
       curr_max_prob = -1.0f;
       for (i = 0; i < sm->rows; i++)
       {
@@ -1067,105 +674,13 @@ seqmatrix_collate_mv (SeqMatrix* sm, const Alphabet* sigma)
          {
             /* write position to seq */
             curr_max_prob = sm->matrix[sm->curr_matrix][i][j];
-            sm->sequence[j] = alphabet_no_2_base(i, sigma);
-/*3203211002132030030103203032032001030032132003002303201303003212300321320003*/
+            max_row = i;
          }
       }
+      sm->transform_row (max_row, j, data);
    }
 
    return 0;
-}
-
-/** @brief Perform a SCMF simulation on a sequence matrix.
- *
- * Calculate the mean force field for a sequence matrix and update cells. This
- * is done either until the system converges or for a specified number of
- * steps. For results of the simulation, the matrix itself has to be
- * interpreted.\n
- * Returns ...
- *
- * @params[in] steps No. of max. simulation steps.
- * @params[in] sm The sequence matrix.
- */
-int
-sequence_matrix_simulate_scmf (const unsigned long steps,
-                               const float t_init,
-                               SeqMatrix* sm,
-                               float** scores)
-{
-   unsigned long t;
-   int error= 0;
-   unsigned long j, i;
-   float col_sum;
-   float T = t_init;
-   float c_rate = 1.0f;
-   float c_port = 0.0f;
-   short int m = 0;
-   float s;
-
-   assert (sm);
-   assert (scores && scores[0]);
-
-   if (sm->curr_matrix == F_Mtrx)
-   {
-     m = S_Mtrx;
-   }
-
-   if (steps > 0)
-   {
-      c_rate = expf ((-1) * ((logf (t_init / 0.1f)) / (steps - 1)));
-      /* c_port = (-1) * (t_init - 0.1f) / (steps - 1); */
-   }
-
-   /* perform for a certain number of steps */
-   t = 0;
-   while ((!error) && (t < steps))
-   {
-      s = 0.0f;
-
-      /* calculate Eeff */
-      error = sequence_matrix_calc_eeff_col_scmf (sm, T, scores);
-
-      /* update matrix */
-      /* for all columns */
-      for (j = 0; j < sm->cols; j++)
-      {
-         /* which are not fixed */
-         if (!seqmatrix_is_col_fixed (j, sm))
-         {
-            /* calc sum of col */
-            col_sum = 0.0f;
-            for (i = 0; i < sm->rows; i++)
-            {
-               col_sum += sm->matrix[sm->curr_matrix][i][j];
-            }
-
-            /* for each row */
-            for (i = 0; i < sm->rows; i++)
-            {
-               sm->matrix[sm->curr_matrix][i][j] = 
-                  sm->matrix[sm->curr_matrix][i][j] / col_sum;
-               /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
-               sm->matrix[sm->curr_matrix][i][j] = 
-                  (0.2 * sm->matrix[sm->curr_matrix][i][j])
-                  + (0.8 * sm->matrix[m][i][j]);
-
-               /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
-               s += (sm->matrix[sm->curr_matrix][i][j]
-                     * logf (sm->matrix[sm->curr_matrix][i][j]));
-            }
-         }
-      }
-
-      s = s/sm->cols;
-
-      t++;
-
-      /* if (s > -0.01f) return error; */
-      T = (T * c_rate) + c_port;
-   }
-
-   return error;
 }
 
 /** @brief Perform a SCMF simulation on a sequence matrix using the NN.
@@ -1180,48 +695,46 @@ sequence_matrix_simulate_scmf (const unsigned long steps,
  * @params[in] sm The sequence matrix.
  */
 int
-sequence_matrix_simulate_scmf_nn (const unsigned long steps,
-                                  const float t_init,
-                                  SeqMatrix* sm,
-                                  const NN_scores* scores,
-                                  const Alphabet* sigma)
+seqmatrix_simulate_scmf (const unsigned long steps,
+                         const float t_init,
+                         const float c_rate,
+                         const float c_port,
+                         const float lambda,
+                         const float s_thresh, 
+                         SeqMatrix* sm,
+                         void* sco)
 {
-   int error= 0;
-   short int m = 0;             /* matrix to use */
-   float c_rate = 1.0f;         /* cooling factor */
-   float c_port = 0.0f;         /* cooling summand */
+/*nussinov: */
+/*CGGAUCAAACCUGAACACAUACAGGACAGCGAUACAAACGCUGAACAAGUCCGAACACAACGGACUGAUCCGAAAC*/
+/*nn: */
+/*CGUGCACUAGGACCAGAUAAAGUCCAGGGGCAAAUAGAGCCCCAAAUAGGGGCAAAUAGAGCCCCGUGCACGAAAG*/
+
    unsigned long t;             /* time */
+   int error= 0;
    unsigned long i, j;          /* iterator */
+   float col_sum;
    float T = t_init;            /* current temperature */
+   short int m = 0;             /* matrix to use */
    float s;                     /* matrix entropy */
-   float col_sum;               
 
    assert (sm);
-   assert (scores);
+   assert (sm->calc_eeff_col);
+   assert (sco);
 
    if (sm->curr_matrix == F_Mtrx)
    {
      m = S_Mtrx;
    }
 
-   /* determine cooling rate */
-   if (steps > 0)
-   {
-      c_rate = expf ((-1) * ((logf (t_init / 1.0f)) / (steps - 1)));
-   }
-
-   /*mfprintf (stderr, "Using NN model: %lu steps, init. T = %.2f, "
-             "cooling rate = %f\n", steps,
-             t_init, c_rate);*/
-
    /* perform for a certain number of steps */
    t = 0;
    while ((!error) && (t < steps))
    {
+
       s = 0.0f;
 
       /* calculate Eeff */
-      error = sequence_matrix_calc_eeff_col_scmf_nn (sm, T, scores, sigma);
+      error = sm->calc_eeff_col (sm, T, sco);
 
       /* update matrix */
       /* for all columns */      
@@ -1244,8 +757,8 @@ sequence_matrix_simulate_scmf_nn (const unsigned long steps,
                   sm->matrix[sm->curr_matrix][i][j] / col_sum;
                /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
                sm->matrix[sm->curr_matrix][i][j] = 
-                  (0.6 * sm->matrix[sm->curr_matrix][i][j])
-                  + (0.4 * sm->matrix[m][i][j]);
+                  (lambda * sm->matrix[sm->curr_matrix][i][j])
+                + ((1 - lambda) * sm->matrix[m][i][j]);
 
                /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
                s += (sm->matrix[sm->curr_matrix][i][j]
@@ -1254,54 +767,27 @@ sequence_matrix_simulate_scmf_nn (const unsigned long steps,
          }
       }
 
+      /* shouldn't s be calculated on the no. of unfixed cols? */
       s = (s / sm->cols) * (-1.0f);
 
-      if (s < 0.05f) 
+      if (s <s_thresh) 
       {
          mfprintf (stdout, "Entropy dropout: %f\n", s);
          return error;
       }
 
-      /* mfprintf (stdout, "%lu %f\n", t, s); */
-
       T = (T * c_rate) + c_port;
       t++;
+
+/*       if (t%10 == 0) */
+/*          mfprintf (stderr, "step: %5lu T=%.3f S=%.3f\n", t, T, s); */
    }
+
    return error;
 }
 
 
 /*********************************   Output   *********************************/
-
-/** @brief Print the sequence of a sequence matrix to a stream.
- *
- * @params[in] stream Output stream to write to. FILE *stream
- * @params[in] sm The sequence matrix.
- */
-void
-seqmatrix_fprintf_sequence (FILE* stream, SeqMatrix* sm)
-{
-   unsigned long i;
-
-   assert (sm != NULL);
-   assert (sm->sequence != NULL);
-
-   /* mfprintf (stream, "%lu\n", (unsigned long) sm->cols); */
-   for (i = 0; i < sm->cols; i++)
-   {
-      mfprintf (stream, "%c", sm->sequence[i]);
-   }
-}
-
-/** @brief Print the sequence of a sequence matrix to stdout.
- *
- * @params[in] sm The sequence matrix.
- */
-void
-seqmatrix_printf_sequence (SeqMatrix* sm)
-{
-   seqmatrix_fprintf_sequence (stdout, sm);
-}
 
 /** @brief Print a sequence matrix to a stream.
  *
@@ -1322,7 +808,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
 
    assert (sm);
    assert (p <= FLT_DIG); /* check that p stays in the precision of float */
-   
+
    /* to circumvent problems with multiple threads, interfering prints...
       we first create the whole matrix in the memory */
    

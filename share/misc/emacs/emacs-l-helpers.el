@@ -1,7 +1,7 @@
 ;;; emacs-l-helpers.el --- Set of "helping hand" functions for using emacs in
 ;;;                        this project
 
-;; version=2007-10-16.19
+;; version=2008-08-19.22
 
 ;; Copyright (C) 2007 Stefan Bienert
 ;; Copyright (C) 2007 Center for Bioinformatics, University of Hamburg
@@ -14,6 +14,9 @@
 
 ;;; History:
 ;;  2007-10-10 bienert: created
+;;  2008-08-13 bienert: added auto-insert advice
+
+(require 'autoinsert)
 
 ;;; Code:
 (defgroup elh nil "The customisation group for Emacs' lil' helper"
@@ -40,7 +43,11 @@ Argument PTRPATH will be storend in project-tree-root."
   "Checks whether the path of pwdpath starts with ptrpath.
 Argument pwdpath is the path to be checked.
 Argument ptrpath is the path to be checked for."
-  (if (numberp (string-match (expand-file-name ptrpath)
+  (defvar ptrpath-tmp)
+  (if (string= (substring ptrpath -1) "/")
+      (setq ptrpath-tmp ptrpath)
+      (setq ptrpath-tmp (format "%s/" ptrpath)))
+  (if (numberp (string-match (expand-file-name ptrpath-tmp)
                              (expand-file-name pwdpath)))
       't
     (eval nil))
@@ -185,7 +192,7 @@ Optional argument SYMBOL takes a string to be writtin in front of each line."
 (defun elh-add-author-file (author lname afile)
   "Edit AUTHORS. Add new authors, add new files.
 Argument symbol takes the name to be searched."
-  (interactive "MAuthor? ")
+  (interactive "MAuthor?\nMShort name?\nMFile to add?")
   ;; list of variables
   (defvar authorpath)
   (defvar atregexp)
@@ -224,6 +231,32 @@ Argument symbol takes the name to be searched."
                 (error "Problems at closing file AUTHORS!")))
           (error "Could not access file AUTHORS!")))
     (error "File AUTHORS is currently visited, close buffer first."))
+)
+
+;; add author name to AUTHORS with question for confirmation
+(defun elh-add-author-confirm (eaac-author eaac-lname eaac-afile
+                               &optional eaac-do-not-ask eaac-answer)
+  "First ask and then add a new file to AUTHORS. Asking can be circumvented by
+setting optional argument eaac-do-not-ask. The answer is then fetched from
+eaac-answer"
+  (when (not eaac-do-not-ask)
+    (setq eaac-answer (y-or-n-p "Edit AUTHORS? ")))
+  (when eaac-answer
+    (elh-add-author-file eaac-author eaac-lname eaac-afile)
+     )
+  eaac-answer
+  )
+
+;; add an advice to auto-insert to ignore whitespaces & newlines
+;; has to be activated via "(ad-activate 'auto-insert)" in the emacs
+;; configuration file
+;; we use flag 'preactivate' because info page says so for byte compilation
+;; we will try it with and without this flag
+(defadvice auto-insert (before elh-empty-whitespace-only-buffers preactivate)
+  "If a buffer only contains whitespaces (including newlines), they will be deleted so auto-insert accepts the buffer to be empty."
+  (if (not (re-search-forward "[^[:blank:]\n]" nil t))
+      (delete-region (point-min) (point-max))
+  )
 )
 
 (provide 'emacs-l-helpers)

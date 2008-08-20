@@ -106,8 +106,6 @@ alphabet_new_pair (const char* upper,
    unsigned long i;
    Alphabet* this = alphabet_new (file, line);
 
-   assert ((size % 2) == 0);
-
    if ((this != NULL) && (size != 0))
    {
       /* set size */

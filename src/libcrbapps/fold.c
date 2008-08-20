@@ -103,7 +103,7 @@ fold_cmdline_parser_postprocess (const struct fold_args_info* args_info,
    return 0;
 }
 
-int
+static int
 calc_cell_nussinov(const unsigned long i,
                    const unsigned long j,
                    const char* sequence,
@@ -131,7 +131,8 @@ calc_cell_nussinov(const unsigned long i,
       }
    }
 
-   if (scores[(int)sequence[i]][(int)sequence[j]] != 0)
+   if ((scores[(int)sequence[i]][(int)sequence[j]] > 0)
+       ||(scores[(int)sequence[i]][(int)sequence[j]] < 0))
    {
       /*mprintf ("(%lu,%lu) %.3f - %.3f + %3.f\n", i, j, matrix[i][j].v,
                                                 matrix[i + 1][j -1 ].v, 

@@ -38,7 +38,7 @@
 struct Scmf_Rna_Opt_data {
       void* scores;
       Alphabet* sigma;    /* alphabet */
-      char* seq;          /* sequence */
+      Rna* rna;           /* sequence and pairlist */
 };
 
 /** @brief Create new data object for cell energy calculations.
@@ -49,13 +49,14 @@ Scmf_Rna_Opt_data*
 scmf_rna_opt_data_new (const char* file, const int line)
 {
    /* allocate 1 object */
-   Scmf_Rna_Opt_data* cedat = XOBJ_MALLOC(sizeof (Scmf_Rna_Opt_data), file, line);
+   Scmf_Rna_Opt_data* cedat = XOBJ_MALLOC(sizeof (Scmf_Rna_Opt_data),
+                                          file, line);
 
    if (cedat != NULL)
    {
       cedat->scores = NULL;
-      cedat->sigma     = NULL;
-      cedat->seq       = NULL;
+      cedat->sigma  = NULL;
+      cedat->rna    = NULL;
    }
 
    return cedat;
@@ -64,126 +65,160 @@ scmf_rna_opt_data_new (const char* file, const int line)
 /** @brief Delete a cell energy data object.
  *
  */
-void
-scmf_rna_opt_data_delete_nn (Scmf_Rna_Opt_data* cedat)
-{
-   if (cedat != NULL)
-   {
-      alphabet_delete (cedat->sigma);
-      nn_scores_delete (cedat->scores);
-      XFREE (cedat->seq);
-      XFREE (cedat);
-   }
-}
+/* void */
+/* scmf_rna_opt_data_delete_nn (Scmf_Rna_Opt_data* cedat) */
+/* { */
+/*    if (cedat != NULL) */
+/*    { */
+/*       alphabet_delete (cedat->sigma); */
+/*       nn_scores_delete (cedat->scores); */
+/*       rna_delete (cedat->rna); */
+/*       XFREE (cedat); */
+/*    } */
+/* } */
+
+/** @brief Delete a cell energy data object.
+ *
+ */
+/* void */
+/* scmf_rna_opt_data_delete_nussi (Scmf_Rna_Opt_data* cedat) */
+/* { */
+/*    if (cedat != NULL) */
+/*    { */
+/*       alphabet_delete (cedat->sigma); */
+/*       XFREE_2D ((void**)cedat->scores); */
+/*       rna_delete (cedat->rna); */
+/*       XFREE (cedat); */
+/*    } */
+/* } */
 
 /** @brief Delete a cell energy data object.
  *
  */
 void
-scmf_rna_opt_data_delete_nussi (Scmf_Rna_Opt_data* cedat)
+scmf_rna_opt_data_delete (Scmf_Rna_Opt_data* cedat)
 {
    if (cedat != NULL)
    {
+      assert (cedat->scores == NULL);
+
       alphabet_delete (cedat->sigma);
-      XFREE_2D ((void**)cedat->scores);
-      XFREE (cedat->seq);
+      rna_delete (cedat->rna);
       XFREE (cedat);
    }
 }
 
-/** @brief Initialise a new cell energy data object and initialise it.
+/** @brief Initialise a new cell energy data object.
  */
 Scmf_Rna_Opt_data*
-scmf_rna_opt_data_new_nn (const unsigned long seqlen,
-                           const char* file, const int line)
+scmf_rna_opt_data_new_init (const char* structure,
+                            const unsigned long seqlen,
+                            const char* alpha_string,
+                            const unsigned long alpha_size,
+                            const char* file, const int line)
 {
+   int error;
+
    Scmf_Rna_Opt_data* this = scmf_rna_opt_data_new (file, line);
 
    if (this != NULL)
    {
-      this->seq = XOBJ_MALLOC ((seqlen + 1) * sizeof (*(this->seq)),
-                               file, line);
-      if (this->seq != NULL)
-      {
-         this->seq[seqlen] = '\0';
-      }
-      else
-      {
-         scmf_rna_opt_data_delete_nn (this);
-         return NULL;
-      }
-
-      this->sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2);
+      /* init alphabet */
+      this->sigma = ALPHABET_NEW_SINGLE (alpha_string, alpha_size);
       if (this->sigma == NULL)
       {
-         scmf_rna_opt_data_delete_nn (this);
+         scmf_rna_opt_data_delete (this);
          return NULL;
       }
 
-      this->scores = NN_SCORES_NEW_INIT(this->sigma);
-      if (this->scores == NULL)
+      /* init Rna object */
+      this->rna = RNA_NEW;
+      if (this->rna == NULL)
       {
-         scmf_rna_opt_data_delete_nn (this);
+         scmf_rna_opt_data_delete (this);
          return NULL;
       }
+      error = RNA_INIT_SEQUENCE(seqlen, this->rna);
+      if (error)
+      {
+         scmf_rna_opt_data_delete (this);
+         return NULL;         
+      }
+      
+      error = RNA_INIT_PAIRLIST_VIENNA(structure, seqlen, this->rna);
    }
 
    return this;
 }
 
+
 /** @brief Initialise a new cell energy data object and initialise it.
  */
-Scmf_Rna_Opt_data*
-scmf_rna_opt_data_new_nussi (const unsigned long seqlen,
-                             const char* file, const int line)
-{
-   Scmf_Rna_Opt_data* this = scmf_rna_opt_data_new (file, line);
+/* Scmf_Rna_Opt_data* */
+/* scmf_rna_opt_data_new_nn (const unsigned long seqlen __attribute__((unused)), */
+/*                           const char* file, const int line) */
+/* { */
+/*    Scmf_Rna_Opt_data* this = scmf_rna_opt_data_new (file, line); */
 
-   if (this != NULL)
-   {
-      this->seq = XOBJ_MALLOC ((seqlen + 1) * sizeof (*(this->seq)),
-                               file, line);
-      if (this->seq != NULL)
-      {
-         this->seq[seqlen] = '\0';
-      }
-      else
-      {
-         scmf_rna_opt_data_delete_nussi (this);
-         return NULL;
-      }
+/*    if (this != NULL) */
+/*    { */
 
-      this->sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2);
-      if (this->sigma == NULL)
-      {
-         scmf_rna_opt_data_delete_nussi (this);
-         return NULL;
-      }
+/*       this->sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2); */
+/*       if (this->sigma == NULL) */
+/*       { */
+/*          scmf_rna_opt_data_delete_nn (this); */
+/*          return NULL; */
+/*       } */
 
-      this->scores = create_scoring_matrix (this->sigma);
-      if (this->scores == NULL)
-      {
-         scmf_rna_opt_data_delete_nussi (this);
-         return NULL;
-      }
-   }
+/*       this->scores = NN_SCORES_NEW_INIT(this->sigma); */
+/*       if (this->scores == NULL) */
+/*       { */
+/*          scmf_rna_opt_data_delete_nn (this); */
+/*          return NULL; */
+/*       } */
+/*    } */
 
-   return this;
-}
+/*    return this; */
+/* } */
+
+/** @brief Initialise a new cell energy data object and initialise it.
+ */
+/* Scmf_Rna_Opt_data* */
+/* scmf_rna_opt_data_new_nussi (const unsigned long seqlen __attribute__((unused)), */
+/*                              const char* file, const int line) */
+/* { */
+/*    Scmf_Rna_Opt_data* this = scmf_rna_opt_data_new (file, line); */
+
+/*    if (this != NULL) */
+/*    { */
+/*       this->sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2); */
+/*       if (this->sigma == NULL) */
+/*       { */
+/*          scmf_rna_opt_data_delete_nussi (this); */
+/*          return NULL; */
+/*       } */
+
+/*       this->scores = create_scoring_matrix (this->sigma); */
+/*       if (this->scores == NULL) */
+/*       { */
+/*          scmf_rna_opt_data_delete_nussi (this); */
+/*          return NULL; */
+/*       } */
+/*    } */
+
+/*    return this; */
+/* } */
 
 /** @brief Set scores for the nearest neighbour model and an alphabet.
  *
  */
 void
-scmf_rna_opt_data_set (NN_scores* scores, Alphabet* sigma,
-                      Scmf_Rna_Opt_data* cedat)
+scmf_rna_opt_data_set_scores (void* scores,
+                              Scmf_Rna_Opt_data* cedat)
 {
    assert (cedat);
-   assert (scores);
-   assert (sigma);
 
    cedat->scores = scores;
-   cedat->sigma = sigma;
 }
 
 
@@ -198,20 +233,31 @@ scmf_rna_opt_data_transform_row_2_base (const unsigned long row,
 
    cont = (Scmf_Rna_Opt_data*) data;
 
-   cont->seq[col] = alphabet_no_2_base(row, cont->sigma);
+   rna_set_sequence_base (alphabet_no_2_base(row, cont->sigma), col, cont->rna);
 
    return 0;
 }
 
 /** @brief Retriev alphabet component from data container.
  */
-/* Alphabet* */
-/* scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data* cont) */
-/* { */
-/*    assert (cont->sigma); */
+Alphabet*
+scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data* cont)
+{
+   assert (cont);
+   assert (cont->sigma);
 
-/*    return cont->sigma; */
-/* } */
+   return cont->sigma;
+}
+
+/** @brief Retrieve a list of pairs.
+ */
+unsigned long*
+scmf_rna_opt_data_get_pairlist (Scmf_Rna_Opt_data* cont)
+{
+   assert (cont);
+
+   return rna_get_pairlist (cont->rna);
+}
 
 /** @brief calculate energy using the nussinov model.
  *
@@ -259,7 +305,8 @@ scmf_rna_opt_calc_nussinov (const unsigned long row,
    het_rate = ((-1) * ((logf (1 / 0.000001f)) / (cols)));
 
    /* calculate contribution of wanted interaction (if any) */
-   interaction = seqmatrix_col_interacts_with (col, sm);
+   /* interaction = seqmatrix_col_interacts_with (col, sm);*/
+   interaction = rna_base_pairs_with (col, test->rna);
    if (interaction)
    {
       for (i = 0; i < rows; i++)
@@ -326,7 +373,8 @@ scmf_rna_opt_calc_nussinov (const unsigned long row,
 char*
 scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data* this)
 {
-   return this->seq;
+   /* return this->seq */
+   return rna_get_sequence (this->rna);
 }
 
 /** @brief calculate energy using the Nearest Neighbour energy model.
@@ -378,7 +426,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    het_rate = ((-1) * ((logf (1 / 0.000001f)) / (cols)));
 
    /* calculate contribution of wanted interaction (if any) */
-   interaction = seqmatrix_col_interacts_with (col, sm);
+   interaction = rna_base_pairs_with (col, cedat->rna);
+   /*interaction = seqmatrix_col_interacts_with (col, sm);*/
    if (interaction)
    {
       if (col < interaction)
@@ -392,7 +441,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
             seqmatrix_col_interacts_with (col, sm) >= 2 (pairs with pos 1),
             thus seqmatrix_col_interacts_with (col+1, sm) == 0 never matches
             anything */
-         if (seqmatrix_col_interacts_with ((col + 1), sm) == (interaction - 1))
+   /* if (seqmatrix_col_interacts_with ((col + 1), sm) == (interaction - 1)) */
+         if (rna_base_pairs_with ((col + 1), cedat->rna) == (interaction - 1))
          {
             /* for all allowed base pairs */
             for (l = 0; l < bp_allowed; l++)
@@ -450,7 +500,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
       else /* we are at the "j part" of a base pair */
       {
          /* decide if we got to pairs or one and a mismatch */
-         if (seqmatrix_col_interacts_with ((col - 1), sm) == (interaction + 1))
+     /*if (seqmatrix_col_interacts_with ((col - 1), sm) == (interaction + 1))*/
+         if (rna_base_pairs_with ((col - 1), cedat->rna) == (interaction + 1))
          {
             /* for all allowed base pairs */
             for (l = 0; l < bp_allowed; l++)

@@ -32,12 +32,13 @@
 #include <config.h>
 #include <stddef.h>
 #include <libcrbbasic/crbbasic.h>
+#include "alphabet.h"
 #include "rna.h"
 
 
 struct Rna {
       char* seq;                /* the nucleotide sequence */
-      char* vienna;             /* vienna string */
+      /* char* vienna; */             /* vienna string */
       unsigned long* pairs;     /* base pairs */
       unsigned long size;       /* size of the RNA (sequence & 2D structure) */
 };
@@ -63,16 +64,16 @@ rna_new (const char* file, const int line)
    
    if (this != NULL)
    {
-      this->size   = 0;
-      this->seq    = NULL;
-      this->vienna = NULL;
-      this->pairs  = NULL;
+      this->size      = 0;
+      this->seq       = NULL;
+      /* this->vienna    = NULL; */
+      this->pairs     = NULL;
    }
 
    return this;
 }
 
-/** @brief Delete a Rna.
+/** @brief Delete a Rna object.
  *
  * The destructor for @c Rna objects.
  *
@@ -85,7 +86,7 @@ rna_delete (Rna* this)
    if (this != NULL)
    {
      XFREE(this->seq);
-     XFREE(this->vienna);
+     /* XFREE(this->vienna); */
      XFREE(this->pairs);
      XFREE(this);
    }
@@ -105,7 +106,7 @@ rna_delete (Rna* this)
  * @param[in] line Fill with calling line.
  */
 int
-rna_allocate_sequence (const unsigned long size, Rna* this,
+rna_init_sequence (const unsigned long size, Rna* this,
                        const char* file, const int line)
 {
    assert (this);
@@ -114,11 +115,12 @@ rna_allocate_sequence (const unsigned long size, Rna* this,
 
    this->size = size;
 
-   this->seq = XOBJ_MALLOC (this->size * sizeof (this->seq[0]), file, line);
+   this->seq = XOBJ_CALLOC ((this->size + 1), sizeof (this->seq[0]),
+                            file, line);
    if (this->seq == NULL)
    {
       return ERR_RNA_ALLOC;
-   }   
+   }
 
    return 0;
 }
@@ -160,7 +162,7 @@ rna_init_pairlist_vienna (const char* vienna,
    unsigned long* p_stack = NULL;
 
    assert (this);
-   assert (this->vienna == NULL);
+   /* assert (this->vienna == NULL); */
    assert (this->pairs == NULL);
    assert ((this->size == 0) || (this->size == length));
 
@@ -250,8 +252,172 @@ rna_init_pairlist_vienna (const char* vienna,
 
 /********************************   Altering   ********************************/
 
+/** @brief Set a certain base at a certain position in an Rna sequence.
+ *
+ * Set a given base at a certain position in the sequence component of an Rna
+ * object. Position counting starts at 0.\n
+ *
+ * @param[in] base The base type to set.
+ * @param[in] pos Position where to place base.
+ * @param[in] this Rna data object.
+ */
+void
+rna_set_sequence_base (const char base, const unsigned long pos, Rna* this)
+{
+   assert (this);
+   assert (this->seq);
+   assert (this->size > pos);
+
+   this->seq[pos] = base;
+
+}
+
+/** @brief Transform Rna sequence to numbers.
+ *
+ * Transform the sequence component of an Rna object to numbers.\n
+ * Returns 0 on success, @c ERR_RNA_NO_BASE if the sequence contains invalid
+ * bases. In case of error, the sequence is unchanged.
+ *
+ * @param[in] sigma Alphabet to use for transformation.
+ * @param[in] this Rna data object.
+ */
+int
+rna_transform_sequence_2_no (const Alphabet* sigma, Rna* this)
+{
+   unsigned long i;
+   char tmp;
+
+   assert (sigma);
+   assert (this);
+   assert (this->seq);
+
+   for (i = 0; i < this->size; i++)
+   {
+      tmp = alphabet_base_2_no (this->seq[i], sigma);
+
+      if (tmp == CHAR_UNDEF)
+      {
+         if (i > 0)
+         {
+            for (; i > 0; i--)
+            {
+               this->seq[i - 1] = alphabet_no_2_base (this->seq[i - 1], sigma);
+            }
+         }
+         return ERR_RNA_NO_BASE;
+      }
+
+      this->seq[i] = tmp;
+   }
+
+   return 0;
+}
+
+/** @brief Transform Rna sequence from numbers to bases.
+ *
+ * Transform the sequence component of an Rna object to bases.\n
+ * Returns 0 on success, @c ERR_RNA_NO_BASE if the sequence contains invalid
+ * bases. In case of error, the sequence is unchanged.
+ *
+ * @param[in] sigma Alphabet to use for transformation.
+ * @param[in] this Rna data object.
+ */
+int
+rna_transform_sequence_2_bases (const Alphabet* sigma, Rna* this)
+{
+   unsigned long i;
+   char tmp;
+
+   assert (sigma);
+   assert (this);
+   assert (this->seq);
+
+   for (i = 0; i < this->size; i++)
+   {
+      tmp = alphabet_no_2_base (this->seq[i], sigma);
+
+      if (tmp == CHAR_UNDEF)
+      {
+         if (i > 0)
+         {
+            for (; i > 0; i--)
+            {
+               this->seq[i - 1] = alphabet_base_2_no (this->seq[i - 1], sigma);
+            }
+         }
+         return ERR_RNA_NO_BASE;
+      }
+
+      this->seq[i] = tmp;
+   }
+
+   return 0;
+}
 
 /*********************************   Access   *********************************/
+
+/** @brief Get the no. of nucleotides of an Rna object.
+ *
+ * Returns the no. of nucleotides of a given Rna object.
+ *
+ * @param[in] this Rna data object.
+ */
+unsigned long
+rna_get_size (const Rna* this)
+{
+   assert (this);
+
+   return this->size;
+}
+
+/** @brief Get the list of pairs of an Rna object.
+ *
+ * Returns the pairing list of an Rna object. If no list was set before,
+ * returns @c NULL.
+ *
+ * @params[in] this Rna data object.
+ */
+unsigned long*
+rna_get_pairlist (const Rna* this)
+{
+   assert (this);
+
+   return this->pairs;
+}
+
+/** @brief Get the sequence of an Rna object.
+ *
+ * Returns the sequence component of an Rna object as a cstring. If no sequence
+ * was set before, returns @c NULL.
+ *
+ * @params[in] this Rna data object.
+ */
+char*
+rna_get_sequence (const Rna* this)
+{
+   assert (this);
+
+   return this->seq;
+}
+
+/** @brief Get a base from a certain position in an Rna sequence.
+ *
+ * Get a base from a certain position in the sequence component of an Rna
+ * object. Position counting starts at 0.\n
+ *
+ * @param[in] pos Position where to place base.
+ * @param[in] this Rna data object.
+ */
+char
+rna_get_sequence_base (const unsigned long pos, const Rna* this)
+{
+   assert (this);
+   assert (this->seq);
+   assert (this->size > pos);
+
+   return this->seq[pos];
+
+}
 
 /** @brief Get the pairing partner of a base.
  *
@@ -262,7 +428,7 @@ rna_init_pairlist_vienna (const char* vienna,
  * @params[in] this Rna data object.
  */
 unsigned long
-rna_base_pairs_with (unsigned long pos, Rna* this)
+rna_base_pairs_with (const unsigned long pos, const Rna* this)
 {
    assert (this);
    assert (this->pairs);

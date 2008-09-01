@@ -48,16 +48,26 @@ scmf_rna_opt_data_new (const char*, const int);
 #define SCMF_RNA_OPT_DATA_NEW scmf_rna_opt_data_new (__FILE__, __LINE__)
 
 void
+scmf_rna_opt_data_delete (Scmf_Rna_Opt_data*);
+
+/*void
 scmf_rna_opt_data_delete_nn (Scmf_Rna_Opt_data*);
 
 void
-scmf_rna_opt_data_delete_nussi (Scmf_Rna_Opt_data*);
-
-void
-scmf_rna_opt_data_set (NN_scores*, Alphabet*, Scmf_Rna_Opt_data*);
+scmf_rna_opt_data_delete_nussi (Scmf_Rna_Opt_data*);*/
 
 Scmf_Rna_Opt_data*
-scmf_rna_opt_data_new_nn (const unsigned long, const char*, const int);
+scmf_rna_opt_data_new_init (const char*,
+                            const unsigned long,
+                            const char*,
+                            const unsigned long,
+                            const char*, const int);
+
+#define SCMF_RNA_OPT_DATA_NEW_INIT(S, L, A, G)                   \
+   scmf_rna_opt_data_new_init (S, L, A, G, __FILE__, __LINE__)
+
+/*Scmf_Rna_Opt_data*
+  scmf_rna_opt_data_new_nn (const unsigned long, const char*, const int);
 
 #define SCMF_RNA_OPT_DATA_NEW_NN(L) \
    scmf_rna_opt_data_new_nn (L, __FILE__, __LINE__)
@@ -66,15 +76,22 @@ Scmf_Rna_Opt_data*
 scmf_rna_opt_data_new_nussi (const unsigned long, const char*, const int);
 
 #define SCMF_RNA_OPT_DATA_NEW_NUSSI(L) \
-   scmf_rna_opt_data_new_nussi (L, __FILE__, __LINE__)
+scmf_rna_opt_data_new_nussi (L, __FILE__, __LINE__)*/
 
 int
 scmf_rna_opt_data_transform_row_2_base (const unsigned long,
                                         const unsigned long,
                                         void*);
 
-/*Alphabet*
-  scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data*);*/
+void
+scmf_rna_opt_data_set_scores (void*,
+                              Scmf_Rna_Opt_data*);
+
+unsigned long*
+scmf_rna_opt_data_get_pairlist (Scmf_Rna_Opt_data*);
+
+Alphabet*
+scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data*);
 
 char*
 scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data*);

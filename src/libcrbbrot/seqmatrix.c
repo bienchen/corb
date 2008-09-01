@@ -52,7 +52,7 @@ struct SeqMatrix {
       char* fixed_sites;          /* list of fixed sites in the matrix */
       float** matrix[No_Of_Mtrx]; /* current and future matrices */
       short int curr_matrix;      /* index of current matrix */
-      unsigned long* pairlist;    /* interacting sites */
+/*       unsigned long* pairlist; */    /* interacting sites */
       size_t rows;
       size_t cols;
       float gas_constant;
@@ -93,7 +93,7 @@ seqmatrix_new (const char* file, const int line)
    if (sm != NULL)
    {
       sm->fixed_sites      = NULL;
-      sm->pairlist         = NULL;
+/*       sm->pairlist         = NULL; */
       sm->calc_eeff_col    = NULL;
       sm->calc_eeff_row    = NULL;
       sm->calc_cell_energy = NULL;
@@ -125,7 +125,7 @@ seqmatrix_delete (SeqMatrix* sm)
    if (sm != NULL)
    {
       XFREE    (sm->fixed_sites);
-      XFREE    (sm->pairlist);
+/*       XFREE    (sm->pairlist); */
 
       for (i = 0; i < No_Of_Mtrx; i++)
       {
@@ -176,10 +176,10 @@ unsigned long
 seqmatrix_col_interacts_with (const unsigned long col, const SeqMatrix* sm)
 {
    assert (sm);
-   assert (sm->pairlist);
+/*    assert (sm->pairlist); */
    assert (col < sm->cols);
 
-   return sm->pairlist[col];
+   return 0/* sm->pairlist[col] */;
 }
 
 /** @brief get the width of a sequence matrix.
@@ -359,7 +359,7 @@ seqmatrix_calc_eeff_row_scmf (const unsigned long col,
  * @param[in] sm Sequence matrix to initialise.
  */
 int
-seqmatrix_init (const unsigned long* pairs,
+seqmatrix_init (const unsigned long* pairs __attribute__((unused)),
                 const unsigned long rows,
                 const unsigned long width,
                 SeqMatrix* sm,
@@ -370,7 +370,7 @@ seqmatrix_init (const unsigned long* pairs,
 
    assert (sm);
    assert (sm->fixed_sites == NULL);
-   assert (sm->pairlist    == NULL);
+/*    assert (sm->pairlist    == NULL); */
    assert (sm->matrix[F_Mtrx]   == NULL);
    assert (sm->matrix[S_Mtrx]   == NULL);
 
@@ -436,15 +436,15 @@ seqmatrix_init (const unsigned long* pairs,
    }
 
    /* copy pairlist */
-   sm->pairlist = XOBJ_CALLOC (width, sizeof (*(sm->pairlist)), file, line);
+/*    sm->pairlist = XOBJ_CALLOC (width, sizeof (*(sm->pairlist)), file, line); */
 
-   if (pairs != NULL)
-   {
-      for (i = 0; i < width; i++)
-      {
-         sm->pairlist[i] = pairs[i]; /* xxx use memcpy instead? */
-      }
-   }
+/*    if (pairs != NULL) */
+/*    { */
+/*       for (i = 0; i < width; i++) */
+/*       { */
+/*          sm->pairlist[i] = pairs[i]; /\* xxx use memcpy instead? *\/ */
+/*       } */
+/*    } */
 
    /* run over list of presettings and set sites */
    /* allocate memory & init fixed sites */

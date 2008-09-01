@@ -32,6 +32,8 @@
 extern "C" {
 #endif
 
+#include "alphabet.h"
+
 #ifndef RNA_H
 #define RNA_H
 
@@ -47,7 +49,8 @@ enum rna_retvals{
    ERR_RNA_ALLOC = 1,      /* (re)allocation problems */
    ERR_RNA_VIENNA_FORMAT,  /* Wrong format of Vienna structure string */
    ERR_RNA_VIENNA_MMC,     /* Mismatched closing pairing partner found */
-   ERR_RNA_VIENNA_MMO     /* Mismatched opening pairing partner found*/
+   ERR_RNA_VIENNA_MMO,     /* Mismatched opening pairing partner found */
+   ERR_RNA_NO_BASE         /* Given symbol is not a valid base */
 };
 
 typedef struct Rna Rna;
@@ -71,19 +74,38 @@ rna_init_pairlist_vienna (const char*, const unsigned long, Rna*,
    rna_init_pairlist_vienna (A, B, C, __FILE__, __LINE__);
 
 int
-rna_allocate_sequence (const unsigned long, Rna*, const char*, const int);
+rna_init_sequence (const unsigned long, Rna*, const char*, const int);
 
-#define RNA_ALLOCATE_SEQUENCE(A, B) \
-   rna_allocate_sequence (A, B, __FILE__, __LINE__)
+#define RNA_INIT_SEQUENCE(A, B) \
+   rna_init_sequence (A, B, __FILE__, __LINE__)
 
 /********************************   Altering   ********************************/
 
+void
+rna_set_sequence_base (const char, const unsigned long, Rna*);
+
+int
+rna_transform_sequence_2_no (const Alphabet*, Rna*);
+
+int
+rna_transform_sequence_2_bases (const Alphabet*, Rna*);
 
 /*********************************   Access   *********************************/
 
 unsigned long
-rna_base_pairs_with (unsigned long, Rna*);
+rna_get_size (const Rna*);
 
+unsigned long*
+rna_get_pairlist (const Rna*);
+
+char*
+rna_get_sequence (const Rna*);
+
+unsigned long
+rna_base_pairs_with (const unsigned long, const Rna*);
+
+char
+rna_get_sequence_base (const unsigned long, const Rna*);
 
 #endif /* RNA_H */
 

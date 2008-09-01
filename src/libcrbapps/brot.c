@@ -41,100 +41,6 @@
 #include "brot_cmdline.h"
 #include "brot.h"
 
-static unsigned long*
-parse_input_structure (const char* structure)
-{
-   size_t struct_len;
-   unsigned long open_pair = 0;
-   unsigned long i;
-   unsigned long* pairlist = NULL;
-   unsigned long* p_stack;
-   int error = 0;
-
-   assert (structure);
-
-   struct_len = strlen (structure);
-
-   /* allocate list */
-   pairlist = XCALLOC (struct_len, sizeof (*pairlist));
-   if (pairlist == NULL)
-   {
-      return pairlist;
-   }
-
-   p_stack = XCALLOC (struct_len, sizeof (*pairlist));
-
-   i = 0;
-   while ((!error) && (i < struct_len))
-   {
-      if (  (structure[i] != '(')
-          &&(structure[i] != ')')
-          &&(structure[i] != '.'))
-      {
-         THROW_ERROR_MSG ("Non-valid symbol found in structure string. "
-                          "Allowed characters: \'(\', \')\', \'.\'. Found "
-                          "\'%c\' at position %lu.", structure[i],
-                         i);
-         error = 1;
-      }
-
-      switch (structure[i])
-      {
-         case '(' :
-            p_stack[open_pair] = i;
-            open_pair++;
-            break;     
-
-         case ')' :
-            if (open_pair == 0)
-            {
-               THROW_ERROR_MSG ("Mismatched nucleotide (closing base pair "
-                                "partner) found at position %lu in structure "
-                                "string",
-                                i);
-               error = 1;               
-            }
-            else
-            {
-               open_pair--;
-               pairlist[i] = p_stack[open_pair] + 1;
-               pairlist[p_stack[open_pair]] = i + 1;
-            }
-            break;
-
-         case '.' : ;
-            break;     
-
-         default  : 
-            THROW_ERROR_MSG ("Non-valid symbol found in structure string. "
-                             "Allowed characters: \'(\', \')\', \'.\'. Found "
-                             "\'%c\' at position %lu.",
-                             structure[i], i);
-            error = 1;
-            break;
-      }
-
-      i++;
-   }
-
-   if (open_pair != 0)
-   {
-      THROW_ERROR_MSG ("Mismatched nucleotide (opening base pair "
-                       "partner) found in structure string");
-      error = 1;
-   }
-   
-   XFREE (p_stack);
-
-   if (error)
-   {
-      XFREE (pairlist);
-      return NULL;
-   }
-
-   return pairlist;
-}
-
 static int
 brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
 {
@@ -248,14 +154,14 @@ adopt_site_presettings (const struct brot_args_info* args_info,
 
 static int
 simulate_using_nn_scoring (struct brot_args_info* brot_args,
-                           SeqMatrix* sm)
+                           SeqMatrix* sm, Scmf_Rna_Opt_data* data)
 {
    int error = 0;
    float c_rate = 0;
-   Scmf_Rna_Opt_data* data =
-      SCMF_RNA_OPT_DATA_NEW_NN (seqmatrix_get_width(sm));
+   NN_scores* scores =
+      NN_SCORES_NEW_INIT(scmf_rna_opt_data_get_alphabet (data));
 
-   if (data == NULL)
+   if (scores == NULL)
    {
       error = 1;
    }
@@ -263,6 +169,8 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    /* simulate */
    if (!error)
    {
+      scmf_rna_opt_data_set_scores (scores, data);
+
       seqmatrix_set_gas_constant (8.314472, sm);
 
       if (brot_args->steps_arg > 0)
@@ -308,28 +216,22 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       /*error = seqmatrix_collate_mv (sm, sigma);*/
    }
 
-   if (!error)
-   {
-      mprintf ("%s\n", scmf_rna_opt_data_get_seq(data));
-   }
-
-   /* seqmatrix_print_2_stdout (6, sm); */
-
-   scmf_rna_opt_data_delete_nn (data);
+   nn_scores_delete (scores);
+   scmf_rna_opt_data_set_scores (NULL, data);
 
    return error;
 }
 
 static int
 simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
-                                 SeqMatrix* sm)
+                                 SeqMatrix* sm, Scmf_Rna_Opt_data* data)
 {
    int error = 0;
    float c_rate = 0;
-   Scmf_Rna_Opt_data* data =
-      SCMF_RNA_OPT_DATA_NEW_NUSSI (seqmatrix_get_width(sm));
+   float** scores
+      = create_scoring_matrix (scmf_rna_opt_data_get_alphabet (data)); 
 
-   if (data == NULL)
+   if (scores == NULL)
    {
       error = 1;
    }
@@ -337,6 +239,7 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
    /* simulate */
    if (!error)
    {
+      scmf_rna_opt_data_set_scores (scores, data);
 
       if (brot_args->steps_arg > 0)
       {
@@ -380,13 +283,8 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
       /* error = seqmatrix_collate_mv (sm, sigma); */
    }
 
-   if (!error)
-   {
-      mprintf ("%s\n", scmf_rna_opt_data_get_seq(data));
-   }
-
-
-   scmf_rna_opt_data_delete_nussi (data);
+   scmf_rna_opt_data_set_scores (NULL, data);
+   XFREE_2D ((void**)scores);
 
    return error;
 }
@@ -395,15 +293,9 @@ int
 brot_main(const char *cmdline)
 {
    struct brot_args_info brot_args;
-   SeqMatrix* sm           = NULL;
-   int retval              = 0;
-   unsigned long* pairlist = NULL;
-   Alphabet* sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2);
-
-   if (sigma == NULL)
-   {
-      return EXIT_FAILURE;
-   }
+   SeqMatrix* sm               = NULL;
+   int retval                  = 0;
+   Scmf_Rna_Opt_data* sim_data = NULL;
 
    /* command line parsing */
    brot_cmdline_parser_init (&brot_args);
@@ -421,11 +313,14 @@ brot_main(const char *cmdline)
       retval = brot_cmdline_parser_postprocess (&brot_args);
    }
 
+   /* init simulation data */
    if (retval == 0)
    {
-      /* Analyse & transform structure */
-      pairlist = parse_input_structure (brot_args.inputs[1]);
-      if (pairlist == NULL)
+      sim_data = SCMF_RNA_OPT_DATA_NEW_INIT(brot_args.inputs[1], 
+                                            strlen (brot_args.inputs[1]),
+                                            RNA_ALPHABET,
+                                            strlen(RNA_ALPHABET)/2);
+      if (sim_data == NULL)
       {
          retval = 1;
       }
@@ -437,8 +332,8 @@ brot_main(const char *cmdline)
       sm = SEQMATRIX_NEW;
       if (sm != NULL)
       {
-         retval = SEQMATRIX_INIT (pairlist,
-                                  alphabet_size (sigma),
+         retval = SEQMATRIX_INIT (scmf_rna_opt_data_get_pairlist (sim_data),
+                      alphabet_size (scmf_rna_opt_data_get_alphabet (sim_data)),
                                   strlen (brot_args.inputs[1]),
                                   sm);
          /*seqmatrix_print_2_stdout (2, sm);*/
@@ -452,7 +347,9 @@ brot_main(const char *cmdline)
    /* fix certain sites in the matrix */
    if (retval == 0)
    {
-      retval = adopt_site_presettings (&brot_args, sigma, sm);
+      retval = adopt_site_presettings (&brot_args,
+                                      scmf_rna_opt_data_get_alphabet (sim_data),
+                                       sm);
    }
 
    if (retval == 0)
@@ -462,7 +359,7 @@ brot_main(const char *cmdline)
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
-            retval = simulate_using_nn_scoring (&brot_args, sm);
+            retval = simulate_using_nn_scoring (&brot_args, sm, sim_data);
          }
          else
          {
@@ -476,15 +373,19 @@ brot_main(const char *cmdline)
       }
       else if (brot_args.scoring_arg == scoring_arg_nussinov)
       {
-         retval = simulate_using_nussinov_scoring (&brot_args, sm);
+         retval = simulate_using_nussinov_scoring (&brot_args, sm, sim_data);
       }
    }
   
+   if (retval == 0)
+   {
+      mprintf ("%s\n", scmf_rna_opt_data_get_seq(sim_data));
+   }   
+
    /* finalise */
    brot_cmdline_parser_free (&brot_args);
    seqmatrix_delete (sm);
-   XFREE (pairlist);
-   alphabet_delete (sigma);
+   scmf_rna_opt_data_delete (sim_data);
 
    if (retval == 0)
    {
@@ -495,3 +396,6 @@ brot_main(const char *cmdline)
       return EXIT_FAILURE;
    }
 }
+/* nn: ACGUGGCAAGGGCAACAGAUAGCCCAGGGGCACAGAGAGCCCCAGAUAGGGGCAUAGAGAGCCCCGCCACGUAGAG */
+/*nussi: CCAAUUGAACCGGAACAAUAACCGGACCGGGAACAUAACCCGGAAACAGGUCGAACAUAACGACCCAAUUGGACAC
+*/

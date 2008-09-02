@@ -62,39 +62,6 @@ scmf_rna_opt_data_new (const char* file, const int line)
    return cedat;
 }
 
-/** @brief Delete a cell energy data object.
- *
- */
-/* void */
-/* scmf_rna_opt_data_delete_nn (Scmf_Rna_Opt_data* cedat) */
-/* { */
-/*    if (cedat != NULL) */
-/*    { */
-/*       alphabet_delete (cedat->sigma); */
-/*       nn_scores_delete (cedat->scores); */
-/*       rna_delete (cedat->rna); */
-/*       XFREE (cedat); */
-/*    } */
-/* } */
-
-/** @brief Delete a cell energy data object.
- *
- */
-/* void */
-/* scmf_rna_opt_data_delete_nussi (Scmf_Rna_Opt_data* cedat) */
-/* { */
-/*    if (cedat != NULL) */
-/*    { */
-/*       alphabet_delete (cedat->sigma); */
-/*       XFREE_2D ((void**)cedat->scores); */
-/*       rna_delete (cedat->rna); */
-/*       XFREE (cedat); */
-/*    } */
-/* } */
-
-/** @brief Delete a cell energy data object.
- *
- */
 void
 scmf_rna_opt_data_delete (Scmf_Rna_Opt_data* cedat)
 {
@@ -151,67 +118,6 @@ scmf_rna_opt_data_new_init (const char* structure,
    return this;
 }
 
-
-/** @brief Initialise a new cell energy data object and initialise it.
- */
-/* Scmf_Rna_Opt_data* */
-/* scmf_rna_opt_data_new_nn (const unsigned long seqlen __attribute__((unused)), */
-/*                           const char* file, const int line) */
-/* { */
-/*    Scmf_Rna_Opt_data* this = scmf_rna_opt_data_new (file, line); */
-
-/*    if (this != NULL) */
-/*    { */
-
-/*       this->sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2); */
-/*       if (this->sigma == NULL) */
-/*       { */
-/*          scmf_rna_opt_data_delete_nn (this); */
-/*          return NULL; */
-/*       } */
-
-/*       this->scores = NN_SCORES_NEW_INIT(this->sigma); */
-/*       if (this->scores == NULL) */
-/*       { */
-/*          scmf_rna_opt_data_delete_nn (this); */
-/*          return NULL; */
-/*       } */
-/*    } */
-
-/*    return this; */
-/* } */
-
-/** @brief Initialise a new cell energy data object and initialise it.
- */
-/* Scmf_Rna_Opt_data* */
-/* scmf_rna_opt_data_new_nussi (const unsigned long seqlen __attribute__((unused)), */
-/*                              const char* file, const int line) */
-/* { */
-/*    Scmf_Rna_Opt_data* this = scmf_rna_opt_data_new (file, line); */
-
-/*    if (this != NULL) */
-/*    { */
-/*       this->sigma = ALPHABET_NEW_SINGLE (RNA_ALPHABET, strlen(RNA_ALPHABET)/2); */
-/*       if (this->sigma == NULL) */
-/*       { */
-/*          scmf_rna_opt_data_delete_nussi (this); */
-/*          return NULL; */
-/*       } */
-
-/*       this->scores = create_scoring_matrix (this->sigma); */
-/*       if (this->scores == NULL) */
-/*       { */
-/*          scmf_rna_opt_data_delete_nussi (this); */
-/*          return NULL; */
-/*       } */
-/*    } */
-
-/*    return this; */
-/* } */
-
-/** @brief Set scores for the nearest neighbour model and an alphabet.
- *
- */
 void
 scmf_rna_opt_data_set_scores (void* scores,
                               Scmf_Rna_Opt_data* cedat)
@@ -220,8 +126,6 @@ scmf_rna_opt_data_set_scores (void* scores,
 
    cedat->scores = scores;
 }
-
-
 
 int
 scmf_rna_opt_data_transform_row_2_base (const unsigned long row,

@@ -59,9 +59,6 @@ seqmatrix_delete (SeqMatrix*);
 bool
 seqmatrix_is_col_fixed (const unsigned long, const SeqMatrix*);
 
-/* unsigned long */
-/* seqmatrix_col_interacts_with (const unsigned long, const SeqMatrix*); */
-
 unsigned long
 seqmatrix_get_width (const SeqMatrix*);
 

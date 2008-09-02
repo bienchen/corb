@@ -93,7 +93,6 @@ seqmatrix_new (const char* file, const int line)
    if (sm != NULL)
    {
       sm->fixed_sites      = NULL;
-/*       sm->pairlist         = NULL; */
       sm->calc_eeff_col    = NULL;
       sm->calc_eeff_row    = NULL;
       sm->calc_cell_energy = NULL;
@@ -125,7 +124,6 @@ seqmatrix_delete (SeqMatrix* sm)
    if (sm != NULL)
    {
       XFREE    (sm->fixed_sites);
-/*       XFREE    (sm->pairlist); */
 
       for (i = 0; i < No_Of_Mtrx; i++)
       {
@@ -154,7 +152,6 @@ seqmatrix_is_col_fixed (const unsigned long col, const SeqMatrix* sm)
    assert (sm);
    assert (sm->matrix[sm->curr_matrix]);
    assert (sm->fixed_sites);
-   /* assert (); */
 
    if (sm->fixed_sites[(col / CHAR_BIT)] & (1 << (col % CHAR_BIT)))
    {
@@ -162,24 +159,6 @@ seqmatrix_is_col_fixed (const unsigned long col, const SeqMatrix* sm)
    }
 
    return false;
-}
-
-/** @brief Get interacting sites.
- *
- * Returns the no. of the column interactiong with @c col + 1. If there is no
- * interaction defined for the site at column @c col, 0 is returned.
- *
- * @param[in] col Column to check interaction.
- * @param[in] sm Sequence matrix.
- */
-unsigned long
-seqmatrix_col_interacts_with (const unsigned long col, const SeqMatrix* sm)
-{
-   assert (sm);
-/*    assert (sm->pairlist); */
-   assert (col < sm->cols);
-
-   return 0/* sm->pairlist[col] */;
 }
 
 /** @brief get the width of a sequence matrix.
@@ -284,8 +263,6 @@ seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
    assert (sm);
    assert (sm->calc_eeff_row);
 
-   /* assert (sigma); */
-
    /* for each col */
    i = 0;
    while ((!error) && (i < sm->cols))
@@ -307,7 +284,7 @@ seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
    {
       sm->curr_matrix = F_Mtrx;
    }
-   /*exit(1);*/
+
    return error;
 }
 

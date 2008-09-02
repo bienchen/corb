@@ -50,12 +50,6 @@ scmf_rna_opt_data_new (const char*, const int);
 void
 scmf_rna_opt_data_delete (Scmf_Rna_Opt_data*);
 
-/*void
-scmf_rna_opt_data_delete_nn (Scmf_Rna_Opt_data*);
-
-void
-scmf_rna_opt_data_delete_nussi (Scmf_Rna_Opt_data*);*/
-
 Scmf_Rna_Opt_data*
 scmf_rna_opt_data_new_init (const char*,
                             const unsigned long,
@@ -65,18 +59,6 @@ scmf_rna_opt_data_new_init (const char*,
 
 #define SCMF_RNA_OPT_DATA_NEW_INIT(S, L, A, G)                   \
    scmf_rna_opt_data_new_init (S, L, A, G, __FILE__, __LINE__)
-
-/*Scmf_Rna_Opt_data*
-  scmf_rna_opt_data_new_nn (const unsigned long, const char*, const int);
-
-#define SCMF_RNA_OPT_DATA_NEW_NN(L) \
-   scmf_rna_opt_data_new_nn (L, __FILE__, __LINE__)
-
-Scmf_Rna_Opt_data*
-scmf_rna_opt_data_new_nussi (const unsigned long, const char*, const int);
-
-#define SCMF_RNA_OPT_DATA_NEW_NUSSI(L) \
-scmf_rna_opt_data_new_nussi (L, __FILE__, __LINE__)*/
 
 int
 scmf_rna_opt_data_transform_row_2_base (const unsigned long,

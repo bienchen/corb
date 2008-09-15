@@ -2,7 +2,7 @@
 ;;;                    structs
 
   
-;; version=2008-08-19.23
+;; version=2008-09-03.11
   
 ;; Copyright (C) 2007 Stefan Bienert
 ;; Copyright (C) 2007 Center for Bioinformatics, University of Hamburg
@@ -22,6 +22,11 @@
 
 ;;; ToDo
 ;;  - combine duplicated parts in c-header and c-source skeleton?
+;;     - check impl. of author funcs, how to check interactive mode?
+;;     - next step: build switch to ask for author editing into c-file-skeleton
+;;       - two vars: One for decision of c-source,
+;;         one to signal interactive mode
+;;       - can we determine interactive mode automatically?
 ;;     - next step: substitute c-file-skeleton into c-header-skeleton
 ;;       -> subst. c-header into c-create-header?
 ;;     - used by c-source and c-header

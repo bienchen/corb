@@ -55,10 +55,22 @@ scmf_rna_opt_data_new_init (const char*,
                             const unsigned long,
                             const char*,
                             const unsigned long,
+                            float,
                             const char*, const int);
 
-#define SCMF_RNA_OPT_DATA_NEW_INIT(S, L, A, G)                   \
-   scmf_rna_opt_data_new_init (S, L, A, G, __FILE__, __LINE__)
+#define SCMF_RNA_OPT_DATA_NEW_INIT(S, L, A, G, H)                 \
+   scmf_rna_opt_data_new_init (S, L, A, G, H, __FILE__, __LINE__)
+
+/* int */
+/* scmf_rna_opt_data_init_negative_design_energies (void*, */
+/*                                                  SeqMatrix*); */
+
+int
+scmf_rna_opt_data_update_neg_design_energy (void*, unsigned long, SeqMatrix*);
+
+int
+scmf_rna_opt_data_init_negative_design_energies_alt (void*,
+                                                 SeqMatrix*);
 
 int
 scmf_rna_opt_data_transform_row_2_base (const unsigned long,
@@ -66,8 +78,10 @@ scmf_rna_opt_data_transform_row_2_base (const unsigned long,
                                         void*);
 
 void
-scmf_rna_opt_data_set_scores (void*,
-                              Scmf_Rna_Opt_data*);
+scmf_rna_opt_data_set_scores (void*, Scmf_Rna_Opt_data*);
+
+void
+scmf_rna_opt_data_set_bp_allowed (char**, Scmf_Rna_Opt_data*);
 
 unsigned long*
 scmf_rna_opt_data_get_pairlist (Scmf_Rna_Opt_data*);

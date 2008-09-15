@@ -19,3 +19,6 @@ Stefan Bienert (bienert):
         libcrbrna/nn_scores.[c,h] libcrbrna/rna.[c,h]
         libcrbrna/test_alphabet.c libcrbrna/test_nn_scores
         libcrbrna/test_rna.c
+
+test (test):
+        test.test

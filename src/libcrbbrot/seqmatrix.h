@@ -115,6 +115,15 @@ seqmatrix_set_transform_row (int (*transform_row) (const unsigned long,
                              SeqMatrix*);
 
 void
+seqmatrix_set_pre_col_iter_hook(int (*pre_col_iter_hook) (void*, SeqMatrix*),
+                                SeqMatrix* sm);
+
+void
+seqmatrix_set_fixed_site_hook (int (*fixed_site_hook) (void*, unsigned long,
+                                                       SeqMatrix*),
+                               SeqMatrix* sm);
+
+void
 seqmatrix_fix_col (const unsigned long,
                    const unsigned long,
                    SeqMatrix*);

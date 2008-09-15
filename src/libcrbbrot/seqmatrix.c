@@ -67,6 +67,8 @@ struct SeqMatrix {
                                  void*,
                                  SeqMatrix*);
       int (*transform_row) (const unsigned long, const unsigned long, void*);
+      int (*pre_col_iter_hook) (void*, SeqMatrix*);
+      int (*fixed_site_hook) (void*, unsigned long, SeqMatrix*);
 };
 
 /**********************   Constructors and destructors   **********************/
@@ -92,11 +94,13 @@ seqmatrix_new (const char* file, const int line)
 
    if (sm != NULL)
    {
-      sm->fixed_sites      = NULL;
-      sm->calc_eeff_col    = NULL;
-      sm->calc_eeff_row    = NULL;
-      sm->calc_cell_energy = NULL;
-      sm->transform_row    = NULL;
+      sm->fixed_sites       = NULL;
+      sm->calc_eeff_col     = NULL;
+      sm->calc_eeff_row     = NULL;
+      sm->calc_cell_energy  = NULL;
+      sm->transform_row     = NULL;
+      sm->pre_col_iter_hook = NULL;
+      sm->fixed_site_hook   = NULL;
 
       sm->gas_constant  = 1;
 
@@ -244,6 +248,25 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
    sm->matrix[S_Mtrx][row][col] = 1.0f;
 }
 
+static __inline__ int
+seqmatrix_pre_col_iter_hook (void* data, SeqMatrix* sm)
+{
+   assert (data);
+   assert (sm);
+
+   return 0;
+}
+
+static __inline__ int
+seqmatrix_fixed_site_hook (void* data, unsigned long i,SeqMatrix* sm)
+{
+   assert (data);
+   assert (sm);
+   assert (i < sm->cols);
+
+   return 0;
+}
+
 /** @brief Update the columns of a sequence matrix
  *
  * Update cols of a sequence matrix in a SCMF simulation.
@@ -258,7 +281,6 @@ seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
 {
    unsigned long i;
    int error = 0;
-   float** scores = (float**) sco;
 
    assert (sm);
    assert (sm->calc_eeff_row);
@@ -269,8 +291,12 @@ seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
    {
       if (!seqmatrix_is_col_fixed (i, sm))
       {
-         /* error = seqmatrix_calc_eeff_row_scmf (i, sm, t, scores, NULL); */
-         error = sm->calc_eeff_row (i, sm, t, scores);
+         error = sm->calc_eeff_row (i, sm, t, sco);
+      }
+      else
+      {
+         /* mfprintf (stderr, "\n\n\nIN %lu\n\n\n", i); */
+         error = sm->fixed_site_hook (sco, i, sm);
       }
 
       i++;
@@ -303,7 +329,6 @@ seqmatrix_calc_eeff_row_scmf (const unsigned long col,
 {
    short int new_matrix = F_Mtrx;
    unsigned long j;
-   float** scores = (float**) sco;
 
    assert (sm);
    assert (sm->calc_cell_energy);
@@ -316,7 +341,7 @@ seqmatrix_calc_eeff_row_scmf (const unsigned long col,
    for (j = 0; j < sm->rows; j++)
    {
       sm->matrix[new_matrix][j][col] = sm->calc_cell_energy (j, col,
-                                                             scores,
+                                                             sco,
                                                              sm);
       sm->matrix[new_matrix][j][col] =
          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(sm->gas_constant*t)));
@@ -352,8 +377,10 @@ seqmatrix_init (const unsigned long* pairs __attribute__((unused)),
    assert (sm->matrix[S_Mtrx]   == NULL);
 
    /* set standard functions */
-   sm->calc_eeff_col = seqmatrix_calc_eeff_col_scmf;
-   sm->calc_eeff_row = seqmatrix_calc_eeff_row_scmf;
+   sm->calc_eeff_col     = seqmatrix_calc_eeff_col_scmf;
+   sm->calc_eeff_row     = seqmatrix_calc_eeff_row_scmf;
+   sm->pre_col_iter_hook = seqmatrix_pre_col_iter_hook;
+   sm->fixed_site_hook   = seqmatrix_fixed_site_hook;
 
    /* allocate matrix */
    sm->rows = rows;
@@ -518,6 +545,23 @@ seqmatrix_set_transform_row (int (*transform_row) (const unsigned long,
 {
    assert (sm);
    sm->transform_row = transform_row;
+}
+
+void
+seqmatrix_set_pre_col_iter_hook (int (*pre_col_iter_hook) (void*, SeqMatrix*),
+                                     SeqMatrix* sm)
+{
+   assert (sm);
+   sm->pre_col_iter_hook = pre_col_iter_hook;
+}
+
+void
+seqmatrix_set_fixed_site_hook (int (*fixed_site_hook) (void*, unsigned long,
+                                                       SeqMatrix*),
+                                SeqMatrix* sm)
+{
+   assert (sm);
+   sm->fixed_site_hook = fixed_site_hook;
 }
 
 /** @brief Transform a sequence matrix into an unambigouos sequence.
@@ -707,57 +751,66 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    t = 0;
    while ((!error) && (t < steps))
    {
+      mfprintf (stderr,"     STEP: %lu\n", t);
+
+      error = sm->pre_col_iter_hook (sco, sm);
 
       s = 0.0f;
 
       /* calculate Eeff */
-      error = sm->calc_eeff_col (sm, T, sco);
+      if (!error)
+      {
+         error = sm->calc_eeff_col (sm, T, sco);
+      }
 
       /* update matrix */
-      /* for all columns */      
-      for (j = 0; j < sm->cols; j++)
+      /* for all columns */ 
+      if (!error)
       {
-         /* which are not fixed */
-         if (!seqmatrix_is_col_fixed (j, sm))
+         for (j = 0; j < sm->cols; j++)
          {
-            /* calc sum of col */
-            col_sum = 0.0f;
-            for (i = 0; i < sm->rows; i++)
+            /* which are not fixed */
+            if (!seqmatrix_is_col_fixed (j, sm))
             {
-               col_sum += sm->matrix[sm->curr_matrix][i][j];
-            }
-
-            /* for each row */
-            for (i = 0; i < sm->rows; i++)
-            {
-               sm->matrix[sm->curr_matrix][i][j] = 
-                  sm->matrix[sm->curr_matrix][i][j] / col_sum;
-               /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
-               sm->matrix[sm->curr_matrix][i][j] = 
-                  (lambda * sm->matrix[sm->curr_matrix][i][j])
-                + ((1 - lambda) * sm->matrix[m][i][j]);
-
-               /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
-               s += (sm->matrix[sm->curr_matrix][i][j]
-                     * logf (sm->matrix[sm->curr_matrix][i][j]));
+               /* calc sum of col */
+               col_sum = 0.0f;
+               for (i = 0; i < sm->rows; i++)
+               {
+                  col_sum += sm->matrix[sm->curr_matrix][i][j];
+               }
+               
+               /* for each row */
+               for (i = 0; i < sm->rows; i++)
+               {
+                  sm->matrix[sm->curr_matrix][i][j] = 
+                     sm->matrix[sm->curr_matrix][i][j] / col_sum;
+                  /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
+                  sm->matrix[sm->curr_matrix][i][j] = 
+                     (lambda * sm->matrix[sm->curr_matrix][i][j])
+                     + ((1 - lambda) * sm->matrix[m][i][j]);
+                  
+                  /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
+                  s += (sm->matrix[sm->curr_matrix][i][j]
+                        * logf (sm->matrix[sm->curr_matrix][i][j]));
+               }
             }
          }
-      }
 
-      /* shouldn't s be calculated on the no. of unfixed cols? */
-      s = (s / sm->cols) * (-1.0f);
-
-      if (s <s_thresh) 
-      {
-         mfprintf (stdout, "Entropy dropout: %f\n", s);
-         return error;
-      }
-
-      T = (T * c_rate) + c_port;
-      t++;
-
+         /* shouldn't s be calculated on the no. of unfixed cols? */
+         s = (s / sm->cols) * (-1.0f);
+         
+         if (s < s_thresh) 
+         {
+            mfprintf (stdout, "Entropy dropout: %f\n", s);
+            return error;
+         }
+         
+         T = (T * c_rate) + c_port;
+         t++;
+         
 /*       if (t%10 == 0) */
 /*          mfprintf (stderr, "step: %5lu T=%.3f S=%.3f\n", t, T, s); */
+      }
    }
 
    return error;

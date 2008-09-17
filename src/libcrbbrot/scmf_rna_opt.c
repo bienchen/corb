@@ -256,10 +256,10 @@ scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
             {
                nn_scores_get_allowed_basepair (m, &bip1, &bjm1,
                                                this->scores);
-               
+
                prob = seqmatrix_get_probability (bj,    j,      sm)
                     * seqmatrix_get_probability (bjm1, (j - 1), sm);
-               
+        
                this->en_neg2[k][(int)bip1] += (nn_scores_get_G_stack (k, bj,
                                                                  bjm1, bip1,
                                                                  this->scores)
@@ -425,16 +425,6 @@ scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data* cont)
    return cont->sigma;
 }
 
-/** @brief Retrieve a list of pairs.
- */
-unsigned long*
-scmf_rna_opt_data_get_pairlist (Scmf_Rna_Opt_data* cont)
-{
-   assert (cont);
-
-   return rna_get_pairlist (cont->rna);
-}
-
 /** @brief calculate energy using the nussinov model.
  *
  * Calculate the energy for a cell of a sequence matrix using the nussinov
@@ -456,7 +446,7 @@ scmf_rna_opt_calc_nussinov (const unsigned long row,
                            SeqMatrix* sm)
 {
    float cell = 0.0f;             /* cell to be calculated */
-   unsigned long interaction = 0; /* col of cell interacts with col of sm */
+   unsigned long interaction;     /* col of cell interacts with col of sm */
    unsigned long i, j;            /* indeces */
    unsigned long rows;            /* no. of rows of the matrix */
    unsigned long cols;            /* no. of cols of the matrix */
@@ -480,18 +470,18 @@ scmf_rna_opt_calc_nussinov (const unsigned long row,
    /* calculate contribution of wanted interaction (if any) */
    /* interaction = seqmatrix_col_interacts_with (col, sm);*/
    interaction = rna_base_pairs_with (col, test->rna);
-   if (interaction)
+   if (interaction != NOT_PAIRED)
    {
       for (i = 0; i < rows; i++)
       {
          if (col < interaction)
          {
-            cell += (seqmatrix_get_probability (i, (interaction - 1), sm)
+            cell += (seqmatrix_get_probability (i, interaction, sm)
                      * scores[row][i]);
          }
          else
          {
-            cell += (seqmatrix_get_probability (i, (interaction - 1), sm)
+            cell += (seqmatrix_get_probability (i, interaction, sm)
                      * scores[i][row]);
          }
       }
@@ -500,7 +490,7 @@ scmf_rna_opt_calc_nussinov (const unsigned long row,
    /* calculate contribution of unwanted pairs */
    for (j = 0; j < cols; j++)
    {
-      if ((j != col) && ((j + 1) != interaction))
+      if ((j != col) && (j != interaction))
       {
          for (i = 0; i < rows; i++)
          {
@@ -574,7 +564,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    unsigned long cols;            /* no. of cols of the matrix */
    unsigned long allowed_bp;      /* no. of allowed base pairs */
    unsigned long alpha_size;      /* size of the alphabet */
-   unsigned long interaction = 0; /* col of cell interacts with col of sm */
+   unsigned long interaction;     /* col of cell interacts with col of sm */
    unsigned long l, k, m;         /* indeces */
    char bi, bj, bip1, bjm1;       /* container for bases i and j */
    long G_stack_score;            /* fetch Gibb's free energy for a stack */
@@ -603,17 +593,13 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    /* calculate contribution of wanted interaction (if any) */
    interaction = rna_base_pairs_with (col, cedat->rna);
 
-   if (col < interaction)
+   if ((interaction != NOT_PAIRED) && (col < interaction))
    {  /* we are at the "i part" of a base pair */
       /* 5' - ii+1
          jj-1 - 3' */
-      /* decide if we got to pairs or one and a mismatch */
+      /* decide if we got two pairs or one and a mismatch */
       /* All this does not work properly for immedeate base pairs: ()!!! */
-      /* We do not need to check here if i+1 has a base pair at all because
-         seqmatrix_col_interacts_with (col, sm) >= 2 (pairs with pos 1),
-         thus seqmatrix_col_interacts_with (col+1, sm) == 0 never matches
-         anything */
-      if (rna_base_pairs_with ((col + 1), cedat->rna) == (interaction - 1))
+      if (rna_base_pairs_with ((col + 1), cedat->rna) == interaction - 1)
       {
          /* for all allowed base pairs */
          for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
@@ -627,11 +613,12 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    
                G_stack_score = nn_scores_get_G_stack (row, bj, bjm1, bip1,
                                                       cedat->scores);
+  
                update_prob = 
-                  seqmatrix_get_probability (bj, (interaction - 1), sm)
+                  seqmatrix_get_probability (bj, interaction, sm)
                   * seqmatrix_get_probability (bip1, (col + 1), sm)
-                  * seqmatrix_get_probability (bjm1,(interaction - 2),sm);
-               
+                  * seqmatrix_get_probability (bjm1,(interaction - 1),sm);
+   
                cell += (update_prob * G_stack_score);
             }
          }
@@ -650,9 +637,9 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                   G_stack_score = nn_scores_get_G_mm_stack (row, bj, m, k,
                                                             cedat->scores);
                   update_prob =
-                     seqmatrix_get_probability (bj, (interaction - 1), sm)
+                     seqmatrix_get_probability (bj, interaction, sm)
                      * seqmatrix_get_probability (k, (col + 1), sm)
-                     * seqmatrix_get_probability (m, (interaction - 2), sm);
+                     * seqmatrix_get_probability (m, (interaction - 1), sm);
                   
                   cell += (update_prob * G_stack_score);
 
@@ -661,9 +648,9 @@ scmf_rna_opt_calc_nn (const unsigned long row,
          }
       }
    }
-   else if (interaction) /* we are at the "j part" of a base pair */
+   else if (interaction != NOT_PAIRED) /*we are at the "j part" of a base pair*/
    {
-      /* decide if we got to pairs or one and a mismatch */
+      /* decide if we got two pairs or one and a mismatch */
       if (rna_base_pairs_with ((col - 1), cedat->rna) == (interaction + 1))
       {
          /* for all allowed base pairs */
@@ -681,8 +668,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                                                       cedat->scores);
                
                update_prob = 
-                  seqmatrix_get_probability (bi, (interaction - 1), sm)
-                  * seqmatrix_get_probability (bip1, interaction, sm)
+                  seqmatrix_get_probability (bi, interaction, sm)
+                  * seqmatrix_get_probability (bip1, (interaction + 1), sm)
                   * seqmatrix_get_probability (bjm1, (col - 1), sm);
                
                cell += (update_prob * G_stack_score);                 
@@ -705,8 +692,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                                                             cedat->scores);
                   
                   update_prob =
-                     seqmatrix_get_probability (bi, (interaction - 1), sm)
-                     * seqmatrix_get_probability (k, interaction, sm)
+                     seqmatrix_get_probability (bi, interaction, sm)
+                     * seqmatrix_get_probability (k, (interaction + 1), sm)
                      * seqmatrix_get_probability (m, (col - 1), sm);
                   
                   cell += (update_prob * G_stack_score);
@@ -741,7 +728,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
 
    /* care about interactions */
    /* interacts with downstream position */
-   if (col < interaction)
+   if ((interaction != NOT_PAIRED) && (col < interaction))
    {
       for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
       {
@@ -755,16 +742,16 @@ scmf_rna_opt_calc_nn (const unsigned long row,
             G_stack_score = nn_scores_get_G_stack (row, bj, bjm1, bip1,
                                                    cedat->scores);
             update_prob =
-               seqmatrix_get_probability (bj, (interaction - 1), sm)
+               seqmatrix_get_probability (bj, interaction, sm)
                * seqmatrix_get_probability (bip1, (col + 1), sm)
-               * seqmatrix_get_probability (bjm1,(interaction - 2),sm);
+               * seqmatrix_get_probability (bjm1,(interaction - 1),sm);
             
             tmp_neg -= (update_prob * G_stack_score);
          }
       }
    }
    /* interacts with upstream position */
-   else if (interaction)
+   else if (interaction != NOT_PAIRED)
    {
       for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
       {
@@ -779,8 +766,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                                                    cedat->scores);
             
             update_prob =
-               seqmatrix_get_probability (bi, (interaction - 1), sm)
-               * seqmatrix_get_probability (bip1, interaction, sm)
+               seqmatrix_get_probability (bi, interaction, sm)
+               * seqmatrix_get_probability (bip1, (interaction + 1), sm)
                * seqmatrix_get_probability (bjm1, (col - 1), sm);
             
             tmp_neg -= (update_prob * G_stack_score);
@@ -798,7 +785,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    /*tmp = 0; tmp2 = 0.0f; tmp3 = 0.0f; */
    for (k = 0; k < cols; k++)
    {
-      if ((k != col) && ((k + 1) != interaction))
+      if ((k != col) && (k != interaction))
       {
 /*SNIP*/
 /*          if (col < k) /\* col is i, k is j (base pair is i < j) *\/ */
@@ -932,4 +919,8 @@ user    0m38.926s
 sys     0m0.068s
 ================================================================================
 
+*/
+
+/* Test nussi
+CGACGUUAAGUCGACAACAUACGACACGACGAUCACAACGUCGAACAAGCACGAUCACAACGUGCAACGUCGAAAC
 */

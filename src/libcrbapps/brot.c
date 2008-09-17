@@ -393,8 +393,8 @@ brot_main(const char *cmdline)
       sm = SEQMATRIX_NEW;
       if (sm != NULL)
       {
-         retval = SEQMATRIX_INIT (scmf_rna_opt_data_get_pairlist (sim_data),
-                      alphabet_size (scmf_rna_opt_data_get_alphabet (sim_data)),
+         retval = SEQMATRIX_INIT (
+            alphabet_size (scmf_rna_opt_data_get_alphabet (sim_data)),
                                   strlen (brot_args.inputs[1]),
                                   sm);
          /*seqmatrix_print_2_stdout (2, sm);*/

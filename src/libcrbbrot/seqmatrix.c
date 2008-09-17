@@ -361,8 +361,7 @@ seqmatrix_calc_eeff_row_scmf (const unsigned long col,
  * @param[in] sm Sequence matrix to initialise.
  */
 int
-seqmatrix_init (const unsigned long* pairs __attribute__((unused)),
-                const unsigned long rows,
+seqmatrix_init (const unsigned long rows,
                 const unsigned long width,
                 SeqMatrix* sm,
                 const char* file, const int line)

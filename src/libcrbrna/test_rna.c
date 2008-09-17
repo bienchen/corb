@@ -98,7 +98,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 
    /* testing accessing pairs */
    l = rna_base_pairs_with (0, test_obj);
-   if (l != strlen (test_string))
+   if ((l + 1) != strlen (test_string))
    {
       THROW_ERROR_MSG ("Wrong index for pairing partner found. Checked pos. "
                        "%d, expected partner index %lu, got %lu. Structure "
@@ -107,7 +107,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;       
    }
    r = rna_base_pairs_with (strlen (test_string) - 1, test_obj);
-   if (r != 1)
+   if (r != 0)
    {
       THROW_ERROR_MSG ("Wrong index for pairing partner found. Checked pos. "
                        "%d, expected partner index %d, got %lu. Structure "

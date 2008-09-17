@@ -32,6 +32,7 @@
 extern "C" {
 #endif
 
+#include <libcrbbasic/crbbasic.h>
 #include "alphabet.h"
 
 #ifndef RNA_H
@@ -39,7 +40,7 @@ extern "C" {
 
 
 /* unpaired nucleotide */
-#define NOT_PAIRED 0
+#define NOT_PAIRED ULONG_UNDEF
 #define VIENNA_OPEN  '('
 #define VIENNA_CLOSE ')'
 #define VIENNA_UNPAIRED '.'

@@ -72,14 +72,13 @@ seqmatrix_get_probability (const unsigned long, const unsigned long,
 /********************************   Altering   ********************************/
 
 int
-seqmatrix_init (const unsigned long*,
-                const unsigned long,
+seqmatrix_init (const unsigned long,
                 const unsigned long,
                 SeqMatrix*,
                 const char*, const int);
 
-#define SEQMATRIX_INIT(A, B, C, SM) \
-   seqmatrix_init (A, B, C, SM, __FILE__, __LINE__)
+#define SEQMATRIX_INIT(A, B, SM)                         \
+   seqmatrix_init (A, B, SM, __FILE__, __LINE__)
 
 void
 seqmatrix_set_cell (const float, const unsigned long, const unsigned long,

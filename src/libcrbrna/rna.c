@@ -30,6 +30,7 @@
 
 
 #include <config.h>
+#include <limits.h>
 #include <stddef.h>
 #include <libcrbbasic/crbbasic.h>
 /*#include "alphabet.h"*/
@@ -203,8 +204,8 @@ rna_init_pairlist_vienna (const char* vienna,
    assert ((this->size == 0) || (this->size == length));
 
    /* allocate list */
-   /* !!! by using calloc we assume, that NOT_PAIRED equals zero !!! */
-   this->pairs = XOBJ_CALLOC (length, sizeof (this->pairs[0]), file, line);
+   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * length, file, line);
+   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * length);
    if (this->pairs == NULL)
    {
       error = ERR_RNA_ALLOC;
@@ -243,8 +244,8 @@ rna_init_pairlist_vienna (const char* vienna,
             else
             {
                open_pair--;
-               this->pairs[i] = p_stack[open_pair] + 1;
-               this->pairs[p_stack[open_pair]] = i + 1;
+               this->pairs[i] = p_stack[open_pair];
+               this->pairs[p_stack[open_pair]] = i;
             }
             break;
             
@@ -390,64 +391,6 @@ rna_transform_sequence_2_bases (const Alphabet* sigma, Rna* this)
    return 0;
 }
 
-/** @brief Decompose an rna structure stored in an Rna object.
- *
- * Analyses a rna structure and stores information about its components in the
- * Rna object.\n
- * Returns 0 on success, ... else.
- *
- * @param[in] this Rna data object.
- */
-int
-rna_decompose_structure (Rna* this)
-{
-   unsigned long i, p, q;
-   int error = 0;
-
-   assert (this);
-   assert (this->pairs);
-
-    /* exterior loop */
-
-    /* hairpins, interior loops (including stacking basepairs) and multiloops */
-    i = 0;
-    while ((i < this->size) && (!error)) 
-    {
-       /* continue until we have found an opening basepairing
-          i.e. we're at i of basepair (i, pairs[i]) */
-       if ((this->pairs[i] == NOT_PAIRED) || (i >= this->pairs[i]))
-       {
-          i++;
-       }
-       /* now search inwards from basepair (i, pairs[i] - 1) for the next two
-          basepairs (p, pairs[p]) and ( (pairs[q], q) or (q, pairs[q]) )
-          TODO: i think all 4 combinations are possible:
-          (p,pairs[p])  (pairs[p],p)  (pairs[q],q)  (q,pairs[q]) */
-       else
-       {
-          p = i + 1;
-          q = this->pairs[i] - 2; /* holds for "0 pairs 1" -> pairs[0] = 2 */
-          while ((this->pairs[p] == NOT_PAIRED) && (p < (this->pairs[i] - 1)))
-             p++;
-          while ((this->pairs[q] == NOT_PAIRED) && (q > i))
-             q--;
-
-          /* now we can tell what loop type we have */
-          if (q < p)
-          {
-             /* hairpin loop - pairs have run past each other */
-          }
-          else
-          {
-          }
-
-          /* move to next paired base */
-          i = p;
-       }
-    }
-    
-    return 0;
-}
 
 /*********************************   Access   *********************************/
 

@@ -867,8 +867,8 @@ scmf_rna_opt_calc_nn (const unsigned long row,
       }
    }
 
-   mfprintf (stderr, "c: %lu r: %lu Eneg: %.2f cell: %.2f\n",
-             col, row, tmp_neg, cell);
+   /*mfprintf (stderr, "c: %lu r: %lu Eneg: %.2f cell: %.2f\n",
+     col, row, tmp_neg, cell);*/
 
    /*mprintf ("c: %lu r: %lu Eneg: %f\n", col, row, tmp_neg);*/
 

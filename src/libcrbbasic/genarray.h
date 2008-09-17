@@ -86,7 +86,7 @@ extern "C" {
  * @param[in] SIZE size of the array.
  * @param[in] TYPE datatype of the array elements.
  */
-#define ARRAY_INIT(A, SIZE, TYPE)         \
+#define ARRAY_INIT(A, SIZE, TYPE)            \
    A.data = XMALLOC(sizeof (TYPE) * (SIZE)); \
    A.current = 0;                            \
    A.size = (SIZE)
@@ -108,6 +108,20 @@ extern "C" {
 
 
 /********************************   Altering   ********************************/
+
+/** @brief Set an array to NULL values 
+ *
+ * Set all components of an array to null bytes. Intended to be used for
+ * multiple arrays integrated in other data structures. Should make the code of
+ * the constructor simple since ARRAY_DELETE can be called on "nulled" arrays,
+ * safely.
+ *
+ * @param[in] A array.
+ */
+#define ARRAY_SET_VOID(A) \
+   A.data = NULL; \
+   A.current = 0; \
+   A.size = 0
 
 /** @brief Add an element to the end of an array.
  *

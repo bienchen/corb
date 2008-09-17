@@ -751,7 +751,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    t = 0;
    while ((!error) && (t < steps))
    {
-      mfprintf (stderr,"     STEP: %lu\n", t);
+      /*mfprintf (stderr,"     STEP: %lu\n", t);*/
 
       error = sm->pre_col_iter_hook (sco, sm);
 

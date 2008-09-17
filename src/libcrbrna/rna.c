@@ -32,19 +32,53 @@
 #include <config.h>
 #include <stddef.h>
 #include <libcrbbasic/crbbasic.h>
-#include "alphabet.h"
+/*#include "alphabet.h"*/
 #include "rna.h"
 
 
+typedef struct {
+      ArrayUlong tetra_loop;
+} struct_comp;
+
+
 struct Rna {
-      char* seq;                /* the nucleotide sequence */
-      /* char* vienna; */             /* vienna string */
+      char*          seq;       /* the nucleotide sequence */
+      /* char* vienna; */       /* vienna string */
       unsigned long* pairs;     /* base pairs */
-      unsigned long size;       /* size of the RNA (sequence & 2D structure) */
+      unsigned long  size;      /* size of the RNA (sequence & 2D structure) */
+      struct_comp    structure; /* decomposed structure */
 };
 
 
 /**********************   Constructors and destructors   **********************/
+
+/** @brief Init a struct_comp structure.
+ *
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+static __inline__ struct_comp
+struct_comp_new (void/* const char* file, const int line */)
+{
+   struct_comp this;
+
+   ARRAY_ULONG_INIT(this.tetra_loop, 0);
+
+   return this;
+}
+
+/** @brief Delete the components of a struct_comp structure.
+ *
+ * @param[in] this Object to be freed.
+ */
+static __inline__ void
+struct_comp_delete (struct_comp* this)
+{
+   if (this != NULL)
+   {
+     ARRAY_DELETE(this->tetra_loop);
+   }
+}
 
 /** @brief Create a new rna object.
  *
@@ -68,6 +102,7 @@ rna_new (const char* file, const int line)
       this->seq       = NULL;
       /* this->vienna    = NULL; */
       this->pairs     = NULL;
+      this->structure = struct_comp_new();
    }
 
    return this;
@@ -88,6 +123,7 @@ rna_delete (Rna* this)
      XFREE(this->seq);
      /* XFREE(this->vienna); */
      XFREE(this->pairs);
+     struct_comp_delete (&this->structure);
      XFREE(this);
    }
 }
@@ -352,6 +388,65 @@ rna_transform_sequence_2_bases (const Alphabet* sigma, Rna* this)
    }
 
    return 0;
+}
+
+/** @brief Decompose an rna structure stored in an Rna object.
+ *
+ * Analyses a rna structure and stores information about its components in the
+ * Rna object.\n
+ * Returns 0 on success, ... else.
+ *
+ * @param[in] this Rna data object.
+ */
+int
+rna_decompose_structure (Rna* this)
+{
+   unsigned long i, p, q;
+   int error = 0;
+
+   assert (this);
+   assert (this->pairs);
+
+    /* exterior loop */
+
+    /* hairpins, interior loops (including stacking basepairs) and multiloops */
+    i = 0;
+    while ((i < this->size) && (!error)) 
+    {
+       /* continue until we have found an opening basepairing
+          i.e. we're at i of basepair (i, pairs[i]) */
+       if ((this->pairs[i] == NOT_PAIRED) || (i >= this->pairs[i]))
+       {
+          i++;
+       }
+       /* now search inwards from basepair (i, pairs[i] - 1) for the next two
+          basepairs (p, pairs[p]) and ( (pairs[q], q) or (q, pairs[q]) )
+          TODO: i think all 4 combinations are possible:
+          (p,pairs[p])  (pairs[p],p)  (pairs[q],q)  (q,pairs[q]) */
+       else
+       {
+          p = i + 1;
+          q = this->pairs[i] - 2; /* holds for "0 pairs 1" -> pairs[0] = 2 */
+          while ((this->pairs[p] == NOT_PAIRED) && (p < (this->pairs[i] - 1)))
+             p++;
+          while ((this->pairs[q] == NOT_PAIRED) && (q > i))
+             q--;
+
+          /* now we can tell what loop type we have */
+          if (q < p)
+          {
+             /* hairpin loop - pairs have run past each other */
+          }
+          else
+          {
+          }
+
+          /* move to next paired base */
+          i = p;
+       }
+    }
+    
+    return 0;
 }
 
 /*********************************   Access   *********************************/

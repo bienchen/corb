@@ -4,7 +4,7 @@ Also see files ChangeLog and THANKS
 
 
 Stefan Bienert (bienert):
-        ../share/misc/emacs/test.h corb.c libcrbapps/brot.[c,h]
+        (test): ../share/misc/emacs/test.h corb.c libcrbapps/brot.[c,h]
         libcrbapps/fold.[c,h] libcrbbasic/argvprsr.[c,h]
         libcrbbasic/crbbasic.h libcrbbasic/errormsg.[c,h]
         libcrbbasic/gcckywrd.h libcrbbasic/genarray.hh libcrbbasic/inc_pthr.h
@@ -17,8 +17,5 @@ Stefan Bienert (bienert):
         libcrbbrot/ef_energy.[c,h] libcrbbrot/preset.[c,h]
         libcrbbrot/seqmatrix.[c,h] libcrbrna/alphabet.[c,h] libcrbrna/crbrna.h
         libcrbrna/nn_scores.[c,h] libcrbrna/rna.[c,h]
-        libcrbrna/test_alphabet.c libcrbrna/test_nn_scores
-        libcrbrna/test_rna.c
-
-test (test):
-        test.test
+        libcrbrna/secstruct.[c,h] libcrbrna/test_secstruct.c libcrbrna/test_alphabet.c
+        libcrbrna/test_nn_scores libcrbrna/test_rna.c test test.test

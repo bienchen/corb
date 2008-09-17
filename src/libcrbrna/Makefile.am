@@ -1,4 +1,4 @@
-# Last modified: 2008-08-19.12
+# Last modified: 2008-09-16.11
 
 # Copyright (c) 2008 Stefan Bienert <bienert@zbh.uni-hamburg.de>
 # Copyright (c) 2008 Center for Bioinformatics, University of Hamburg 
@@ -19,11 +19,13 @@ noinst_LIBRARIES = libcrbrna.a
 libcrbrna_a_SOURCES =                      \
 	alphabet.c                         \
 	nn_scores.c                        \
+        secstruct.c                        \
 	rna.c
 
 noinst_HEADERS =                           \
 	alphabet.h                         \
 	nn_scores.h                        \
+        secstruct.h                        \
 	rna.h                              \
 	crbrna.h
 
@@ -36,11 +38,14 @@ LDADD =                                    \
 check_PROGRAMS =                           \
 	test_alphabet                      \
 	test_nn_scores                     \
-	test_rna
+	test_rna                           \
+	test_secstruct
 
 test_alphabet_SOURCES  = test_alphabet.c
 
 test_nn_scores_SOURCES = test_nn_scores.c
+
+test_secstruct_SOURCES = test_secstruct.c
 
 test_rna_SOURCES       = test_rna.c
 

@@ -42,6 +42,9 @@
  */
 
 
+#include "alphabet.h"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -101,12 +104,19 @@ nn_scores_fprintf_G_stack (FILE*, const NN_scores*, const Alphabet*);
 void
 nn_scores_fprintf_mm_G_stack (FILE*, const NN_scores*, const Alphabet*);
 
+void
+nn_scores_fprintf_G_hairpin_loop (FILE*, const NN_scores*);
+
+void
+nn_scores_fprintf_G_hairpin_loop (FILE*, const NN_scores*);
 
 /******************************   Miscellaneous   *****************************/
 
 unsigned long
 nn_scores_bp_2_idx (const char, const char, const NN_scores*);
 
+bool
+nn_scores_is_allowed_basepair (const char, const char, void*);
 
 #endif /* NN_SCORES_H */
 

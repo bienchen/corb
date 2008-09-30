@@ -125,15 +125,17 @@ alphabet_new_pair (const char* upper,
       this->size = size;
 
       /* copy strings */
-      this->upper_case = XOBJ_MALLOC (this->size * sizeof (this->upper_case[0]),
-                                      file, line);
+
+      this->upper_case = XOBJ_MALLOC (this->size * sizeof (this->upper_case[0]), file, line);
+
       if (this->upper_case == NULL)
       {
          alphabet_delete (this);
          return NULL;
       }
-      this->lower_case = XOBJ_MALLOC (this->size * sizeof (this->upper_case[0]),
-                                      file, line);
+
+      this->lower_case = XOBJ_MALLOC (this->size * sizeof (this->upper_case[0]), file, line);   
+
       if (this->upper_case == NULL)
       {
          alphabet_delete (this);

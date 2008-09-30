@@ -202,6 +202,9 @@ secstruct_get_i_5p_5pdangle_extloop (const unsigned long, const SecStruct*);
 unsigned long
 secstruct_get_i_3p_5pdangle_extloop (const unsigned long, const SecStruct*);
 
+int
+secstruct_calculate_DG (const char*, const NN_scores*, const SecStruct*);
+
 #endif /* SECSTRUCT_H */
 
 #ifdef __cplusplus

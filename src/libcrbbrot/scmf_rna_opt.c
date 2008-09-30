@@ -135,7 +135,8 @@ scmf_rna_opt_data_new_init (const char* structure,
          scmf_rna_opt_data_delete (this);
          return NULL;
       }
-      error = RNA_ALLOC_SEQUENCE(seqlen, this->rna);
+
+      error = RNA_ALLOCATE_SEQUENCE(seqlen, this->rna);
       if (error)
       {
          scmf_rna_opt_data_delete (this);
@@ -609,7 +610,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    if ((interaction != NOT_PAIRED) && (col < interaction))
    {  /* we are at the "i part" of a base pair */
       /* 5' - ii+1
-         jj-1 - 3' */
+              jj-1 - 3' */
       /* decide if we got two pairs or one and a mismatch */
       /* All this does not work properly for immedeate base pairs: ()!!! */
       if (rna_base_pairs_with ((col + 1), cedat->rna) == interaction - 1)

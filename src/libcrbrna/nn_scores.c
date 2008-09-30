@@ -43,9 +43,10 @@
 
 
 #include <config.h>
+#include <stdarg.h>
 #include <math.h>
 #include <libcrbbasic/crbbasic.h>
-#include "alphabet.h"
+/*#include "alphabet.h"*/
 #include "nn_scores.h"
 
 /* no. of canonical base pairs + whobble GU */
@@ -53,12 +54,15 @@
 
 struct NN_scores {
       long** G_stack;                /* stacking energies */
-      long** G_mm_stack;             /* stacks with one mismatch */
       unsigned long G_stack_size;
+      long** G_mm_stack;             /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
-      char** bp_allowed;             /* canonical base pairs + whobble GU */
+      int* G_hairpin_loop;               /* hairpin loops */
+      unsigned long G_hairpin_loop_size;
+      /* hairpin loop closing bp */
+      char** bp_allowed;                 /* canonical base pairs + whobble GU */
       unsigned long bp_allowed_size;
-      char** bp_idx;                 /* indeces for base pairs */
+      char** bp_idx;                     /* indeces for base pairs */
       unsigned long bp_idx_size;
 };
 
@@ -84,373 +88,358 @@ nn_scores_new (const char* file, const int line)
    
    if (this != NULL)
    {
-      this->G_stack         = NULL;
-      this->G_stack_size    = 0;
-      this->G_mm_stack      = NULL;
-      this->G_mm_stack_size = 0;
-      this->bp_idx          = NULL;
-      this->bp_allowed      = NULL;
-      this->bp_allowed_size = 0;
+      this->G_stack             = NULL;
+      this->G_stack_size        = 0;
+      this->G_mm_stack          = NULL;
+      this->G_mm_stack_size     = 0;
+      this->G_hairpin_loop      = NULL;
+      this->G_hairpin_loop_size = 0;
+      this->bp_idx              = NULL;
+      this->bp_allowed          = NULL;
+      this->bp_allowed_size     = 0;
    }
 
    return this;
 }
 
-/** @brief Create a new Nearest Neighbour scoring scheme with standard values.
- *
- * The constructor for an initialised @c NN_scores objects. If compiled with
- * enabled memory checking, @c file and @c line should point to the position
- * where the function was called. Both parameters are automatically set by
- * using the macro @c NN_SCORES_NEW_INIT.\n
- * As parameters for the canonical Watson-Crick base pairs, plus the G-U wobble
- * base pair, the stacking energies (table "stack_energies") from the Vienna
- * RNA package are used. For stacks consisting of only one base pair and a
- * mismatch, we use ... mismatch_interior \n
- * Returns @c NULL on error.
- *
- * @param[in] sigma alphabet.
- * @param[in] file fill with name of calling file.
- * @param[in] line fill with calling line.
- */
-NN_scores*
-nn_scores_new_init (Alphabet* sigma, const char* file, const int line)
+static int
+allocate_init_bp_allowed (char a, char u, char g, char c,
+                          NN_scores* this,
+                          const char* file, const int line)
 {
-   NN_scores* this;
-   unsigned long i;
-   char a, u, g, c;
-
-   assert (sigma != NULL);
-
-   this = nn_scores_new (file, line);
-
-   if (this != NULL)
+   this->bp_allowed_size = NO_ALLOWED_BP;
+   this->bp_allowed = (char**) XOBJ_MALLOC_2D (this->bp_allowed_size, 2,
+                                               sizeof (char),
+                                               file, line);
+   if (this->bp_allowed == NULL)
    {
-      if (! alphabet_is_standard_rna (sigma))
-      {
-         nn_scores_delete (this);
-         return NULL;
-      }
+      return 1;        
+   }
+   
+   this->bp_allowed[0][0] = c; this->bp_allowed[0][1] = g; /* CG */
+   this->bp_allowed[1][0] = g; this->bp_allowed[1][1] = c; /* GC */
+   this->bp_allowed[2][0] = g; this->bp_allowed[2][1] = u; /* GU */
+   this->bp_allowed[3][0] = u; this->bp_allowed[3][1] = g; /* UG */
+   this->bp_allowed[4][0] = a; this->bp_allowed[4][1] = u; /* AU */
+   this->bp_allowed[5][0] = u; this->bp_allowed[5][1] = a; /* UA */
 
-      /* create list of allowed base pairs */
-      this->bp_allowed_size = NO_ALLOWED_BP;
-      this->bp_allowed = (char**) XMALLOC_2D (this->bp_allowed_size, 2,
-                                              sizeof (char));
-      if (this->bp_allowed == NULL)
-      {
-         nn_scores_delete (this);
-         return NULL;        
-      }
+   return 0;
+}
 
-      a = alphabet_base_2_no('A', sigma);
-      u = alphabet_base_2_no('U', sigma);
-      g = alphabet_base_2_no('G', sigma);
-      c = alphabet_base_2_no('C', sigma);
+static int
+allocate_init_bp_idx (unsigned long size,
+                      char a, char u, char g, char c, NN_scores* this,
+                      const char* file, const int line)
+{
+   unsigned long i;
 
-      this->bp_allowed[0][0] = c; this->bp_allowed[0][1] = g; /* CG */
-      this->bp_allowed[1][0] = g; this->bp_allowed[1][1] = c; /* GC */
-      this->bp_allowed[2][0] = g; this->bp_allowed[2][1] = u; /* GU */
-      this->bp_allowed[3][0] = u; this->bp_allowed[3][1] = g; /* UG */
-      this->bp_allowed[4][0] = a; this->bp_allowed[4][1] = u; /* AU */
-      this->bp_allowed[5][0] = u; this->bp_allowed[5][1] = a; /* UA */
+   this->bp_idx = (char**) XOBJ_MALLOC_2D (size, size, sizeof (char),
+                                           file, line);
+   if (this->bp_idx == NULL)
+   {
+      return 1;        
+   }
+   this->bp_idx_size = size * size;
 
-      /* create base pair indeces */
-      this->bp_idx = (char**) XMALLOC_2D (alphabet_size (sigma),
-                                          alphabet_size (sigma),
-                                          sizeof (char));
-      if (this->bp_idx == NULL)
-      {
-         nn_scores_delete (this);
-         return NULL;        
-      }
-      this->bp_idx_size = alphabet_size (sigma) * alphabet_size (sigma);
+   /* place indeces of allowed base pairs at the begining og the table */
+   for (i = 0; i < this->bp_allowed_size; i++)
+   {
+      this->bp_idx[(int) this->bp_allowed[i][0]]
+                  [(int) this->bp_allowed[i][1]] = i;
+   }
 
-      for (i = 0; i < this->bp_allowed_size; i++)
-      {
-         this->bp_idx[(int) this->bp_allowed[i][0]]
-                     [(int) this->bp_allowed[i][1]] = i;
-      }
+   this->bp_idx[(int) a][(int) a] = i; /* AA */
+   i++;
+   this->bp_idx[(int) a][(int) g] = i; /* AG */
+   i++;
+   this->bp_idx[(int) a][(int) c] = i; /* AC */
+   i++;
+   this->bp_idx[(int) u][(int) u] = i; /* UU */
+   i++;
+   this->bp_idx[(int) u][(int) c] = i; /* UC */
+   i++;
+   this->bp_idx[(int) g][(int) a] = i; /* GA */
+   i++;
+   this->bp_idx[(int) g][(int) g] = i; /* GG */
+   i++;
+   this->bp_idx[(int) c][(int) a] = i; /* CA */
+   i++;
+   this->bp_idx[(int) c][(int) u] = i; /* CU */
+   i++;
+   this->bp_idx[(int) c][(int) c] = i; /* CC */
 
-      this->bp_idx[(int) a][(int) a] = i; /* AA */
-      i++;
-      this->bp_idx[(int) a][(int) g] = i; /* AG */
-      i++;
-      this->bp_idx[(int) a][(int) c] = i; /* AC */
-      i++;
-      this->bp_idx[(int) u][(int) u] = i; /* UU */
-      i++;
-      this->bp_idx[(int) u][(int) c] = i; /* UC */
-      i++;
-      this->bp_idx[(int) g][(int) a] = i; /* GA */
-      i++;
-      this->bp_idx[(int) g][(int) g] = i; /* GG */
-      i++;
-      this->bp_idx[(int) c][(int) a] = i; /* CA */
-      i++;
-      this->bp_idx[(int) c][(int) u] = i; /* CU */
-      i++;
-      this->bp_idx[(int) c][(int) c] = i; /* CC */
-      i++;
+   return 0;
+}
 
-      /* prepare table for stacking energies */
-      this->G_stack_size = this->bp_allowed_size;
+static int
+allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
+                       const char* file, const int line)
+{
+   /*unsigned long i;*/
 
-      this->G_stack = (long**) XMALLOC_2D (this->G_stack_size,
-                                           this->G_stack_size,
-                                           sizeof (long));
-      this->G_stack_size *= this->G_stack_size;
+   this->G_stack_size = this->bp_allowed_size;
+   
+   /* allocate matrix */
+   this->G_stack = (long**) XOBJ_MALLOC_2D (this->G_stack_size,
+                                            this->G_stack_size,
+                                            sizeof (long),
+                                            file, line);
+   this->G_stack_size *= this->G_stack_size;
+   
+   if (this->G_stack == NULL)
+   {
+      return 1;
+   }
 
-      if (this->G_stack == NULL)
-      {
-         nn_scores_delete (this);
-         return NULL;        
-      }
+   /*for (i = 0; i < this->G_stack_size; i++)
+   {
+      this->G_stack[0][i] = 0;
+      }*/
 
-      for (i = 0; i < this->G_stack_size; i++)
-      {
-         this->G_stack[0][i] = 0;
-      }
+   /* regular pairs */
+   /* AU AU */
+   /* 5'- AU 
+      UA -5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+      [(int) this->bp_idx[(int)a][(int)u]] = -110;
 
-      /* set stacking energies (DG) */
-      /* 5' - ip - 3' */
-      /* 3' - jq - 5' --> i < p < q < j */
-      /*    = ij qp    */
+   /* AU UA */
+   /* 5'- AA
+      UU -5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+      [(int) this->bp_idx[(int)u][(int)a]] = -90;
+   
+   /* AU UG */
+   /* 5'- AG
+      UU -5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+      [(int) this->bp_idx[(int)u][(int)g]] = -60;
+   
+   
+   /* AU GU */
+   /* 5'- AU
+      UG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+      [(int) this->bp_idx[(int)g][(int)u]] = -140;      
+   
+   /* AU CG */
+   /* 5'- AG
+      UC -5'*/
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+      [(int) this->bp_idx[(int)c][(int)g]] = -210;        
+   
+   /* AU GC */
+   /* 5'- AC
+      UG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+      [(int) this->bp_idx[(int)g][(int)c]] = -220; 
+   
+   /* UA AU */
+   /* 5'- UU 
+      AA  -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+      [(int) this->bp_idx[(int)a][(int)u]] = -90;
+   
+   /* UA UA */
+   /* 5'- UA
+      AU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+      [(int) this->bp_idx[(int)u][(int)a]] = -130;
+   
+   /* UA UG */
+   /* 5'- UG
+      AU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+      [(int) this->bp_idx[(int)u][(int)g]] = -100;
+   
+   /* UA GU */
+   /* 5'- UU
+      AG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+      [(int) this->bp_idx[(int)g][(int)u]] = -130;
+   
+   /* UA CG */
+   /* 5'- UG
+      AC -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+      [(int) this->bp_idx[(int)c][(int)g]] = -210;
+   
+   /* UA GC */
+   /* 5'- UC
+      AG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+      [(int) this->bp_idx[(int)g][(int)c]] = -240;
+   
+   /* UG AU */
+   /* 5'- UU
+      GA -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+      [(int) this->bp_idx[(int)a][(int)u]] = -60;
+   
+   /* UG UA */
+   /* 5'- UA 
+      GU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+      [(int) this->bp_idx[(int)u][(int)a]] = -100;
+   
+   /* UG UG */
+   /* 5'- UG 
+      GU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+      [(int) this->bp_idx[(int)u][(int)g]] = 30;
+   
+   /* UG GU*/
+   /* 5'- UU 
+      GG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+      [(int) this->bp_idx[(int)g][(int)u]] = -50;
+   
+   /* UG CG */
+   /* 5'- UG 
+      GC -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+      [(int) this->bp_idx[(int)c][(int)g]] = -140;
+   
+   /* UG GC */
+   /* 5'- UC 
+      GG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+      [(int) this->bp_idx[(int)g][(int)c]] = -150;
+   
+   /* GU AU */
+   /* 5'- GU 
+      UA -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+      [(int) this->bp_idx[(int)a][(int)u]] = -140;
+   
+   /* GU UA */
+   /* 5'- GA 
+      UU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+      [(int) this->bp_idx[(int)u][(int)a]] = -130;
+   
+   /* GU UG */
+   /* 5'- GG 
+      UU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+      [(int) this->bp_idx[(int)u][(int)g]] = -50;
+   
+   /* GU GU */
+   /* 5'- GU 
+      UG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+      [(int) this->bp_idx[(int)g][(int)u]] = 130;
+   
+   /* GU CG */
+   /* 5'- GG 
+      UC -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+      [(int) this->bp_idx[(int)c][(int)g]] = -210;
+   
+   /* GU GC */
+   /* 5'- GC 
+      UG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+      [(int) this->bp_idx[(int)g][(int)c]] = -250;
+   
+   /* CG AU */
+   /* 5'- C
+      G -5'*/
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+      [(int) this->bp_idx[(int)a][(int)u]] = -210;
+   
+   /* CG UA */
+   /* 5'- CA
+      GU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+      [(int) this->bp_idx[(int)u][(int)a]] = -210;
+   
+   /* CG UG */
+   /* 5'- CG
+      GU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+      [(int) this->bp_idx[(int)u][(int)g]] = -140;
 
-      /* regular pairs */
-      /* AU AU */
-      /* 5'- AU 
-             UA -5' */
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)u]] = -110;
+   /* CG GU */
+   /* 5'- CU
+      GG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+      [(int) this->bp_idx[(int)g][(int)u]] = -210;
+   
+   /* CG CG */
+   /* 5'- CG
+      GC -5'*/
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+      [(int) this->bp_idx[(int)c][(int)g]] = -240;
+   
+   /* CG GC */
+   /* 5'- CC
+      GG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+      [(int) this->bp_idx[(int)g][(int)c]] = -330;
+   
+   /* GC AU */
+   /* 5'- GU
+      CA -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+      [(int) this->bp_idx[(int)a][(int)u]] = -220;
+   
+   /* GC UA */
+   /* 5'- GA
+      CU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+      [(int) this->bp_idx[(int)u][(int)a]] = -240;
+   
+   /* GC UG */
+   /* 5'- GG
+      CU -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+      [(int) this->bp_idx[(int)u][(int)g]] = -150;
+   
+   /* GC GU */
+   /* 5'- GU
+      CG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+      [(int) this->bp_idx[(int)g][(int)u]] = -250;
+   
+   /* GC CG */
+   /* 5'- GG
+      CC -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+      [(int) this->bp_idx[(int)c][(int)g]] = -330;
+   
+   /* GC GC */
+   /* 5'- GC
+      CG -5'*/
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+      [(int) this->bp_idx[(int)g][(int)c]] = -340;
+   
 
-      /* AU UA */
-      /* 5'- AA
-             UU -5' */
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)a]] = -90;
+   return 0;
+}
 
-      /* AU UG */
-      /* 5'- AG
-             UU -5' */
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)g]] = -60;
-     
+static int
+allocate_init_G_mm_stack_size (char a, char u, char g, char c,
+                               unsigned long size, NN_scores* this,
+                               const char* file, const int line)
+{
+   this->G_mm_stack_size = size * size;
+   
+   this->G_mm_stack = (long**) XOBJ_MALLOC_2D (this->bp_allowed_size,
+                                               this->G_mm_stack_size,
+                                               sizeof (long),
+                                               file, line);
+   this->G_mm_stack_size *= this->bp_allowed_size;
 
-      /* AU GU */
-      /* 5'- AU
-             UG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)u]] = -140;      
-
-      /* AU CG */
-      /* 5'- AG
-             UC -5'*/
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)g]] = -210;        
-
-      /* AU GC */
-      /* 5'- AC
-             UG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)c]] = -220; 
-
-      /* UA AU */
-      /* 5'- UU 
-             AA  -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)a][(int)u]] = -90;
-
-      /* UA UA */
-      /* 5'- UA
-             AU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)u][(int)a]] = -130;
-
-      /* UA UG */
-      /* 5'- UG
-             AU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)u][(int)g]] = -100;
-
-      /* UA GU */
-      /* 5'- UU
-             AG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)g][(int)u]] = -130;
-
-      /* UA CG */
-      /* 5'- UG
-             AC -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)c][(int)g]] = -210;
-
-      /* UA GC */
-      /* 5'- UC
-             AG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-                   [(int) this->bp_idx[(int)g][(int)c]] = -240;
-    
-      /* UG AU */
-      /* 5'- UU
-             GA -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)u]] = -60;
-
-      /* UG UA */
-      /* 5'- UA 
-             GU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)a]] = -100;
-
-      /* UG UG */
-      /* 5'- UG 
-             GU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)g]] = 30;
-
-      /* UG GU*/
-      /* 5'- UU 
-             GG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)u]] = -50;
-
-      /* UG CG */
-      /* 5'- UG 
-             GC -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)g]] = -140;
-
-      /* UG GC */
-      /* 5'- UC 
-             GG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)c]] = -150;
-
-      /* GU AU */
-      /* 5'- GU 
-             UA -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)a][(int)u]] = -140;
-
-      /* GU UA */
-      /* 5'- GA 
-             UU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)a]] = -130;
-
-      /* GU UG */
-      /* 5'- GG 
-             UU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)u][(int)g]] = -50;
-
-      /* GU GU */
-      /* 5'- GU 
-             UG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)u]] = 130;
-
-      /* GU CG */
-      /* 5'- GG 
-             UC -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)c][(int)g]] = -210;
-
-      /* GU GC */
-      /* 5'- GC 
-             UG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-                   [(int) this->bp_idx[(int)g][(int)c]] = -250;
-
-      /* CG AU */
-      /* 5'- C
-             G -5'*/
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)a][(int)u]] = -210;
-
-      /* CG UA */
-      /* 5'- CA
-             GU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)a]] = -210;
-
-      /* CG UG */
-      /* 5'- CG
-             GU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)u][(int)g]] = -140;
-
-      /* CG GU */
-      /* 5'- CU
-             GG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)u]] = -210;
-
-      /* CG CG */
-      /* 5'- CG
-             GC -5'*/
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)g]] = -240;
-
-      /* CG GC */
-      /* 5'- CC
-             GG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)g][(int)c]] = -330;
-
-      /* GC AU */
-      /* 5'- GU
-             CA -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)a][(int)u]] = -220;
-
-      /* GC UA */
-      /* 5'- GA
-             CU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)u][(int)a]] = -240;
-
-      /* GC UG */
-      /* 5'- GG
-             CU -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)u][(int)g]] = -150;
-
-      /* GC GU */
-      /* 5'- GU
-             CG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)g][(int)u]] = -250;
-
-      /* GC CG */
-      /* 5'- GG
-             CC -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)c][(int)g]] = -330;
-
-      /* GC GC */
-      /* 5'- GC
-             CG -5'*/
-      this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-                   [(int) this->bp_idx[(int)g][(int)c]] = -340;
-
-      /* prepare table for mismatch stacking energies */
-      this->G_mm_stack_size = alphabet_size (sigma) * alphabet_size (sigma);
-
-      this->G_mm_stack = (long**) XMALLOC_2D (this->bp_allowed_size,
-                                              this->G_mm_stack_size,
-                                              sizeof (long));
-      this->G_mm_stack_size *= this->bp_allowed_size;
-
-      if (this->G_mm_stack == NULL)
-      {
-         nn_scores_delete (this);
-         return NULL;        
-      }
-
-      for (i = 0; i < this->G_mm_stack_size; i++)
-      {
-         this->G_mm_stack[0][i] = 0;
-      }
+   if (this->G_mm_stack == NULL)
+   {
+      return 1;
+   }
+   
+   /*for (i = 0; i < this->G_mm_stack_size; i++)
+   {
+      this->G_mm_stack[0][i] = 0;
+      }*/
 
       /* stacks containing a mismatch */
       /* mi: param from mismatch_interior table */
@@ -868,7 +857,142 @@ nn_scores_new_init (Alphabet* sigma, const char* file, const int line)
       /* mi: 0 mh: -90 */
       this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
                       [(int) this->bp_idx[(int)c][(int)c]] = -45;
+
+   return 0;
+}
+
+static int
+allocate_init_hairpin_loop (NN_scores* this, const char* file, const int line)
+{
+
+   this->G_hairpin_loop_size = 31;
+   this->G_hairpin_loop = XOBJ_MALLOC (  this->G_hairpin_loop_size
+                                       * sizeof (this->G_hairpin_loop[0]),
+                                         file, line);
+   if (this->G_hairpin_loop == NULL)
+   {
+      return 1;        
    }
+
+   this->G_hairpin_loop[ 0] = INT_UNDEF; /* min. loop length is 3 */
+   this->G_hairpin_loop[ 1] = INT_UNDEF;
+   this->G_hairpin_loop[ 2] = INT_UNDEF;
+   this->G_hairpin_loop[ 3] = 570;
+   this->G_hairpin_loop[ 4] = 560;
+   this->G_hairpin_loop[ 5] = 560;
+   this->G_hairpin_loop[ 6] = 540;
+   this->G_hairpin_loop[ 7] = 590;
+   this->G_hairpin_loop[ 8] = 560;
+   this->G_hairpin_loop[ 9] = 640;
+   this->G_hairpin_loop[10] = 650;
+   this->G_hairpin_loop[11] = 660;
+   this->G_hairpin_loop[12] = 670;
+   this->G_hairpin_loop[13] = 678;
+   this->G_hairpin_loop[14] = 686;
+   this->G_hairpin_loop[15] = 694;
+   this->G_hairpin_loop[16] = 701;
+   this->G_hairpin_loop[17] = 707;
+   this->G_hairpin_loop[18] = 713;
+   this->G_hairpin_loop[19] = 719;
+   this->G_hairpin_loop[20] = 725;
+   this->G_hairpin_loop[21] = 730;
+   this->G_hairpin_loop[22] = 735;
+   this->G_hairpin_loop[23] = 740;
+   this->G_hairpin_loop[24] = 744;
+   this->G_hairpin_loop[25] = 749;
+   this->G_hairpin_loop[26] = 753;
+   this->G_hairpin_loop[27] = 757;
+   this->G_hairpin_loop[28] = 761;
+   this->G_hairpin_loop[29] = 765;
+   this->G_hairpin_loop[30] = 769;
+
+   return 0;
+}
+
+/** @brief Create a new Nearest Neighbour scoring scheme with standard values.
+ *
+ * The constructor for an initialised @c NN_scores objects. If compiled with
+ * enabled memory checking, @c file and @c line should point to the position
+ * where the function was called. Both parameters are automatically set by
+ * using the macro @c NN_SCORES_NEW_INIT.\n
+ * As parameters for the canonical Watson-Crick base pairs, plus the G-U wobble
+ * base pair, the stacking energies (table "stack_energies") from the Vienna
+ * RNA package are used. For stacks consisting of only one base pair and a
+ * mismatch, we use ... mismatch_interior \n
+ * Returns @c NULL on error.
+ *
+ * @param[in] sigma alphabet.
+ * @param[in] file fill with name of calling file.
+ * @param[in] line fill with calling line.
+ */
+NN_scores*
+nn_scores_new_init (Alphabet* sigma, const char* file, const int line)
+{
+   NN_scores* this;
+   /*unsigned long i;*/
+   char a, u, g, c;
+
+   assert (sigma);
+
+   this = nn_scores_new (file, line);
+
+   if (this == NULL)
+   {
+      return NULL;
+   }
+
+
+   if (! alphabet_is_standard_rna (sigma))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+   
+   /* fetch nucleotide identifiers from alphabet (just for convenience) */
+   a = alphabet_base_2_no('A', sigma);
+   u = alphabet_base_2_no('U', sigma);
+   g = alphabet_base_2_no('G', sigma);
+   c = alphabet_base_2_no('C', sigma);
+   
+   /* create table of allowed base pairs */
+   if (allocate_init_bp_allowed (a, u, g, c, this, file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+
+   /* create table of base pair indeces */
+   if (allocate_init_bp_idx (alphabet_size (sigma), a, u, g, c, this,
+                             file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+   
+   /* create table of stacking energies */
+   if (allocate_init_G_stack (a, u, g, c, this, file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+
+   /* create table for mismatch stacking energies */
+   if(allocate_init_G_mm_stack_size (a, u, g, c, alphabet_size (sigma), this,
+                                     file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;       
+   }
+
+   /* init hairpin loops */
+   if (allocate_init_hairpin_loop (this, file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+   
+   /* init hairpin closing base pair energies */
+   XMALLOC_ND(sizeof (int), 3, 4, 2, 3);
 
    return this;
 }
@@ -886,6 +1010,7 @@ nn_scores_delete (NN_scores* this)
    {
      XFREE_2D ((void**)this->G_stack);
      XFREE_2D ((void**)this->G_mm_stack);
+     XFREE (this->G_hairpin_loop);
      XFREE_2D ((void**)this->bp_idx);
      XFREE_2D ((void**)this->bp_allowed);
      XFREE (this);
@@ -1371,29 +1496,141 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
    XFREE (string_start);
 }
 
+/** @brief Print the hairpin loop energies of a scoring scheme to a stream.
+ *
+ * Prints hairpin loop energies to a stream. Form is "loop size: score".
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ */
+void
+nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
+{
+   unsigned long i;
+   int rprec, rprec_idx, tmp, pline_width = 0;
+   char* string;
+   char* string_start;
+   char* en_undef;
+
+   assert (scheme != NULL);
+   assert (scheme->G_hairpin_loop != NULL);
+
+   /* dermine widest cell */
+   for (i = 0; i < scheme->G_hairpin_loop_size; i++)
+   {
+      rprec = 0;
+      tmp = scheme->G_hairpin_loop[i];
+      if (tmp == INT_UNDEF)
+      {
+         tmp = 0;
+      }
+
+      if (tmp < 0)
+      {
+         tmp *= (-1);
+         rprec++;
+      }
+      
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+      }
+      
+      if (rprec > pline_width) 
+      {
+         pline_width = rprec;
+      }       
+   }
+   rprec = pline_width;
+   rprec_idx = floor (log10 (scheme->G_hairpin_loop_size) + 1);
+
+   /* add up components of a line */
+   pline_width += 3; /*: \n*/
+   pline_width += rprec_idx;
+
+   /* allocate memory for the string and the undef symbol
+      therefore we add "rprec + 1" which is the 2 (for null terminating the
+      strings) */
+   string = XMALLOC (sizeof (char) *
+                     (pline_width * scheme->G_hairpin_loop_size) + 2 + rprec);
+   if (string == NULL)
+   {
+      return;
+   }
+
+   en_undef = string;
+   for (i = 0; i < (unsigned long) rprec; i++)
+   {
+      en_undef[i] = '-';
+   }
+   en_undef[i] = '\0';
+
+
+   string_start = string + rprec + 1;
+   string = string + rprec + 1;
+
+   /* start printing */
+   for (i = 0; i < scheme->G_hairpin_loop_size; i++)
+   {
+      /* store index */
+      msprintf (string, "%*ld", rprec_idx, i);
+      string+= rprec_idx;
+
+      msprintf (string, ": ");
+      string+= 2;
+
+      if (scheme->G_hairpin_loop[i] == INT_UNDEF)
+      {
+         msprintf (string, "%s", en_undef);         
+      }
+      else
+      {
+         msprintf (string, "%*i", rprec, scheme->G_hairpin_loop[i]);
+      }
+      string+= rprec;
+
+      string[0] = '\n';
+      string++;
+   }
+
+   /* actually print */
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (en_undef);  /* en_undef is the start of the whole memory */
+}
 
 /******************************   Miscellaneous   *****************************/
 
-/** @brief Create a new Nearest Neighbour scoring scheme with standard values.
- *
- * The constructor for an initialised @c NN_scores objects. If compiled with
- * enabled memory checking, @c file and @c line should point to the position
- * where the function was called. Both parameters are automatically set by
- * using the macro @c NN_SCORES_NEW_INIT.\n
- * Returns @c NULL on error.
- *
- * @param[in] sigma alphabet.
- * @param[in] file fill with name of calling file.
- * @param[in] line fill with calling line.
- */
 unsigned long
 nn_scores_bp_2_idx (const char base1, const char base2, const NN_scores* scheme)
 {
-   assert (scheme != NULL);
+   assert (scheme);
 
    /*mprintf ("(%c,%c) = %lu\n", alphabet_no_2_base(base1, sigma),
                                alphabet_no_2_base(base2, sigma),
                                base1 * alphabet_size (sigma) + base2);*/
 
    return scheme->bp_idx[(int)base1][(int)base2];
+}
+
+bool
+nn_scores_is_allowed_basepair (const char base1, const char base2,
+                               void* this)
+{
+   NN_scores* scheme = (NN_scores*) this;
+
+   assert (scheme);
+
+
+   if ((unsigned long) scheme->bp_idx[(int)base1][(int)base2]
+       < scheme->bp_allowed_size)
+   {
+      return true;
+   }
+
+   return false;
 }

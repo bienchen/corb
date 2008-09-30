@@ -54,7 +54,7 @@ extern "C" {
 #define ULONG_UNDEF ULONG_MAX
 #define CHAR_UNDEF  CHAR_MAX
 #define UCHAR_UNDEF UCHAR_MAX
-
+#define INT_UNDEF   INT_MAX
 
 #endif /* UNDEF_H */
 

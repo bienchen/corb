@@ -77,6 +77,9 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    nn_scores_fprintf_G_stack (stdout, scores, sigma);
    mprintf ("Mismatch stacking energies:\n");
    nn_scores_fprintf_mm_G_stack (stdout, scores, sigma);
+   mprintf ("Hairpin loop energies:\n");
+   mprintf ("Size: Score\n");
+   nn_scores_fprintf_G_hairpin_loop (stdout, scores);
 
    alphabet_delete (sigma);
    nn_scores_delete (scores);

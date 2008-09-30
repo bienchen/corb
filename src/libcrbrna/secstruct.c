@@ -45,6 +45,8 @@
 #include <config.h>
 #include <stdlib.h> /* only as long as EXIT_FAILURE is in use */
 #include <libcrbbasic/crbbasic.h>
+#include "nn_scores.h"
+#include "rna.h"
 #include "secstruct.h"
 
 /* structure to store hairpins */
@@ -402,7 +404,8 @@ secstruct_find_interactions (const unsigned long* pairs,
             /* hairpin loop - pairs have run past each other */
             HairpinLoop hl = { .i = i, .j = pairs[i],
                                .size = pairs[i] - i - 1 };
-            ARRAY_PUSH(this->hairpin_loop, hl, HairpinLoop, { error = 1; });
+            ARRAY_PUSH(this->hairpin_loop, hl, HairpinLoop,
+                       { error = ERR_RNA_ALLOC; });
          }
          else
          {
@@ -423,14 +426,16 @@ secstruct_find_interactions (const unsigned long* pairs,
                {
                   /* stacking pair of base pairs */
                   StackLoop st = { .i = i1, .j = j1};
-                  ARRAY_PUSH(this->stack, st, StackLoop, { error = 1; });
+                  ARRAY_PUSH(this->stack, st, StackLoop,
+                             { error = ERR_RNA_ALLOC; });
                }
                else if ((size1 == 0) || (size2 == 0))
                {
                   /* bulge loop */
                   BulgeLoop bg = { .i1 = i1, .j1 = j1, .i2 = i2, .j2 = j2,
                                    .size = (size1 > size2 ? size1 : size2) };
-                  ARRAY_PUSH(this->bulge_loop, bg, BulgeLoop, { error = 1; });
+                  ARRAY_PUSH(this->bulge_loop, bg, BulgeLoop,
+                             { error = ERR_RNA_ALLOC; });
                   /*mfprintf (stderr, "Found bulge: Start %lu, %lu, stop: "
                     "%lu, %lu, size: %lu\n", i1, j1, i2, j2, bg.size);*/
                }
@@ -439,7 +444,8 @@ secstruct_find_interactions (const unsigned long* pairs,
                   /* generic internal loop */
                   IntLoop in = { .i1 = i1, .j1 = j1, .i2 = i2, .j2 = j2,
                                  .size1 = size1, .size2 = size2};
-                  ARRAY_PUSH(this->internal_loop, in, IntLoop, { error = 1; });
+                  ARRAY_PUSH(this->internal_loop, in, IntLoop,
+                             { error = ERR_RNA_ALLOC; });
                   /*mfprintf (stderr, "Found internal: Start %lu, %lu, stop: "
                             "%lu, %lu, size: %lu, %lu\n", i1, j1, i2, j2,
                             size1, size2);*/
@@ -480,7 +486,8 @@ secstruct_find_interactions (const unsigned long* pairs,
                         ml.dangle3[ml.ndangle3][Ne_Dangle] = pairs[i] - 1;*/
                   ml.ndangle3++;
                   
-                  ARRAY_PUSH (this->multi_loop, ml, MultiLoop, { error = 1; });
+                  ARRAY_PUSH (this->multi_loop, ml, MultiLoop,
+                              { error = ERR_RNA_ALLOC; });
                }
             }
          }
@@ -1096,4 +1103,56 @@ secstruct_get_i_3p_5pdangle_extloop (const unsigned long i,
    assert (this->ext_loop.ndangle5 > i);
 
    return (this->ext_loop.dangle5[i][P3_Dangle]);
+}
+
+/*********************************    Misc    *********************************/
+
+/** @brief Calculate the free energy of a structure.
+ *
+ * Evaluate the free energy of a secondary structure using the Nearest
+ * Neighbour model. This function does not check for base pairs allowed by the
+ * energy model. So feeding a structure with non canonical base pairs to it
+ * will result in undefined behaviour.\n
+ * Returns the free energy.
+ * 
+ * 
+ */
+int
+secstruct_calculate_DG (const char* seq, const NN_scores* scores,
+                        const SecStruct* this)
+{
+   unsigned long k;
+   int Gs = 0;
+   char i, j, jm1, ip1;
+
+   assert (seq);
+   assert (scores);
+   assert (this);
+
+   /* stacking pairs */
+      /* 5' - ii+1
+              jj-1 - 3' */
+   for (k = 0; k < ARRAY_CURRENT (this->stack); k++)
+   {
+      /* Why can we access j-1 and i+1 without any checking here?
+         If i and j pair, i is at least 0 and j 1. Hence sequence length is at
+         least 2. */
+      /* Why do we know that j-1 and i+1 form a pair? If they were unpaired,
+         i,j would be the starting base pair of a loop and therefore not in the
+         stack array. */
+      i   = seq[ARRAY_ACCESS (this->stack, k).i];
+      j   = seq[ARRAY_ACCESS (this->stack, k).j];
+      jm1 = seq[ARRAY_ACCESS (this->stack, k).j - 1];
+      ip1 = seq[ARRAY_ACCESS (this->stack, k).i + 1];
+
+      Gs += nn_scores_get_G_stack (i, j, jm1, ip1, scores);
+   }
+
+   /* hairpins */
+   for (k = 0; k < ARRAY_CURRENT (this->hairpin_loop); k++)
+   {
+      
+   }
+
+   return Gs;
 }

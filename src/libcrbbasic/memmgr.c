@@ -718,11 +718,234 @@ xmalloc_2d (const size_t n_rows,
             matrix[i] = ((char*) matrix[i-1]) + (n_cols * size);
          }
       }
+      else
+      {
+         XFREE (matrix);
+      }
    }
 
    return matrix;
 }
 
+/** @brief Allcoate memory for a n-dimensional array at runtime.
+ *
+ * Do not call this directly. Use the macro
+ * @c XMALLOC_RND(size_t size, size_t dim) instead. This will
+ * asure the memory manager to work properly and set the calling file and line
+ * for you.\n
+ * This function is ment to allocate memory for an array with n-dimensions.
+ * "runtime" means, that it is theoretically possible to determine the no. and
+ * size of dimensions entirely during the runtime of a program. If you do not
+ * need this it is probably a good idea to use @c xmalloc_nd instead. The
+ * behaviour for @c n = 0 is undefined.\n
+ * Returns a pointer to the allocated memory on success, @c NULL else. The
+ * return value is @c void* so that it is still possible to create
+ * 1-dimensional arrays with this function. This is just for reasons of
+ * generality.
+ *
+ * @params[in] size No. of bytes per element.
+ * @params[in] n No. of dimensions.
+ * @params[in] dim Size of each of the @c n dimensions.
+ * @params[in] file Calling file.
+ * @params[in] line Called from line.
+ */
+void*
+xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
+             const char* file, const int line)
+{
+   /* for all further explainations we consider D to have indeces 0...n
+      NOT 0...n-1 as in C */
+   size_t i, j;
+   size_t part;          /* end idx of current partition */
+   size_t idx;           /* current index in an array */
+   size_t ptr_size = 0;  /* no. of elements in the pointer storage */
+   size_t dat_size = 1;  /* no. of data elements */
+   void** array;
+
+   assert (dim);
+
+   if (n == 1)
+   {
+      return XOBJ_MALLOC (size * (*dim), file, line);      
+   }
+
+   /* Calculate no. of required pointers and size of data storage. */
+   /* All dimensions but the last one are just partioning a single array. */
+   /* The last dimension is of course the data storage and hence the pre-last */
+   /* dimension is a set of pointers pointing to the data. */
+   /* Therefore the size of the pointer array has to be the sum of the */
+   /* incremental products of all but the last dimensions: */
+   /* ptr_size =  \sum_i=0^{n-1}{\product_j=0^i{D_j}} */
+   /* The data storage has to be the product of all dimension sizes: */
+   /* dat_size = \product_i=0^n{D_i} */
+   for (i = 0; i < (n-1); i++)
+   {
+      dat_size *= dim[i];
+      ptr_size += dat_size;
+   }
+   dat_size *= dim[i];
+
+   /* allocate pointer */
+   array =  XOBJ_MALLOC (sizeof (*array) * ptr_size, file, line);
+   if (array == NULL)
+   {
+      return NULL;
+   }
+
+   /* partion pointer space/ set pointer. */
+   /* We have to arrange n-1 dimensions into the pointer array. The last */
+   /* dimension is a set of pointers referring to the "real" data storage. */
+   /* Therefore we loop over the first n-1 dimensions and set a first pointer */
+   /* to the beginning of the next partition. Outgoing from this pointer, all */
+   /* other pointers are set, partitioning another part of the storage in */
+   /* chunks of the size of the next dimension. Thereby the last partition to */
+   /* be created is determined by the product of foregoing dimension sizes. */
+   part = 1;
+   idx = 0;
+   array[0] = (char*) array + (dim[0] * sizeof (*array));
+   for (i = 0; i < (n-2); i++)
+   {
+      part *= dim[i]; /* calculate last index of current partioning process */
+      idx++;          /* increase, since the last poitner was already set */
+      /* arrange pointers with partitions */
+      for (j = 1; j < part; j++)
+      {
+         array[idx] = ((char*)array[idx-1]) + (dim[i+1] * sizeof (*array));
+         idx++;
+      }
+
+      /* set start of next partition area */
+      array[idx] = (char*)array[idx-1] + (dim[i+1] * sizeof (*array));
+   }
+
+   /* allocate memory for data */
+   array[idx] = XOBJ_MALLOC (size * dat_size, file, line);
+   if (array[idx] == NULL)
+   {
+      free (array);
+      return NULL;
+   }
+
+   /* set pointer to data */
+   /* idx points to the begin of the remains of the pointer storage. */
+   for (idx = idx + 1; idx < ptr_size; idx++)
+   {
+      array[idx] = ((char*)array[idx-1]) + (size * dim[n-1]);
+   }
+
+   return array;
+}
+
+/** @brief Allcoate memory for a n-dimensional array.
+ *
+ * Do not call this directly. Use the macro
+ * @c XMALLOC_ND(size_t size, size_t dim, ...) instead. This will
+ * asure the memory manager to work properly and set the calling file and line
+ * for you.\n
+ * This function is ment to allocate memory for an array with n-dimensions
+ * using a variable argument list. This gives you the convenience of the
+ * abundance of an additional array for the dimension sizes. The problem with
+ * var.arg. lists is the lack of possiblity for type checking. Beside it should
+ * be obvious that only positive integers are acceptable as dimension sizes,
+ * it is possible to force all kinds of data types into such a list, even
+ * structs. Using the wrong data type with this function will lead to undefined
+ * behaviour. The argument list requires @c n - 1 entries otherwise the
+ * behaviour is undefined. Internally @c size_t is used for the arguments in
+ * the list. The behaviour for @c n = 0 is undefined.\n
+ * Returns a pointer to the allocated memory on success, @c NULL else. The
+ * return value is @c void* so that it is still possible to create
+ * 1-dimensional arrays with this function. This is just for reasons of
+ * generality.
+ *
+ * @params[in] size No. of bytes per element.
+ * @params[in] n No. of dimensions.
+ * @params[in] file Calling file.
+ * @params[in] line Called from line.
+ * @params[in] ... List of sizes of the dimensions (@c size_t).
+ */
+void*
+xmalloc_nd (const size_t size __attribute__((unused)),
+            const char* file __attribute__((unused)),
+            const int line __attribute__((unused)),
+            const size_t n, ...)
+{
+   size_t i, j, part, idx, curr_dim;
+   size_t ptr_size = 0;
+   size_t dat_size = 1;
+   va_list ap;
+   void** array;
+
+   /* determine size of pointer storage */
+   va_start(ap, n);
+
+   if (n == 1)
+   {
+      curr_dim = va_arg(ap, size_t);
+      va_end(ap);
+      return XOBJ_MALLOC (size * curr_dim, file, line);      
+   }
+
+   /* calculate storage sizes */
+   for (i = 0; i < (n-1); i++)
+   {
+      curr_dim = va_arg(ap, size_t);
+      dat_size *= curr_dim;
+      ptr_size += dat_size;
+   }
+   curr_dim = va_arg(ap, size_t);
+   dat_size *= curr_dim;
+
+   va_end(ap);
+
+   /* allocate pointer */
+   array =  XOBJ_MALLOC (sizeof (*array) * ptr_size, file, line);
+   if (array == NULL)
+   {
+      return NULL;
+   }   
+
+   /* partion pointer space/ set pointer. */
+   va_start(ap, n);  
+
+   part = 1;
+   idx = 0;
+   curr_dim = va_arg(ap, size_t);
+   array[0] = (char*) array + (curr_dim * sizeof (*array));
+   for (i = 0; i < (n-2); i++)
+   {
+      part *= curr_dim;
+      idx++;            
+      /* arrange pointers with partitions */
+      curr_dim = va_arg(ap, size_t);
+      for (j = 1; j < part; j++)
+      {       
+         array[idx] = ((char*)array[idx-1]) + (curr_dim * sizeof (*array));
+         idx++;
+      }
+      array[idx] = (char*)array[idx-1] + (curr_dim * sizeof (*array));
+   }
+   curr_dim = va_arg (ap, unsigned long);
+
+   va_end(ap);
+
+   /* allocate memory for data */
+   array[idx] = XOBJ_MALLOC (size * dat_size, file, line);
+   if (array[idx] == NULL)
+   {
+      free (array);
+      return NULL;
+   }
+
+   /* set pointer to data */
+   /* idx points to the begin of the remains of the pointer storage. */
+   for (idx = idx + 1; idx < ptr_size; idx++)
+   {
+      array[idx] = ((char*)array[idx-1]) + (size * curr_dim);
+   }
+
+
+   return array;
+}
 
 /** @brief Wrapper function for free.
  *
@@ -779,4 +1002,32 @@ xfree_2d (void** matrix)
       XFREE (*matrix);
       XFREE (matrix);
    }
+}
+
+/** brief Free nD memory.
+ *
+ * Free the memory held by a n-dimensional arry. May be called directly. For
+ * consistent style (all memory allocation & releasing via macros), we provide
+ * XFREE_ND(void**).
+ *
+ * @params[in] n No. of dimensions.
+ * @params[in] matrix Matrix to be freed.
+*/
+void
+xfree_nd (const size_t n, void** array)
+{
+   size_t i;
+   void** data = array;
+
+   if (n > 1)
+   {
+      for (i = 0; i < (n - 2); i++)
+      {
+         data = *data;
+      }
+      
+      XFREE (*data);
+   }
+
+   XFREE (array);
 }

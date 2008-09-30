@@ -47,6 +47,8 @@
 #include <stddef.h>
 #include <libcrbbasic/crbbasic.h>
 /*#include "alphabet.h"*/
+#include "secstruct.h"
+/*#include "nn_scores.h"*/
 #include "rna.h"
 
 
@@ -60,7 +62,7 @@ struct Rna {
       /* char* vienna; */       /* vienna string */
       unsigned long* pairs;     /* base pairs */
       unsigned long  size;      /* size of the RNA (sequence & 2D structure) */
-      struct_comp    structure; /* decomposed structure */
+       SecStruct*    structure; /* decomposed structure */
 };
 
 
@@ -116,7 +118,7 @@ rna_new (const char* file, const int line)
       this->seq       = NULL;
       /* this->vienna    = NULL; */
       this->pairs     = NULL;
-      this->structure = struct_comp_new();
+      this->structure = NULL;
    }
 
    return this;
@@ -137,14 +139,14 @@ rna_delete (Rna* this)
      XFREE(this->seq);
      /* XFREE(this->vienna); */
      XFREE(this->pairs);
-     struct_comp_delete (&this->structure);
+     secstruct_delete (this->structure);
      XFREE(this);
    }
 }
 
 /** @brief Allocate memory for the sequence component of an @c Rna object.
  *
- * Allocate the memory for a sequence stored within an @c Rna dat aobject. If
+ * Allocate the memory for a sequence stored within an @c Rna data object. If
  * compiled with enabled memory checking, @c file and @c line should point to
  * the position where the function was called. Both parameters are 
  * automatically set by using the macro @c RNA_ALLOCATE_SEQUENCE.\n
@@ -156,7 +158,7 @@ rna_delete (Rna* this)
  * @param[in] line Fill with calling line.
  */
 int
-rna_alloc_sequence (const unsigned long size, Rna* this,
+rna_allocate_sequence (const unsigned long size, Rna* this,
                        const char* file, const int line)
 {
    assert (this);
@@ -168,6 +170,91 @@ rna_alloc_sequence (const unsigned long size, Rna* this,
    this->seq = XOBJ_CALLOC ((this->size + 1), sizeof (this->seq[0]),
                             file, line);
    if (this->seq == NULL)
+   {
+      return ERR_RNA_ALLOC;
+   }
+
+   return 0;
+}
+
+/** @brief Store a copy of an RNA sequence in an Rna data object.
+ *
+ * Initialise the sequence component of an Rna object. The data source is a
+ * character string over a certain alphabet. The sequence is transforme into
+ * the internal RNA representation and therefore stored as a copy in the
+ * object. If compiled with enabled memory checking, @c file and @c line
+ * should point to the position where the function was called. Both parameters
+ * are automatically set by using the macro @c RNA_INIT_SEQUENCE.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC on memory problems. On problems
+ * parsing the sequence string, the following error codes are returned:\n
+ * @list
+ * @c ERR_RNA_NO_BASE A base in the sequence is not in the given alphabet.
+ *
+ * @params[in] seq Sequence string.
+ * @params[in] length Length of the sequence.
+ * @params[in] sigma Alphabet.
+ * @params[in] this Rna object to store structure.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_init_sequence (const char* seq,
+                   const unsigned long length,
+                   Alphabet* sigma,
+                   Rna* this,
+                   const char* file, const int line)
+{
+   int error = 0;
+   unsigned long i;
+
+   assert (this);
+   assert (this->seq == NULL);
+   assert ((this->size == 0) || (this->size == length));
+
+   /* allocate sequence */
+   error = rna_allocate_sequence (length, this, file, line);
+
+   /* store & validate sequence */
+   i = 0;
+   while ((!error) && (i < length))
+   {
+      this->seq[i] = alphabet_base_2_no (seq[i], sigma);
+
+      if (this->seq[i] == CHAR_UNDEF)
+      {
+         error =  ERR_RNA_NO_BASE;
+      }
+      i++;
+   }
+
+   return error;
+}
+
+/** @brief Allocate memory for the pair list component of an @c Rna object.
+ *
+ * Allocate the memory for a list of pairs stored within an @c Rna data object.
+ * If compiled with enabled memory checking, @c file and @c line should point to
+ * the position where the function was called. Both parameters are 
+ * automatically set by using the macro @c RNA_ALLOCATE_PAIRLIST.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC on memory problems.
+ *
+ * @param[in] size Size of the sequence/ structure of the RNA.
+ * @param[in] this Rna data object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_allocate_pairlist (const unsigned long size, Rna* this,
+                       const char* file, const int line)
+{
+   assert (this);
+   assert (this->pairs == NULL);
+   assert ((this->size == 0) || (this->size == size));  
+   
+   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * size, file, line);
+   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * size);   
+
+   if (this->pairs == NULL)
    {
       return ERR_RNA_ALLOC;
    }
@@ -217,12 +304,7 @@ rna_init_pairlist_vienna (const char* vienna,
    assert ((this->size == 0) || (this->size == length));
 
    /* allocate list */
-   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * length, file, line);
-   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * length);
-   if (this->pairs == NULL)
-   {
-      error = ERR_RNA_ALLOC;
-   }
+   error = rna_allocate_pairlist (length, this, file, line);
 
    if (!error)
    {
@@ -299,6 +381,84 @@ rna_init_pairlist_vienna (const char* vienna,
    return error;
 }
 
+/** @brief Initialise an Rna data object with a sequence and a structure.
+ *
+ * Store sequence and structure in an Rna data object. Does the same as using
+ * @c rna_init_sequence together with @c rna_init_pairlist_vienna. Since there
+ * is only one @c length parameter, we assume that sequence and structure are
+ * of equal length. If compiled with enabled memory checking, @c file and
+ * @c line should point to the position where the function was called. Both
+ * parameters are automatically set by using the macro
+ * @c RNA_INIT_SEQUENCE_STRUCTURE.\n
+ * Returns 0 on success or an error code from the utilised functions.
+ *
+ * @param[in] seq Sequence.
+ * @param[in] vienna Structure string in Vienna notation.
+ * @param[in] length Length of the RNA.
+ * @param[in] sigma Alphabet.
+ * @param[in] this Rna data object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_init_sequence_structure (const char* seq,
+                             const char* vienna,
+                             const unsigned long length,
+                             Alphabet* sigma,
+                             Rna* this,
+                             const char* file, const int line)
+{
+   int error = 0;
+
+   /* allocate and store sequence */
+   error = rna_init_sequence (seq, length, sigma, this, file, line);
+
+   /* allocate and store structure */
+   if (!error)
+   {
+      error = rna_init_pairlist_vienna (vienna, length, this, file, line);
+   }
+
+   return error;
+}
+
+/** @brief Decompose an already stored secondary structue.
+ *
+ * Initialise the secondary structure component of an Rna data object. Instead
+ * of a simple list of pairs, this creates a set of structural components the
+ * RNA structure consists of. If compiled with enabled memory checking,
+ * @c file and @c line should point to the position where the function was
+ * called. Both parameters are automatically set by using the macro
+ * @c RNA_SECSTRUCT_INIT.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC if memory allocation failed.
+ *
+ * @param[in] this Rna object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_secstruct_init (Rna* this, const char* file, const int line)
+{
+   int error = 0;
+
+   assert (this);
+   assert (this->pairs);
+   assert (this->structure == NULL);
+
+   this->structure = secstruct_new (file, line);
+
+   if (this->structure == NULL)
+   {
+      error = ERR_RNA_ALLOC;
+   }
+   else
+   {
+      error = secstruct_find_interactions (this->pairs, this->size,
+                                           this->structure);
+   }
+
+   return error;
+}
 
 /********************************   Altering   ********************************/
 
@@ -508,4 +668,55 @@ rna_base_pairs_with (const unsigned long pos, const Rna* this)
    assert (this->size > pos);
 
    return this->pairs[pos];
+}
+
+/** @brief Check all base pairs of a structure to be valid.
+ *
+ * For a given secondary structure and sequence, test all base pairs to be
+ * allowed. This should be used to verify if a RNA secondary structure can be
+ * evaluated with a certain scoring function.\n
+ * Returns the size of the RNA if all base pairs are allowed or the index of
+ * the 5' base of the first base pair not allowed.
+ *
+ * @param[in] this RNA structure to be checked.
+ */
+unsigned long
+rna_validate_basepairs (bool (*validate_basepair) (const char, const char,
+                                                   void*),
+                        void* scores, const Rna* this)
+{
+   unsigned long k;
+
+   assert (validate_basepair);
+   assert (this);
+   assert (this->seq);
+   assert (this->pairs);
+
+   for (k = 0; k < this->size; k++)
+   {
+      if (this->pairs[k] != NOT_PAIRED)
+      {
+         if (validate_basepair (this->seq[k], this->seq[this->pairs[k]], scores)
+             == false)
+         {
+            return k;
+         }  
+      }
+   }
+
+   return this->size;
+}
+
+unsigned long
+rna_validate_basepairs_nn_scores (NN_scores* scores, const Rna* this)
+{
+   return rna_validate_basepairs (nn_scores_is_allowed_basepair, scores, this);
+}
+
+int
+rna_secstruct_calculate_DG (const NN_scores* scores, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_calculate_DG (this->seq, scores, this->structure);
 }

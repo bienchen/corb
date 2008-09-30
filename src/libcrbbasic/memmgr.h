@@ -105,6 +105,19 @@ xmalloc_2d (const size_t, const size_t, const size_t, const char*, const int)
 #endif /* __GNUC__ */
 ;
 
+void*
+xmalloc_rnd (const size_t, const size_t, const size_t*, const char*, const int)
+#if defined(__GNUC__) && (__GNUC__ > 2)
+     __attribute__((malloc))
+#endif /* __GNUC__ */
+;
+
+void*
+xmalloc_nd (const size_t, const char*, const int, const size_t, ...)
+#if defined(__GNUC__) && (__GNUC__ > 2)
+     __attribute__((malloc))
+#endif /* __GNUC__ */
+;
 
 void
 xfree (void* ptr);
@@ -114,6 +127,9 @@ checked_xfree (void* ptr);
 
 void
 xfree_2d (void** matrix);
+
+void
+xfree_nd (const size_t, void**);
 
 void
 free_memory_manager (void);
@@ -160,8 +176,20 @@ free_memory_manager (void);
 #define XOBJ_MALLOC_2D(ROWS,COLS,SIZE,F,L)               \
    xmalloc_2d (ROWS, COLS, SIZE, F, L)
 
+#define XMALLOC_RND(SIZE, N, DIM) \
+   xmalloc_rnd (SIZE, N, DIM, __FILE__, __LINE__)
+
+#define XOBJ_MALLOC_RND(SIZE, N, DIM, F, L)            \
+   xmalloc_rnd (SIZE, N, DIM, F, L)
+
+#define XMALLOC_ND(SIZE,DIM,...) \
+   xmalloc_nd (SIZE, __FILE__, __LINE__, DIM, __VA_ARGS__)
+
 #define XFREE_2D(PTRPTR) \
    xfree_2d (PTRPTR)
+
+#define XFREE_ND(N, PTRPTR)                      \
+   xfree_nd (N, PTRPTR)
 
 #endif /* MEMMGR_H */
 

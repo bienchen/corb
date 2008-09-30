@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 #include <libcrbbasic/crbbasic.h>
+#include "nn_scores.h"
 #include "alphabet.h"
 
 #ifndef RNA_H
@@ -64,7 +65,7 @@ enum rna_retvals{
    ERR_RNA_VIENNA_FORMAT,  /* Wrong format of Vienna structure string */
    ERR_RNA_VIENNA_MMC,     /* Mismatched closing pairing partner found */
    ERR_RNA_VIENNA_MMO,     /* Mismatched opening pairing partner found */
-   ERR_RNA_NO_BASE         /* Given symbol is not a valid base */
+   ERR_RNA_NO_BASE,        /* Given symbol is not a valid base */
 };
 
 typedef struct Rna Rna;
@@ -81,6 +82,12 @@ void
 rna_delete (Rna*);
    
 int
+rna_allocate_pairlist (const unsigned long, Rna*, const char*, const int);
+
+#define RNA_ALLOCATE_PAIRLIST(A, B) \
+   rna_allocate_pairlist (A, B, __FILE__, __LINE__)
+
+int
 rna_init_pairlist_vienna (const char*, const unsigned long, Rna*,
                           const char*, const int);
 
@@ -90,8 +97,30 @@ rna_init_pairlist_vienna (const char*, const unsigned long, Rna*,
 int
 rna_alloc_sequence (const unsigned long, Rna*, const char*, const int);
 
+int
+rna_init_sequence (const char*, const unsigned long, Alphabet*, Rna*,
+                   const char*, const int);
+
+#define RNA_INIT_SEQUENCE(SEQ, LENGTH, SIGMA, RNA)  \
+   rna_init_sequence (SEQ, LENGTH, SIGMA, RNA, __FILE__, __LINE__)
+
+int
+rna_init_sequence_structure (const char*, const char*, const unsigned long,
+                             Alphabet*, Rna*,
+                             const char*, const int);
+
+#define RNA_INIT_SEQUENCE_STRUCTURE(A, B, C, D, E) \
+   rna_init_sequence_structure (A, B, C, D, E, __FILE__, __LINE__)
+
+
 #define RNA_ALLOC_SEQUENCE(A, B) \
    rna_alloc_sequence (A, B, __FILE__, __LINE__)
+
+int
+rna_secstruct_init (Rna*, const char*, const int);
+
+#define RNA_SECSTRUCT_INIT(A) \
+   rna_secstruct_init (A, __FILE__, __LINE__)
 
 /********************************   Altering   ********************************/
 
@@ -123,6 +152,16 @@ rna_base_pairs_with (const unsigned long, const Rna*);
 
 char
 rna_get_sequence_base (const unsigned long, const Rna*);
+
+unsigned long
+rna_validate_basepairs (bool (*validate_basepair) (const char, const char,
+                                                   void*), void*, const Rna*);
+
+unsigned long
+rna_validate_basepairs_nn_scores (NN_scores*, const Rna*);
+
+int
+rna_secstruct_calculate_DG (const NN_scores*, const Rna*);
 
 #endif /* RNA_H */
 

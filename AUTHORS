@@ -3,7 +3,7 @@ Authors of <put cool name here>
 Also see files ChangeLog and THANKS
 
 
-Stefan Bienert (bienert):
+Stefan Bienert (bienert, bienert@zbh.uni-hamburg.de):
         (test): ../share/misc/emacs/test.h corb.c libcrbapps/brot.[c,h]
         libcrbapps/fold.[c,h] libcrbbasic/argvprsr.[c,h]
         libcrbbasic/crbbasic.h libcrbbasic/errormsg.[c,h]

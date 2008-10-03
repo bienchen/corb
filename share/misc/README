@@ -1,9 +1,9 @@
-Last modified: 2008-02-29.14
+Copyright (C) 2007 Stefan Bienert
 
-Copyright (c) 2007 Stefan Bienert <bienert@zbh.uni-hamburg.de>
-Copyright (c) 2007 Center for Bioinformatics, University of Hamburg 
+See the end of the file for license conditions.
 
-The copyright statements hold unless stated otherwise.
+Last modified: 2008-10-03.16
+
 
 This directory contains miscellaneous stuff for the project
 "RNA Energetics & Sequence Design".
@@ -19,9 +19,25 @@ emacs/  - Syntax highlighting extensions and skeletons for Emacs. For an
 m4/     - M4 macros for autoconf, automake and autoheader.
 
 
+
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)
 # time-stamp-start: "Last modified: "
 # time-stamp-format: "%:y-%02m-%02d.%02H"
 # time-stamp-end: "$"
 # End:
+
+This file is part of CoRB.
+
+CoRB is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoRB is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with CoRB.  If not, see <http://www.gnu.org/licenses/>.

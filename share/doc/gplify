@@ -1,0 +1,171 @@
+Copyright (C) 2008 Stefan Bienert
+
+See the end of the file for license conditions.
+
+Last modified: 2008-10-03.22
+
+
+                   How to GPLify Your Contribution to CoRB
+                 -------------------------------------------
+
+1. Introduction
+2. After Many Years...
+3. GPLify Your Code
+4. GPLify Your Documentation
+
+
+
+                               1. Introduction
+                             -------------------
+
+This document only describes the technical details on how to put your
+contribution to CoRB under the terms of the GNU General Public License (GPL).
+For philosophic issues, etc. please refer to
+http://www.gnu.org/licenses/gpl-faq.html.
+
+An ideal contribution to CoRB should consist of two components: Code and
+documentation. Since source code is usually the larger part, we start
+describing how to fit your code under the GPL. Thereafter we provide an
+instruction for your documentation. But before everything else, a few notes on
+a more general issue in licensing and copylefting...
+
+
+
+                             2. After Many Years
+                           -----------------------
+
+Both, documentation and source code files need a copyright line somewhere near
+the top. The note should be of the following form:
+
+<snip>
+Copyright (C) (years) (Your Name)
+<snip>
+
+Thereby the list of years shows the dates on which versions of a file were
+completed, not released. An example would be the following scenario: You finish
+a new version of a software on Dec 31 2007 but release it on Jan 1 2008. The
+copyright line should then contain 2007, not 2008. Of course this is a little
+bit complicated but required  by international copyright law. 
+
+
+
+                             3. GPLify Your Code
+                           -----------------------
+
+To put your code under the GPL, each file has to contain a legal notice, saying
+that it is covered by the GPL. This includes all source files: Lisp, C, Perl,
+M4, Shell, makefile.am's, ....
+
+For the notice, just copy the following to the top of all source files:
+
+<snip>
+Copyright (C) (years) (Your Name)
+
+This file is part of CoRB.
+
+CoRB is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoRB is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
+<snip>
+
+Additionally you should place your name and a working email address in the
+AUTHORS file. You will find this file in the top-level directory of the CoRB
+projects.
+
+If you modify an existing file, just say so in the file itself. The note should
+also contain the date of change. On major changes, discuss with the original
+author if she agrees in sharing the copyright. Notes about changes should go
+right after the license disclaimer.
+
+Copying code from other projects covered by the SAME license should be OK in
+principle. Please note that you have to include the copyright notice of the
+foreign code in your file. All copyright notices should be gathered right near
+the top of the files.
+
+Beside the license notes in the code, your program should advertise the fact
+that it is free software. Also it should inform the user that there is no
+warranty. A standard way of doing this is to make your program output this
+notice when it is passed the --version command-line flag. The notice should
+look like this:
+
+<snip>
+(program name) (version)
+Copyright (C) (years) (Your Name)
+(program name) comes with ABSOLUTELY NO WARRANTY.
+For more information about license issues, see the file named COPYING.
+<snip>
+
+Since your program is not a single binary, you can omit the redistribution note
+of most GNU software. This message will be included in the CoRB binary.
+
+NOTETOMYSELF: Include redistribution (see emacs --version) note in CoRB
+              --version
+
+
+
+                         4. GPLify Your Documentation
+                       --------------------------------
+
+All your code documentation is already covered by the GPL if you include the
+note in the source files. But manuals will be distributed in "compiled" form,
+that is as pdf, html, .... Of course such a document does not contain the
+copyright notes from the source files. Therefore you should explicitly put them 
+under the GNU Free Documentation License (GFDL). For more information on this
+license refer to http://www.gnu.org/licenses/fdl.html. Basically, to use the
+GFDL with your document, you have to include a copy of the license in the
+document and put the following note right after the title page:
+
+<snip>
+Copyright (C)  (years) (Your Name).
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+<snip>
+
+If you do not agree with the "Invariant Sections, no Front-Cover Texts, ..."
+part, you may change it to something like:
+
+<snip>
+with the Invariant Sections being LIST THEIR TITLES, with the
+Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+<snip>
+
+The GFDL is used for the existing manuals/ guides.
+
+- put corb into free software directory
+
+
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "Last modified: "
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-end: "$"
+# End:
+
+This file is part of CoRB.
+
+CoRB is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoRB is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with CoRB.  If not, see <http://www.gnu.org/licenses/>.

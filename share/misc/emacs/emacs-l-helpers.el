@@ -1,7 +1,7 @@
 ;;; emacs-l-helpers.el --- Set of "helping hand" functions for using emacs in
 ;;;                        this project
 
-;; version=2008-10-03.22
+;; version=2008-10-04.13
 
 ;; Copyright (C) 2007 Stefan Bienert
 ;; 
@@ -99,7 +99,47 @@ Optional argument SYMBOL takes a string to be writtin in front of each line."
   (princ symbol csbuf)
   (terpri csbuf)
   (princ symbol csbuf)
-  (princ " See COPYING file in the top level directory of this tree for licence." csbuf)
+  (princ " This file is part of CoRB." csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " CoRB is free software: you can redistribute it and/or modify" csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " it under the terms of the GNU General Public License as published by"
+         csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " the Free Software Foundation, either version 3 of the License, or"
+         csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " (at your option) any later version." csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " CoRB is distributed in the hope that it will be useful," csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " but WITHOUT ANY WARRANTY; without even the implied warranty of"
+         csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " GNU General Public License for more details." csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " You should have received a copy of the GNU General Public License"
+         csbuf)
+  (terpri csbuf)
+  (princ symbol csbuf)
+  (princ " along with CoRB.  If not, see <http://www.gnu.org/licenses/>." csbuf)
   (terpri csbuf)
   )
 

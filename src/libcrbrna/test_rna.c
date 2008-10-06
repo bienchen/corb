@@ -125,7 +125,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       THROW_ERROR_MSG ("Wrong index for pairing partner found. Checked pos. "
                        "%d, expected partner index %d, got %lu. Structure "
                        "was: \'%s\'!",
-                       (strlen (test_string) - 1), 1, r, test_string);
+                       (int)(strlen (test_string) - 1), 1, r, test_string);
       return EXIT_FAILURE;       
    }
 

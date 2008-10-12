@@ -218,6 +218,19 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
+   /* test setting entire sequence at once */
+   test_string = "ACCCUGCAG";
+   rna_set_sequence (test_string, strlen (test_string), test_obj);
+
+   /* check sequence*/
+   if (strcmp (rna_get_sequence (test_obj), test_string) != 0)
+   {
+      THROW_ERROR_MSG ("Unintentional error: Stored sequence and sequence to "
+                       "be stored differ: src = \'%s\' dest = \'%s\'",
+                       test_string, rna_get_sequence (test_obj));
+      return EXIT_FAILURE;
+   }
+
    rna_delete (test_obj);
    alphabet_delete (sigma);
 

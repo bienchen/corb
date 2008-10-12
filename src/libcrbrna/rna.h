@@ -98,6 +98,9 @@ rna_alloc_sequence (const unsigned long, Rna*, const char*, const int);
 void
 rna_set_sequence_base (const char, const unsigned long, Rna*);
 
+void
+rna_set_sequence (const char*, const unsigned long, Rna*);
+
 int
 rna_transform_sequence_2_no (const Alphabet*, Rna*);
 

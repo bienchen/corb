@@ -322,6 +322,28 @@ rna_set_sequence_base (const char base, const unsigned long pos, Rna* this)
 
 }
 
+/** @brief Copy a given sequence into an Rna object.
+ *
+ * Set the sequence component of an Rna object. Since the input sequence is
+ * copied, memory for it has to be allocated before calling. The sequence is
+ * stored verbatim, this means that it is not transformed into numbers or vice
+ * versa automatically. If @c len exceeds the allocated memory, only a fitting
+ * prefix of the sequence is copied. We do not check whether sequence consists
+ * only of symbols from a certain RNA alphabet.
+ *
+ * @param[in] sequence Sequence to be copied.
+ * @param[in] len Length of the sequence.
+ * @param[in] this Rna object.
+ */
+void
+rna_set_sequence (const char* sequence, const unsigned long len, Rna* this)
+{
+   assert (this);
+   assert (sequence);
+
+   memcpy (this->seq, sequence, (len < this->size ? len : this->size));
+}
+
 /** @brief Transform Rna sequence to numbers.
  *
  * Transform the sequence component of an Rna object to numbers.\n

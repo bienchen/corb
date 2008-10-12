@@ -88,10 +88,10 @@ rna_init_pairlist_vienna (const char*, const unsigned long, Rna*,
    rna_init_pairlist_vienna (A, B, C, __FILE__, __LINE__);
 
 int
-rna_init_sequence (const unsigned long, Rna*, const char*, const int);
+rna_alloc_sequence (const unsigned long, Rna*, const char*, const int);
 
-#define RNA_INIT_SEQUENCE(A, B) \
-   rna_init_sequence (A, B, __FILE__, __LINE__)
+#define RNA_ALLOC_SEQUENCE(A, B) \
+   rna_alloc_sequence (A, B, __FILE__, __LINE__)
 
 /********************************   Altering   ********************************/
 

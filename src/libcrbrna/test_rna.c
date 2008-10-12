@@ -132,7 +132,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    
    /* testing sequence: Initialisation */
    test_string = "AUGCAUGCA";
-   error = RNA_INIT_SEQUENCE(strlen (test_string), test_obj);
+   error = RNA_ALLOC_SEQUENCE(strlen (test_string), test_obj);
    if (error)
    {
       THROW_ERROR_MSG ("Unintentional error while trying to init the sequence "

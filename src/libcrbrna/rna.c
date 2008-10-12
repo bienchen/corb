@@ -156,7 +156,7 @@ rna_delete (Rna* this)
  * @param[in] line Fill with calling line.
  */
 int
-rna_init_sequence (const unsigned long size, Rna* this,
+rna_alloc_sequence (const unsigned long size, Rna* this,
                        const char* file, const int line)
 {
    assert (this);

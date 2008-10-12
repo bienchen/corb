@@ -557,7 +557,7 @@ int
 fold_main(const char *cmdline)
 {
    struct fold_args_info fold_args;
-   Str* structure;
+   Str* structure = NULL;
    unsigned long seqlen, i;
    Alphabet* sigma = NULL;
    int retval = 0;
@@ -602,11 +602,8 @@ fold_main(const char *cmdline)
    }
 
    /* finalise */
-   if (retval == 0)
-   { 
-      str_delete (structure);
-      alphabet_delete (sigma);
-   }
+   str_delete (structure);
+   alphabet_delete (sigma);
    fold_cmdline_parser_free (&fold_args);
 
    if (retval == 0)

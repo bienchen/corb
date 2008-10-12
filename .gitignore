@@ -36,6 +36,7 @@ src/libcrbbasic/test_str
 src/libcrbrna/test_alphabet
 src/libcrbrna/test_nn_scores
 src/libcrbrna/test_rna
+src/libcrbrna/test_secstruct
 
 
 

@@ -2,10 +2,20 @@ Copyright (C) 2007 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-10-03.16
+Last modified: 2008-10-13.10
 
-- create file with copyright preambel: personal & institution (refer to 
-  share/misc/emacs/c-skeletons.el)
+- Howto start
+  - git clone
+  - create important files (cpowner)
+  - edit emacs conf
+  - first compilation
+- Howto initialise your own project
+  - don't forget testing before pushing here (valgrind, icc...)
+- Library docs
+- short git intro
+- icc info (how to use copyrighted names?), link
+- valgrind info
+- bootstrap
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

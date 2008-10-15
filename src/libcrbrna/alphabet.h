@@ -51,7 +51,7 @@ extern "C" {
 
 
 /* alphabet strings */
-#define RNA_ALPHABET "AUGCaugc"
+#define RNA_ALPHABET "ACGUacgu"
 #define IUPAC_NA_STRICT_ALPHABET "ACGTURYMKWSBDHVN"
 #define IUPAC_NA_ALPHABET "ACGTURYMKWSBDHVNacgturymkwsbdhvn"
 

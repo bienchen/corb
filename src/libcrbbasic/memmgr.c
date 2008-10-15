@@ -1017,17 +1017,22 @@ void
 xfree_nd (const size_t n, void** array)
 {
    size_t i;
-   void** data = array;
+   void** data;
 
-   if (n > 1)
+   if (array != NULL)
    {
-      for (i = 0; i < (n - 2); i++)
+      data = array;
+
+      if (n > 1)
       {
-         data = *data;
+         for (i = 0; i < (n - 2); i++)
+         {
+            data = *data;
+         }
+         
+         XFREE (*data);
       }
       
-      XFREE (*data);
+      XFREE (array);
    }
-
-   XFREE (array);
 }

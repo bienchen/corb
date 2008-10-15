@@ -51,16 +51,26 @@
 
 /* no. of canonical base pairs + whobble GU */
 #define NO_ALLOWED_BP 6
+/* dimensions of the G_mismatch_hairpin table */
+#define D_MM_H 3                /* minimal loop size */
+#define D_TL   6                /* size of a tetraloop + closing bp */
+#define NN_LXC37 107.856        /* ask marco about this */
+
 
 struct NN_scores {
-      long** G_stack;                /* stacking energies */
+      long** G_stack;                        /* stacking energies */
       unsigned long G_stack_size;
-      long** G_mm_stack;             /* stacks with one mismatch */
+      long** G_mm_stack;                     /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
-      int* G_hairpin_loop;               /* hairpin loops */
+      int* G_hairpin_loop;                   /* hairpin loops */
       unsigned long G_hairpin_loop_size;
-      /* hairpin loop closing bp */
-      char** bp_allowed;                 /* canonical base pairs + whobble GU */
+      int*** G_mismatch_hairpin;             /* hairpin loop closing bp */
+      unsigned long G_mismatch_hairpin_size;
+      int* non_gc_penalty_for_bp;            /* penalty for closing non-GC */
+      char** tetra_loop;                     /* sorted list of possible loops */
+      int* G_tetra_loop;                     /* scores */
+      unsigned long tetra_loop_size;
+      char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
       char** bp_idx;                     /* indeces for base pairs */
       unsigned long bp_idx_size;
@@ -88,15 +98,21 @@ nn_scores_new (const char* file, const int line)
    
    if (this != NULL)
    {
-      this->G_stack             = NULL;
-      this->G_stack_size        = 0;
-      this->G_mm_stack          = NULL;
-      this->G_mm_stack_size     = 0;
-      this->G_hairpin_loop      = NULL;
-      this->G_hairpin_loop_size = 0;
-      this->bp_idx              = NULL;
-      this->bp_allowed          = NULL;
-      this->bp_allowed_size     = 0;
+      this->G_stack                 = NULL;
+      this->G_stack_size            = 0;
+      this->G_mm_stack              = NULL;
+      this->G_mm_stack_size         = 0;
+      this->G_hairpin_loop          = NULL;
+      this->G_hairpin_loop_size     = 0;
+      this->G_mismatch_hairpin      = NULL;
+      this->G_mismatch_hairpin_size = 0;
+      this->non_gc_penalty_for_bp   = NULL;
+      this->tetra_loop              = NULL;
+      this->G_tetra_loop            = NULL;
+      this->tetra_loop_size         = 0;
+      this->bp_idx                  = NULL;
+      this->bp_allowed              = NULL;
+      this->bp_allowed_size         = 0;
    }
 
    return this;
@@ -356,61 +372,61 @@ allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
    
    /* CG UG */
    /* 5'- CG
-      GU -5'*/
+          GU -5'*/
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
       [(int) this->bp_idx[(int)u][(int)g]] = -140;
 
    /* CG GU */
    /* 5'- CU
-      GG -5'*/
+          GG -5'*/
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
       [(int) this->bp_idx[(int)g][(int)u]] = -210;
    
    /* CG CG */
    /* 5'- CG
-      GC -5'*/
+          GC -5'*/
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
       [(int) this->bp_idx[(int)c][(int)g]] = -240;
    
    /* CG GC */
    /* 5'- CC
-      GG -5'*/
+          GG -5'*/
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
       [(int) this->bp_idx[(int)g][(int)c]] = -330;
    
    /* GC AU */
    /* 5'- GU
-      CA -5'*/
+          CA -5'*/
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
       [(int) this->bp_idx[(int)a][(int)u]] = -220;
    
    /* GC UA */
    /* 5'- GA
-      CU -5'*/
+          CU -5'*/
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
       [(int) this->bp_idx[(int)u][(int)a]] = -240;
    
    /* GC UG */
    /* 5'- GG
-      CU -5'*/
+          CU -5'*/
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
       [(int) this->bp_idx[(int)u][(int)g]] = -150;
    
    /* GC GU */
    /* 5'- GU
-      CG -5'*/
+          CG -5'*/
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
       [(int) this->bp_idx[(int)g][(int)u]] = -250;
    
    /* GC CG */
    /* 5'- GG
-      CC -5'*/
+          CC -5'*/
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
       [(int) this->bp_idx[(int)c][(int)g]] = -330;
    
    /* GC GC */
    /* 5'- GC
-      CG -5'*/
+          CG -5'*/
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
       [(int) this->bp_idx[(int)g][(int)c]] = -340;
    
@@ -909,6 +925,461 @@ allocate_init_hairpin_loop (NN_scores* this, const char* file, const int line)
    return 0;
 }
 
+static int
+allocate_init_mismatch_hairpin (int a, int u, int g, int c,
+                                const unsigned long no_of_b,
+                                NN_scores* this,
+                                const char* file, const int line)
+{
+   /* allocate memory */
+   this->G_mismatch_hairpin
+      = (int***) XOBJ_MALLOC_ND(sizeof (***this->G_mismatch_hairpin),
+                                D_MM_H,
+                                file, line,
+                                this->bp_allowed_size, no_of_b, no_of_b);
+   if (this->G_mismatch_hairpin == NULL)
+   {
+      return 1;        
+   }
+   this->G_mismatch_hairpin_size = this->bp_allowed_size * no_of_b * no_of_b;
+
+   /* store values this->bp_idx[][] */
+   /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][a] = -150; /* AA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][c] = -150; /* AC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][g] = -140; /* AG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][u] = -180; /* AU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][a] = -100; /* CA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][c] =  -90; /* CC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][g] = -290; /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][u] =  -80; /* CU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][a] = -220; /* GA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][c] = -200; /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][g] = -160; /* GG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][u] = -110; /* GU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][a] = -170; /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][c] = -140; /* UC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][g] = -180; /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][u] = -200; /* UU */
+
+   /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][a] = -110; /* AA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][c] = -150; /* AC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][g] = -130; /* AG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][u] = -210; /* AU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][a] = -110; /* CA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][c] =  -70; /* CC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][g] = -240; /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][u] =  -50; /* CU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][a] = -240; /* GA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][c] = -290; /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][g] = -140; /* GG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][u] = -120; /* GU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][a] = -190; /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][c] = -100; /* UC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][g] = -220; /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][u] = -150; /* UU */
+
+   /* GU */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][a] =  20; /* AA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][c] = -50; /* AC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][g] = -30; /* AG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][u] = -30; /* AU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][a] =  -10; /* CA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][c] =  -20; /* CC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][g] = -150; /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][u] =  -20; /* CU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][a] =  -90; /* GA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][c] = -110; /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][g] =  -30; /* GG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][u] =    0; /* GU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][a] =  -30; /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][c] =  -30; /* UC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][g] =  -40; /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][u] = -110; /* UU */
+
+   /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][a] = -50; /* AA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][c] = -30; /* AC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][g] = -60; /* AG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][u] = -50; /* AU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][a] =  -20; /* CA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][c] =  -10; /* CC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][g] = -170; /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][u] =    0; /* CU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][a] =  -80; /* GA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][c] = -120; /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][g] =  -30; /* GG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][u] =  -70; /* GU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][a] = -60; /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][c] = -10; /* UC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][g] = -60; /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][u] = -80; /* UU */
+
+   /* AU */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][a] = -30; /* AA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][c] = -50; /* AC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][g] = -30; /* AG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][u] = -30; /* AU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][a] =  -10; /* CA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][c] =  -20; /* CC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][g] = -150; /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][u] =  -20; /* CU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][a] = -110; /* GA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][c] = -120; /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][g] =  -20; /* GG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][u] =   20; /* GU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][a] =  -30; /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][c] =  -30; /* UC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][g] =  -60; /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][u] = -110; /* UU */
+
+   /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][a] = -50; /* AA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][c] = -30; /* AC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][g] = -60; /* AG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][u] = -50; /* AU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][a] =  -20; /* CA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][c] =  -10; /* CC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][g] = -120; /* CG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][u] =    0; /* CU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][a] = -140; /* GA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][c] = -120; /* GC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][g] =  -70; /* GG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][u] =  -20; /* GU */
+
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][a] = -30; /* UA */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][c] = -10; /* UC */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][g] = -50; /* UG */
+   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][u] = -80; /* UU */
+
+   return 0;
+}
+
+static int
+allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
+                                     NN_scores* this,
+                                     const char* file, const int line)
+{
+   this->non_gc_penalty_for_bp = (int*) XOBJ_MALLOC (
+                                        sizeof (int) * this->bp_allowed_size,
+                                        file, line);
+   if (this->non_gc_penalty_for_bp == NULL)
+   {
+      return 1;
+   }
+
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[c][g]] = 0;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[g][c]] = 0;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[a][u]] = 50;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[g][u]] = 50;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[u][a]] = 50;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[u][g]] = 50;
+
+   return 0;
+}
+
+void
+tetra_loop_swap_entries (unsigned long src, unsigned long dest,
+                         unsigned long col,
+                         NN_scores* this)
+{
+   unsigned long i;
+   char tmp[D_TL];
+   int G_tmp;
+   char* ctmp;
+
+   if (this->tetra_loop[dest][col] == this->tetra_loop[src][col])
+   {
+      return;
+   }
+
+   /* copy scores first */
+   G_tmp = this->G_tetra_loop[dest];
+   this->G_tetra_loop[dest] = this->G_tetra_loop[src];
+   this->G_tetra_loop[src] = G_tmp;
+
+   if ((src == 0)||(dest == 0))
+   {
+      for (i = 0; i < D_TL; i++)
+      {
+         tmp[i] = this->tetra_loop[dest][i];
+      }   
+      for (i = 0; i < D_TL; i++)
+      {
+         this->tetra_loop[dest][i] = this->tetra_loop[src][i];
+      }
+      for (i = 0; i < D_TL; i++)
+      {
+         this->tetra_loop[src][i] = tmp[i];
+      }
+   }
+   else
+   {
+      /* temp. cpy dest */
+      ctmp = this->tetra_loop[dest];
+      
+      /* cpy src to dest */
+      this->tetra_loop[dest] = this->tetra_loop[src];
+
+      /* restore dest in src */
+      this->tetra_loop[src] = ctmp;
+   }
+
+}
+
+static void
+radix_sort_tetra_loop (unsigned long alpha_size, NN_scores* this, Alphabet* sigma)
+{
+   unsigned long left_border[UCHAR_MAX + 1];
+   unsigned long i;
+   char cd;                     /* current digit */
+   unsigned long col = D_TL;
+   unsigned long lb;
+
+   for (col = D_TL; col > 0; col--)
+   {
+   memset (left_border, 0, (UCHAR_MAX + 1)*sizeof (unsigned long));
+
+   /* find borders */
+   for (i = 0; i < this->tetra_loop_size; i++)
+   {
+      left_border[this->tetra_loop[i][col - 1] + 1]++;
+   }
+
+   mfprintf (stderr, "lb of 0: %lu\n", left_border[0]);
+   for (i = 1; i <= alpha_size; i++)
+   {
+      left_border[i] += left_border[i - 1];
+      mfprintf (stderr, "lb of %lu: %lu\n", i, left_border[i]);
+   }
+
+   for (i = 0; i < this->tetra_loop_size; i++)
+   {
+      cd = this->tetra_loop[i][col - 1];
+
+      /* find correct entry for current position */
+      if ((int)cd == 0)
+         lb = 0;
+      else
+         lb = left_border[(int)cd - 1];
+      mfprintf (stderr, "Working on %2lu (%2i) (%2lu < %2lu < %2lu) ", i, cd,
+                lb, i, left_border[(int)cd]);
+      while ((lb > i) || (i+1 > left_border[(int)cd]))
+      {
+         mfprintf (stderr, "SWAP: %lu -> %lu\n", i, left_border[(int)cd]);
+         tetra_loop_swap_entries (i, left_border[(int)cd], col - 1, this);
+         nn_scores_fprintf_tetra_loop(stderr, this, sigma);
+         left_border[(int)cd]++;
+         
+         cd = this->tetra_loop[i][col - 1];
+         if ((int)cd == 0)
+            lb = 0;
+         else
+            lb = left_border[(int)cd - 1];
+         mfprintf (stderr, "Working on %2lu (%2i) (%2lu < %2lu < %2lu) ", i, cd,
+                   left_border[(int)cd], i, left_border[cd + 1]);
+      }
+      mfprintf (stderr, "\n");
+
+   }
+   }
+}
+
+static int
+allocate_init_tetra_loop (const int a, const int u, const int g, const int c,
+                          unsigned long alpha_size,
+                          NN_scores* this,
+                          Alphabet* sigma,
+                          const char* file, const int line)
+{
+   char* l;
+
+   this->tetra_loop_size = 30;
+   this->tetra_loop = (char**) XOBJ_MALLOC_2D (this->tetra_loop_size, D_TL,
+                                               sizeof (char),
+                                               file, line);
+   if (this->tetra_loop == NULL)
+   {
+      return 1;
+   }
+
+   this->G_tetra_loop = (int*) XOBJ_MALLOC (
+                                           sizeof (int) * this->tetra_loop_size,
+                                           file, line);
+
+   /* GGGGAC -300 */
+   l = this->tetra_loop[0];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c;
+   this->G_tetra_loop[0] = -300;
+
+   /* GGUGAC -300 */
+   l = this->tetra_loop[1];
+   l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c;
+   this->G_tetra_loop[1] = -300;
+
+   /* CGAAAG -300 */
+   l = this->tetra_loop[2];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g;
+   this->G_tetra_loop[2] = -300;
+
+   /* GGAGAC -300 */
+   l = this->tetra_loop[3];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c;
+   this->G_tetra_loop[3] = -300;
+
+   /* CGCAAG -300 */
+   l = this->tetra_loop[4];
+   l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g;
+   this->G_tetra_loop[4] = -300;
+
+   /* GGAAAC -300 */
+   l = this->tetra_loop[5];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c;
+   this->G_tetra_loop[5] = -300;
+
+   /* CGGAAG -300 */
+   l = this->tetra_loop[6];
+   l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g;
+   this->G_tetra_loop[6] = -300;
+
+   /* CUUCGG -300 */
+   l = this->tetra_loop[7];
+   l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g;
+   this->G_tetra_loop[7] = -300;
+
+   /* CGUGAG -300 */
+   l = this->tetra_loop[8];
+   l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g;
+   this->G_tetra_loop[8] = -300;
+
+   /* CGAAGG -250 */
+   l = this->tetra_loop[9];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g;
+   this->G_tetra_loop[9] = -250;
+
+   /* CUACGG -250 */
+   l = this->tetra_loop[10];
+   l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g;
+   this->G_tetra_loop[10] = -250;
+
+   /* GGCAAC -250 */
+   l = this->tetra_loop[11];
+   l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c;
+   this->G_tetra_loop[11] = -250;
+
+   /* CGCGAG -250 */
+   l = this->tetra_loop[12];
+   l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g;
+   this->G_tetra_loop[12] = -250;
+
+   /* UGAGAG -250 */
+   l = this->tetra_loop[13];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g;
+   this->G_tetra_loop[13] = -250;
+
+   /* CGAGAG -200 */
+   l = this->tetra_loop[14];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g;
+   this->G_tetra_loop[14] = -200;
+
+   /* AGAAAU -200 */
+   l = this->tetra_loop[15];
+   l[0] = a; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = u;
+   this->G_tetra_loop[15] = -200;
+
+   /* CGUAAG -200 */
+   l = this->tetra_loop[16];
+   l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g;
+   this->G_tetra_loop[16] = -200;
+
+   /* CUAACG -200 */
+   l = this->tetra_loop[17];
+   l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g;
+   this->G_tetra_loop[17] = -200;
+
+   /* UGAAAG -200 */
+   l = this->tetra_loop[18];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g;
+   this->G_tetra_loop[18] = -200;
+ 
+   /* GGAAGC -150 */
+   l = this->tetra_loop[19];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c;
+   this->G_tetra_loop[19] = -150;
+
+   /* GGGAAC -150 */
+   l = this->tetra_loop[20];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c;
+   this->G_tetra_loop[20] = -150;
+
+   /* UGAAAA -150 */
+   l = this->tetra_loop[21];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a;
+   this->G_tetra_loop[21] = -150;
+ 
+   /* AGCAAU -150 */
+   l = this->tetra_loop[22];
+   l[0] = a; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = u;
+   this->G_tetra_loop[22] = -150;
+ 
+   /* AGUAAU -150 */
+   l = this->tetra_loop[23];
+   l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u;
+   this->G_tetra_loop[23] = -150;
+
+   /* CGGGAG -150 */
+   l = this->tetra_loop[24];
+   l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g;
+   this->G_tetra_loop[24] = -150;
+
+   /* AGUGAU -150 */
+   l = this->tetra_loop[25];
+   l[0] = a; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = u;
+   this->G_tetra_loop[25] = -150;
+
+   /* GGCGAC -150 */
+   l = this->tetra_loop[26];
+   l[0] = g; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = c;
+   this->G_tetra_loop[26] = -150;
+
+   /* GGGAGC -150 */
+   l = this->tetra_loop[27];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = g; l[5] = c;
+   this->G_tetra_loop[27] = -150;
+
+   /* GUGAAC -150 */
+   l = this->tetra_loop[28];
+   l[0] = g; l[1] = u; l[2] = g; l[3] = a; l[4] = a; l[5] = c;
+   this->G_tetra_loop[28] = -150;
+ 
+   /* UGGAAA -150 */
+   l = this->tetra_loop[29];
+   l[0] = u; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = a;
+   this->G_tetra_loop[29] = -150;
+
+   radix_sort_tetra_loop (alpha_size, this, sigma);
+
+   return 0;
+}
+
 /** @brief Create a new Nearest Neighbour scoring scheme with standard values.
  *
  * The constructor for an initialised @c NN_scores objects. If compiled with
@@ -992,7 +1463,29 @@ nn_scores_new_init (Alphabet* sigma, const char* file, const int line)
    }
    
    /* init hairpin closing base pair energies */
-   XMALLOC_ND(sizeof (int), 3, 4, 2, 3);
+   if (allocate_init_mismatch_hairpin (a, u, g, c,
+                                       alphabet_size (sigma),
+                                       this,
+                                       file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+
+   /* init penalties for non-GC closing base pairs of loops */
+   if (allocate_init_non_gc_penalty_for_bp (a, u, g, c, this, file,line))
+   {
+      nn_scores_delete (this);
+      return NULL;      
+   }
+
+   /* init tetra loop index and score values */
+   if (allocate_init_tetra_loop (a, u, g, c, alphabet_size (sigma), this, sigma,
+                                 file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;      
+   }
 
    return this;
 }
@@ -1011,6 +1504,10 @@ nn_scores_delete (NN_scores* this)
      XFREE_2D ((void**)this->G_stack);
      XFREE_2D ((void**)this->G_mm_stack);
      XFREE (this->G_hairpin_loop);
+     XFREE_ND (D_MM_H, (void**) this->G_mismatch_hairpin);
+     XFREE (this->non_gc_penalty_for_bp);
+     XFREE_2D ((void**)this->tetra_loop);
+     XFREE (this->G_tetra_loop);
      XFREE_2D ((void**)this->bp_idx);
      XFREE_2D ((void**)this->bp_allowed);
      XFREE (this);
@@ -1098,6 +1595,57 @@ nn_scores_get_G_mm_stack (const char i, const char j,
                             [(int) scheme->bp_idx[(int)k][(int)l]];
 }
 
+/** @brief Returns the score for a hairpin loop of certain size.
+ *
+ * @params[in] i 5' base of closing pair.
+ * @params[in] j 3' base of closing pair.
+ * @params[in] size Length of the loop (unpaired bases only).
+ * @params[in] this Scoring scheme.
+ */
+int
+nn_scores_get_G_hairpin_loop (const char* seq,
+                              const unsigned long i,
+                              const unsigned long j,
+                              const unsigned long size,
+                              const NN_scores* this)
+{
+   int G = 0;
+   int bp = (int)this->bp_idx[(int)seq[i]][(int)seq[j]];
+   int bip1 = seq[i + 1];
+   int bjm1 = seq[j - 1];
+
+   assert (seq);
+   assert (this);
+   assert (j > 0);
+
+   if (size < this->G_hairpin_loop_size)
+   {
+      G += this->G_hairpin_loop[size];
+   }
+   else
+   {
+      G += this->G_hairpin_loop[this->G_hairpin_loop_size - 1]
+         + (NN_LXC37 * logf((float) size / (this->G_hairpin_loop_size - 1)));
+   }
+
+    /* mismatch penalty for the mismatch interior to the closing basepair of
+       the hairpin. triloops get non-parameterised mismatch penalty */
+   if (size == D_MM_H)
+   {
+      G += this->non_gc_penalty_for_bp[bp];
+   }
+   else
+   {
+      G+= this->G_mismatch_hairpin[bp][bip1][bjm1];
+   }
+   
+   /* tetraloop bonus */
+   if (size == 4)
+   {
+   }
+
+   return G;
+}
 
 /*********************************    Size    *********************************/
 
@@ -1601,6 +2149,333 @@ nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
    mfprintf (stream, "%s", string_start);
 
    XFREE (en_undef);  /* en_undef is the start of the whole memory */
+}
+
+/** @brief Print the mismatch hairpin energies of a scoring scheme to a stream.
+ *
+ * Prints hairpin loop closing base pair energies to a stream.
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma The alphabet.
+ */
+void
+nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
+                                      const NN_scores* scheme,
+                                      const Alphabet* sigma)
+{
+   unsigned long i, j, k;
+   int tmp;
+   int rprec;
+   unsigned long pline_width = 2;
+   unsigned long x;             /* 3' base of loop pair */
+   unsigned long y;             /* 5' base of loop pair */
+   unsigned long z;             /* stacked base pair */
+   char* string;
+   char* string_start;
+   char* header;
+
+   assert (scheme != NULL);
+   assert (scheme->G_mismatch_hairpin != NULL);
+   assert (scheme->bp_allowed != NULL);
+   assert (sigma != NULL);
+
+   x = y = alphabet_size (sigma);
+   z = scheme->bp_allowed_size;
+
+   /* dermine widest cell */
+   for (i = 0; i < z; i++)      /* for all base pairs */
+   {
+      for (j = 0; j < x; j++)   /* for all 3' bases */
+      {
+         for (k = 0; k < y; k++) /* for all 5' bases */
+         {
+            rprec = 0;
+            tmp = scheme->G_mismatch_hairpin[i][j][k];
+
+            /* fetch '-' symbol */
+            if (tmp < 0)
+            {
+               tmp *= (-1);
+               rprec++;
+            }
+
+            /* get no. of digits */
+            if (tmp > 0)
+            {
+               rprec += floor (log10 (tmp) + 1);
+            }
+            else
+            {
+               rprec += 1;
+            }
+
+            if ((unsigned) rprec > pline_width) 
+            {
+               pline_width = rprec;
+            } 
+         }
+      }
+   }
+   rprec = pline_width;
+
+   /* add up components of a line */
+   pline_width += 3;            /*\s|\s*/
+   pline_width *= x;
+   pline_width += 1;            /* + N */
+   pline_width += 1;            /* + \n */
+
+   /* create header line for each table */
+   string = (char*) XMALLOC (sizeof (char) * pline_width);
+   if (string == NULL)
+   {
+      return;
+   }
+   header = string;
+
+   if (rprec > 1)
+   {
+      rprec--;
+   }
+
+   for (i = 0; i < x; i++)
+   {
+      msprintf (string, "  | %*c", rprec, alphabet_no_2_base (i, sigma));
+      string += rprec;
+      string += 4;
+   }
+   string[0] = '\n';
+   string++;
+   string[0] = '\0';
+
+   if ((rprec + 1) > 1)
+   {
+      rprec++;
+   }
+
+   /* now for the tables */
+   /* add to pline_width: room for base pair + table head */
+   pline_width *= y;
+   pline_width += strlen (header); /* table header */
+   pline_width += 4;               /* NN:\n */
+   string = (char*) XMALLOC (sizeof (char) * ((pline_width * z) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;  
+   
+   for (i = 0; i < z; i++)
+   {
+      /* start new bp table */
+      msprintf (string, "%c%c:\n", 
+                alphabet_no_2_base (scheme->bp_allowed[i][0], sigma),
+                alphabet_no_2_base (scheme->bp_allowed[i][1], sigma));
+      string += 4;
+      msprintf (string, "%s", header);
+      string += strlen (header);
+
+      for (j = 0; j < y; j++)
+      {
+         msprintf (string, "%c", alphabet_no_2_base (j, sigma));
+         string++;
+         for (k = 0; k < x; k++)
+         {
+            msprintf (string, " | %*i", rprec,
+                      scheme->G_mismatch_hairpin[i][j][k]);
+            string += rprec;
+            string += 3;
+         }
+         string[0] = '\n';
+         string++;
+      }
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+   XFREE (header);
+}
+
+/** @brief Print the penalties for non-GC closing base pairs.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma The alphabet.
+ */
+void
+nn_scores_fprintf_non_gc_penalty_for_bp(FILE* stream,
+                                        const NN_scores* scheme,
+                                        const Alphabet* sigma)
+{
+   unsigned long i;
+   int tmp;
+   int rprec;
+   unsigned long pline_width = 2;
+   char* string;
+   char* string_start;
+
+   assert (scheme != NULL);
+   assert (scheme->non_gc_penalty_for_bp != NULL);
+   assert (scheme->bp_allowed != NULL);
+   assert (sigma != NULL);
+
+   /* determine highest no. of digits */
+   for (i = 0; i < scheme->bp_allowed_size; i++) /* for all base pairs */
+   {
+      rprec = 0;
+      tmp = scheme->non_gc_penalty_for_bp[i];
+      
+      /* fetch '-' symbol */
+      if (tmp < 0)
+      {
+         tmp *= (-1);
+         rprec++;
+      }
+
+      /* get no. of digits */
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+            }
+      
+      if ((unsigned) rprec > pline_width) 
+      {
+         pline_width = rprec;
+      } 
+   }
+   rprec = pline_width;
+
+   /* add up components of a line */
+   pline_width += 4;            /*NN:\s*/
+   pline_width += 1;            /* + \n */
+
+   string = (char*) XMALLOC (sizeof (char)
+                             * ((pline_width * scheme->bp_allowed_size) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;  
+   
+   for (i = 0; i < scheme->bp_allowed_size; i++)
+   {
+      msprintf (string, "%c%c: ", 
+                alphabet_no_2_base (scheme->bp_allowed[i][0], sigma),
+                alphabet_no_2_base (scheme->bp_allowed[i][1], sigma));
+      string += 4;
+
+      msprintf (string, "%*i", rprec, scheme->non_gc_penalty_for_bp[i]);
+      string += rprec;
+
+      string[0] = '\n';
+      string++;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);  
+
+   XFREE (string_start);
+}
+
+/** @brief Print the bonus scores for tetra loops.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma The alphabet.
+ */
+void
+nn_scores_fprintf_tetra_loop(FILE* stream,
+                             const NN_scores* scheme,
+                             const Alphabet* sigma)
+{
+   unsigned long i, j;
+   int tmp;
+   int rprec;
+   unsigned long pline_width = 2;
+   char* string;
+   char* string_start;
+
+   assert (scheme != NULL);
+   assert (scheme->tetra_loop != NULL);
+   assert (scheme->G_tetra_loop != NULL);
+   assert (sigma != NULL);
+
+   /* find largest no. */
+   for (i = 0; i < scheme->tetra_loop_size; i++)
+   {
+      rprec = 0;
+      tmp = scheme->G_tetra_loop[i];
+      
+      /* fetch '-' symbol */
+      if (tmp < 0)
+      {
+         tmp *= (-1);
+         rprec++;
+      }
+      
+      /* get no. of digits */
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+      }
+      
+      if ((unsigned) rprec > pline_width) 
+      {
+         pline_width = rprec;
+      } 
+   }
+   rprec = pline_width;   
+
+   /* add up components of a line */
+   pline_width += 10;            /*N-NNNN-N:\s*/
+   pline_width += 1;            /* + \n */
+
+   /* allocate buffer */
+   string = (char*) XMALLOC (sizeof (char)
+                             * ((pline_width * scheme->tetra_loop_size) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;  
+
+   /* print */
+   for (i = 0; i < scheme->tetra_loop_size; i++)
+   {
+      msprintf (string, "%c-", alphabet_no_2_base (scheme->tetra_loop[i][0],
+                                                  sigma));
+      string += 2;      
+      for (j = 1; j < (D_TL - 1); j++)
+      {
+         msprintf (string, "%c", alphabet_no_2_base (scheme->tetra_loop[i][j],
+                                                     sigma));
+         string ++;
+      }
+      msprintf (string, "-%c", alphabet_no_2_base (scheme->tetra_loop[i][j],
+                                                  sigma));
+      string += 2; 
+
+      msprintf (string, ": %*i", rprec, scheme->G_tetra_loop[i]);
+      string += rprec;
+      string += 2;
+
+      string[0] = '\n';
+      string++;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);  
+
+   XFREE (string_start);
 }
 
 /******************************   Miscellaneous   *****************************/

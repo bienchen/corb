@@ -110,6 +110,17 @@ nn_scores_fprintf_G_hairpin_loop (FILE*, const NN_scores*);
 void
 nn_scores_fprintf_G_hairpin_loop (FILE*, const NN_scores*);
 
+void
+nn_scores_fprintf_G_mismatch_hairpin (FILE*, const NN_scores*, const Alphabet*);
+
+void
+nn_scores_fprintf_non_gc_penalty_for_bp(FILE*,
+                                        const NN_scores*,
+                                        const Alphabet*);
+
+void
+nn_scores_fprintf_tetra_loop(FILE*, const NN_scores*, const Alphabet*);
+
 /******************************   Miscellaneous   *****************************/
 
 unsigned long

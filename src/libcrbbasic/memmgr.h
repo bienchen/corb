@@ -185,10 +185,13 @@ free_memory_manager (void);
 #define XMALLOC_ND(SIZE,DIM,...) \
    xmalloc_nd (SIZE, __FILE__, __LINE__, DIM, __VA_ARGS__)
 
+#define XOBJ_MALLOC_ND(SIZE,DIM,F,L,...)           \
+   xmalloc_nd (SIZE, F, L, DIM, __VA_ARGS__)
+
 #define XFREE_2D(PTRPTR) \
    xfree_2d (PTRPTR)
 
-#define XFREE_ND(N, PTRPTR)                      \
+#define XFREE_ND(N, PTRPTR)                   \
    xfree_nd (N, PTRPTR)
 
 #endif /* MEMMGR_H */

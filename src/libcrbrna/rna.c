@@ -73,28 +73,28 @@ struct Rna {
  * @param[in] file Fill with name of calling file.
  * @param[in] line Fill with calling line.
  */
-static __inline__ struct_comp
-struct_comp_new (void/* const char* file, const int line */)
-{
-   struct_comp this;
+/* static __inline__ struct_comp */
+/* struct_comp_new (void/\* const char* file, const int line *\/) */
+/* { */
+/*    struct_comp this; */
 
-   ARRAY_ULONG_INIT(this.tetra_loop, 0);
+/*    ARRAY_ULONG_INIT(this.tetra_loop, 0); */
 
-   return this;
-}
+/*    return this; */
+/* } */
 
 /** @brief Delete the components of a struct_comp structure.
  *
  * @param[in] this Object to be freed.
  */
-static __inline__ void
-struct_comp_delete (struct_comp* this)
-{
-   if (this != NULL)
-   {
-     ARRAY_DELETE(this->tetra_loop);
-   }
-}
+/* static __inline__ void */
+/* struct_comp_delete (struct_comp* this) */
+/* { */
+/*    if (this != NULL) */
+/*    { */
+/*      ARRAY_DELETE(this->tetra_loop); */
+/*    } */
+/* } */
 
 /** @brief Create a new rna object.
  *

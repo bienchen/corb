@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2008-10-03.22
+scriptversion=2008-10-18.21
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 
@@ -36,12 +36,14 @@ M4_MACRO_DIR=`awk '{ FS = "(\\\(\\\[*|\\\]*\\\))" } \
               /AC_CONFIG_MACRO_DIR\\(\\[.*\\]\\)/ { print $2 }' \
               $CONFIGURE_AC`
 
-if test -n $M4_MACRO_DIR; then # macro directory found
+if test -n "$M4_MACRO_DIR"; then # macro directory found
     M4_MACRO_SOURCES=`echo ${M4_MACRO_DIR}/*.m4`;
+    # dirty hack to solve problems if $M4_MACRO_DIR is empty
+    M4_MACRO_DIR="-I ${M4_MACRO_DIR}"
 else
     M4_MACRO_SOURCES=
 fi
-
+echo $M4_MACRO_DIR
 
 # configuartion header
 CONFIG_H=src/config.h
@@ -365,7 +367,7 @@ configure: $ACLOCAL_M4 \
 	@rm -rf ${CACHE_DIR}
 $ACLOCAL_M4: $M4_MACRO_SOURCES $CONFIGURE_AC
 	@echo "[ Creating \$@ ]"
-	@${AL} -I $M4_MACRO_DIR
+	@${AL} $M4_MACRO_DIR
 	@rm -rf ${CACHE_DIR}
 $CONFIG_H_IN:$CONFIGURE_AC
 	@echo "[ Creating $CONFIG_H_IN ]"

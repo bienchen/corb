@@ -43,7 +43,7 @@ if test -n "$M4_MACRO_DIR"; then # macro directory found
 else
     M4_MACRO_SOURCES=
 fi
-echo $M4_MACRO_DIR
+
 
 # configuartion header
 CONFIG_H=src/config.h

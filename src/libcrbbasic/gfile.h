@@ -63,6 +63,9 @@ gfile_new (const char*, const int);
 
 #define GFILE_NEW gfile_new (__FILE__, __LINE__)
 
+void
+gfile_delete (GFile*);
+
 
 #endif /* GFILE_H */
 

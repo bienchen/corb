@@ -79,6 +79,21 @@ gfile_new (const char* file, const int line)
    return this;
 }
 
+/** @brief Delete a file object.
+ *
+ * The destructor for @c GFile objects.
+ *
+ * @param[in] this object to be freed.
+ */
+void
+gfile_delete (GFile* this)
+{
+   if (this != NULL)
+   {
+     XFREE(this);
+   }
+}
+
 /********************************   Altering   ********************************/
 
 /*********************************   Access   *********************************/

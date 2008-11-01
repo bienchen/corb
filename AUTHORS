@@ -4,7 +4,7 @@ Also see files ChangeLog and THANKS
 
 
 Stefan Bienert (bienert, bienert@zbh.uni-hamburg.de):
-        (test): ../share/misc/emacs/test.h corb.c libcrbapps/brot.[c,h]
+        corb.c libcrbapps/brot.[c,h]
         libcrbapps/er2de.[c,h] libcrbapps/fold.[c,h]
         libcrbbasic/argvprsr.[c,h] libcrbbasic/crbbasic.h
         libcrbbasic/errormsg.[c,h] libcrbbasic/gcckywrd.h
@@ -20,3 +20,17 @@ Stefan Bienert (bienert, bienert@zbh.uni-hamburg.de):
         libcrbrna/rna.[c,h] libcrbrna/secstruct.[c,h]
         libcrbrna/test_alphabet.c libcrbrna/test_nn_scores.c
         libcrbrna/test_rna.c libcrbrna/test_secstruct.c
+        libcrbapps/fold.[c,h] libcrbbasic/argvprsr.[c,h]
+        libcrbbasic/crbbasic.h libcrbbasic/errormsg.[c,h]
+        libcrbbasic/gcckywrd.h libcrbbasic/genarray.hh libcrbbasic/inc_pthr.h
+        libcrbbasic/inc_strg.h libcrbbasic/memmgr.[c,h]
+        libcrbbasic/mprintf.[c,h] libcrbbasic/mprintf_dummy.h
+        libcrbbasic/str.[c,h] libcrbbasic/test_argvprsr.c
+        libcrbbasic/test_errormsg.c libcrbbasic/test_genarray.c,
+        libcrbbasic/test_memmgr.c libcrbbasic/test_mprintf.c
+        libcrbbasic/test_str.[c,h] libcrbbasic/undef.h]
+        libcrbbrot/ef_energy.[c,h] libcrbbrot/preset.[c,h]
+        libcrbbrot/seqmatrix.[c,h] libcrbrna/alphabet.[c,h] libcrbrna/crbrna.h
+        libcrbrna/nn_scores.[c,h] libcrbrna/rna.[c,h]
+        libcrbrna/secstruct.[c,h] libcrbrna/test_secstruct.c libcrbrna/test_alphabet.c
+        libcrbrna/test_nn_scores libcrbrna/test_rna.c test test.test libcrbbasic/gfile.c libcrbbasic/gfile.h

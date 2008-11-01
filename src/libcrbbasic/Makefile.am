@@ -1,4 +1,4 @@
-# Last modified: 2008-10-06.14
+# Last modified: 2008-11-01.12
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl 
@@ -40,6 +40,7 @@ libcrbbasic_a_SOURCES =                    \
         mprintf.c                          \
         errormsg.c 	                   \
         argvprsr.c	                   \
+        gfile.c  	                   \
 	str.c
 
 # libcrbbasic_a
@@ -56,6 +57,7 @@ noinst_HEADERS =                           \
 	str.h                              \
         undef.h                            \
         crbbasic.h                         \
+        gfile.h  	                   \
         genarray.h
 
 

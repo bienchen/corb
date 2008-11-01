@@ -48,12 +48,20 @@ extern "C" {
 #define GFILE_H
 
 
-enum GFile_Types 
-{
+typedef enum {
+   GFILE_VOID = 0,
    GFILE_ASCII
-};
+} GFileType;
 
 typedef struct GFile GFile;
+
+
+/**********************   Constructors and destructors   **********************/
+
+GFile*
+gfile_new (const char*, const int);
+
+#define GFILE_NEW gfile_new (__FILE__, __LINE__)
 
 
 #endif /* GFILE_H */

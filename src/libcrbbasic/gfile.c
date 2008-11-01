@@ -42,13 +42,51 @@
 
 
 #include <config.h>
+#include <stddef.h>
+#include "errormsg.h"
+#include "memmgr.h"
 #include "gfile.h"
 
 
-struct Gfile {
-      unsigned long len;
-      size_t size;
-      char* data;
+struct GFile {
+   GFileType type;
 };
+
+
+/**********************   Constructors and destructors   **********************/
+/** @brief Create a new file object.
+ *
+ * The constructor for @c GFile objects. If compiled with enabled
+ * memory checking, @c file and @c line should point to the position where the
+ * function was called. Both parameters are automatically set by using the
+ * macro @c GFILE_NEW.\n
+ * Returns @c NULL on error.
+ *
+ * @param[in] file fill with name of calling file.
+ * @param[in] line fill with calling line.
+ */
+GFile*
+gfile_new (const char* file, const int line)
+{
+   /* allocate 1 object */
+   GFile* this = XOBJ_MALLOC(sizeof (GFile), file, line);
+   
+   if (this != NULL)
+   {
+      this->type = GFILE_VOID;
+   }
+
+   return this;
+}
+
+/********************************   Altering   ********************************/
+
+/*********************************   Access   *********************************/
+
+/*********************************    Size    *********************************/
+
+/********************************* Searching  *********************************/
+
+/********************************* Comparison *********************************/
 
 

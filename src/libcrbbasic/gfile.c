@@ -43,65 +43,147 @@
 
 #include <config.h>
 #include <stddef.h>
+#include <assert.h>
 #include "errormsg.h"
 #include "memmgr.h"
+#include "str.h"
 #include "gfile.h"
 
 
 struct GFile {
    GFileType type;
+   union {
+      FILE* uc; 
+   } fileptr;
+   Str* path;
 };
 
-
-/**********************   Constructors and destructors   **********************/
-/** @brief Create a new file object.
- *
- * The constructor for @c GFile objects. If compiled with enabled
- * memory checking, @c file and @c line should point to the position where the
- * function was called. Both parameters are automatically set by using the
- * macro @c GFILE_NEW.\n
- * Returns @c NULL on error.
- *
- * @param[in] file fill with name of calling file.
- * @param[in] line fill with calling line.
- */
-GFile*
-gfile_new (const char* file, const int line)
-{
-   /* allocate 1 object */
-   GFile* this = XOBJ_MALLOC(sizeof (GFile), file, line);
-   
-   if (this != NULL)
-   {
-      this->type = GFILE_VOID;
-   }
-
-   return this;
-}
-
-/** @brief Delete a file object.
- *
- * The destructor for @c GFile objects.
- *
- * @param[in] this object to be freed.
- */
-void
+static void
 gfile_delete (GFile* this)
 {
    if (this != NULL)
    {
-     XFREE(this);
+      str_delete (this->path);
+      XFREE(this);
    }
 }
 
-/********************************   Altering   ********************************/
 
-/*********************************   Access   *********************************/
+/** @brief Get the type of a file.
+ *
+ * Retrive the type of a file. The file name may contain the whole path\n
+ * Returns GFILE_UNCOMPRESSED for uncompressed files or if @c file is @c NULL.
+ *
+ * @param[in] file File name.
+ * @param[in] length Length of file name.
+ */
+GFileType
+gfile_determine_type (const char* file __attribute__((unused)),
+                      unsigned long length __attribute__ ((unused)))
+{
+   return GFILE_UNCOMPRESSED;
+}
 
-/*********************************    Size    *********************************/
+/** @brief Open a file.
+ *
+ * Opens an uncompressed, bzip2- or gzip-compressed file. @c type provides the
+ * possibility to force a file to be opened as a certain type. Usually @c type
+ * should be passed as @c GFILE_VOID. In that case @c gfile_open determines the
+ * type by the file extension. @c mode accepts the same modes as @c fopen. If
+ * compiled with enabled memory checking, @c file and @c line should point to
+ * the position where the function was called. Both parameters are
+ * automatically set by using the macro @c GFILE_OPEN.\n
+ * Returns a valid file pointer or @c NULL on error.
+ *
+ * @param[in] filepath File name.
+ * @param[in] length Length of file name.
+ * @param[in] type Type of file.
+ * @param[in] mode Mode to open file with.
+ */
+GFile*
+gfile_open (const char* filepath,
+            const unsigned long length,
+            const GFileType type,
+            const char* mode,
+            const char* file, const int line)
+{
+   GFile* gfile = XOBJ_MALLOC(sizeof (GFile), file, line);
+   
+   assert (filepath);
+   assert (mode);
 
-/********************************* Searching  *********************************/
+   if (gfile != NULL)
+   {
+      gfile->path = str_new_cstr (filepath, file, line);
+      if (gfile->path == NULL)
+      {
+         gfile_delete (gfile);
+         gfile = NULL;
+      }
+   }
 
-/********************************* Comparison *********************************/
+   if (gfile != NULL)
+   {
+      gfile->type = type;
 
+      /* check for file type */
+      if (gfile->type == GFILE_VOID)
+      {
+         gfile->type = gfile_determine_type (filepath, length);
+      }
+      
+      /* open file */
+      switch (gfile->type)
+      {
+         case GFILE_UNCOMPRESSED:
+            gfile->fileptr.uc = fopen (filepath, mode);
+            break;            
+         default:
+            THROW_ERROR_MSG ("Opening file \"%s\" failed: Unknown file type",
+                             filepath);
+            gfile_delete (gfile);
+            gfile = NULL;
+      }
+   }
 
+   return gfile;
+}
+
+/** @brief Close a file.
+ *
+ * Close a generic file and free all occupied ressources.\n
+ * Returns @c EOF on error, 0 else.
+ *
+ * @param[in] gfile GFile pointer
+ */
+int
+gfile_close (GFile* gfile)
+{
+   int ret_val = 0;
+
+   if (gfile == NULL)
+   {
+      return ret_val;
+   }
+
+   switch (gfile->type)
+   {
+      case GFILE_UNCOMPRESSED:
+         ret_val = fclose (gfile->fileptr.uc);
+         break;            
+      default:
+         THROW_ERROR_MSG ("Closing file \"%s\" failed: Unknown file type",
+                          str_get (gfile->path));
+         gfile_delete (gfile);
+         ret_val = EOF;
+   }
+
+   if (ret_val == EOF)
+   {
+      THROW_ERROR_MSG ("Closing file \"%s\" failed:", str_get (gfile->path));
+   }
+
+   gfile_delete (gfile);
+
+   return ret_val;
+}

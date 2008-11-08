@@ -20,9 +20,9 @@
 /*
  ****   Documentation header   ***
  *
- *  @file libcrbbasic/gfile.h
+ *  @file libcrbbasic/test_gfile.c
  *
- *  @brief Generic file handling
+ *  @brief Testing the gfile module
  *
  *  Module: gfile
  *
@@ -40,38 +40,47 @@
  *
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#ifndef GFILE_H
-#define GFILE_H
+#include <config.h>
+#include <stdlib.h>
+#include <assert.h>
+#include "inc_strg.h"
+#include "memmgr.h"
+#include "errormsg.h"
+/*#include "mprintf.h"*/
+#include "gfile.h"
+ 
 
-#include <stdio.h>
+int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
+{
+   GFile* file;
+   char c_file[] = "test_gfile.c";
+   int ret_val = 0;
 
-typedef enum {
-   GFILE_VOID = 0,
-   GFILE_UNCOMPRESSED
-} GFileType;
+   /* open file */
+   file = GFILE_OPEN(c_file, strlen (c_file), GFILE_VOID, "r");
+   if (file == NULL)
+   {
+      THROW_ERROR_MSG ("Could not open \"%s\".", c_file);
+      return EXIT_FAILURE;
+   }   
 
-typedef struct GFile GFile;
+   ret_val = gfile_close (file);
+   if (ret_val == EOF)
+   {
+      THROW_ERROR_MSG ("Could not close \"%s\".", c_file);      
+   }
+
+   /* create compressed files */
+
+   /* read compr. files */
+
+   /* delete files */
+
+   /* try to open again */
 
 
-GFileType
-gfile_determine_type (const char*, unsigned long);
+   FREE_MEMORY_MANAGER;
 
-GFile*
-gfile_open (const char*, const unsigned long, const GFileType, const char*,
-            const char*, const int);
-
-#define GFILE_OPEN(PATH, LEN, TYPE, MODE) \
-   gfile_open (PATH, LEN, TYPE, MODE, __FILE__, __LINE__)
-
-int
-gfile_close (GFile*);
-
-#endif /* GFILE_H */
-
-#ifdef __cplusplus
+   return EXIT_SUCCESS;
 }
-#endif

@@ -2,7 +2,7 @@ Copyright (C) 2007 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-10-13.10
+Last modified: 2008-11-06.23
 
 - Howto start
   - git clone
@@ -16,6 +16,19 @@ Last modified: 2008-10-13.10
 - icc info (how to use copyrighted names?), link
 - valgrind info
 - bootstrap
+
+Which manuals/ documentation do we want?
+User
+----
+- large Manual in pdf/ html -> texinfo
+- Manpages for usage -> strip somehow
+
+Developer
+---------
+- large developmend handbook -> texinfo?
+- manpages for functions     -> own strip script and include to texinfo
+- html handbook -> texinfo
+- function reference ->texinfo
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

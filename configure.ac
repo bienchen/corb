@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2008-11-07.22
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -109,6 +109,7 @@ AH_BOTTOM([
 AC_CONFIG_FILES([
         Makefile
         share/Makefile
+        share/doc/Makefile
         share/misc/Makefile
         share/misc/bin/Makefile
         share/misc/emacs/Makefile

@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2008-10-18.21
+scriptversion=2008-11-07.22
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 
@@ -357,7 +357,8 @@ fi
 if test "$mode" != "reset"; then
     # paste data into makefile
     cat <<EOF > $tmpfile
-# configure ist abhaengig von /share.../configure.ac!
+# please note: we could use ${AM} --add-missing but with this we could
+#              probably miss if something is added.
 all: $ACLOCAL_M4 $CONFIG_H_IN configure $MAKEFILE_IN
 configure: $ACLOCAL_M4 \
            $MAKEFILE_IN \

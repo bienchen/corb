@@ -1,4 +1,4 @@
-# Last modified: 2008-10-06.14
+# Last modified: 2008-11-07.22
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -18,10 +18,9 @@
 #dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 ACLOCAL_AMFLAGS = -I share/misc/m4
 
-SUBDIRS=misc 
+SUBDIRS=misc doc
 
 
 #dnl Local variables:

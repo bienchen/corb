@@ -1,0 +1,54 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename corb-developer-handbook.info
+@settitle corb -- A Developer Handbook version
+@c %**end of header
+
+
+@c  II: Summary and Copyright
+@copying
+This manual is for program, version version.
+
+Copyright @copyright{} years copyright-owner.
+
+@quotation
+Permission is granted to ...
+@end quotation
+@end copying
+
+
+@c  III: Title and Copyright
+@titlepage
+@title name-of-manual-when-printed
+@subtitle subtitle-if-any
+@subtitle second-subtitle
+@author author
+
+@c  The following two commands
+@c  start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+Published by ...
+@end titlepage
+
+@c So the toc is printed at the start.
+@contents
+
+@ifnottex
+
+
+@c  IV: `Top' Node and Master Menu
+@node Top
+@top title
+
+This manual is for program, version version.
+@end ifnottex
+
+
+@c  V: Body
+
+
+@c VI: End
+@bye

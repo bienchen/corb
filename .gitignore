@@ -37,6 +37,7 @@ src/libcrbbasic/test_genarray
 src/libcrbbasic/test_memmgr
 src/libcrbbasic/test_mprintf
 src/libcrbbasic/test_str
+src/libcrbbasic/test_gfile
 src/libcrbrna/test_alphabet
 src/libcrbrna/test_nn_scores
 src/libcrbrna/test_rna

@@ -44,10 +44,11 @@
 
 #include <config.h>
 #include <stdlib.h> /* only as long as EXIT_FAILURE is in use */
+#include <math.h>
 #include <libcrbbasic/crbbasic.h>
-#include "nn_scores.h"
 #include "rna.h"
 #include "secstruct.h"
+#include "nn_scores.h"
 
 /* structure to store hairpins */
 typedef struct {
@@ -82,20 +83,6 @@ typedef struct {
 
 ARRAY_CREATE_CLASS(IntLoop);
 
-/* indeces for multiloop arrays */
-enum stem_indeces {
-   P5_Strand = 0,
-   P3_Strand,
-   No_Of_Strands
-};
-
-enum dangle_indeces {
-   P5_Dangle = 0,
-   P3_Dangle,
-   Ne_Dangle,
-   No_Of_Dangles
-};
-
 /* store multiloops */
 typedef struct {
       unsigned long unpaired;
@@ -109,7 +96,6 @@ ARRAY_CREATE_CLASS(MultiLoop);
 
 /* data structure to store decomposed secondary structures */
 struct SecStruct {
-      ArrayUlong tetra_loop;    /* store end position of a tetra loop */
       ArrayHairpinLoop hairpin_loop;
       ArrayStackLoop stack;
       ArrayBulgeLoop bulge_loop;
@@ -139,19 +125,11 @@ secstruct_new (const char* file, const int line)
    
    if (this != NULL)
    {
-      ARRAY_SET_VOID (this->tetra_loop);
       ARRAY_SET_VOID (this->hairpin_loop);
       ARRAY_SET_VOID (this->stack);
       ARRAY_SET_VOID (this->bulge_loop);
       ARRAY_SET_VOID (this->internal_loop);
       ARRAY_SET_VOID (this->multi_loop);
-
-      ARRAY_ULONG_INIT (this->tetra_loop, 1);
-      if (ARRAY_IS_NULL (this->tetra_loop))
-      {
-         secstruct_delete (this);
-         return NULL;
-      }
 
       ARRAY_INIT (this->hairpin_loop, 1, HairpinLoop);
       if (ARRAY_IS_NULL (this->hairpin_loop))
@@ -246,7 +224,6 @@ secstruct_delete (SecStruct* this)
 
    if (this != NULL)
    {
-      ARRAY_DELETE (this->tetra_loop);
       ARRAY_DELETE (this->hairpin_loop);
       ARRAY_DELETE (this->stack);
       ARRAY_DELETE (this->bulge_loop);
@@ -1122,12 +1099,24 @@ secstruct_calculate_DG (const char* seq, const NN_scores* scores,
                         const SecStruct* this)
 {
    unsigned long k;
-   int Gs = 0;
+   int G, Ge = 0, Gs = 0, Gb = 0, Gh = 0, Gi = 0, Gm = 0;
    char i, j, jm1, ip1;
 
    assert (seq);
    assert (scores);
    assert (this);
+
+   /* external loop */
+   Ge += nn_scores_get_G_extloop_multiloop (seq,
+                                            this->ext_loop.unpaired,
+                                            this->ext_loop.nstems,
+                                            this->ext_loop.stems,
+                                            this->ext_loop.ndangle5,
+                                            this->ext_loop.dangle5,
+                                            this->ext_loop.ndangle3,
+                                            this->ext_loop.dangle3,
+                                            false,
+                                            scores);
 
    /* stacking pairs */
       /* 5' - ii+1
@@ -1148,11 +1137,906 @@ secstruct_calculate_DG (const char* seq, const NN_scores* scores,
       Gs += nn_scores_get_G_stack (i, j, jm1, ip1, scores);
    }
 
+   /* bulge loops */
+   for (k = 0; k < ARRAY_CURRENT (this->bulge_loop); k++)
+   {
+      Gb += nn_scores_get_G_bulge_loop (seq,
+                                        ARRAY_ACCESS (this->bulge_loop, k).i1,
+                                        ARRAY_ACCESS (this->bulge_loop, k).j1,
+                                        ARRAY_ACCESS (this->bulge_loop, k).i2,
+                                        ARRAY_ACCESS (this->bulge_loop, k).j2,
+                                        ARRAY_ACCESS (this->bulge_loop, k).size,
+                                        scores);
+   }
+
+   /* internal loops */
+   for (k = 0; k < ARRAY_CURRENT (this->internal_loop); k++)
+   {
+      Gi += nn_scores_get_G_internal_loop (seq,
+                                    ARRAY_ACCESS (this->internal_loop, k).size1,
+                                    ARRAY_ACCESS (this->internal_loop, k).size2,
+                                    ARRAY_ACCESS (this->internal_loop, k).i1,
+                                    ARRAY_ACCESS (this->internal_loop, k).j1,
+                                    ARRAY_ACCESS (this->internal_loop, k).i2,
+                                    ARRAY_ACCESS (this->internal_loop, k).j2,
+                                           scores);
+   }
+
    /* hairpins */
    for (k = 0; k < ARRAY_CURRENT (this->hairpin_loop); k++)
    {
-      
+      Gh += nn_scores_get_G_hairpin_loop (seq,
+                                         ARRAY_ACCESS (this->hairpin_loop, k).i,
+                                         ARRAY_ACCESS (this->hairpin_loop, k).j,
+                                      ARRAY_ACCESS (this->hairpin_loop, k).size,
+                                          scores);
    }
 
-   return Gs;
+   /* multiloops */
+   for (k = 0; k < ARRAY_CURRENT (this->multi_loop); k++)
+   {
+      Gm += nn_scores_get_G_extloop_multiloop (seq,
+                                    ARRAY_ACCESS (this->multi_loop, k).unpaired,
+                                    ARRAY_ACCESS (this->multi_loop, k).nstems,
+                                    ARRAY_ACCESS (this->multi_loop, k).stems,
+                                    ARRAY_ACCESS (this->multi_loop, k).ndangle5,
+                                    ARRAY_ACCESS (this->multi_loop, k).dangle5,
+                                    ARRAY_ACCESS (this->multi_loop, k).ndangle3,
+                                    ARRAY_ACCESS (this->multi_loop, k).dangle3,
+                                               true,
+                                               scores);
+   }
+
+   mfprintf (stdout, "external: %d\n"
+                     "stack:    %d\n"
+                     "bulge:    %d\n"
+                     "hairpin:  %d\n"
+                     "internal: %d\n"
+                     "multi:    %d\n",
+             Ge, Gs, Gb, Gh, Gi, Gm);
+
+   G = Ge + Gs + Gb + Gh + Gi + Gm;
+
+   return G;
+}
+
+
+/*********************************   Output   *********************************/
+
+/** @brief Print the list of stacks of a secondary structure to a stream.
+ *
+ * Format is "index of pair: i - j".\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_stacks (FILE* stream, const SecStruct* this)
+{
+   unsigned long i;
+   unsigned long tmp;
+   int rprec, rpreci;
+   unsigned long pline_width = 2;
+   char* string;
+   char* string_start;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->stack));
+
+   /* find largest pair */
+   for (i = 0; i < ARRAY_CURRENT (this->stack); i++)
+   {
+      rprec = 0;
+      tmp = ARRAY_ACCESS (this->stack, i).i;
+      if (tmp < ARRAY_ACCESS (this->stack, i).j)
+      {
+         tmp = ARRAY_ACCESS (this->stack, i).j;
+      }
+
+      /* get no. of digits */
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+      }
+      
+      if ((unsigned) rprec > pline_width) 
+      {
+         pline_width = rprec;
+      }
+   }
+   rprec = pline_width;   
+   if (i > 0)
+   {
+      rpreci = floor (log10 (i) + 1);
+   }
+   else
+   {
+      rpreci = 1;
+   }
+
+   /* add up components of a line */
+   pline_width += rprec;
+   pline_width += rpreci;
+   pline_width += 5;            /*:\s\s-\s*/
+   pline_width += 1;            /* + \n */
+
+   /* allocate buffer */
+   string = (char*) XMALLOC (sizeof (char)
+                            * ((pline_width * ARRAY_CURRENT (this->stack))+ 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;  
+
+   /* print */
+   for (i = 0; i < ARRAY_CURRENT (this->stack); i++)
+   {
+      msprintf (string, "%*lu: %*lu - %*lu\n", rpreci, i, rprec,
+                ARRAY_ACCESS (this->stack, i).i, rprec,
+                ARRAY_ACCESS (this->stack, i).j);
+ 
+      string += pline_width;      
+
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);  
+
+   XFREE (string_start);
+}
+
+/** @brief Print the list of hairpins of a secondary structure to a stream.
+ *
+ * Format is "index of pair: i - j (size)".\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_hairpins (FILE* stream, const SecStruct* this)
+{
+   unsigned long i;
+   unsigned long tmp, tmps;
+   int rprec, rpreci, rprecs = 0;
+   unsigned long pline_width = 2;
+   int size_width = 0;
+   char* string;
+   char* string_start;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->hairpin_loop));
+
+   /* find largest no. */
+   for (i = 0; i < ARRAY_CURRENT (this->hairpin_loop); i++)
+   {
+      rprec = 0;
+      rprecs = 0;
+     
+      tmp = ARRAY_ACCESS (this->hairpin_loop, i).i;
+      if (tmp < ARRAY_ACCESS (this->hairpin_loop, i).j)
+      {
+         tmp = ARRAY_ACCESS (this->hairpin_loop, i).j;
+      }
+
+      /* get no. of digits */
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+      }
+ 
+      tmps = ARRAY_ACCESS (this->hairpin_loop, i).size;     
+      if (tmps > 0)
+      {
+         rprecs += floor (log10 (tmps) + 1);
+      }
+      else
+      {
+         rprecs += 1;
+      }
+      if (rprecs > size_width)
+      {
+         size_width = rprecs;
+      }
+      
+      if ((unsigned) rprec > pline_width) 
+      {
+         pline_width = rprec;
+      }
+   }
+   rprec = pline_width;
+   if (i > 0)
+   {
+      rpreci = floor (log10 (i) + 1);
+   }
+   else
+   {
+      rpreci = 1;
+   }
+
+   /* add up components of a line */
+   pline_width += rprec;
+   pline_width += size_width;
+   pline_width += rpreci;
+   pline_width += 8;            /*:\s\s-\s\s()*/
+   pline_width += 1;            /* + \n */
+
+   /* allocate buffer */
+   string = (char*) XMALLOC (sizeof (char) * ((pline_width *
+                                      ARRAY_CURRENT (this->hairpin_loop)) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;  
+
+   /* print */
+   for (i = 0; i < ARRAY_CURRENT (this->hairpin_loop); i++)
+   {
+      msprintf (string, "%*lu: %*lu - %*lu (%*lu)\n", rpreci, i, rprec,
+                ARRAY_ACCESS (this->hairpin_loop, i).i, rprec,
+                ARRAY_ACCESS (this->hairpin_loop, i).j, size_width,
+                ARRAY_ACCESS (this->hairpin_loop, i).size);
+ 
+      string += pline_width;      
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);  
+
+   XFREE (string_start);
+}
+
+/** @brief Print the list of bulges of a secondary structure to a stream.
+ *
+ * Format is "index of pair: i_1/j_1 - i_2/j_2 (size)".\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_bulges (FILE* stream, const SecStruct* this)
+{
+   unsigned long i;
+   unsigned long tmp, tmps;
+   int rprec, rprecs = 0, rpreci;
+   unsigned long pline_width = 2;
+   int size_width = 0;
+   char* string;
+   char* string_start;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->bulge_loop));
+
+   /* find largest no. */
+   for (i = 0; i < ARRAY_CURRENT (this->bulge_loop); i++)
+   {
+      rprec = 0;
+      rprecs = 0;
+
+      /* width of 'size' component */
+      tmps = ARRAY_ACCESS (this->bulge_loop, i).size;
+
+      if (tmps > 0)
+      {
+         rprecs += floor (log10 (tmps) + 1);
+      }
+      else
+      {
+         rprecs += 1;
+      }
+      if (rprecs > size_width)
+      {
+         size_width = rprecs;
+      }
+
+      /* base pos. component */
+      tmp = ARRAY_ACCESS (this->bulge_loop, i).i1;
+      if (ARRAY_ACCESS (this->bulge_loop, i).j1 > tmp)
+      {
+         tmp = ARRAY_ACCESS (this->bulge_loop, i).j1;
+      }
+      if (ARRAY_ACCESS (this->bulge_loop, i).i2 > tmp)
+      {
+         tmp = ARRAY_ACCESS (this->bulge_loop, i).i2;
+      }
+      if (ARRAY_ACCESS (this->bulge_loop, i).j2 > tmp)
+      {
+         tmp = ARRAY_ACCESS (this->bulge_loop, i).j2;
+      }  
+
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+      }
+      
+      if ((unsigned) rprec > pline_width) 
+      {
+         pline_width = rprec;
+      }
+   }
+   rprec = pline_width;
+   if (i > 0)
+   {
+      rpreci = floor (log10 (i) + 1);
+   }
+   else
+   {
+      rpreci = 1;
+   }
+
+   /* add up components of a line */
+   pline_width = (rprec * 4);
+   pline_width += rpreci;
+   pline_width += size_width;
+   pline_width += 10;            /*:\s/\s-\s/\s()*/
+   pline_width += 1;            /* + \n */
+
+   /* allocate buffer */
+   string = (char*) XMALLOC (sizeof (char) * ((pline_width *
+                                        ARRAY_CURRENT (this->bulge_loop)) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;
+
+   /* print */
+   for (i = 0; i < ARRAY_CURRENT (this->bulge_loop); i++)
+   {
+      msprintf (string, "%*lu: %*lu/%*lu - %*lu/%*lu (%*lu)\n",
+                rpreci, i,
+                rprec, ARRAY_ACCESS (this->bulge_loop, i).i1,
+                rprec, ARRAY_ACCESS (this->bulge_loop, i).j1,
+                rprec, ARRAY_ACCESS (this->bulge_loop, i).i2,
+                rprec, ARRAY_ACCESS (this->bulge_loop, i).j2,
+                size_width, ARRAY_ACCESS (this->bulge_loop, i).size);
+ 
+      string += pline_width;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+}
+
+/** @brief Print a list of internal loops of a secondary structure to a stream.
+ *
+ * Format is "index of pair: i_1/j_1 - i_2/j_2 (size1/size2)".\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_internals (FILE* stream, const SecStruct* this)
+{
+   unsigned long i;
+   unsigned tmp, tmps;
+   int rprec, rprecs = 0, rpreci;
+   unsigned long pline_width = 2;
+   int size_width = 0;
+   char* string;
+   char* string_start;
+
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->internal_loop));
+
+   /* find largest no. */
+   for (i = 0; i < ARRAY_CURRENT (this->internal_loop); i++)
+   {
+      rprec = 0;
+      rprecs = 0;
+
+      /* width of 'size' component */
+      tmps = ARRAY_ACCESS (this->internal_loop, i).size1;
+
+      if ((  ARRAY_ACCESS (this->internal_loop, i).size2
+             * ARRAY_ACCESS (this->internal_loop, i).size2)
+          > (unsigned)(tmps * tmps))
+      {
+         tmps = ARRAY_ACCESS (this->internal_loop, i).size2;
+      }
+
+      if (tmps > 0)
+      {
+         rprecs += floor (log10 (tmps) + 1);
+      }
+      else
+      {
+         rprecs += 1;
+      }
+      if (rprecs > size_width)
+      {
+         size_width = rprecs;
+      }
+
+      /* base pos. component */
+      tmp = ARRAY_ACCESS (this->internal_loop, i).i1;
+      if (ARRAY_ACCESS (this->internal_loop, i).j1 > tmp)
+      {
+         tmp = ARRAY_ACCESS (this->internal_loop, i).j1;
+      }
+      if (ARRAY_ACCESS (this->internal_loop, i).i2 > tmp)
+      {
+         tmp = ARRAY_ACCESS (this->internal_loop, i).i2;
+      }
+      if (ARRAY_ACCESS (this->internal_loop, i).j2 > tmp)
+      {
+         tmp = ARRAY_ACCESS (this->internal_loop, i).j2;
+      }  
+
+      if (tmp > 0)
+      {
+         rprec += floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         rprec += 1;
+      }
+      
+      if ((unsigned) rprec > pline_width) 
+      {
+         pline_width = rprec;
+      }
+   }
+   rprec = pline_width;
+   if (i > 0)
+   {
+      rpreci = floor (log10 (i) + 1);
+   }
+   else
+   {
+      rpreci = 1;
+   }
+
+   /* add up components of a line */
+   pline_width = (rprec * 4);
+   pline_width += rpreci;
+   pline_width += (2 * size_width);
+   pline_width += 11;            /*:\s/\s-\s/\s(/)*/
+   pline_width += 1;            /* + \n */
+
+   /* allocate buffer */
+   string = (char*) XMALLOC (sizeof (char) * ((pline_width *
+                                     ARRAY_CURRENT (this->internal_loop)) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;
+
+
+   /* print */
+   for (i = 0; i < ARRAY_CURRENT (this->internal_loop); i++)
+   {
+      msprintf (string, "%*lu: %*lu/%*lu - %*lu/%*lu (%*lu/%*lu)\n",
+                rpreci, i,
+                rprec, ARRAY_ACCESS (this->internal_loop, i).i1,
+                rprec, ARRAY_ACCESS (this->internal_loop, i).j1,
+                rprec, ARRAY_ACCESS (this->internal_loop, i).i2,
+                rprec, ARRAY_ACCESS (this->internal_loop, i).j2,
+                size_width, ARRAY_ACCESS (this->internal_loop, i).size1,
+                size_width, ARRAY_ACCESS (this->internal_loop, i).size2);
+ 
+      string += pline_width;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+}
+
+#define SENT1 "Unpaired bases: "
+#define DILM1 " - "
+#define SENT2 "Stems: "
+#define SENT3 "5' dangling ends: "
+#define SENT4 "3' dangling ends: "
+#define INDT1 "  "
+static size_t
+printsize_of_multiloop (const MultiLoop* ml)
+{
+   unsigned long i, j;
+   unsigned long tmp;
+   size_t store_size = 0;
+
+   /* storage for "Unpaired bases: \d+\n" */
+   store_size += strlen (SENT1);
+   store_size += 3;             /* "  " + \n */
+   if (ml->unpaired > 0)
+   {
+      store_size += floor (log10 (ml->unpaired) + 1);
+   }
+   else
+   {
+      store_size += 1;
+   }
+
+   /* storage for stems: \d - \d */
+   store_size += strlen (SENT2);
+   store_size += 3;             /* "  " + \n */
+   if (ml->nstems == 0)
+   {
+      store_size += 1;
+   }
+   else
+   {
+      store_size += floor (log10 (ml->nstems) + 1);
+      tmp = 0;
+      for (i = 0; i < ml->nstems; i++)
+      {
+         for (j = 0; j < No_Of_Strands; j++)
+         {
+            if (ml->stems[i][j] > tmp)
+            {
+               tmp =  ml->stems[i][j];
+            }
+         }
+      }
+      if (tmp > 0)
+      {
+         tmp = floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         tmp = 1;
+      }
+      store_size += ((floor (log10 (i) + 1) + 4) * ml->nstems);
+
+      store_size += (strlen (INDT1) * ml->nstems);
+      store_size += (tmp * No_Of_Strands * ml->nstems);
+      store_size += (strlen (DILM1) * (No_Of_Strands - 1) * ml->nstems);
+      store_size += ml->nstems;
+   }
+
+   /* storage for 5' dangling end */
+   store_size += strlen (SENT3);
+   store_size += 3;             /* "  " + \n */
+   if (ml->ndangle5 == 0)
+   {
+      store_size += 1;
+   }
+   else
+   {
+      store_size += floor (log10 (ml->ndangle5) + 1);
+      tmp = 0;
+      for (i = 0; i < ml->ndangle5; i++)
+      {
+         for (j = 0; j < No_Of_Dangles; j++)
+         {
+            if (ml->dangle5[i][j] > tmp)
+            {
+               tmp =  ml->dangle5[i][j];
+            }
+         }
+      }
+      if (tmp > 0)
+      {
+         tmp = floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         tmp = 1;
+      }
+      store_size += ((floor (log10 (i) + 1) + 4) * ml->ndangle5);
+
+      store_size += (strlen (INDT1) * ml->ndangle5);
+      store_size += (tmp * No_Of_Dangles * ml->ndangle5);
+      store_size += (strlen (DILM1) * (No_Of_Dangles - 1) * ml->ndangle5);
+      store_size += ml->ndangle5;
+   }
+
+   /* storage for 3' dangling end */
+   store_size += strlen (SENT4);
+   store_size += 3;             /* "  " + \n */
+   if (ml->ndangle3 == 0)
+   {
+      store_size += 1;
+   }
+   else
+   {
+      store_size += floor (log10 (ml->ndangle3) + 1);
+      tmp = 0;
+      for (i = 0; i < ml->ndangle3; i++)
+      {
+         for (j = 0; j < No_Of_Dangles; j++)
+         {
+            if (ml->dangle3[i][j] > tmp)
+            {
+               tmp =  ml->dangle3[i][j];
+            }
+         }
+      }
+      if (tmp > 0)
+      {
+         tmp = floor (log10 (tmp) + 1);
+      }
+      else
+      {
+         tmp = 1;
+      }
+      store_size += ((floor (log10 (i) + 1) + 4) * ml->ndangle3);
+
+      store_size += (strlen (INDT1) * ml->ndangle3);
+      store_size += (tmp * No_Of_Dangles * ml->ndangle3);
+      store_size += (strlen (DILM1) * (No_Of_Dangles - 1) * ml->ndangle3);
+      store_size += ml->ndangle3;
+   }
+
+   return store_size;
+}
+
+static size_t
+sprintf_multiloop (char* str, const MultiLoop* ml)
+{
+   int prec, preci;
+   unsigned long i, j;
+   char* string_start = str;
+
+   /* Unpaired bases */
+   msprintf (str, "  %s%lu\n", SENT1, ml->unpaired);
+   str += strlen (SENT1) + 3;
+   if (ml->unpaired > 0)
+   {
+      prec = floor (log10 (ml->unpaired) + 1);     
+   }
+   else
+   {
+      prec = 1;
+   }
+   str += prec;
+
+   /* stems */
+   msprintf (str, "  %s%lu\n", SENT2, ml->nstems);
+   str += strlen (SENT2) + 3;
+   if (ml->nstems == 0)
+   {
+      str += 1;     
+   }
+   else
+   {
+      prec = floor (log10 (ml->nstems) + 1);
+      str += prec;
+
+      /* calc didgits for stems */
+      prec = 0;
+      for (i = 0; i < ml->nstems; i++)
+      {
+         for (j = 0; j < No_Of_Strands; j++)
+         {
+            if (ml->stems[i][j] > (unsigned) prec)
+            {
+               prec =  ml->stems[i][j];
+            }
+         }
+      }
+      if (prec > 0)
+      {
+         prec = floor (log10 (prec) + 1);
+      }
+      else
+      {
+         prec = 1;
+      }
+      preci = floor (log10 (i) + 1);
+
+      /* print stems */   
+      for (i = 0; i < ml->nstems; i++)
+      {
+         msprintf (str, "  %s%*lu: ", INDT1, preci, i);
+         str += (strlen (INDT1) + preci + 4);
+         for (j = 0; j < No_Of_Strands; j++)
+         {
+            if (j == 0)
+            {
+               msprintf (str, "%*lu", prec, ml->stems[i][j]);
+               str += prec;
+            }
+            else
+            {
+               msprintf (str, "%s%*lu", DILM1, prec, ml->stems[i][j]);
+               str += (strlen (DILM1) + prec);
+            }
+         }
+         msprintf (str, "\n");
+         str += 1;
+      }
+   }
+
+   /* 5' dangle */
+   msprintf (str, "  %s%lu\n", SENT3, ml->ndangle5);
+   str += strlen (SENT3) + 3;
+   if (ml->ndangle5 == 0)
+   {
+      str += 1;
+   }
+   else
+   {
+      prec = floor (log10 (ml->ndangle5) + 1);
+      str += prec;
+      
+      /* calc didgits for 5' dangles */
+      prec = 0;
+      for (i = 0; i < ml->ndangle5; i++)
+      {
+         for (j = 0; j < No_Of_Dangles; j++)
+         {
+            if (ml->dangle5[i][j] > (unsigned) prec)
+            {
+               prec =  ml->dangle5[i][j];
+            }
+         }
+      }
+      if (prec > 0)
+      {
+         prec = floor (log10 (prec) + 1);
+      }
+      else
+      {
+         prec = 1;
+      }
+      preci = floor (log10 (i) + 1);
+
+      for (i = 0; i < ml->ndangle5; i++)
+      {
+         msprintf (str, "  %s%*lu: ", INDT1, preci, i);
+         str += (strlen (INDT1) + preci + 4);
+         for (j = 0; j < No_Of_Dangles; j++)
+         {
+            if (j == 0)
+            {
+               msprintf (str, "%*lu", prec, ml->dangle5[i][j]);
+               str += prec;
+            }
+            else
+            {
+               msprintf (str, "%s%*lu", DILM1, prec, ml->dangle5[i][j]);
+               str += (strlen (DILM1) + prec);
+            }
+         }
+         msprintf (str, "\n");
+         str += 1;
+      }
+   }
+
+  /* 3' dangle */
+   msprintf (str, "  %s%lu\n", SENT4, ml->ndangle3);
+   str += strlen (SENT4) + 3;
+   if (ml->ndangle3 == 0)
+   {
+      str += 1;
+   }
+   else
+   {
+      prec = floor (log10 (ml->ndangle3) + 1);
+      str += prec;
+      
+      /* calc didgits for 3' dangles */
+      prec = 0;
+      for (i = 0; i < ml->ndangle3; i++)
+      {
+         for (j = 0; j < No_Of_Dangles; j++)
+         {
+            if (ml->dangle3[i][j] > (unsigned) prec)
+            {
+               prec =  ml->dangle3[i][j];
+            }
+         }
+      }
+      if (prec > 0)
+      {
+         prec = floor (log10 (prec) + 1);
+      }
+      else
+      {
+         prec = 1;
+      }
+      preci = floor (log10 (i) + 1);
+
+      for (i = 0; i < ml->ndangle3; i++)
+      {
+         msprintf (str, "  %s%*lu: ", INDT1, preci, i);
+         str += (strlen (INDT1) + preci + 4);
+         for (j = 0; j < No_Of_Dangles; j++)
+         {
+            if (j == 0)
+            {
+               msprintf (str, "%*lu", prec, ml->dangle3[i][j]);
+               str += prec;
+            }
+            else
+            {
+               msprintf (str, "%s%*lu", DILM1, prec, ml->dangle3[i][j]);
+               str += (strlen (DILM1) + prec);
+            }
+         }
+         msprintf (str, "\n");
+         str += 1;
+      }
+   }
+
+   str[0] = '\0';
+
+   return str - string_start;
+}
+
+void
+secstruct_fprintf_external (FILE* stream, const SecStruct* this)
+{
+   char* string;
+   size_t loop_storage;
+
+   assert (this);
+
+   loop_storage = printsize_of_multiloop (&this->ext_loop);
+
+   string = (char*) XMALLOC (sizeof (char) * (loop_storage + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+
+   sprintf_multiloop (string, &this->ext_loop);
+
+   mfprintf (stream, "%s", string);
+
+   XFREE (string);
+}
+
+void
+secstruct_fprintf_multiloops (FILE* stream, const SecStruct* this)
+{
+   unsigned long i;
+   size_t storage = 0;
+   int preci;
+   char* string;
+   char* string_start;
+
+   /* calc storage of loops */
+   for (i = 0; i < ARRAY_CURRENT (this->multi_loop); i++)
+   {
+      storage += printsize_of_multiloop (&(ARRAY_ACCESS (this->multi_loop, i)));
+   }
+   if (i > 0)
+   {
+      preci = floor (log10 (i) + 1);
+   }
+   else
+   {
+      preci = 1;
+   }
+
+   /* add storage for "\d+:\n" */
+   storage += ((preci + 2) * ARRAY_CURRENT (this->multi_loop));
+
+   string = (char*) XMALLOC (sizeof (char) * (storage + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;
+
+   /* print */
+   for (i = 0; i < ARRAY_CURRENT (this->multi_loop); i++)
+   {
+      msprintf (string, "%*lu:\n", preci, i);
+      string += preci + 2;
+      storage = sprintf_multiloop (string,
+                                   &(ARRAY_ACCESS (this->multi_loop, i)));
+      string += storage;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
 }

@@ -2,7 +2,7 @@ Copyright (C) 2007 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-10-13.10
+Last modified: 2008-10-23.14
 
 - Howto start
   - git clone
@@ -16,6 +16,9 @@ Last modified: 2008-10-13.10
 - icc info (how to use copyrighted names?), link
 - valgrind info
 - bootstrap
+
+- hints:
+  - min. params for functions --> instead of foo (seq, a, b) { print seq[a] print seq[b]} do foo (seq[a], seq[b])
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

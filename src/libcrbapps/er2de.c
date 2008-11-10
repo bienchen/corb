@@ -150,8 +150,9 @@ er2de_main(const char *cmdline)
    /* calculate free energy */
    if (retval == 0)
    {
+      /* nn_scores_fprintf_tetra_loop(stdout, scores, sigma); */
       G = rna_secstruct_calculate_DG (scores, rna);
-      mfprintf (stderr, "G= %5.2f\n", G * 0.01);
+      mfprintf (stdout, "G = %5.2f\n", G * 0.01);
    }
 
    /* finalise */

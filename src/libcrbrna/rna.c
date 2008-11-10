@@ -158,8 +158,8 @@ rna_delete (Rna* this)
  * @param[in] line Fill with calling line.
  */
 int
-rna_allocate_sequence (const unsigned long size, Rna* this,
-                       const char* file, const int line)
+rna_alloc_sequence (const unsigned long size, Rna* this,
+                    const char* file, const int line)
 {
    assert (this);
    assert (this->seq == NULL);
@@ -212,7 +212,7 @@ rna_init_sequence (const char* seq,
    assert ((this->size == 0) || (this->size == length));
 
    /* allocate sequence */
-   error = rna_allocate_sequence (length, this, file, line);
+   error = rna_alloc_sequence (length, this, file, line);
 
    /* store & validate sequence */
    i = 0;
@@ -455,6 +455,22 @@ rna_secstruct_init (Rna* this, const char* file, const int line)
    {
       error = secstruct_find_interactions (this->pairs, this->size,
                                            this->structure);
+   }
+
+   if (!error)
+   {
+      mprintf ("Stacked base piars:\n");
+      secstruct_fprintf_stacks (stdout, this->structure);
+      mprintf ("\nHairpin loops:\n");
+      secstruct_fprintf_hairpins (stdout, this->structure);
+      mprintf ("\nBulge loops:\n");
+      secstruct_fprintf_bulges (stdout, this->structure);
+      mprintf ("\nInternal loops:\n");
+      secstruct_fprintf_internals (stdout, this->structure);
+      mprintf ("\nExternal loop:\n");
+      secstruct_fprintf_external (stdout, this->structure);
+      mprintf ("\nMulti loops:\n");
+      secstruct_fprintf_multiloops (stdout, this->structure);
    }
 
    return error;

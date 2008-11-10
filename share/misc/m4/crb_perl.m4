@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2008-10-27.10
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -30,6 +30,21 @@ AC_DEFUN([CRB_PROG_PERL],
 ]dnl# macro-body
         )
 
+# CRB_CHECK_MATCHING_PERL
+# -----------------------
+# CRB_CHECK_MATCHING_PERL ()
+# Check that Perl is available in the version needed by CoRB's Perl scripts.
+AC_DEFUN([CRB_CHECK_MATCHINGPERL],
+[dnl# macro-body
+  AS_IF([test -z $PERL],
+        AC_MSG_ERROR([perl not found])dnl# run-if-true
+       )dnl# AS_IF
+  AS_IF([$PERL -e 'require 5.006;'],
+        [],dnl# run-if-true
+        [AC_MSG_ERROR([Perl v5.6 or better is required; Perl v5.8.2 or better is recommended. If you have several perl versions installed, select the one Automake should use using ./configure PERL=/path/to/perl])]dnl# run-if-false
+       )dnl# AS_IF
+]dnl# macro-body 
+        )
 
 dnl# Local variables:
 dnl# eval: (add-hook 'write-file-hooks 'time-stamp)

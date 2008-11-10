@@ -1,4 +1,4 @@
-# Last modified: 2008-10-06.14
+# Last modified: 2008-10-30.14
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -23,11 +23,21 @@ ACLOCAL_AMFLAGS = -I share/misc/m4
 
 SUFFIXES=.pl
 
+bin_SCRIPTS=
 if CRB_REFORMAT
-  bin_SCRIPTS = reformat
+  bin_SCRIPTS += reformat
 endif
+if CRB_READ_VIENNAPARAMS
+  bin_SCRIPTS += read_viennaparams
+endif
+if CRB_EX_CMP_ER2DE_RNAEVAL
+  bin_SCRIPTS += ex_cmp_er2de_rnaeval
+endif
+
+# misc scripts, build on --with|enable-development
+
 CLEANFILES = $(bin_SCRIPTS)
-EXTRA_DIST = reformat.pl
+EXTRA_DIST = reformat.pl read_viennaparams.pl
 
 do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \

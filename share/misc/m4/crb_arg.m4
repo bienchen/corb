@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2008-10-30.14
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -160,7 +160,7 @@ AC_DEFUN([CRB_ARG_ENABLE_CUM],
                 [invoke]
                 m4_foreach_w([crb_feature],
                              [$2],
-                             ["--enable-[]crb_feature" ])
+                             ["--enable-[]m4_translit(crb_feature,[_.],[--])" ])
                )dnl# CRB_ARG_ENABLE
  dnl# after CRB_ARG_ENABLE, $enable_$1 can only by 'yes' or 'no'
  _CRB_ARG_CHECKED_LOOP_SET([enable],
@@ -186,7 +186,7 @@ AC_DEFUN([CRB_ARG_WITH_CUM],
                 [invoke]
                 m4_foreach_w([crb_feature],
                              [$2],
-                             ["--with-[]crb_feature" ])
+                             ["--with-[]m4_translit(crb_feature,[_.],[--])" ])
                )dnl# CRB_ARG_WITH
  dnl# after CRB_ARG_WITH, $with_$1 can only by 'yes' or 'no'
  _CRB_ARG_CHECKED_LOOP_SET([with],
@@ -196,6 +196,31 @@ AC_DEFUN([CRB_ARG_WITH_CUM],
 ]dnl# macro-body
         )
  
+# CRB_ARG_WITH_PERL_PROG
+# ----------------------
+# CRB_ARG_WITH_PERL_PROG ([tool])
+# Creates an option "--with-$tool" and implements the required checks. For use
+# of the results in makefiles, a conditional variable CRB_$tool is created. For
+# the option, all underscores and dots are substituted with scores. For the
+# conditional variable, all letters are upper case, scores and dots are
+# converted to undersocres. This is not to anoy you but an autoconf/ automake
+# convention which is hard coded. This macro is for perl scripts only.
+AC_DEFUN([CRB_ARG_WITH_PERL_PROG],
+[dnl# macro-body
+ AC_REQUIRE([CRB_PROG_PERL])
+ AC_REQUIRE([AC_PROG_SED])
+ CRB_ARG_WITH(m4_translit([$1],[_.],[--]),
+              [whether to build $1 tool],
+              $2
+             )dnl# CRB_ARG_WITH
+ AS_IF([test x$with_[]m4_translit([$1],[-.],[__]) = xyes],
+       [CRB_CHECK_MATCHINGPERL]
+      )dnl# AS_IF
+ AM_CONDITIONAL([CRB_]m4_translit(m4_toupper([$1]),[-.],[__]),
+                [test x$with_[]m4_translit([$1],[-.],[__]) = xyes])
+]dnl# macro-body
+        )
+
 
 ################################################################################
 #########        Explicit macros: Macros with complete function        #########
@@ -329,37 +354,6 @@ AC_DEFUN([CRB_ARG_WITH_PC_ELISP],
                )dnl# CRB_ARG_WITH
  #crb_pc_elisp=$with_pc_elisp
  AM_CONDITIONAL([CRB_PC_ELISP], [test x$with_pc_elisp = xyes])
-]dnl# macro-body
-        )
-
-# CRB_ARG_WITH_REFORMAT
-# ---------------------
-# CRB_ARG_WITH_REFORMAT ()
-# Creates an option "--with-reformat" to control whether the reformat tool for
-# source code is built or not. Additionally the option is evaluated here as
-# well. If option is set, an automake conditional (AM_CONDITIONAL())
-# CRB_REFORMAT is set. The result of the checks' evalation is stored as 'yes'
-# or 'no' in a variable with_reformat.
-AC_DEFUN([CRB_ARG_WITH_REFORMAT],
-[dnl# macro-body
- AC_REQUIRE([CRB_PROG_PERL])
- AC_REQUIRE([AC_PROG_SED])
- CRB_ARG_WITH([reformat],
-              [whether to build reformat tool],
-              [build reformat tool for source code]
-             )dnl# CRB_ARG_WITH
- AS_IF([test x$with_reformat = xyes],
-       [dnl# run-if-true
-        AS_IF([test -z $PERL],
-              AC_MSG_ERROR([perl not found])dnl# run-if-true
-             )dnl# AS_IF
-        AS_IF([$PERL -e 'require 5.006;'],
-              [],dnl# run-if-true
-              [AC_MSG_ERROR([Perl v5.6 or better is required; Perl v5.8.2 or better is recommended. If you have several perl versions installed, select the one Automake should use using ./configure PERL=/path/to/perl])]dnl# run-if-false
-             )dnl# AS_IF
-       ]dnl# run-if-true
-      )dnl# AS_IF   
- AM_CONDITIONAL([CRB_REFORMAT], [test x$with_reformat = xyes])
 ]dnl# macro-body
         )
 

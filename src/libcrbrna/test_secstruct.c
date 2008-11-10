@@ -52,7 +52,6 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
    Rna* rna;
    SecStruct* structure;
-   /*char test_string[] = "(((...((((((.....))).....))).....)))";*/
    char test_string[] = 
      "..(((...(((...)))...(((...(((...)))...(((...((((((.....))).....))).....)))...(((...)))...)))...(((...)))...)))";
 
@@ -511,6 +510,19 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
          secstruct_delete (structure);
          return EXIT_FAILURE;      
    }
+
+   mprintf ("Stacked base piars:\n");
+   secstruct_fprintf_stacks (stdout, structure);
+   mprintf ("\nHairpin loops:\n");
+   secstruct_fprintf_hairpins (stdout, structure);
+   mprintf ("\nBulge loops:\n");
+   secstruct_fprintf_bulges (stdout, structure);
+   mprintf ("\nInternal loops:\n");
+   secstruct_fprintf_internals (stdout, structure);
+   mprintf ("\nExternal loop:\n");
+   secstruct_fprintf_external (stdout, structure);
+   mprintf ("\nMulti loops:\n");
+   secstruct_fprintf_multiloops (stdout, structure);
 
    secstruct_delete (structure);
    rna_delete (rna);

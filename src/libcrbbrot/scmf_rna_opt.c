@@ -136,7 +136,7 @@ scmf_rna_opt_data_new_init (const char* structure,
          return NULL;
       }
 
-      error = RNA_ALLOCATE_SEQUENCE(seqlen, this->rna);
+      error = RNA_ALLOC_SEQUENCE(seqlen, this->rna);
       if (error)
       {
          scmf_rna_opt_data_delete (this);

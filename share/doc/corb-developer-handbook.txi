@@ -1,54 +1,72 @@
 \input texinfo   @c -*-texinfo-*-
+@c This file is part of `CoRB -- A Developers Handbook`.
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
 @c %**start of header
 @setfilename corb-developer-handbook.info
-@settitle corb -- A Developer Handbook version
+@include version-crb-dev.texi
+@include corb.txi
+@settitle @crbtitledvl{} @value{VERSION}
+@setchapternewpage odd
+@c @afourpaper
+@c @afivepaper
+@afourlatex
+@c @afourwide
 @c %**end of header
 
 
 @c  II: Summary and Copyright
 @copying
-This manual is for program, version version.
+@crbcpylinedvl
 
-Copyright @copyright{} years copyright-owner.
+Copyright @copyright{} 2008 Stefan Bienert.
 
-@quotation
-Permission is granted to ...
-@end quotation
+@crbfdlpermission{}
 @end copying
 
 
 @c  III: Title and Copyright
 @titlepage
-@title name-of-manual-when-printed
-@subtitle subtitle-if-any
-@subtitle second-subtitle
-@author author
+@title  @crbtitledvl{}
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author Stefan Bienert (@email{bienert@@zbh.uni-hamburg.de})
 
 @c  The following two commands
 @c  start the copyright page.
 @page
 @vskip 0pt plus 1filll
 @insertcopying
-
-Published by ...
 @end titlepage
+
+@headings off
+@evenheading @thischapter @| @|
+@oddheading  @| @| @thissection
+@evenfooting @thispage @| @|
+@oddfooting  @| @| @thispage
 
 @c So the toc is printed at the start.
 @contents
 
-@ifnottex
-
 
 @c  IV: `Top' Node and Master Menu
+@ifnottex
 @node Top
-@top title
+@top @crbtitledvl{}
 
-This manual is for program, version version.
+@crbcpylinedvl
 @end ifnottex
+
+@menu
+* GNU Free Documentation License::
+@end menu
 
 
 @c  V: Body
 
 
 @c VI: End
+@node GNU Free Documentation License
+@appendix GNU Free Documentation License
+@include fdl-1.3.txi
+
 @bye

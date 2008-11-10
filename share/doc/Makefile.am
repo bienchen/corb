@@ -1,4 +1,4 @@
-# Last modified: 2008-11-08.20
+# Last modified: 2008-11-10.20
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -20,8 +20,10 @@
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
 
-info_TEXINFOS = corb-developer-handbook.txi
-#hello_TEXINFOS = 
+# please note: The version*.texi files are automatically dependencies
+info_TEXINFOS = corb-developer-handbook.txi corb-user-manual.txi
+corb_developer_handbook_TEXINFOS = corb.txi
+corb_user_manual_TEXINFOS = corb.txi
 
 # create pdf and html docs along with `make all`
 all-local: pdf html

@@ -1,1 +1,72 @@
- 
+\input texinfo   @c -*-texinfo-*-
+@c This file is part of `CoRB -- A Users Manual`.
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+@c %**start of header
+@setfilename corb-user-manual.info
+@include version-crb-use.texi
+@include corb.txi
+@settitle @crbtitleuse{} @value{VERSION}
+@setchapternewpage odd
+@c @afourpaper
+@c @afivepaper
+@afourlatex
+@c @afourwide
+@c %**end of header
+
+
+@c  II: Summary and Copyright
+@copying
+@crbcpylineuse
+
+Copyright @copyright{} 2008 Stefan Bienert.
+
+@crbfdlpermission{}
+@end copying
+
+
+@c  III: Title and Copyright
+@titlepage
+@title  @crbtitleuse{}
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author Stefan Bienert (@email{bienert@@zbh.uni-hamburg.de})
+
+@c  The following two commands
+@c  start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@headings off
+@evenheading @thischapter @| @|
+@oddheading  @| @| @thissection
+@evenfooting @thispage @| @|
+@oddfooting  @| @| @thispage
+
+@c So the toc is printed at the start.
+@contents
+
+
+@c  IV: `Top' Node and Master Menu
+@ifnottex
+@node Top
+@top @crbtitleuse{}
+
+@crbcpylineuse
+@end ifnottex
+
+@menu
+* GNU Free Documentation License::
+@end menu
+
+
+@c  V: Body
+
+
+@c VI: End
+@node GNU Free Documentation License
+@appendix GNU Free Documentation License
+@include fdl-1.3.txi
+
+@bye

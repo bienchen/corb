@@ -1187,13 +1187,13 @@ secstruct_calculate_DG (const char* seq, const NN_scores* scores,
                                                scores);
    }
 
-   mfprintf (stdout, "external: %d\n"
-                     "stack:    %d\n"
-                     "bulge:    %d\n"
-                     "hairpin:  %d\n"
-                     "internal: %d\n"
-                     "multi:    %d\n",
-             Ge, Gs, Gb, Gh, Gi, Gm);
+/*    mfprintf (stdout, "external: %d\n" */
+/*                      "stack:    %d\n" */
+/*                      "bulge:    %d\n" */
+/*                      "hairpin:  %d\n" */
+/*                      "internal: %d\n" */
+/*                      "multi:    %d\n", */
+/*              Ge, Gs, Gb, Gh, Gi, Gm); */
 
    G = Ge + Gs + Gb + Gh + Gi + Gm;
 

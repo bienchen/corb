@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-11-10.10
+# Last modified: 2008-11-10.18
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -41,6 +41,7 @@ use Pod::Usage;
 
 
 # PRIVATE packages - BEGIN
+use PBar;
 # PRIVATE packages - END
 
 # CONSTANTS        - BEGIN
@@ -2087,6 +2088,11 @@ my $pod_verbose = 1;
 my %param_hash;
 my $ret_val;
 my %test_nos;
+
+pbar_enable();
+my %pb;
+
+PBar::start(%pb, 4);
 
 # parse commandline
 $ret_val = parseargs(%arg_hash);

@@ -457,21 +457,21 @@ rna_secstruct_init (Rna* this, const char* file, const int line)
                                            this->structure);
    }
 
-   if (!error)
-   {
-      mprintf ("Stacked base piars:\n");
-      secstruct_fprintf_stacks (stdout, this->structure);
-      mprintf ("\nHairpin loops:\n");
-      secstruct_fprintf_hairpins (stdout, this->structure);
-      mprintf ("\nBulge loops:\n");
-      secstruct_fprintf_bulges (stdout, this->structure);
-      mprintf ("\nInternal loops:\n");
-      secstruct_fprintf_internals (stdout, this->structure);
-      mprintf ("\nExternal loop:\n");
-      secstruct_fprintf_external (stdout, this->structure);
-      mprintf ("\nMulti loops:\n");
-      secstruct_fprintf_multiloops (stdout, this->structure);
-   }
+/*    if (!error) */
+/*    { */
+/*       mprintf ("Stacked base piars:\n"); */
+/*       secstruct_fprintf_stacks (stdout, this->structure); */
+/*       mprintf ("\nHairpin loops:\n"); */
+/*       secstruct_fprintf_hairpins (stdout, this->structure); */
+/*       mprintf ("\nBulge loops:\n"); */
+/*       secstruct_fprintf_bulges (stdout, this->structure); */
+/*       mprintf ("\nInternal loops:\n"); */
+/*       secstruct_fprintf_internals (stdout, this->structure); */
+/*       mprintf ("\nExternal loop:\n"); */
+/*       secstruct_fprintf_external (stdout, this->structure); */
+/*       mprintf ("\nMulti loops:\n"); */
+/*       secstruct_fprintf_multiloops (stdout, this->structure); */
+/*    } */
 
    return error;
 }

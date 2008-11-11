@@ -13959,7 +13959,7 @@ allocate_init_dangle3 (const int a, const int u, const int g, const int c,
    return 0;
 }
 
-void
+static void
 tetra_loop_swap_entries (unsigned long src, unsigned long dest,
                          NN_scores* this)
 {
@@ -14059,7 +14059,10 @@ tetra_loop_qsort (const unsigned long left, const unsigned long right,
 }
 
 static int
-allocate_init_tetra_loop (const int a, const int u, const int g, const int c,
+allocate_init_tetra_loop (const char a,
+                          const char u,
+                          const char g,
+                          const char c,
                           NN_scores* this,
                           const char* file, const int line)
 {
@@ -14549,14 +14552,14 @@ nn_scores_get_G_stack (const char i, const char j,
    assert (scheme);
    assert (scheme->G_stack);
    assert (scheme->bp_idx);
-   assert ((unsigned)   i < sqrtf (scheme->bp_idx_size));
-   assert ((unsigned)   j < sqrtf (scheme->bp_idx_size));
-   assert ((unsigned) ip1 < sqrtf (scheme->bp_idx_size));
-   assert ((unsigned) jm1 < sqrtf (scheme->bp_idx_size));
-   assert (  (unsigned) scheme->bp_idx[(int)i][(int)j] 
-           < sqrtf (scheme->G_stack_size));
-   assert (  (unsigned) scheme->bp_idx[(int)jm1][(int)ip1]
-           < sqrtf (scheme->G_stack_size));
+   assert (i < sqrtf ((float) scheme->bp_idx_size));
+   assert (j < sqrtf ((float) scheme->bp_idx_size));
+   assert (ip1 < sqrtf ((float) scheme->bp_idx_size));
+   assert (jm1 < sqrtf ((float) scheme->bp_idx_size));
+   assert (scheme->bp_idx[(int)i][(int)j] 
+           < sqrtf ((float) scheme->G_stack_size));
+   assert (  scheme->bp_idx[(int)jm1][(int)ip1]
+             < sqrtf ((float) scheme->G_stack_size));
    
    return scheme->G_stack[(int) scheme->bp_idx[(int)i][(int)j]]
                          [(int) scheme->bp_idx[(int)jm1][(int)ip1]];
@@ -14578,10 +14581,10 @@ nn_scores_get_G_mm_stack (const char i, const char j,
    assert (scheme);
    assert (scheme->G_mm_stack);
    assert (scheme->bp_idx);
-   assert ((unsigned) i < sqrtf (scheme->bp_idx_size));
-   assert ((unsigned) j < sqrtf (scheme->bp_idx_size));
-   assert ((unsigned) k < sqrtf (scheme->bp_idx_size));
-   assert ((unsigned) l < sqrtf (scheme->bp_idx_size));
+   assert (i < sqrtf ((float) scheme->bp_idx_size));
+   assert (j < sqrtf ((float) scheme->bp_idx_size));
+   assert (k < sqrtf ((float) scheme->bp_idx_size));
+   assert (l < sqrtf ((float) scheme->bp_idx_size));
    assert (  (unsigned) scheme->bp_idx[(int)i][(int)j] 
            < scheme->bp_allowed_size);
    assert (  (unsigned) scheme->bp_idx[(int)k][(int)l]
@@ -14694,7 +14697,8 @@ nn_scores_get_G_hairpin_loop (const char* seq,
    else
    {
       G += this->G_hairpin_loop[this->G_hairpin_loop_size - 1]
-         + (NN_LXC37 * logf((float) size / (this->G_hairpin_loop_size - 1)));
+         + (int) (NN_LXC37 
+                  * logf((float) size / (this->G_hairpin_loop_size - 1)));
    }
 
     /* mismatch penalty for the mismatch interior to the closing basepair of
@@ -14836,7 +14840,8 @@ nn_scores_get_G_internal_loop (const char* seq,
       else
       {
          G += this->G_internal_loop[this->G_internal_loop_size - 1]
-            + NN_LXC37 * logf ((float) size / (this->G_internal_loop_size - 1));
+            + (int) (NN_LXC37 
+                     * logf ((float) size / (this->G_internal_loop_size - 1)));
       }
       /* loop asymmetry contribution */
       G += (NN_NINIO_MAX < (labs (size1 - size2) * NN_NINIO_M) ? NN_NINIO_MAX
@@ -14930,7 +14935,7 @@ nn_scores_fprintf_bp_idx (FILE* stream,
 
    /* widest cell can be determined by the size of the alphabet */
    rprec = alpha_size * alpha_size;
-   rprec = floor (log10 (rprec) + 1);
+   rprec = floorf (log10f ((float) rprec) + 1);
    
    /* calculate linewidth */
    pline_width = rprec;
@@ -14953,7 +14958,7 @@ nn_scores_fprintf_bp_idx (FILE* stream,
 
    for (i = 0; i < alpha_size; i++)
    {
-      msprintf (string, " | %*c", rprec, alphabet_no_2_base (i, sigma));
+      msprintf (string, " | %*c", rprec, alphabet_no_2_base ((char) i, sigma));
       string += (rprec + 3);      
    }
    string[0] = '\n';
@@ -14962,7 +14967,7 @@ nn_scores_fprintf_bp_idx (FILE* stream,
    /* print index lines */
    for (i = 0; i < alpha_size; i++)
    {
-      msprintf (string, "%c", alphabet_no_2_base (i, sigma));
+      msprintf (string, "%c", alphabet_no_2_base ((char) i, sigma));
       string++;
       
       for (j = 0; j < alpha_size; j++)
@@ -15024,7 +15029,7 @@ nn_scores_fprintf_G_stack (FILE* stream,
          
          if (tmp > 0)
          {
-            rprec += floor (log10 (tmp) + 1);
+            rprec += floorf (log10f ((float) tmp) + 1);
          }
          else
          {
@@ -15156,7 +15161,7 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
          
          if (tmp > 0)
          {
-            rprec += floor (log10 (tmp) + 1);
+            rprec += floorf (log10f ((float) tmp) + 1);
          }
          else
          {
@@ -15200,8 +15205,8 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
       for (j = 0; j < alphabet_size (sigma); j++)
       {
          msprintf (string, " | %*c%c", rprec,
-                   alphabet_no_2_base (i, sigma),
-                   alphabet_no_2_base (j, sigma));
+                   alphabet_no_2_base ((char) i, sigma),
+                   alphabet_no_2_base ((char) j, sigma));
          string += (rprec + 4);
       }
    }
@@ -15282,7 +15287,7 @@ nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
       
       if (tmp > 0)
       {
-         rprec += floor (log10 (tmp) + 1);
+         rprec += floorf (log10f ((float) tmp) + 1);
       }
       else
       {
@@ -15295,7 +15300,7 @@ nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
       }       
    }
    rprec = pline_width;
-   rprec_idx = floor (log10 (scheme->G_hairpin_loop_size) + 1);
+   rprec_idx = floorf (log10f ((float) scheme->G_hairpin_loop_size) + 1);
 
    /* add up components of a line */
    pline_width += 3; /*: \n*/
@@ -15404,7 +15409,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
             /* get no. of digits */
             if (tmp > 0)
             {
-               rprec += floor (log10 (tmp) + 1);
+               rprec += floorf (log10f ((float) tmp) + 1);
             }
             else
             {
@@ -15441,7 +15446,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
 
    for (i = 0; i < x; i++)
    {
-      msprintf (string, "  | %*c", rprec, alphabet_no_2_base (i, sigma));
+      msprintf (string, "  | %*c", rprec, alphabet_no_2_base ((char) i, sigma));
       string += rprec;
       string += 4;
    }
@@ -15478,7 +15483,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
 
       for (j = 0; j < y; j++)
       {
-         msprintf (string, "%c", alphabet_no_2_base (j, sigma));
+         msprintf (string, "%c", alphabet_no_2_base ((char) j, sigma));
          string++;
          for (k = 0; k < x; k++)
          {
@@ -15535,7 +15540,7 @@ nn_scores_fprintf_G_bulge_loop (FILE* stream, const NN_scores* scheme)
       
       if (tmp > 0)
       {
-         rprec += floor (log10 (tmp) + 1);
+         rprec += floorf (log10f ((float) tmp) + 1);
       }
       else
       {
@@ -15548,7 +15553,7 @@ nn_scores_fprintf_G_bulge_loop (FILE* stream, const NN_scores* scheme)
       }       
    }
    rprec = pline_width;
-   rprec_idx = floor (log10 (scheme->G_bulge_loop_size) + 1);
+   rprec_idx = floorf (log10f ((float) scheme->G_bulge_loop_size) + 1);
 
    /* add up components of a line */
    pline_width += 3; /*: \n*/
@@ -15646,7 +15651,7 @@ nn_scores_fprintf_non_gc_penalty_for_bp(FILE* stream,
       /* get no. of digits */
       if (tmp > 0)
       {
-         rprec += floor (log10 (tmp) + 1);
+         rprec += floorf (log10f ((float) tmp) + 1);
       }
       else
       {
@@ -15731,7 +15736,7 @@ nn_scores_fprintf_tetra_loop(FILE* stream,
       /* get no. of digits */
       if (tmp > 0)
       {
-         rprec += floor (log10 (tmp) + 1);
+         rprec += floorf (log10f ((float) tmp) + 1);
       }
       else
       {
@@ -15834,7 +15839,7 @@ nn_scores_fprintf_G_dangle5(FILE* stream,
          
          if (tmp > 0)
          {
-            rprec += floor (log10 (tmp) + 1);
+            rprec += floorf (log10f ((float) tmp) + 1);
          }
          else
          {
@@ -15870,7 +15875,7 @@ nn_scores_fprintf_G_dangle5(FILE* stream,
 
    for (i = 0; i < columns; i++)
    {
-      msprintf (string, " | %*c", rprec, alphabet_no_2_base (i, sigma));
+      msprintf (string, " | %*c", rprec, alphabet_no_2_base ((char) i, sigma));
       string += (rprec + 3);
    }
 
@@ -15949,7 +15954,7 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
          
          if (tmp > 0)
          {
-            rprec += floor (log10 (tmp) + 1);
+            rprec += floorf (log10f ((float) tmp) + 1);
          }
          else
          {
@@ -15985,7 +15990,7 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
 
    for (i = 0; i < columns; i++)
    {
-      msprintf (string, " | %*c", rprec, alphabet_no_2_base (i, sigma));
+      msprintf (string, " | %*c", rprec, alphabet_no_2_base ((char) i, sigma));
       string += (rprec + 3);
    }
 
@@ -16041,11 +16046,11 @@ get_ndigits_matrix (const unsigned long cols,
          }
          else if (matrix[i][j] < 0)
          {
-            cval = floor (log10 (matrix[i][j] * (-1)) + 2);
+            cval = floorf (log10f ((float) matrix[i][j] * (-1)) + 2);
          }
          else
          {
-            cval = floor (log10 (matrix[i][j]) + 1);
+            cval = floorf (log10f ((float) matrix[i][j]) + 1);
          }
          
          if (cval > tmp)
@@ -16099,7 +16104,7 @@ nn_scores_fprintf_G_internal_loop (FILE* stream, const NN_scores* scheme)
       
       if (tmp > 0)
       {
-         rprec += floor (log10 (tmp) + 1);
+         rprec += floorf (log10f ((float) tmp) + 1);
       }
       else
       {
@@ -16112,7 +16117,7 @@ nn_scores_fprintf_G_internal_loop (FILE* stream, const NN_scores* scheme)
       }       
    }
    rprec = pline_width;
-   rprec_idx = floor (log10 (scheme->G_internal_loop_size) + 1);
+   rprec_idx = floorf (log10f ((float) scheme->G_internal_loop_size) + 1);
 
    /* add up components of a line */
    pline_width += 3; /*: \n*/
@@ -16232,7 +16237,7 @@ nn_scores_fprintf_G_int11 (FILE* stream,
    header += 5;
    for (i = 0; i < asize; i++)
    {
-      msprintf (header, " | %*c", rprec, alphabet_no_2_base(i, sigma));
+      msprintf (header, " | %*c", rprec, alphabet_no_2_base((char) i, sigma));
       header += rprec + 3;
    }
    msprintf (header, "\n");
@@ -16275,7 +16280,7 @@ nn_scores_fprintf_G_int11 (FILE* stream,
          
          for (k = 0; k < asize; k++)
          {
-            msprintf (string, "    %c", alphabet_no_2_base(k, sigma));
+            msprintf (string, "    %c", alphabet_no_2_base((char) k, sigma));
             string += 5;
 
             for (l = 0; l < asize; l++)
@@ -16367,7 +16372,7 @@ nn_scores_fprintf_G_int21 (FILE* stream,
    header += 6;
    for (i = 0; i < asize; i++)
    {
-      msprintf (header, " | %*c", rprec, alphabet_no_2_base(i, sigma));
+      msprintf (header, " | %*c", rprec, alphabet_no_2_base((char) i, sigma));
       header += rprec + 3;
    }
    msprintf (header, "\n");
@@ -16407,14 +16412,15 @@ nn_scores_fprintf_G_int21 (FILE* stream,
          
          for (k = 0; k < asize; k++)
          {
-            msprintf (string, "    %c:\n", alphabet_no_2_base(k, sigma));
+            msprintf (string, "    %c:\n", alphabet_no_2_base((char) k, sigma));
             string += 7;     
             msprintf (string, "%s", header);
             string += hsize;
          
             for (l = 0; l < asize; l++)
             {
-               msprintf (string, "     %c", alphabet_no_2_base(l, sigma));
+               msprintf (string, "     %c", alphabet_no_2_base((char) l,
+                                                               sigma));
                string += 6;
                
             for (m = 0; m < asize; m++)
@@ -16511,7 +16517,7 @@ nn_scores_fprintf_G_int22 (FILE* stream,
    header += 7;
    for (i = 0; i < asize; i++)
    {
-      msprintf (header, " | %*c", rprec, alphabet_no_2_base(i, sigma));
+      msprintf (header, " | %*c", rprec, alphabet_no_2_base((char) i, sigma));
       header += rprec + 3;
    }
    msprintf (header, "\n");
@@ -16551,19 +16557,21 @@ nn_scores_fprintf_G_int22 (FILE* stream,
          
          for (k = 0; k < asize; k++)
          {
-            msprintf (string, "    %c:\n", alphabet_no_2_base(k, sigma));
+            msprintf (string, "    %c:\n", alphabet_no_2_base((char) k, sigma));
             string += 7;
 
             for (l = 0; l < asize; l++)
             {
-               msprintf (string, "     %c:\n", alphabet_no_2_base(l, sigma));
+               msprintf (string, "     %c:\n", alphabet_no_2_base((char) l,
+                                                                  sigma));
                string += 8;
                msprintf (string, "%s", header);
                string += hsize;
          
                for (m = 0; m < asize; m++)
                {
-                  msprintf (string, "      %c", alphabet_no_2_base(m, sigma));
+                  msprintf (string, "      %c", alphabet_no_2_base((char) m,
+                                                                   sigma));
                   string += 7;
                   
                   for (n = 0; n < asize; n++)
@@ -16640,7 +16648,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
             /* get no. of digits */
             if (tmp > 0)
             {
-               rprec += floor (log10 (tmp) + 1);
+               rprec += floorf (log10f ((float) tmp) + 1);
             }
             else
             {
@@ -16677,7 +16685,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
 
    for (i = 0; i < x; i++)
    {
-      msprintf (string, "  | %*c", rprec, alphabet_no_2_base (i, sigma));
+      msprintf (string, "  | %*c", rprec, alphabet_no_2_base ((char) i, sigma));
       string += rprec;
       string += 4;
    }
@@ -16714,7 +16722,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
 
       for (j = 0; j < y; j++)
       {
-         msprintf (string, "%c", alphabet_no_2_base (j, sigma));
+         msprintf (string, "%c", alphabet_no_2_base ((char) j, sigma));
          string++;
          for (k = 0; k < x; k++)
          {

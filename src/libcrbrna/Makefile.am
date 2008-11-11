@@ -1,4 +1,4 @@
-# Last modified: 2008-10-06.14
+# Last modified: 2008-10-24.14
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -50,9 +50,9 @@ LDADD =                                    \
 
 check_PROGRAMS =                           \
 	test_alphabet                      \
-	test_nn_scores                     \
 	test_rna                           \
-	test_secstruct
+	test_secstruct                     \
+	test_nn_scores
 
 test_alphabet_SOURCES  = test_alphabet.c
 

@@ -45,10 +45,12 @@
 extern "C" {
 #endif
 
-#include "rna.h"
 
 #ifndef SECSTRUCT_H
 #define SECSTRUCT_H
+
+/*#include "rna.h"*/
+#include "nn_scores.h"
 
 typedef struct SecStruct SecStruct;
 
@@ -201,6 +203,29 @@ secstruct_get_i_5p_5pdangle_extloop (const unsigned long, const SecStruct*);
 
 unsigned long
 secstruct_get_i_3p_5pdangle_extloop (const unsigned long, const SecStruct*);
+
+int
+secstruct_calculate_DG (const char*, const NN_scores*, const SecStruct*);
+
+/*********************************   Output   *********************************/
+
+void
+secstruct_fprintf_stacks (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_hairpins (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_bulges (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_internals (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_external (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_multiloops (FILE*, const SecStruct*);
 
 #endif /* SECSTRUCT_H */
 

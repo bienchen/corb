@@ -47,13 +47,15 @@
 #include "crb_cmdline.h"
 #include <libcrbapps/brot.h>
 #include <libcrbapps/fold.h>
+#include <libcrbapps/er2de.h>
 
 static int
 verify_tool (const Str* tool)
 {
    /* verify name */
    if (  (str_compare_cstr (tool, "brot"))
-       &&(str_compare_cstr (tool, "fold")))
+       &&(str_compare_cstr (tool, "fold"))
+       &&(str_compare_cstr (tool, "er2de")))
    {
       THROW_ERROR_MSG ("Unknown application: \"%s\", try `%s --help` for more "
                        "information.",str_get (tool), get_progname());
@@ -115,7 +117,7 @@ int main(int argc,char *argv[])
    
    if (retval == 0)
    {
-      retval = crb_cmdline_parser_required();
+      retval = crb_cmdline_parser_required(&crb_args, get_progname());
    }   
 
    /* postprocess parsed options */
@@ -162,6 +164,10 @@ int main(int argc,char *argv[])
       {
          retval = fold_main(crb_args.inputs[0]);
       }
+      else if (str_compare_cstr (tool, "er2de") == 0)
+      {
+         retval = er2de_main(crb_args.inputs[0]);
+      }      
    }
 
    /* finalise */

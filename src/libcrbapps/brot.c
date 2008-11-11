@@ -54,6 +54,7 @@
 #include "brot_cmdline.h"
 #include "brot.h"
 
+
 static int
 brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
 {

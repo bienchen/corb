@@ -54,7 +54,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    Alphabet* sigma;
    NN_scores* scores;
 
-   sigma = ALPHABET_NEW_PAIR ("AUGC", "augc", 4);
+   sigma = ALPHABET_NEW_PAIR ("ACGU", "acgu", 4);
    if (sigma == NULL)
    {
       THROW_ERROR_MSG ("Could not create alphabet");
@@ -77,6 +77,33 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    nn_scores_fprintf_G_stack (stdout, scores, sigma);
    mprintf ("Mismatch stacking energies:\n");
    nn_scores_fprintf_mm_G_stack (stdout, scores, sigma);
+   mprintf ("Hairpin loop energies:\n");
+   mprintf ("Size: Score\n");
+   nn_scores_fprintf_G_hairpin_loop (stdout, scores);
+   mprintf ("Mismatch hairpin energies:\n");
+   nn_scores_fprintf_G_mismatch_hairpin (stdout, scores, sigma);
+   mprintf ("Bulge loop energies:\n");
+   mprintf ("Size: Score\n");
+   nn_scores_fprintf_G_bulge_loop (stdout, scores);
+   mprintf ("Penalties for non-GC closing base pairs:\n");
+   nn_scores_fprintf_non_gc_penalty_for_bp(stdout, scores, sigma);
+   mprintf ("Tetra loop bonus energies:\n");
+   nn_scores_fprintf_tetra_loop(stdout, scores, sigma);
+   mprintf ("5' dangling end energies:\n");
+   nn_scores_fprintf_G_dangle5(stdout, scores, sigma);
+   mprintf ("3' dangling end energies:\n");
+   nn_scores_fprintf_G_dangle3(stdout, scores, sigma);
+   mprintf ("1x1 internal loop energies:\n");
+   nn_scores_fprintf_G_int11(stdout, scores, sigma);
+   mprintf ("2x1 internal loop energies:\n");
+   nn_scores_fprintf_G_int21(stdout, scores, sigma);
+   mprintf ("2x2 internal loop energies:\n");
+   nn_scores_fprintf_G_int22(stdout, scores, sigma);
+   mprintf ("Generic internal loop energies:\n");
+   mprintf ("Size: Score\n");
+   nn_scores_fprintf_G_internal_loop (stdout, scores);
+   mprintf ("Mismatch interior energies:\n");
+   nn_scores_fprintf_G_mismatch_interior (stdout, scores, sigma);
 
    alphabet_delete (sigma);
    nn_scores_delete (scores);

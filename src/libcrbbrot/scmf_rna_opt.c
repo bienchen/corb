@@ -135,6 +135,7 @@ scmf_rna_opt_data_new_init (const char* structure,
          scmf_rna_opt_data_delete (this);
          return NULL;
       }
+
       error = RNA_ALLOC_SEQUENCE(seqlen, this->rna);
       if (error)
       {
@@ -226,7 +227,7 @@ int
 scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
                                                  SeqMatrix* sm)
 {
-   unsigned long i, j, k, l, m, cols, alpha, allowed_bp;
+   unsigned long /*i,*/ j, k, l, m, cols, alpha, allowed_bp;
    char bj, bip1, bjm1;
    float prob;
    Scmf_Rna_Opt_data* this;
@@ -239,7 +240,7 @@ scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
    cols = seqmatrix_get_width (sm);
    alpha = alphabet_size (this->sigma);
    allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
-   i = 0;
+   /*i = 0;*/
 
    memset(this->en_neg2[0], 0, (alpha * alpha) * sizeof (*(this->en_neg2)));
    memset(this->en_neg_35[0], 0, (alpha * alpha) * sizeof (*(this->en_neg_35)));
@@ -331,7 +332,7 @@ scmf_rna_opt_iterate_neg_design_term (unsigned long row,
       /* subtract col, col+1 contribution (5' -> 3') */
       for (j = 0; this->bp_allowed[row][j] != 0; j++)
       {
-         bj = this->bp_allowed[row][j] - 1;
+         bj = (char)(this->bp_allowed[row][j] - 1);
          
          for (k = 0; k < allowed_bp; k++)
          {
@@ -341,7 +342,8 @@ scmf_rna_opt_iterate_neg_design_term (unsigned long row,
             prob = seqmatrix_get_probability (bj, (col + 1), sm)
                * seqmatrix_get_probability (bjm1, col, sm);
             
-            this->en_neg2[row][(int)bip1] -= (nn_scores_get_G_stack (row, bj,
+            this->en_neg2[row][(int)bip1] -= (nn_scores_get_G_stack ((char)row,
+                                                                     bj,
                                                                      bjm1, bip1,
                                                                      this->scores)
                                               * prob);
@@ -352,7 +354,7 @@ scmf_rna_opt_iterate_neg_design_term (unsigned long row,
       /* add col+1, col contribution (5' <- 3') */
       for (j = 0; this->bp_allowed[row][j] != 0; j++)
       {
-         bi = this->bp_allowed[row][j] - 1;
+         bi = (char)(this->bp_allowed[row][j] - 1);
          
          for (k = 0; k < allowed_bp; k++)
          {
@@ -362,7 +364,8 @@ scmf_rna_opt_iterate_neg_design_term (unsigned long row,
             prob = seqmatrix_get_probability (bi, col, sm)
                * seqmatrix_get_probability (bip1, (col + 1), sm);
             
-            this->en_neg_35[row][(int)bjm1] += (nn_scores_get_G_stack (bi, row,
+            this->en_neg_35[row][(int)bjm1] += (nn_scores_get_G_stack (bi,
+                                                                      (char)row,
                                                                        bjm1, bip1,
                                                                        this->scores)
                                                 * prob);
@@ -422,7 +425,8 @@ scmf_rna_opt_data_transform_row_2_base (const unsigned long row,
 
    cont = (Scmf_Rna_Opt_data*) data;
 
-   rna_set_sequence_base (alphabet_no_2_base(row, cont->sigma), col, cont->rna);
+   rna_set_sequence_base (alphabet_no_2_base((char)row, cont->sigma),
+                          col, cont->rna);
 
    return 0;
 }
@@ -609,7 +613,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    if ((interaction != NOT_PAIRED) && (col < interaction))
    {  /* we are at the "i part" of a base pair */
       /* 5' - ii+1
-         jj-1 - 3' */
+              jj-1 - 3' */
       /* decide if we got two pairs or one and a mismatch */
       /* All this does not work properly for immedeate base pairs: ()!!! */
       if (rna_base_pairs_with ((col + 1), cedat->rna) == interaction - 1)
@@ -617,14 +621,14 @@ scmf_rna_opt_calc_nn (const unsigned long row,
          /* for all allowed base pairs */
          for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
          {
-            bj = cedat->bp_allowed[row][l] - 1;
+            bj = (char)(cedat->bp_allowed[row][l] - 1);
             
             /* pair each pair with all allowed pairs */
             for (k = 0; k < allowed_bp; k++)
             {
                nn_scores_get_allowed_basepair (k, &bip1, &bjm1, cedat->scores);
    
-               G_stack_score = nn_scores_get_G_stack (row, bj, bjm1, bip1,
+               G_stack_score = nn_scores_get_G_stack ((char)row, bj, bjm1, bip1,
                                                       cedat->scores);
   
                update_prob = 
@@ -641,13 +645,14 @@ scmf_rna_opt_calc_nn (const unsigned long row,
          /* for all allowed base pairs */
          for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
          {
-            bj = cedat->bp_allowed[row][l] - 1;            
+            bj = (char)(cedat->bp_allowed[row][l] - 1);            
             
             for (k = 0; k < alpha_size; k++)
             {
                for (m = 0; m < alpha_size; m++)
                {
-                  G_stack_score = nn_scores_get_G_mm_stack (row, bj, m, k,
+                  G_stack_score = nn_scores_get_G_mm_stack ((char)row, bj,
+                                                            (char)m, (char)k,
                                                             cedat->scores);
                   update_prob =
                      seqmatrix_get_probability (bj, interaction, sm)
@@ -669,7 +674,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
          /* for all allowed base pairs */
          for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
          {
-            bi = cedat->bp_allowed[row][l] - 1; 
+            bi = (char)(cedat->bp_allowed[row][l] - 1); 
             
             /* pair each pair with all allowed pairs */
             for (k = 0; k < allowed_bp; k++)
@@ -677,7 +682,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
                                                cedat->scores);
                
-               G_stack_score = nn_scores_get_G_stack (bi, row, bjm1,bip1,
+               G_stack_score = nn_scores_get_G_stack (bi, (char)row, bjm1,bip1,
                                                       cedat->scores);
                
                update_prob = 
@@ -694,14 +699,15 @@ scmf_rna_opt_calc_nn (const unsigned long row,
          /* for all allowed base pairs */
          for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
          {
-            bi = cedat->bp_allowed[row][l] - 1; 
+            bi = (char)(cedat->bp_allowed[row][l] - 1); 
             
             /* pair with each possible pair */
             for (k = 0; k < alpha_size; k++)
             {
                for (m = 0; m < alpha_size; m++)
                {
-                  G_stack_score = nn_scores_get_G_mm_stack (bi, row,  m, k,
+                  G_stack_score = nn_scores_get_G_mm_stack (bi, (char)row,
+                                                            (char)m, (char)k,
                                                             cedat->scores);
                   
                   update_prob =
@@ -745,14 +751,14 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    {
       for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
       {
-         bj = cedat->bp_allowed[row][l] - 1;
+         bj = (char)(cedat->bp_allowed[row][l] - 1);
          
          for (k = 0; k < allowed_bp; k++)
          {
             nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
                                             cedat->scores);
             
-            G_stack_score = nn_scores_get_G_stack (row, bj, bjm1, bip1,
+            G_stack_score = nn_scores_get_G_stack ((char)row, bj, bjm1, bip1,
                                                    cedat->scores);
             update_prob =
                seqmatrix_get_probability (bj, interaction, sm)
@@ -768,14 +774,14 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    {
       for (l = 0; cedat->bp_allowed[row][l] != 0; l++)
       {
-         bi = cedat->bp_allowed[row][l] - 1;
+         bi = (char)(cedat->bp_allowed[row][l] - 1);
          
          for (k = 0; k < allowed_bp; k++)
          {
             nn_scores_get_allowed_basepair (k, &bip1, &bjm1,
                                             cedat->scores);
             
-            G_stack_score = nn_scores_get_G_stack (bi, row, bjm1,bip1,
+            G_stack_score = nn_scores_get_G_stack (bi, (char) row, bjm1,bip1,
                                                    cedat->scores);
             
             update_prob =

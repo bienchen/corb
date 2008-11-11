@@ -19,6 +19,7 @@
 
 
 
+
 # This Makefile creates the applications library. This is, the set of
 # applications provided by CoRb. Therefore the library contains the
 # main-function pendants of all the tools. See README for more information.
@@ -30,17 +31,21 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 
 noinst_LIBRARIES = libcrbapps.a
 
-libcrbapps_a_SOURCES = \
-	brot.c         \
-	brot_cmdline.c \
-	fold.c         \
-        fold_cmdline.c
+libcrbapps_a_SOURCES =  \
+	brot.c          \
+	brot_cmdline.c  \
+	fold.c          \
+        fold_cmdline.c  \
+        er2de.c         \
+        er2de_cmdline.c
 
-noinst_HEADERS =      \
-	brot_cmdline.h\
+noinst_HEADERS =        \
+	brot_cmdline.h  \
 	brot.h \
-	fold_cmdline.h\
-        fold.h
+	fold_cmdline.h  \
+        fold.h          \
+        er2de.h         \
+        er2de_cmdline.h
 
 
 # Do we need testing here?

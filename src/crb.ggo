@@ -21,8 +21,9 @@ purpose     "RNA analysis"
 usage       "corb [OPTIONS]... APPLICATION [OPTIONS]..."
 description "Collection of RNAanalysis Binaries
              available tools:
-             brot: Basic RNA Optimisation Tool
-             fold: Prediction of RNA Secondary Structures"
+             brot:  Basic RNA Optimisation Tool
+             fold:  Prediction of RNA Secondary Structures
+             er2de: Evaluating RNA 2D energy"
 
 # arguments to gengetopt
 args "--func-name=crb_cmdline_parser --file-name=crb_cmdline --include-getopt \

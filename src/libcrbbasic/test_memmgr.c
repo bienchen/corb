@@ -51,14 +51,22 @@ int main(void)
    char** string;
    unsigned long i;
    unsigned long sample = 100000;
+   unsigned long width = 10;
+   size_t dim[] = {100000, 10};
+   char test_text[] = "Hello World";
 
    /* test allocating */
    string = XMALLOC (sample * sizeof (char*));
+   if (string == NULL)
+   {
+      mfprintf (stderr, "Failed to use xmalloc()\n");
+      return EXIT_FAILURE;
+   }
 
    for (i=0; i < sample; i++)
    {
-      string[i] = XMALLOC (10 * sizeof (char));
-      if (string == NULL)
+      string[i] = XMALLOC (width * sizeof (char));
+      if (string[i] == NULL)
       {
          mfprintf (stderr, "Failed to use xmalloc()\n");
          return EXIT_FAILURE;
@@ -71,6 +79,69 @@ int main(void)
    }
 
    XFREE (string);
+
+   /* check 2D allocation */
+   string = (char**) XMALLOC_2D(sample, width, sizeof (char));
+   if (string == NULL)
+   {
+      mfprintf (stderr, "Failed to use xmalloc_2d()\n");
+      return EXIT_FAILURE;
+   }
+
+   for (i = 0; i < sample; i++)
+   {
+      string[i][0] = 'H';
+   }
+
+   XFREE_2D ((void**) string);
+
+   /* doing 2D allocation with rnd function */
+   string = (char**) XMALLOC_RND (sizeof (char),
+                                  sizeof (dim)/sizeof (*dim),
+                                  dim);
+   if (string == NULL)
+   {
+      mfprintf (stderr, "Failed to use xmalloc_rnd()\n");
+      return EXIT_FAILURE;
+   }
+
+   for (i = 0; i < sample; i++)
+   {
+      string[i][0] = 'H';
+   }
+
+   XFREE_ND (sizeof (dim)/sizeof (*dim), (void**) string);
+
+   /* doing 2D allocation using nd function */
+   string = (char**) XMALLOC_ND (sizeof (char), 2, dim[0], dim[1]);
+   if (string == NULL)
+   {
+      mfprintf (stderr, "Failed to use xmalloc_nd()\n");
+      return EXIT_FAILURE;
+   }
+
+   for (i = 0; i < sample; i++)
+   {
+      string[i][0] = 'H';
+   }
+
+   XFREE_ND (2, (void**) string);
+
+   /* trying to allocate an 2D array to store text (char*) */
+   string = (char**) XMALLOC_ND (sizeof (char*), 1, dim[0]);
+   if (string == NULL)
+   {
+      mfprintf (stderr, "Failed to use xmalloc_nd()\n");
+      return EXIT_FAILURE;
+   }
+
+   for (i = 0; i < sample; i++)
+   {
+      string[i] = test_text;
+   }
+
+   /* we may only free the pointer we allocated! */
+   XFREE ((void*) string);
 
    FREE_MEMORY_MANAGER;
 

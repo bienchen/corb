@@ -24,7 +24,7 @@ args "--string-parser --func-name=brot_cmdline_parser --file-name=brot_cmdline -
 option "scoring" c "Choose a different scoring scheme"
        details="Use a certain energy model to score the RNA sequence. \
                 Possible NAMEs are `NN' and `nussinov'. `nussinov' uses \
-                a Nussinov modle, only counting Hbonds. `NN' invokes the \
+                a Nussinov model, only counting Hbonds. `NN' invokes the \
                 Nearest Neighbour model."
        values="NN","nussinov"
        enum

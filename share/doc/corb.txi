@@ -1,6 +1,6 @@
 @c -*-texinfo-*-
-@c This file is part of `CoRB -- A Developers Handbook` and
-@c `CoRB -- A Users Manual`.
+@c This file is part of `CoRB --- A Developers Handbook` and
+@c `CoRB --- A Users Manual`.
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
@@ -20,7 +20,7 @@
 
 @c title of the CoRB development handbook
 @macro crbtitledvl{}
-@corb{} -- A Developers Handbook
+@corb{} --- A Developers Handbook
 @end macro
 
 @c copyright line for the development handbook
@@ -31,7 +31,7 @@ This manual is the @corb{} Developement Handbook (version @value{VERSION},
 
 @c title of the CoRB user manual
 @macro crbtitleuse{}
-@corb{} -- A Users Manual
+@corb{} --- A Users Manual
 @end macro
 
 @c copyright line for the user manual

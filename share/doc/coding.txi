@@ -1,0 +1,14 @@
+@c -*-texinfo-*-
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+@cindex Coding rules
+@cindex Writing code
+@cindex Rules for code
+@cindex Notes on code
+@cindex Coding style
+@cindex Style of code
+start with short desc whats in this chapter desc. single sections? or in menu?
+section for general stuff?
+section language specific
+subsection c, perl, m4...

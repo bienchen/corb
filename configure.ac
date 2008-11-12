@@ -1,4 +1,4 @@
-# Last modified: 2008-11-12.11
+# Last modified: 2008-11-12.15
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -91,7 +91,7 @@ AC_REPLACE_FUNCS([memset])
 AC_REPLACE_FUNCS([vprintf])
 AC_REPLACE_FUNCS([vfprintf])
 AC_REPLACE_FUNCS([strerror])
-
+AC_REPLACE_FUNCS([strtoul])
 
 CRB_ARG_ENABLE_CFLAGS_WARNINGS_EVAL
 

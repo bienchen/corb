@@ -121,7 +121,7 @@ struct SecStruct {
 SecStruct*
 secstruct_new (const char* file, const int line)
 {
-   SecStruct* this = XOBJ_MALLOC(sizeof (SecStruct), file, line);
+   SecStruct* this = XOBJ_MALLOC(sizeof (*this), file, line);
    
    if (this != NULL)
    {
@@ -1264,7 +1264,7 @@ secstruct_fprintf_stacks (FILE* stream, const SecStruct* this)
    pline_width += 1;            /* + \n */
 
    /* allocate buffer */
-   string = (char*) XMALLOC (sizeof (char)
+   string = (char*) XMALLOC (sizeof (*string)
                             * ((pline_width * ARRAY_CURRENT (this->stack))+ 1));
    if (string == NULL)
    {
@@ -1368,7 +1368,7 @@ secstruct_fprintf_hairpins (FILE* stream, const SecStruct* this)
    pline_width += 1;            /* + \n */
 
    /* allocate buffer */
-   string = (char*) XMALLOC (sizeof (char) * ((pline_width *
+   string = (char*) XMALLOC (sizeof (*string) * ((pline_width *
                                       ARRAY_CURRENT (this->hairpin_loop)) + 1));
    if (string == NULL)
    {
@@ -1482,7 +1482,7 @@ secstruct_fprintf_bulges (FILE* stream, const SecStruct* this)
    pline_width += 1;            /* + \n */
 
    /* allocate buffer */
-   string = (char*) XMALLOC (sizeof (char) * ((pline_width *
+   string = (char*) XMALLOC (sizeof (*string) * ((pline_width *
                                         ARRAY_CURRENT (this->bulge_loop)) + 1));
    if (string == NULL)
    {
@@ -1606,7 +1606,7 @@ secstruct_fprintf_internals (FILE* stream, const SecStruct* this)
    pline_width += 1;            /* + \n */
 
    /* allocate buffer */
-   string = (char*) XMALLOC (sizeof (char) * ((pline_width *
+   string = (char*) XMALLOC (sizeof (*string) * ((pline_width *
                                      ARRAY_CURRENT (this->internal_loop)) + 1));
    if (string == NULL)
    {
@@ -1979,7 +1979,7 @@ secstruct_fprintf_external (FILE* stream, const SecStruct* this)
 
    loop_storage = printsize_of_multiloop (&this->ext_loop);
 
-   string = (char*) XMALLOC (sizeof (char) * (loop_storage + 1));
+   string = (char*) XMALLOC (sizeof (*string) * (loop_storage + 1));
    if (string == NULL)
    {
       return;
@@ -2018,7 +2018,7 @@ secstruct_fprintf_multiloops (FILE* stream, const SecStruct* this)
    /* add storage for "\d+:\n" */
    storage += ((preci + 2) * ARRAY_CURRENT (this->multi_loop));
 
-   string = (char*) XMALLOC (sizeof (char) * (storage + 1));
+   string = (char*) XMALLOC (sizeof (*string) * (storage + 1));
    if (string == NULL)
    {
       return;

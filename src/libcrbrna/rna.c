@@ -110,7 +110,7 @@ struct Rna {
 Rna*
 rna_new (const char* file, const int line)
 {
-   Rna* this = XOBJ_MALLOC(sizeof (Rna), file, line);
+   Rna* this = XOBJ_MALLOC(sizeof (*this), file, line);
    
    if (this != NULL)
    {

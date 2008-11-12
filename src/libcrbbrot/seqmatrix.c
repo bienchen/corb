@@ -103,7 +103,7 @@ seqmatrix_new (const char* file, const int line)
    unsigned long i;
 
    /* allocate 1 object */
-   SeqMatrix* sm = XOBJ_MALLOC(sizeof (SeqMatrix), file, line);
+   SeqMatrix* sm = XOBJ_MALLOC(sizeof (*sm), file, line);
 
    if (sm != NULL)
    {
@@ -308,7 +308,7 @@ seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
       }
       else
       {
-         /* mfprintf (stderr, "\n\n\nIN %lu\n\n\n", i); */
+         /*mfprintf (stdout, "\n\n\nIN %lu\n\n\n", i);*/
          error = sm->fixed_site_hook (sco, i, sm);
       }
 
@@ -399,7 +399,8 @@ seqmatrix_init (const unsigned long rows,
    sm->cols = width;
 
    sm->matrix[F_Mtrx] = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
-                                                  sizeof (float), file, line);
+                                                  sizeof (**sm->matrix),
+                                                  file, line);
    if (sm->matrix[F_Mtrx] == NULL)
    {
       return ERR_SM_ALLOC;
@@ -407,7 +408,8 @@ seqmatrix_init (const unsigned long rows,
    sm->curr_matrix = F_Mtrx;
 
    sm->matrix[S_Mtrx] = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
-                                                  sizeof (float), file, line);
+                                                  sizeof (**sm->matrix),
+                                                  file, line);
    if (sm->matrix[S_Mtrx] == NULL)
    {
       return ERR_SM_ALLOC;
@@ -428,10 +430,10 @@ seqmatrix_init (const unsigned long rows,
       {
          memcpy (sm->matrix[F_Mtrx][i],
                  sm->matrix[F_Mtrx][i - 1],
-                 sizeof (float) * width);/* even distri */
+                 sizeof (**sm->matrix) * width);/* even distri */
          memcpy (sm->matrix[S_Mtrx][i],
                  sm->matrix[S_Mtrx][i - 1],
-                 sizeof (float) * width);
+                 sizeof (**sm->matrix) * width);
       }
 
       /*srand(997654329);
@@ -903,7 +905,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    line_width += 1;              /* + '\n' */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * (((line_width) * sm->rows) + 1));
+   string = XMALLOC (sizeof (*string) * (((line_width) * sm->rows) + 1));
    string_start = string;
 
    /* write matrix */

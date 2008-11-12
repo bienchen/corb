@@ -67,8 +67,7 @@ Scmf_Rna_Opt_data*
 scmf_rna_opt_data_new (const char* file, const int line)
 {
    /* allocate 1 object */
-   Scmf_Rna_Opt_data* cedat = XOBJ_MALLOC(sizeof (Scmf_Rna_Opt_data),
-                                          file, line);
+   Scmf_Rna_Opt_data* cedat = XOBJ_MALLOC(sizeof (*cedat), file, line);
 
    if (cedat != NULL)
    {
@@ -149,10 +148,10 @@ scmf_rna_opt_data_new_init (const char* structure,
 
       this->en_neg2 = (float**) XMALLOC_2D (alphabet_size (this->sigma),
                                            alphabet_size (this->sigma),
-                                             sizeof (float));
+                                            sizeof (**(this->en_neg2)));
       this->en_neg_35 = (float**) XMALLOC_2D (alphabet_size (this->sigma),
                                            alphabet_size (this->sigma),
-                                             sizeof (float));
+                                              sizeof (**(this->en_neg_35)));
 
       error = RNA_INIT_PAIRLIST_VIENNA(structure, seqlen, this->rna);
    }
@@ -222,7 +221,6 @@ scmf_rna_opt_data_new_init (const char* structure,
 
 /*    return 0; */
 /* } */
-
 int
 scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
                                                  SeqMatrix* sm)
@@ -242,8 +240,8 @@ scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
    allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    /*i = 0;*/
 
-   memset(this->en_neg2[0], 0, (alpha * alpha) * sizeof (*(this->en_neg2)));
-   memset(this->en_neg_35[0], 0, (alpha * alpha) * sizeof (*(this->en_neg_35)));
+   memset(this->en_neg2[0], 0, (alpha * alpha) * sizeof (**(this->en_neg2)));
+   memset(this->en_neg_35[0], 0, (alpha * alpha) * sizeof(**(this->en_neg_35)));
    memset(this->en_neg, 0, alpha * sizeof (*(this->en_neg)));
 
    /*for (k = 0; k < alpha; k++)
@@ -278,6 +276,7 @@ scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
                                                                  bjm1, bip1,
                                                                  this->scores)
                                           * prob);
+
                this->en_neg[k] += (nn_scores_get_G_stack (k, bj,
                                                                  bjm1, bip1,
                                                                  this->scores)
@@ -630,7 +629,6 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    
                G_stack_score = nn_scores_get_G_stack ((char)row, bj, bjm1, bip1,
                                                       cedat->scores);
-  
                update_prob = 
                   seqmatrix_get_probability (bj, interaction, sm)
                   * seqmatrix_get_probability (bip1, (col + 1), sm)
@@ -684,7 +682,6 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                
                G_stack_score = nn_scores_get_G_stack (bi, (char)row, bjm1,bip1,
                                                       cedat->scores);
-               
                update_prob = 
                   seqmatrix_get_probability (bi, interaction, sm)
                   * seqmatrix_get_probability (bip1, (interaction + 1), sm)
@@ -760,6 +757,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
             
             G_stack_score = nn_scores_get_G_stack ((char)row, bj, bjm1, bip1,
                                                    cedat->scores);
+
             update_prob =
                seqmatrix_get_probability (bj, interaction, sm)
                * seqmatrix_get_probability (bip1, (col + 1), sm)
@@ -783,7 +781,7 @@ scmf_rna_opt_calc_nn (const unsigned long row,
             
             G_stack_score = nn_scores_get_G_stack (bi, (char) row, bjm1,bip1,
                                                    cedat->scores);
-            
+
             update_prob =
                seqmatrix_get_probability (bi, interaction, sm)
                * seqmatrix_get_probability (bip1, (interaction + 1), sm)
@@ -794,7 +792,6 @@ scmf_rna_opt_calc_nn (const unsigned long row,
       }
    }   
    /* SB: 08-09-12 */
-   
    scmf_rna_opt_iterate_neg_design_term (row, col, cedat, sm);
 
    /* SB END - 08-09-10 */

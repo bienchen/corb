@@ -70,7 +70,7 @@ ArgvParser*
 argvparser_new (const char* file, const int line)
 {
    /* allocate 1 parser object */
-   ArgvParser* obj = XOBJ_MALLOC(sizeof (ArgvParser), file, line);
+   ArgvParser* obj = XOBJ_MALLOC(sizeof (*obj), file, line);
 
    if (obj != NULL)
    {
@@ -135,7 +135,8 @@ int argvparser_set_maintainername (char* name, ArgvParser* argvparser)
       /* regardless of what is the content of mt_name, we just realloc it to
          the right size. On mt_name == NULL, realloc should act like malloc() */
       argvparser->mt_name = XREALLOC (argvparser->mt_name,
-                                      sizeof (char) * (strlen (name) + 1));
+                                        sizeof (*argvparser->mt_name) 
+                                      * (strlen (name) + 1));
       if (argvparser->mt_name == NULL)
       {
          return ERR_AP_ALLOC;

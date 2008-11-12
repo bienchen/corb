@@ -77,7 +77,7 @@ alphabet_new (const char* file, const int line)
    unsigned char i;
 
    /* allocate 1 object */
-   Alphabet* this = XOBJ_MALLOC(sizeof (Alphabet), file, line);
+   Alphabet* this = XOBJ_MALLOC(sizeof (*this), file, line);
    
    if (this != NULL)
    {
@@ -304,7 +304,7 @@ alphabet_no_2_base (const char base,
 float**
 create_scoring_matrix (const Alphabet* sigma)
 {
-   float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (float));
+   float** matrix = (float**) XMALLOC_2D (4, 4, sizeof (**matrix));
 
    if (matrix == NULL)
    {

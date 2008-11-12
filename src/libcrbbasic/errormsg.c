@@ -142,7 +142,7 @@ set_progname (const char* prog_name)
    }
 
    len = strlen (prog_name) + 1; /* + 1 for trailing '\0' */
-   __error_info.prog_name = XMALLOC (len * sizeof (char));
+   __error_info.prog_name = XMALLOC (len * sizeof (*__error_info.prog_name));
    strncpy (__error_info.prog_name, prog_name, len);
 
 #ifdef HAVE_PTHREAD
@@ -201,7 +201,8 @@ add_2_progname (const char* string)
    string_len = strlen (string);
    pname_len  = strlen (__error_info.prog_name);
    /* check if __error_info.program_name + string is to large */
-   if ((SIZE_MAX - (string_len * sizeof (char))) < (pname_len * sizeof (char)))
+   if (  (SIZE_MAX - (string_len * sizeof (*string))) 
+       < (pname_len * sizeof (*__error_info.prog_name)))
    {
       THROW_ERROR_MSG ("Program name \"%s\" and string \"%s\" to be added are "
                        "to long to store.", get_progname(), string);
@@ -212,7 +213,8 @@ add_2_progname (const char* string)
       return ERR_PS_TO_LONG;
    }
    __error_info.prog_name = XREALLOC (__error_info.prog_name,
-                                     (pname_len+string_len+1) * sizeof (char));
+                                     (pname_len+string_len+1)
+                                      * sizeof (*__error_info.prog_name));
 
    /* concatenate */
    strncat (__error_info.prog_name, string, string_len);
@@ -243,7 +245,7 @@ add_name_2_progname (const char* tool_name)
       return ERR_NAME_EMPTY;
    }
 
-   tmp = XMALLOC (sizeof (char) * (strlen (tool_name) + 2));
+   tmp = XMALLOC (sizeof (*tmp) * (strlen (tool_name) + 2));
    tmp[0] = ' ';
    tmp[1] = '\0';
    strcat (tmp, tool_name);

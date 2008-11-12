@@ -217,7 +217,7 @@ mblist_add_block (const unsigned long hashkey,
       __memman.addr_tbl[hashkey].size += 100;
       __memman.addr_tbl[hashkey].lst = xrealloc(__memman.addr_tbl[hashkey].lst,
                                                 __memman.addr_tbl[hashkey].size
-                                                * sizeof (MemBlk),
+                                     * sizeof (*__memman.addr_tbl[hashkey].lst),
                                                 __FILE__,
                                                 __LINE__);
       if (__memman.addr_tbl[hashkey].lst == NULL)
@@ -281,7 +281,8 @@ mm_sys_add_block (const void* ptr,
    /* do we have to allocate the hash table first? */
    if (__memman.addr_tbl == NULL)
    {
-      __memman.addr_tbl = xmalloc (__memman.tbl_size * sizeof (MemBlkLst),
+      __memman.addr_tbl = xmalloc (  __memman.tbl_size
+                                   * sizeof (*__memman.addr_tbl),
                                    __FILE__,
                                    __LINE__);
       if (__memman.addr_tbl == NULL)

@@ -204,31 +204,34 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       /* we need 1 byte for each possible pair + 1byte for the NULL byte for
          each letter in the alphabet */
       bp_allowed[0] = XCALLOC (allowed_bp + alpha_size,
-                               sizeof (*(bp_allowed[0])));
+                               sizeof (**(bp_allowed)));
       if (bp_allowed[0] == NULL)
       {
          error = 1;
       }
    }
 
-   i = 0;
-   k = 0;
-   while ((!error) && (i < alpha_size))
+   if (!error)
    {
-      bp_allowed[i] = bp_allowed[0] + (k * sizeof (char));
-
-      for (j = 0; j < allowed_bp; j++)
+      i = 0;
+      k = 0;
+      while (i < alpha_size)
       {
-         nn_scores_get_allowed_basepair (j, &bi, &bj, scores);
-         if (i == (unsigned) bi)
+         bp_allowed[i] = bp_allowed[0] + (k * sizeof (**(bp_allowed)));
+         
+         for (j = 0; j < allowed_bp; j++)
          {
-            bp_allowed[0][k] = bj + 1;
-            k++;
+            nn_scores_get_allowed_basepair (j, &bi, &bj, scores);
+            if (i == (unsigned) bi)
+            {
+               bp_allowed[0][k] = bj + 1;
+               k++;
+            }
          }
+         
+         k++;
+         i++;
       }
-
-      k++;
-      i++;
    }
 
    /* simulate */
@@ -267,7 +270,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       seqmatrix_set_fixed_site_hook (scmf_rna_opt_data_update_neg_design_energy,
                                      sm);
 
-      /*seqmatrix_print_2_stdout (2, sm); */
+      /*seqmatrix_print_2_stdout (2, sm);*/
       if (brot_args->steps_arg > 0)
       {
          c_rate = logf (brot_args->temp_arg / 1.0f);
@@ -290,6 +293,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    nn_scores_delete (scores);
    scmf_rna_opt_data_set_scores (NULL, data);
    scmf_rna_opt_data_set_bp_allowed (NULL, data);
+
    XFREE (bp_allowed[0]);
    XFREE (bp_allowed);
 

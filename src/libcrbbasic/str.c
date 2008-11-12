@@ -79,7 +79,7 @@ Str*
 str_new (const char* file, const int line)
 {
    /* allocate 1 object */
-   Str* obj = XOBJ_MALLOC(sizeof (Str), file, line);
+   Str* obj = XOBJ_MALLOC(sizeof (*obj), file, line);
    
    if (obj != NULL)
    {
@@ -112,7 +112,7 @@ istr_new_init (const char* cstr, size_t size, const char* file, const int line)
    if (this != NULL)
    {
       this->size = size;
-      this->data = XOBJ_MALLOC(sizeof (char) * this->size, file, line);
+      this->data = XOBJ_MALLOC(sizeof (*this->data) * this->size, file, line);
       if (this->data != NULL)
       {
          this->len = this->size - 1;
@@ -173,11 +173,11 @@ str_new_char (const char c,
    if (this != NULL)
    {
       this->size = l + 1;
-      this->data = XOBJ_MALLOC(this->size * sizeof (char), file, line);
+      this->data = XOBJ_MALLOC(this->size * sizeof (*this->data), file, line);
       if (this->data != NULL)
       {
          this->len = this->size - 1;
-         memset (this->data, c, sizeof (*(this->data)) * this->len);
+         memset (this->data, c, sizeof (*this->data) * this->len);
          this->data[this->len] = '\0';
       }
       else
@@ -250,7 +250,7 @@ istr_cpy_cstr (Str* dest, const char* cstr, const size_t len)
    if (dest->size <= len)
    {
       dest->size = len + 1;
-      dest->data = XREALLOC (dest->data, (sizeof (char) * dest->size));
+      dest->data = XREALLOC (dest->data, (sizeof (*dest->data) * dest->size));
 
       if (dest->data == NULL)
       {
@@ -363,7 +363,7 @@ istr_append (Str* dest, const char* cstr, const unsigned long len)
    if (dest->size < con_size)
    {
       dest->size = con_size;
-      dest->data = XREALLOC (dest->data, (sizeof (char) * dest->size));
+      dest->data = XREALLOC (dest->data, (sizeof (*dest->data) * dest->size));
       
       if (dest->data == NULL)
       {
@@ -557,7 +557,7 @@ str_resize (Str* str, const size_t newsize, const char padchar)
 
    /* resize */
    str->size = newsize;
-   str->data = XREALLOC (str->data, (sizeof (char) * str->size));
+   str->data = XREALLOC (str->data, (sizeof (*str->data) * str->size));
       
    if (str->data == NULL)
    {

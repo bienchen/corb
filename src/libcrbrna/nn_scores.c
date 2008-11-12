@@ -119,7 +119,7 @@ NN_scores*
 nn_scores_new (const char* file, const int line)
 {
    /* allocate 1 object */
-   NN_scores* this = XOBJ_MALLOC(sizeof (NN_scores), file, line);
+   NN_scores* this = XOBJ_MALLOC(sizeof (*this), file, line);
    
    if (this != NULL)
    {
@@ -166,7 +166,7 @@ allocate_init_bp_allowed (char a, char u, char g, char c,
 {
    this->bp_allowed_size = NO_ALLOWED_BP;
    this->bp_allowed = (char**) XOBJ_MALLOC_2D (this->bp_allowed_size, 2,
-                                               sizeof (char),
+                                               sizeof (**this->bp_allowed),
                                                file, line);
    if (this->bp_allowed == NULL)
    {
@@ -190,7 +190,7 @@ allocate_init_bp_idx (unsigned long size,
 {
    unsigned long i;
 
-   this->bp_idx = (char**) XOBJ_MALLOC_2D (size, size, sizeof (char),
+   this->bp_idx = (char**) XOBJ_MALLOC_2D (size, size, sizeof (**this->bp_idx),
                                            file, line);
    if (this->bp_idx == NULL)
    {
@@ -239,7 +239,7 @@ allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
    /* allocate matrix */
    this->G_stack = (long**) XOBJ_MALLOC_2D (this->G_stack_size,
                                             this->G_stack_size,
-                                            sizeof (long),
+                                            sizeof (**this->G_stack),
                                             file, line);
    this->G_stack_size *= this->G_stack_size;
    
@@ -484,7 +484,7 @@ allocate_init_G_mm_stack_size (char a, char u, char g, char c,
    
    this->G_mm_stack = (long**) XOBJ_MALLOC_2D (this->bp_allowed_size,
                                                this->G_mm_stack_size,
-                                               sizeof (long),
+                                               sizeof (**this->G_mm_stack),
                                                file, line);
    this->G_mm_stack_size *= this->bp_allowed_size;
 
@@ -2014,7 +2014,8 @@ allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
                                      const char* file, const int line)
 {
    this->non_gc_penalty_for_bp = (int*) XOBJ_MALLOC (
-                                        sizeof (int) * this->bp_allowed_size,
+                                        sizeof (*this->non_gc_penalty_for_bp)
+                                        * this->bp_allowed_size,
                                         file, line);
    if (this->non_gc_penalty_for_bp == NULL)
    {
@@ -13856,7 +13857,8 @@ allocate_init_dangle5 (const int a, const int u, const int g, const int c,
                        const char* file, const int line)
 {
    this->G_dangle5 = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
-                                             sizeof (int), file, line);
+                                             sizeof (**this->G_dangle5),
+                                             file, line);
 
    this->G_dangle5_size = this->bp_allowed_size * size;
 
@@ -13911,7 +13913,8 @@ allocate_init_dangle3 (const int a, const int u, const int g, const int c,
                        const char* file, const int line)
 {
    this->G_dangle3 = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
-                                             sizeof (int), file, line);
+                                             sizeof (**this->G_dangle3),
+                                             file, line);
 
    this->G_dangle3_size = this->bp_allowed_size * size;
 
@@ -14070,16 +14073,16 @@ allocate_init_tetra_loop (const char a,
 
    this->tetra_loop_size = 30;
    this->tetra_loop = (char**) XOBJ_MALLOC_2D (this->tetra_loop_size, D_TL,
-                                               sizeof (char),
+                                               sizeof (**this->tetra_loop),
                                                file, line);
    if (this->tetra_loop == NULL)
    {
       return 1;
    }
 
-   this->G_tetra_loop = (int*) XOBJ_MALLOC (
-                                           sizeof (int) * this->tetra_loop_size,
-                                           file, line);
+   this->G_tetra_loop = (int*) XOBJ_MALLOC (sizeof (*this->G_tetra_loop)
+                                            * this->tetra_loop_size,
+                                            file, line);
 
    /* GGGGAC -300 */
    l = this->tetra_loop[0];
@@ -14890,7 +14893,7 @@ nn_scores_fprintf_bp_allowed (FILE* stream,
    assert (sigma != NULL);
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * ((scheme->bp_allowed_size * 3) + 1));
+   string = XMALLOC (sizeof (*string) * ((scheme->bp_allowed_size * 3) + 1));
    if (string == NULL)
    {
       return;
@@ -14943,7 +14946,7 @@ nn_scores_fprintf_bp_idx (FILE* stream,
    pline_width *= alpha_size;
    pline_width += 2;            /* N\n */
 
-   string = XMALLOC (sizeof (char) *
+   string = XMALLOC (sizeof (*string) *
                      ((pline_width * (alpha_size + 1)) + 1));
    if (string == NULL)
    {
@@ -15051,7 +15054,7 @@ nn_scores_fprintf_G_stack (FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * ((pline_width * (matrix_edge + 1)) + 1));
+   string = XMALLOC (sizeof (*string) * ((pline_width * (matrix_edge+ 1)) + 1));
    if (string == NULL)
    {
       return;
@@ -15183,7 +15186,7 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * ((pline_width * (matrix_rows + 1)) + 1));
+   string = XMALLOC (sizeof (*string) * ((pline_width * (matrix_rows+ 1)) + 1));
    if (string == NULL)
    {
       return;
@@ -15309,7 +15312,7 @@ nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
    /* allocate memory for the string and the undef symbol
       therefore we add "rprec + 1" which is the 2 (for null terminating the
       strings) */
-   string = XMALLOC (sizeof (char) *
+   string = XMALLOC (sizeof (*string) *
                      (pline_width * scheme->G_hairpin_loop_size) + 2 + rprec);
    if (string == NULL)
    {
@@ -15432,7 +15435,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* create header line for each table */
-   string = (char*) XMALLOC (sizeof (char) * pline_width);
+   string = (char*) XMALLOC (sizeof (*string) * pline_width);
    if (string == NULL)
    {
       return;
@@ -15464,7 +15467,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
    pline_width *= y;
    pline_width += strlen (header); /* table header */
    pline_width += 4;               /* NN:\n */
-   string = (char*) XMALLOC (sizeof (char) * ((pline_width * z) + 1));
+   string = (char*) XMALLOC (sizeof (*string) * ((pline_width * z) + 1));
    if (string == NULL)
    {
       return;
@@ -15562,7 +15565,7 @@ nn_scores_fprintf_G_bulge_loop (FILE* stream, const NN_scores* scheme)
    /* allocate memory for the string and the undef symbol
       therefore we add "rprec + 1" which is the 2 (for null terminating the
       strings) */
-   string = XMALLOC (sizeof (char) *
+   string = XMALLOC (sizeof (*string) *
                      (pline_width * scheme->G_bulge_loop_size) + 2 + rprec);
    if (string == NULL)
    {
@@ -15669,7 +15672,7 @@ nn_scores_fprintf_non_gc_penalty_for_bp(FILE* stream,
    pline_width += 4;            /*NN:\s*/
    pline_width += 1;            /* + \n */
 
-   string = (char*) XMALLOC (sizeof (char)
+   string = (char*) XMALLOC (sizeof (*string)
                              * ((pline_width * scheme->bp_allowed_size) + 1));
    if (string == NULL)
    {
@@ -15755,7 +15758,7 @@ nn_scores_fprintf_tetra_loop(FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* allocate buffer */
-   string = (char*) XMALLOC (sizeof (char)
+   string = (char*) XMALLOC (sizeof (*string)
                              * ((pline_width * scheme->tetra_loop_size) + 1));
    if (string == NULL)
    {
@@ -15861,7 +15864,7 @@ nn_scores_fprintf_G_dangle5(FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * ((pline_width * (rows + 1)) + 1));
+   string = XMALLOC (sizeof (*string) * ((pline_width * (rows + 1)) + 1));
    if (string == NULL)
    {
       return;
@@ -15976,7 +15979,7 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * ((pline_width * (rows + 1)) + 1));
+   string = XMALLOC (sizeof (*string) * ((pline_width * (rows + 1)) + 1));
    if (string == NULL)
    {
       return;
@@ -16126,7 +16129,7 @@ nn_scores_fprintf_G_internal_loop (FILE* stream, const NN_scores* scheme)
    /* allocate memory for the string and the undef symbol
       therefore we add "rprec + 1" which is the 2 (for null terminating the
       strings) */
-   string = XMALLOC (sizeof (char) *
+   string = XMALLOC (sizeof (*string) *
                      (pline_width * scheme->G_internal_loop_size) + 2 + rprec);
    if (string == NULL)
    {
@@ -16226,7 +16229,7 @@ nn_scores_fprintf_G_int11 (FILE* stream,
    hsize = (asize * rprec) + 6 + (3 * asize); 
    store_size += (hsize * no);
 
-   header = XMALLOC (sizeof (char) * (hsize + 1));
+   header = XMALLOC (sizeof (*header) * (hsize + 1));
    if (header == NULL)
    {
       return;
@@ -16253,7 +16256,7 @@ nn_scores_fprintf_G_int11 (FILE* stream,
    store_size += (rprec * no);
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * (store_size + 1));
+   string = XMALLOC (sizeof (*string) * (store_size + 1));
    if (string == NULL)
    {
       return;
@@ -16361,7 +16364,7 @@ nn_scores_fprintf_G_int21 (FILE* stream,
    hsize = (asize * rprec) + 7 + (3 * asize);
    store_size += (hsize * no);
 
-   header = XMALLOC (sizeof (char) * (hsize + 1));
+   header = XMALLOC (sizeof (*header) * (hsize + 1));
    if (header == NULL)
    {
       return;
@@ -16388,7 +16391,7 @@ nn_scores_fprintf_G_int21 (FILE* stream,
    store_size += (rprec * no);
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * (store_size + 1));
+   string = XMALLOC (sizeof (*string) * (store_size + 1));
    if (string == NULL)
    {
       return;
@@ -16506,7 +16509,7 @@ nn_scores_fprintf_G_int22 (FILE* stream,
    hsize = (asize * rprec) + 8 + (3 * asize);
    store_size += (hsize * no);
 
-   header = XMALLOC (sizeof (char) * (hsize + 1));
+   header = XMALLOC (sizeof (*header) * (hsize + 1));
    if (header == NULL)
    {
       return;
@@ -16533,7 +16536,7 @@ nn_scores_fprintf_G_int22 (FILE* stream,
    store_size += (rprec * no);
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (char) * (store_size + 1));
+   string = XMALLOC (sizeof (*string) * (store_size + 1));
    if (string == NULL)
    {
       return;
@@ -16671,7 +16674,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
    pline_width += 1;            /* + \n */
 
    /* create header line for each table */
-   string = (char*) XMALLOC (sizeof (char) * pline_width);
+   string = (char*) XMALLOC (sizeof (*string) * pline_width);
    if (string == NULL)
    {
       return;
@@ -16703,7 +16706,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
    pline_width *= y;
    pline_width += strlen (header); /* table header */
    pline_width += 4;               /* NN:\n */
-   string = (char*) XMALLOC (sizeof (char) * ((pline_width * z) + 1));
+   string = (char*) XMALLOC (sizeof (*string) * ((pline_width * z) + 1));
    if (string == NULL)
    {
       return;

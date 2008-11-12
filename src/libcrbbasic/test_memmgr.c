@@ -56,7 +56,7 @@ int main(void)
    char test_text[] = "Hello World";
 
    /* test allocating */
-   string = XMALLOC (sample * sizeof (char*));
+   string = XMALLOC (sample * sizeof (*string));
    if (string == NULL)
    {
       mfprintf (stderr, "Failed to use xmalloc()\n");
@@ -65,7 +65,7 @@ int main(void)
 
    for (i=0; i < sample; i++)
    {
-      string[i] = XMALLOC (width * sizeof (char));
+      string[i] = XMALLOC (width * sizeof (**string));
       if (string[i] == NULL)
       {
          mfprintf (stderr, "Failed to use xmalloc()\n");
@@ -81,7 +81,7 @@ int main(void)
    XFREE (string);
 
    /* check 2D allocation */
-   string = (char**) XMALLOC_2D(sample, width, sizeof (char));
+   string = (char**) XMALLOC_2D(sample, width, sizeof (**string));
    if (string == NULL)
    {
       mfprintf (stderr, "Failed to use xmalloc_2d()\n");
@@ -96,7 +96,7 @@ int main(void)
    XFREE_2D ((void**) string);
 
    /* doing 2D allocation with rnd function */
-   string = (char**) XMALLOC_RND (sizeof (char),
+   string = (char**) XMALLOC_RND (sizeof (**string),
                                   sizeof (dim)/sizeof (*dim),
                                   dim);
    if (string == NULL)
@@ -113,7 +113,7 @@ int main(void)
    XFREE_ND (sizeof (dim)/sizeof (*dim), (void**) string);
 
    /* doing 2D allocation using nd function */
-   string = (char**) XMALLOC_ND (sizeof (char), 2, dim[0], dim[1]);
+   string = (char**) XMALLOC_ND (sizeof (**string), 2, dim[0], dim[1]);
    if (string == NULL)
    {
       mfprintf (stderr, "Failed to use xmalloc_nd()\n");
@@ -128,7 +128,7 @@ int main(void)
    XFREE_ND (2, (void**) string);
 
    /* trying to allocate an 2D array to store text (char*) */
-   string = (char**) XMALLOC_ND (sizeof (char*), 1, dim[0]);
+   string = (char**) XMALLOC_ND (sizeof (*string), 1, dim[0]);
    if (string == NULL)
    {
       mfprintf (stderr, "Failed to use xmalloc_nd()\n");

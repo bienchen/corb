@@ -111,7 +111,8 @@ float
 scmf_rna_opt_calc_nn (const unsigned long, const unsigned long,
                      void*,
                      SeqMatrix*);
-   
+void
+print_mycount (const char*);
 #endif /* SCMF_RNA_OPT_H */
 
 #ifdef __cplusplus

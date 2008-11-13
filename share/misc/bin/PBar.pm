@@ -1,4 +1,4 @@
-# Last modified: 2008-11-10.10
+# Last modified: 2008-11-13.13
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -69,7 +69,7 @@ BEGIN {
     $VERSION     = 0.01;
     
     @ISA         = qw(Exporter);
-    @EXPORT      = qw(&pbar_enable);
+    @EXPORT      = qw(&pbar_enable &pbar_start);
     %EXPORT_TAGS = ( );     # eg: TAG => [ qw!name1 name2! ],
     
     # your exported package globals go here,
@@ -86,7 +86,7 @@ our @EXPORT_OK;
 # NON-EXPORTED GLOBALS - END
 
 # PRIVATE GLOBALS      - BEGIN
-my $private_start = sub {};
+my $private_func_start = sub {};
 # PRIVATE GLOBALS      - END
 
 =head1 FUNCTIONS
@@ -111,7 +111,7 @@ B<EXAMPLE>
 
 sub enable
 {
-    $private_start = sub {
+    $private_func_start = sub {
         my ($pbar_hashref, $count) = @_;
         $pbar_hashref->{count} = $count;
         $pbar_hashref->{bar} = "";
@@ -162,7 +162,12 @@ B<EXAMPLE>
 
 sub start(\% $)
 {
-    return &$private_start (@_);
+    return &$private_func_start (@_);
+}
+
+sub pbar_start
+{
+    return &$private_func_start (@_);
 }
 
 =head1 AUTHOR

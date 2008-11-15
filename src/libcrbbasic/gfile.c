@@ -187,3 +187,21 @@ gfile_close (GFile* gfile)
 
    return ret_val;
 }
+
+/** @brief Read from file.
+ *
+ * Reads @c nobj items of size @c size from stream @c stream into array @c
+ * ptr. Unlike the error handling of ANSI C @c fread, we provide an error
+ * variable @c error defaulting to 0. Possible values on error are:
+ * ...\n
+ * Returns the number of items read. Values smaller than @c nobj indicate
+ * end-of-file or error.
+ *
+ * @param[in] gfile GFile pointer
+ */
+size_t
+gfile_read (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
+{
+   
+   return 0;
+}

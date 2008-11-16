@@ -70,6 +70,9 @@ gfile_open (const char*, const unsigned long, const GFileType, const char*,
 int
 gfile_close (GFile*);
 
+size_t
+gfile_read (int*, void*, size_t, size_t, GFile*);
+
 #endif /* GFILE_H */
 
 #ifdef __cplusplus

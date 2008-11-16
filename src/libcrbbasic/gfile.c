@@ -137,13 +137,23 @@ gfile_open (const char* filepath,
       {
          case GFILE_UNCOMPRESSED:
             gfile->fileptr.uc = fopen (filepath, mode);
+            if (gfile->fileptr.uc == NULL)
+            {
+               gfile_delete (gfile);
+               gfile = NULL;
+            }
             break;            
          default:
             THROW_ERROR_MSG ("Opening file \"%s\" failed: Unknown file type",
                              filepath);
             gfile_delete (gfile);
-            gfile = NULL;
+            return NULL;
       }
+   }
+
+   if (gfile == NULL)
+   {
+      THROW_ERROR_MSG ("Opening file \"%s\" failed:", filepath);
    }
 
    return gfile;
@@ -175,7 +185,7 @@ gfile_close (GFile* gfile)
          THROW_ERROR_MSG ("Closing file \"%s\" failed: Unknown file type",
                           str_get (gfile->path));
          gfile_delete (gfile);
-         ret_val = EOF;
+         return EOF;
    }
 
    if (ret_val == EOF)
@@ -193,15 +203,46 @@ gfile_close (GFile* gfile)
  * Reads @c nobj items of size @c size from stream @c stream into array @c
  * ptr. Unlike the error handling of ANSI C @c fread, we provide an error
  * variable @c error defaulting to 0. Possible values on error are:
- * ...\n
+ * GFILE_UNKNOWN_TYPE for file of unknown compression state, ...\n
  * Returns the number of items read. Values smaller than @c nobj indicate
  * end-of-file or error.
  *
  * @param[in] gfile GFile pointer
  */
+enum gfile_errors {
+   GFILE_UNKNOWN_TYPE = 1,
+   GFILE_READ_ERROR,
+};
+
 size_t
 gfile_read (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
 {
-   
-   return 0;
+   size_t obj_read = EOF;
+
+   assert (error);
+   assert (ptr);
+   assert (stream);
+
+   switch (stream->type)
+   {
+      case GFILE_UNCOMPRESSED:
+         obj_read = fread(ptr, size, nobj, stream->fileptr.uc);
+         if (obj_read != nobj)
+         {
+            /* check for error */
+            if (ferror(stream->fileptr.uc))
+            {
+               THROW_ERROR_MSG ("Reading from file \"%s\" failed:",
+                                str_get (stream->path));
+               *error = GFILE_READ_ERROR;
+            }
+         }
+         break;
+      default:
+         THROW_ERROR_MSG ("Reading from file \"%s\" failed: Unknown file type",
+                          str_get (stream->path));
+         *error = GFILE_UNKNOWN_TYPE;
+   }
+
+   return obj_read;
 }

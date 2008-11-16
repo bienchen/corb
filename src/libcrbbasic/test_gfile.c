@@ -49,12 +49,12 @@
 #include "errormsg.h"
 /*#include "mprintf.h"*/
 #include "gfile.h"
- 
+
 
 int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
    GFile* file;
-   char c_file[] = "test_gfile.c";
+   char c_file[] = "gfile.c";
    int ret_val = 0;
 
    /* open file */
@@ -63,7 +63,9 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    {
       THROW_ERROR_MSG ("Could not open \"%s\".", c_file);
       return EXIT_FAILURE;
-   }   
+   }
+
+
 
    ret_val = gfile_close (file);
    if (ret_val == EOF)

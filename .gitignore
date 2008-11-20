@@ -25,6 +25,7 @@ Makefile
 Makefile.in
 share/misc/bin/reformat
 share/misc/bin/read_viennaparams
+share/misc/bin/ex_cmp_er2de_rnaeval
 share/misc/emacs/elc-stamp
 # src/libcrbbasic/test_*
 autom4te.cache
@@ -37,6 +38,7 @@ src/libcrbbasic/test_genarray
 src/libcrbbasic/test_memmgr
 src/libcrbbasic/test_mprintf
 src/libcrbbasic/test_str
+src/libcrbbasic/test_gfile
 src/libcrbrna/test_alphabet
 src/libcrbrna/test_nn_scores
 src/libcrbrna/test_rna

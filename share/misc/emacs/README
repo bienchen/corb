@@ -2,11 +2,11 @@ Copyright (C) 2007 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-10-03.21
+Last modified: 2008-11-01.12
 
 
 This directory contains the Emacs C syntax highlighting extensions and
-skeletons for the project "RNA Energetics & Sequence Design".
+skeletons for CoRB project.
 
 For the syntax highlighting, just add the following to the .emacs, where
 "HIGHLIGHT" is the extension you want to load and PATH points to the directory:
@@ -26,30 +26,30 @@ the directory:
 
 
   ;; standard elisp functions for the whole dev-environment
-(if (file-readable-p "PATH/corb/share/misc/emacs/emacs-l-helpers.elc")
-    (load-library "PATH/corb/share/misc/emacs/emacs-l-helpers.elc")
+(if (file-readable-p "PATH_TO_CORB_REPO/share/misc/emacs/emacs-l-helpers.elc")
+    (load-library "PATH_TO_CORB_REPO/share/misc/emacs/emacs-l-helpers.elc")
   (progn
-    (when (file-readable-p "PATH/corb/share/misc/emacs/emacs-l-helpers.el"))
-    (load-library "PATH/corb/share/misc/emacs/emacs-l-helpers.el")))
+    (when (file-readable-p "PATH_TO_CORB_REPO/share/misc/emacs/emacs-l-helpers.el"))
+    (load-library "PATH_TO_CORB_REPO/share/misc/emacs/emacs-l-helpers.el")))
 
 
 Before loading the C extensions, you have to announce the project directory to
 the emacs-l-helper library:
 
 
-  ;; set project root
-(elh-set-project-tree-root "PATH/corb")
+;;; set project root
+(elh-set-project-tree-root "PATH_TO_CORB_REPO")
 
 
 Now you can add loading of the C extensions to the .emacs:
 
 
-  ;; load Cs lil' helpers
-(if (file-readable-p "PATH/corb/share/misc/emacs/c-l-helpers.elc")
-    (load-library "PATH/corb/share/misc/emacs/c-l-helpers.elc")
+;;; load Cs lil' helpers
+(if (file-readable-p "PATH_TO_CORB_REPO/share/misc/emacs/c-l-helpers.elc")
+    (load-library "PATH_TO_CORB_REPO/share/misc/emacs/c-l-helpers.elc")
   (progn
-    (when (file-readable-p "PATH/corb/share/misc/emacs/c-l-helpers.el"))
-    (load-library "PATH/corb/share/misc/emacs/c-l-helpers.el")))
+    (when (file-readable-p "PATH_TO_CORB_REPO/share/misc/emacs/c-l-helpers.el"))
+    (load-library "PATH_TO_CORB_REPO/share/misc/emacs/c-l-helpers.el")))
 
 
 For the C skeletons you can enable the auto-insertion feature of Emacs.
@@ -58,7 +58,7 @@ visiting an empty file with extension ".c" or ".h". Just add the following to
 .emacs:
 
 
-  ;; auto-insert for c-source & header files
+;;; auto-insert for c-source & header files
 (require 'autoinsert)
 (auto-insert-mode 't)
 
@@ -66,6 +66,14 @@ visiting an empty file with extension ".c" or ".h". Just add the following to
 (define-auto-insert "\\.c$" 'c-source-skeleton)
 (define-auto-insert "\\.h$" 'c-header-skeleton)
 
+At least with linux there is one problem. Some methods to create new files
+automatically add a newline or a whitespace to it. This will not be recognised
+as an empty file be emacs. As a workaround we proved an Emacs advice for the
+auto-insert function. It can be activated with the following line in the Emacs
+configuration file:
+
+
+(ad-activate 'auto-insert)
 
 
 # Local variables:

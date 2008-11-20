@@ -79,6 +79,9 @@ scmf_rna_opt_data_new_init (const char*,
 /*                                                  SeqMatrix*); */
 
 int
+scmf_rna_opt_data_secstruct_init (Scmf_Rna_Opt_data*);
+
+int
 scmf_rna_opt_data_update_neg_design_energy (void*, unsigned long, SeqMatrix*);
 
 int
@@ -108,11 +111,13 @@ scmf_rna_opt_calc_nussinov (const unsigned long, const unsigned long,
                            SeqMatrix*);
 
 float
-scmf_rna_opt_calc_nn (const unsigned long, const unsigned long,
+scmf_rna_opt_calc_simplenn (const unsigned long, const unsigned long,
                      void*,
                      SeqMatrix*);
-void
-print_mycount (const char*);
+
+int
+scmf_rna_opt_calc_col_nn (SeqMatrix*, const float, void*);
+
 #endif /* SCMF_RNA_OPT_H */
 
 #ifdef __cplusplus

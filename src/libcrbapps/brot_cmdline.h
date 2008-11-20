@@ -29,7 +29,7 @@ extern "C" {
 #define BROT_CMDLINE_PARSER_VERSION "0.1"
 #endif
 
-enum enum_scoring { scoring_arg_NN = 0 , scoring_arg_nussinov };
+enum enum_scoring { scoring_arg_NN = 0 , scoring_arg_nussinov, scoring_arg_simpleNN };
 
 /** @brief Where the command line options are stored */
 struct brot_args_info

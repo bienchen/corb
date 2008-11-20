@@ -23,10 +23,13 @@ args "--string-parser --func-name=brot_cmdline_parser --file-name=brot_cmdline -
 
 option "scoring" c "Choose a different scoring scheme"
        details="Use a certain energy model to score the RNA sequence. \
-                Possible NAMEs are `NN' and `nussinov'. `nussinov' uses \
-                a Nussinov model, only counting Hbonds. `NN' invokes the \
-                Nearest Neighbour model."
-       values="NN","nussinov"
+                 Possible NAMEs are `NN', `nussinov' and `simpleNN'. \
+                 `nussinov' uses a Nussinov model, only counting Hbonds. `NN' \
+                 invokes the Nearest Neighbour model. `simpleNN' uses a very \
+                 coarse grained approximation of the Nearest Neighbour model, \
+                 scoring every base pair as a stack, averaging mismatches in \
+                 stacked pairs and without any loop parameters."
+       values="NN","nussinov", "simpleNN"
        enum
        typestr="NAME"
        default="NN"
@@ -43,7 +46,7 @@ option "fixed-nuc" n "Preset a nucleotide in a position"
        multiple
 
 option "steps" s "Number of iterations"
-       details="Iteration steps for the update of site probabilites."
+       details="Iteration steps for the update of site probabilities."
        long
        typestr="INT"
        default="1000"

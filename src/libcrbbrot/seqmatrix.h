@@ -84,6 +84,9 @@ seqmatrix_get_probability (const unsigned long, const unsigned long,
 
 /********************************   Altering   ********************************/
 
+void
+seqmatrix_set_current_matrix_zero (SeqMatrix*);
+
 int
 seqmatrix_init (const unsigned long,
                 const unsigned long,

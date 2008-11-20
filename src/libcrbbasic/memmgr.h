@@ -194,6 +194,9 @@ free_memory_manager (void);
 #define XFREE_ND(N, PTRPTR)                   \
    xfree_nd (N, PTRPTR)
 
+void**
+matrix2d_set_zero (void**, const size_t, const size_t, const size_t);
+
 #endif /* MEMMGR_H */
 
 #ifdef __cplusplus

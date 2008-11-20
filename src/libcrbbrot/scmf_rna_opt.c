@@ -159,6 +159,12 @@ scmf_rna_opt_data_new_init (const char* structure,
    return this;
 }
 
+int
+scmf_rna_opt_data_secstruct_init (Scmf_Rna_Opt_data* this)
+{
+   return RNA_SECSTRUCT_INIT (this->rna);
+}
+
 /* int */
 /* scmf_rna_opt_data_init_negative_design_energies (void* data, */
 /*                                                  SeqMatrix* sm) */
@@ -571,7 +577,7 @@ scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data* this)
  * @params[in] sm Sequence matrix.
  */
 float
-scmf_rna_opt_calc_nn (const unsigned long row,
+scmf_rna_opt_calc_simplenn (const unsigned long row,
                       const unsigned long col,
                       void* sco,
                       SeqMatrix* sm)
@@ -658,7 +664,6 @@ scmf_rna_opt_calc_nn (const unsigned long row,
                      * seqmatrix_get_probability (m, (interaction - 1), sm);
                   
                   cell += (update_prob * G_stack_score);
-
                }
             }
          }
@@ -881,6 +886,143 @@ scmf_rna_opt_calc_nn (const unsigned long row,
    cell += tmp_het;
 
    return cell;
+}
+
+
+/* RNA design using the full NN model
+*/
+static void
+scmf_rna_opt_calc_hairpin (const unsigned long row,
+                           const unsigned long hairpin,
+                           SeqMatrix* sm,
+                           const float t,
+                           Scmf_Rna_Opt_data* this)
+{
+   unsigned long start, end, size;
+   char bj;                     /* base at j part of pair */
+   unsigned long k, l, m;
+   unsigned long alpha_size;
+   float cell = 0.0f;
+   float update_prob;
+
+   alpha_size = alphabet_size (this->sigma);
+
+   rna_secstruct_get_geometry_hairpin(&start, &end, &size, hairpin, this->rna);
+   mfprintf (stderr, "process hairpin loop %lu %.2f: %lu - %lu | %lu\n",
+             hairpin, t, start, end, size);
+
+   /* rows of 5' base */
+   /* iterate all possible base pairs with the current base! */
+   /* check if fixed! */
+   for (k = 0; this->bp_allowed[row][k] != 0; k++)
+   {
+      bj = this->bp_allowed[row][k] - 1;
+
+      /* for all possible unpaired bases */
+      for (l = 0; l < alpha_size; l++)
+      {
+         update_prob =   seqmatrix_get_probability(bj, end,     sm)
+                       * seqmatrix_get_probability(l,  end - 1, sm);
+
+         for (m = 0; m < alpha_size; m++)
+         {
+            cell += (update_prob * seqmatrix_get_probability(m,  start + 1, sm))
+                    * nn_scores_get_G_hairpin_mismatch (row, bj, m, l, size,
+                                                        this->scores);
+            /*mfprintf (stderr, "  %c-%c--%c-%c : %.2f\n",
+                      alphabet_no_2_base(row, this->sigma),
+                      alphabet_no_2_base(bj, this->sigma),
+                      alphabet_no_2_base(m, this->sigma),
+                      alphabet_no_2_base(l, this->sigma),
+                      cell);*/
+         }
+      }
+   }
+
+   /*mfprintf (stderr, "5'(h%lu, s%lu, %c) : %.2f\n",
+             hairpin, size, alphabet_no_2_base(row, this->sigma),
+             cell);*/
+
+   /* rows of 3' base */
+
+   /* special treatment of tetraloops */
+
+}
+
+/** @brief SCMF simulation function.
+ *
+ * This is the substitute for the column iteration function of a SCMF
+ * simulation. Instead of iterating the columns of a sequence matrix we iterate
+ * over the structural components of a RNA secondary structure.
+ *
+ * @params[in] sm Sequence matrix.
+ * @params[in] t temperature.
+ * @params[in] sco Data.
+ */
+int
+scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
+                          const float t,
+                          void* sco)
+{
+   /*unsigned long i;*/
+   int error = 0;
+   Scmf_Rna_Opt_data* this;
+   unsigned long n;
+   unsigned long i;
+   unsigned long rows;
+   unsigned long r;
+
+   assert (sm);
+   assert (sco);
+
+   this = (Scmf_Rna_Opt_data*) sco;
+
+   seqmatrix_set_current_matrix_zero (sm);
+
+   /* iterate all bases (rows) */
+   rows = seqmatrix_get_rows (sm);
+   r = 0;
+   while ((r < rows) && (!error))
+   {
+
+   /* iterate structure components */
+   /*    hairpin loops */
+   n = rna_secstruct_get_noof_hairpins (this->rna);
+   for (i = 0; i < n; i++)
+   {
+      scmf_rna_opt_calc_hairpin (r, i, sm, t, this);
+   }
+
+   /* for each col */
+/*    i = 0; */
+/*    while ((!error) && (i < sm->cols)) */
+/*    { */
+/*       if (!seqmatrix_is_col_fixed (i, sm)) */
+/*       { */
+/*          error = sm->calc_eeff_row (i, sm, t, sco); */
+/*       } */
+/*       else */
+/*       { */
+/*          /\*mfprintf (stdout, "\n\n\nIN %lu\n\n\n", i);*\/ */
+/*          error = sm->fixed_site_hook (sco, i, sm); */
+/*       } */
+
+/*       i++; */
+/*    } */
+
+/*    if (sm->curr_matrix == F_Mtrx) */
+/*    { */
+/*       sm->curr_matrix = S_Mtrx; */
+/*    } */
+/*    else */
+/*    { */
+/*       sm->curr_matrix = F_Mtrx; */
+/*    } */
+     r++;
+   }
+
+
+   return error;
 }
 
 

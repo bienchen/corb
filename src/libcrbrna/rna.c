@@ -736,3 +736,66 @@ rna_secstruct_calculate_DG (const NN_scores* scores, const Rna* this)
 
    return secstruct_calculate_DG (this->seq, scores, this->structure);
 }
+
+unsigned long
+rna_secstruct_get_noof_stacks (const Rna* this)
+{
+   return secstruct_get_noof_stacks (this->structure);
+}
+
+unsigned long
+rna_secstruct_get_noof_hairpins (const Rna* this)
+{
+   return secstruct_get_noof_hairpins (this->structure);
+}
+
+void
+rna_secstruct_get_geometry_hairpin (unsigned long* start,
+                                unsigned long* end,
+                                unsigned long* size,
+                                const unsigned long i,
+                                const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_geometry_hairpin(start, end, size, i, this->structure);
+}
+
+/** @brief get the start base of the ith hairpin loop of a 2D structure
+ *
+ * @param[in] i Index of loop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_start_hairpin (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_start_hairpin (i, this->structure);
+}
+
+/** @brief get the last base of the ith hairpin loop of a 2D structure
+ *
+ * @param[in] i Index of loop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_end_hairpin (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_end_hairpin (i, this->structure);
+}
+
+/** @brief get the no. of unpaired bases of the ith hairpin loop
+ *
+ * @param[in] i Index of loop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_size_hairpin (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_size_hairpin (i, this->structure);
+}

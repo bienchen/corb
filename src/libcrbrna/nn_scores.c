@@ -14668,6 +14668,34 @@ nn_scores_get_G_tetra_loop (const char* seq,
    return 0;
 }
 
+/** @brief Returns the penalty for the closing basepair of a hairpin.
+ *
+ * @param[in] i 5' base of closing pair.
+ * @param[in] j 3' base of closing pair.
+ * @param[in] ip1 i+1 base.
+ * @param[in] jm1 j-1 base.
+ * @param[in] size Loop size.
+ * @param[in] this Scores.
+ */
+int nn_scores_get_G_hairpin_mismatch (const int i,
+                                      const int j,
+                                      const int ip1,
+                                      const int jm1,
+                                      const unsigned long size,
+                                      const NN_scores* this)
+{
+   /* mismatch penalty for the mismatch interior to the closing basepair of
+      the hairpin. triloops get non-parameterised mismatch penalty */
+   if (size == D_MM_H)
+   {
+      return this->non_gc_penalty_for_bp[(int)this->bp_idx[i][j]];
+   }
+   else
+   {
+      return this->G_mismatch_hairpin[(int)this->bp_idx[i][j]][ip1][jm1];
+   }   
+}
+
 /** @brief Returns the score for a hairpin loop of certain size.
  *
  * @params[in] i 5' base of closing pair.
@@ -14683,15 +14711,10 @@ nn_scores_get_G_hairpin_loop (const char* seq,
                               const NN_scores* this)
 {
    int G = 0;
-   int bp;
-   int bip1 = seq[i + 1];
-   int bjm1 = seq[j - 1];
 
    assert (seq);
    assert (this);
    assert (j > 0);
-
-   bp = (int)this->bp_idx[(int)seq[i]][(int)seq[j]];
 
    if (size < this->G_hairpin_loop_size)
    {
@@ -14704,17 +14727,11 @@ nn_scores_get_G_hairpin_loop (const char* seq,
                   * logf((float) size / (this->G_hairpin_loop_size - 1)));
    }
 
-    /* mismatch penalty for the mismatch interior to the closing basepair of
-       the hairpin. triloops get non-parameterised mismatch penalty */
-   if (size == D_MM_H)
-   {
-      G += this->non_gc_penalty_for_bp[bp];
-   }
-   else
-   {
-      G += this->G_mismatch_hairpin[bp][bip1][bjm1];
-   }
-     /*  mfprintf (stderr, "G= %d\n", G); */
+   G += nn_scores_get_G_hairpin_mismatch (seq[i], seq[j],
+                                          seq[i + 1], seq[j - 1],
+                                          size,
+                                          this);
+
    /* tetraloop bonus */
    if (size == 4)
    {
@@ -16600,7 +16617,7 @@ nn_scores_fprintf_G_int22 (FILE* stream,
    XFREE (header);
 }
 
-/** @brief Print the mismatch hairpin energies of a scoring scheme to a stream.
+/** @brief Print the mismatch interior energies of a scoring scheme to a stream.
  *
  * Prints hairpin loop closing base pair energies to a stream.
  * @params[in] stream Output stream to write to. FILE *stream

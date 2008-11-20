@@ -473,7 +473,20 @@ secstruct_find_interactions (const unsigned long* pairs,
          i = p;
       }
    }
-   
+
+   mprintf ("Stacked base piars:\n");
+   secstruct_fprintf_stacks (stdout, this);
+   mprintf ("\nHairpin loops:\n");
+   secstruct_fprintf_hairpins (stdout, this);
+   mprintf ("\nBulge loops:\n");
+   secstruct_fprintf_bulges (stdout, this);
+   mprintf ("\nInternal loops:\n");
+   secstruct_fprintf_internals (stdout, this);
+   mprintf ("\nExternal loop:\n");
+   secstruct_fprintf_external (stdout, this);
+   mprintf ("\nMulti loops:\n");
+   secstruct_fprintf_multiloops (stdout, this);
+
    return error;
 }
 
@@ -492,6 +505,33 @@ secstruct_get_noof_hairpins (const SecStruct* this)
    assert (ARRAY_NOT_NULL (this->hairpin_loop));
 
    return ARRAY_CURRENT (this->hairpin_loop);
+}
+
+/** @brief Retrieve hairpin geometry in one go.
+ *
+ * @param[in/out] start Start position in sequence.
+ * @param[in/out] end   End position in sequence.
+ * @param[in/out] size  Size of the loop.
+ * @param[in]     i    No. of hairpin.
+ * @param[in]     this Secondary structure.
+ */
+void
+secstruct_get_geometry_hairpin (unsigned long* start,
+                                unsigned long* end,
+                                unsigned long* size,
+                                const unsigned long i,
+                                const SecStruct* this)
+{
+   assert(this);
+   assert (ARRAY_NOT_NULL (this->hairpin_loop));
+   assert (ARRAY_CURRENT (this->hairpin_loop) > i);
+   assert(start);
+   assert(end);
+   assert(size);
+
+   *start = ARRAY_ACCESS(this->hairpin_loop, i).i;
+   *end = ARRAY_ACCESS(this->hairpin_loop, i).j;
+   *size = ARRAY_ACCESS(this->hairpin_loop, i).size;
 }
 
 /** @brief get the start base of the ith hairpin loop of a 2D structure

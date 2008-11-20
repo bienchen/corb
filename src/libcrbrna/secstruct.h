@@ -77,6 +77,10 @@ secstruct_find_interactions (const unsigned long*,
 unsigned long
 secstruct_get_noof_hairpins (const SecStruct*);
 
+void
+secstruct_get_geometry_hairpin (unsigned long*, unsigned long*, unsigned long*,
+                                const unsigned long, const SecStruct*);
+
 unsigned long
 secstruct_get_i_start_hairpin (const unsigned long, const SecStruct*);
 

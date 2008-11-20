@@ -1,4 +1,4 @@
-# Last modified: 2008-10-30.14
+# Last modified: 2008-11-20.16
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -37,14 +37,14 @@ endif
 # misc scripts, build on --with|enable-development
 
 CLEANFILES = $(bin_SCRIPTS)
-EXTRA_DIST = reformat.pl read_viennaparams.pl
+EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl PBar.pm
 
 do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
   -e 's,[@]configure_input[@],Generated from $@.pl; do not edit by hand.,g'
 
-.pl:
+.pl:PBar.pm
 	rm -f $@ .$@.tpm
 	$(do_subst) $@.pl >.$@.tmp
 	chmod +x .$@.tmp

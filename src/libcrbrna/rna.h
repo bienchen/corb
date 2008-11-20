@@ -163,6 +163,28 @@ rna_validate_basepairs_nn_scores (NN_scores*, const Rna*);
 int
 rna_secstruct_calculate_DG (const NN_scores*, const Rna*);
 
+unsigned long
+rna_secstruct_get_noof_stacks (const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_hairpins (const Rna*);
+
+void
+rna_secstruct_get_geometry_hairpin (unsigned long*,
+                                    unsigned long*,
+                                    unsigned long*,
+                                    const unsigned long,
+                                    const Rna*);
+
+unsigned long
+rna_secstruct_get_i_start_hairpin (const unsigned long, const Rna*);
+
+unsigned long
+rna_secstruct_get_i_end_hairpin (const unsigned long, const Rna*);
+
+unsigned long
+rna_secstruct_get_i_size_hairpin (const unsigned long, const Rna*);
+
 #endif /* RNA_H */
 
 #ifdef __cplusplus

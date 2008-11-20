@@ -106,6 +106,13 @@ nn_scores_get_G_tetra_loop (const char*,
                             const unsigned long,
                             const NN_scores*);
 
+int nn_scores_get_G_hairpin_mismatch (const int,
+                                      const int,
+                                      const int,
+                                      const int,
+                                      const unsigned long,
+                                      const NN_scores*);
+
 int
 nn_scores_get_G_hairpin_loop (const char*,
                               const unsigned long,

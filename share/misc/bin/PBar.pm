@@ -127,7 +127,13 @@ none.
 
 sub enable
 {
+    # make STDOUT hot (unbuffered)
+    select((select(STDOUT), $|=1)[0]);
+
     $private_func_start = sub {
+	# make STDOUT hot (unbuffered)
+	select((select(STDOUT), $|=1)[0]);
+
         my ($pbar_hashref, $count) = @_;
         $pbar_hashref->{count} = $count;
         $pbar_hashref->{bar} = "";
@@ -215,6 +221,9 @@ sub enable
         printf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
                $pbar_hashref->{bar},
                $hou, $min, $sec);
+
+	# make STDOUT cold (buffered)
+	select((select(STDOUT), $|=0)[0]);
     };
 }
 
@@ -250,6 +259,9 @@ sub disable
     $private_func_update = sub {};
 
     $private_func_finish = sub {};
+
+    # make STDOUT cold (buffered)
+    select((select(STDOUT), $|=0)[0]);
 }
 
 sub pbar_disable

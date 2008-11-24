@@ -426,14 +426,14 @@ rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
    /* read_comment_sh: translate tabs to ws */
    /* read_tr_tabs: translate tabs to sh */
 
-   cr = gfile_read (&error, *buffer + r, 1, sizeof(**buffer), gfile);
+   cr = gfile_fread_tab (&error, *buffer + r, 1, sizeof(**buffer), gfile);
    while ((cr == 1) && (!error))
    {
       /* delete tabs */
-      if (*(*buffer + r) == '\t')
+      /*if (*(*buffer + r) == '\t')
       {
          *(*buffer + r) = ' ';
-      }
+         }*/
 
       mfprintf (stderr, "%c", *(*buffer + r));
       /* store whole buffer, return first col if found */
@@ -506,7 +506,7 @@ rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
          *length = *length * 2;
          (*buffer) = (char*) XREALLOC((*buffer), sizeof((**buffer)) * *length);
       }
-      cr = gfile_read (&error, *buffer + r, 1, sizeof(**buffer), gfile);
+      cr = gfile_fread_tab (&error, *buffer + r, 1, sizeof(**buffer), gfile);
    }
 
    /* return 0 in case of error, 1 if only 1 line was found */

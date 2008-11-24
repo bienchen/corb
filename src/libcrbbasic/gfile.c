@@ -215,7 +215,7 @@ enum gfile_errors {
 };
 
 size_t
-gfile_read (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
+gfile_fread (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
 {
    size_t obj_read = EOF;
 

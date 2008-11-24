@@ -215,7 +215,7 @@ enum gfile_errors {
 };
 
 size_t
-gfile_fread (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
+gfile_fread (int* error, void* ptr, size_t size, size_t nobj, GFile *stream)
 {
    size_t obj_read = EOF;
 
@@ -255,18 +255,21 @@ gfile_fread (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
  * @param[in] gfile GFile pointer
  */
 size_t
-gfile_fread_tab (int *error, char* ptr, size_t size, size_t nobj, GFile *stream)
+gfile_fread_tab (int* error, char* ptr, size_t size, size_t nobj, GFile *stream)
 {
    size_t n_read;
    unsigned long i;
 
    n_read = gfile_fread (error, ptr, size, nobj, stream);
 
-   for (i = 0; i < n_read; i++)
+   if (!(*error))
    {
-      if (ptr[i] == '\t')
+      for (i = 0; i < n_read; i++)
       {
-         ptr[i] = ' ';
+         if (ptr[i] == '\t')
+         {
+            ptr[i] = ' ';
+         }
       }
    }
 

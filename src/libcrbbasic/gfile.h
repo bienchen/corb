@@ -67,6 +67,9 @@ enum {
    GFILE_TR_N
 };
 
+/* line feed character */
+#define CRB_LF '\n'
+
 typedef struct GFile GFile;
 
 

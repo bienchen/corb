@@ -1,4 +1,4 @@
-# Last modified: 2008-12-05.11
+# Last modified: 2009-01-20.21
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -29,9 +29,9 @@ noinst_HEADERS = crb_cmdline.h
 # place?
 LDADD =                                 \
 	libcrbapps/libcrbapps.a         \
-	libcrbbasic/libcrbbasic.a       \
 	libcrbbrot/libcrbbrot.a         \
 	libcrbrna/libcrbrna.a           \
+	libcrbbasic/libcrbbasic.a       \
 	libcrbfallback/libcrbfallback.a
 
 bin_PROGRAMS = corb

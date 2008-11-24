@@ -1,4 +1,4 @@
-# Last modified: 2008-10-24.14
+# Last modified: 2008-11-16.20
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -44,15 +44,15 @@ noinst_HEADERS =                           \
 
 # tests for the library
 LDADD =                                    \
+	libcrbrna.a                        \
 	../libcrbbasic/libcrbbasic.a       \
-	../libcrbfallback/libcrbfallback.a \
-	libcrbrna.a
+	../libcrbfallback/libcrbfallback.a
 
 check_PROGRAMS =                           \
 	test_alphabet                      \
-	test_rna                           \
 	test_secstruct                     \
-	test_nn_scores
+	test_nn_scores                     \
+	test_rna
 
 test_alphabet_SOURCES  = test_alphabet.c
 

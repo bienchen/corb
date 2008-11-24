@@ -117,6 +117,9 @@ rna_init_sequence_structure (const char*, const char*, const unsigned long,
    rna_alloc_sequence (A, B, __FILE__, __LINE__)
 
 int
+rna_read_from_file_ct (Rna*, const char*);
+
+int
 rna_secstruct_init (Rna*, const char*, const int);
 
 #define RNA_SECSTRUCT_INIT(A) \

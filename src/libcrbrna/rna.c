@@ -43,6 +43,7 @@
 
 
 #include <config.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stddef.h>
 #include <libcrbbasic/crbbasic.h>
@@ -67,34 +68,6 @@ struct Rna {
 
 
 /**********************   Constructors and destructors   **********************/
-
-/** @brief Init a struct_comp structure.
- *
- * @param[in] file Fill with name of calling file.
- * @param[in] line Fill with calling line.
- */
-/* static __inline__ struct_comp */
-/* struct_comp_new (void/\* const char* file, const int line *\/) */
-/* { */
-/*    struct_comp this; */
-
-/*    ARRAY_ULONG_INIT(this.tetra_loop, 0); */
-
-/*    return this; */
-/* } */
-
-/** @brief Delete the components of a struct_comp structure.
- *
- * @param[in] this Object to be freed.
- */
-/* static __inline__ void */
-/* struct_comp_delete (struct_comp* this) */
-/* { */
-/*    if (this != NULL) */
-/*    { */
-/*      ARRAY_DELETE(this->tetra_loop); */
-/*    } */
-/* } */
 
 /** @brief Create a new rna object.
  *
@@ -419,6 +392,166 @@ rna_init_sequence_structure (const char* seq,
       error = rna_init_pairlist_vienna (vienna, length, this, file, line);
    }
 
+   return error;
+}
+
+/** @brief Read a RNA structure and sequence from file
+ *
+ * Read in a file in connect format and store its contents in a Rna object.\n
+ * Returns 0 on success, ... else.
+ * @param[in] this Rna object.
+ * @param[in] path Path and file name.
+ */
+static unsigned long
+rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
+{
+   unsigned long r = 0;         /* already read bytes */
+   unsigned long cr = 0;        /* currently read bytes */
+   unsigned long lwp = 0;       /* last whitespace position */
+   unsigned long col = 0;
+   char* endptr;                /* needed for strtoul */
+   bool ct_line = true;         /* is the first line already in ct format? */
+   unsigned long n_bases = 1;   /* no. of bases */
+   unsigned long no;            /* just the number in a col */
+   unsigned long max_no = 0;    /* store max.no. found */
+   int error = 0;
+
+   /* Basic idea: Verify that first line is either a comment or the start of
+      the base list */
+   /* After this function gfile should be at the starting position of the list*/
+   
+   /* throw warnings: first line ct line */
+   /*                 first line does not start with noof bases */
+   /*                 ct lines not ordered  */
+   /* read_comment_sh: translate tabs to ws */
+   /* read_tr_tabs: translate tabs to sh */
+
+   cr = gfile_read (&error, *buffer + r, 1, sizeof(**buffer), gfile);
+   while ((cr == 1) && (!error))
+   {
+      /* delete tabs */
+      if (*(*buffer + r) == '\t')
+      {
+         *(*buffer + r) = ' ';
+      }
+
+      mfprintf (stderr, "%c", *(*buffer + r));
+      /* store whole buffer, return first col if found */
+
+      if (   ((*(*buffer + r) == ' ') || (*(*buffer + r) == CRB_LF))
+          && (ct_line == true))
+      {
+         
+         if ((r > 0) && (*(*buffer + r - 1) != ' '))
+         {
+            mfprintf(stderr, "col: %lu lwp: %lu\n", col, lwp);
+            col++;
+
+            if (col != 2)
+            {
+               no = strtoul((*buffer + lwp), &endptr, 10);
+
+               /* we have read a number, if pointers differ AND the the whole
+                  part of the buffer we are looking at was read */
+               if ((*buffer == endptr) || (((*buffer + r) - endptr) != 0))
+               {
+                  ct_line = false;
+               }
+               else if (col == 1)
+               {
+                  n_bases = no;
+               }
+               else
+               {
+                  if (no > max_no)
+                  {
+                     max_no = no;
+                  }
+               }
+            }
+            else                /* col 2: Only non-numerical col */
+            {
+               /* we do not check the alphabet here */
+               /* but the nucleotide col must have width 1 */
+               if (*(*buffer + lwp + 1) != ' ')
+               {
+                  ct_line = false;
+               }
+            }
+
+            /* remember position of last whitespace */
+            lwp = r + 1;
+         }
+      }
+
+      /* finalise on "end of line" */
+      if (*(*buffer + r) == CRB_LF)
+      {
+         if (ct_line == true)
+         {
+            if (max_no > n_bases)
+            {
+               n_bases = max_no;
+            }
+            /*THROW_WARN_MSG ("File \"%s\" in ct format: "
+              "First line is not a standard header", );*/
+         }         
+         return n_bases;
+      }
+
+      /* enlarge buffer and read next byte */
+      r++;
+      if (r >= *length)
+      {
+         *length = *length * 2;
+         (*buffer) = (char*) XREALLOC((*buffer), sizeof((**buffer)) * *length);
+      }
+      cr = gfile_read (&error, *buffer + r, 1, sizeof(**buffer), gfile);
+   }
+
+   /* return 0 in case of error, 1 if only 1 line was found */
+   if (error)
+   {
+      return 0;
+   }
+
+   return 1;
+}
+
+int
+rna_read_from_file_ct (Rna* this, const char* path)
+{
+   int error = 0;
+   GFile* gfile;
+   char* line_buffer;
+   unsigned long lb_size = 80;
+   unsigned long n;
+
+   assert(this);
+   assert(path);
+
+   /* open file */
+   gfile = GFILE_OPEN(path, strlen (path), GFILE_VOID, "r");
+   if (gfile == NULL)
+   {
+      return 1;
+   }
+
+   /* read */
+   line_buffer = XMALLOC(lb_size * sizeof(*line_buffer));
+
+   /* fetch first line */
+   n = rna_get_first_line_ct (&line_buffer, &lb_size, gfile);
+   if (!n)
+   {
+      error = 1;
+   }
+   mfprintf(stderr, "\nNo. of bases accorcing to fst line: %lu\n", n);
+
+   /* close file */
+   error = gfile_close(gfile);
+   XFREE(line_buffer);
+   
    return error;
 }
 

@@ -211,6 +211,7 @@ gfile_close (GFile* gfile)
  *
  * @param[in] stream File to be reseted
  */
+<<<<<<< HEAD:src/libcrbbasic/gfile.c
 int
 gfile_rewind (GFile* stream)
 {

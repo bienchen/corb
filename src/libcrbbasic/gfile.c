@@ -246,3 +246,29 @@ gfile_fread (int *error, void* ptr, size_t size, size_t nobj, GFile *stream)
 
    return obj_read;
 }
+
+/** @brief Read from file.
+ *
+ * Does the same as @c gfile_fread() on a character array BUT translates all
+ * tabs into whitespaces.
+ *
+ * @param[in] gfile GFile pointer
+ */
+size_t
+gfile_fread_tab (int *error, char* ptr, size_t size, size_t nobj, GFile *stream)
+{
+   size_t n_read;
+   unsigned long i;
+
+   n_read = gfile_fread (error, ptr, size, nobj, stream);
+
+   for (i = 0; i < n_read; i++)
+   {
+      if (ptr[i] == '\t')
+      {
+         ptr[i] = ' ';
+      }
+   }
+
+   return n_read;
+}

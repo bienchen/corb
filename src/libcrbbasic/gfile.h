@@ -71,7 +71,10 @@ int
 gfile_close (GFile*);
 
 size_t
-gfile_read (int*, void*, size_t, size_t, GFile*);
+gfile_fread (int*, void*, size_t, size_t, GFile*);
+
+size_t
+gfile_fread_tab (int*, char*, size_t, size_t, GFile*);
 
 #endif /* GFILE_H */
 

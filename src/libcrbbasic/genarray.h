@@ -338,7 +338,7 @@ ARRAY_CREATE_CLASS_NAMED(unsigned long, Ulong);
  * @param[in] FAILURE block of code to be executed if reallocation fails.
  */
 #define ARRAY_ULONG_PUSH(A, D, FAILURE) \
-   ARRAY_PUSH(A, D, int, FAILURE)
+   ARRAY_PUSH(A, D, unsigned long, FAILURE)
 
 
 #endif /* GENARRAY_H */

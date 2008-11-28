@@ -1,4 +1,4 @@
-# Last modified: 2008-11-20.17
+# Last modified: 2008-11-28.19
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -54,6 +54,11 @@ sides in general. For a really cool progress bar please refer to the
 B<C<Term::ProgressBar>> package from CPAN. This is definitively what you should
 use in productive scripts.
 
+All write operations of C<PBar> utilise Perl's C<syswrite> function. Hence we
+have no problem with buffered filehandles. But you should be careful with
+writing own stuff to C<STDOUT> in a loop while using the C<PBar>
+L<C<update()>|"update / pbar_update"> function.
+
 =cut
 
 
@@ -67,7 +72,7 @@ BEGIN {
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION     = 0.01;
+    $VERSION     = 0.02;
     
     @ISA         = qw(Exporter);
     @EXPORT      = ();
@@ -127,13 +132,7 @@ none.
 
 sub enable
 {
-    # make STDOUT hot (unbuffered)
-    select((select(STDOUT), $|=1)[0]);
-
     $private_func_start = sub {
-	# make STDOUT hot (unbuffered)
-	select((select(STDOUT), $|=1)[0]);
-
         my ($pbar_hashref, $count) = @_;
         $pbar_hashref->{count} = $count;
         $pbar_hashref->{bar} = "";
@@ -154,9 +153,10 @@ sub enable
         $pbar_hashref->{time} = time;
         $pbar_hashref->{tdiff} = 0;
 
-        printf("\n %3.0f%% [%s%*s ETA --:--:-- YY-MM-DD", $pbar_hashref->{port},
-               $pbar_hashref->{bar},
-               ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1), "]");
+        syswrite(STDOUT,
+                 sprintf("\n %3.0f%% [%s%*s ETA --:--:-- YY-MM-DD",
+                         $pbar_hashref->{port}, $pbar_hashref->{bar},
+                ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1), "]"));
     };
 
     $private_func_update = sub {
@@ -189,12 +189,12 @@ sub enable
             my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)
                 = localtime(time + $eta);
 
-            #print "$current $pbar_hashref->{nextbar}\n";
-            printf("\r %3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
-                   $pbar_hashref->{port},
-                   $pbar_hashref->{bar},
-                   ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1),
-                   "]", $hour, $min, $sec, $year % 100,$mon + 1, $mday);
+            syswrite(STDOUT,
+                  sprintf("\r %3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
+                          $pbar_hashref->{port},
+                          $pbar_hashref->{bar},
+                       ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1),
+                          "]", $hour, $min, $sec, $year % 100,$mon + 1, $mday));
 
             $pbar_hashref->{time} = time;
         }
@@ -218,12 +218,11 @@ sub enable
 
         $pbar_hashref->{bar} = sprintf("% *s", $pbar_hashref->{lw}, "");
         $pbar_hashref->{bar} =~ s/\s/=/g;
-        printf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
-               $pbar_hashref->{bar},
-               $hou, $min, $sec);
 
-	# make STDOUT cold (buffered)
-	select((select(STDOUT), $|=0)[0]);
+        syswrite(STDOUT,
+                 sprintf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
+                         $pbar_hashref->{bar},
+                         $hou, $min, $sec));
     };
 }
 
@@ -235,8 +234,9 @@ sub pbar_enable
 =head2 disable / pbar_disable
 
 This function disables the visual progress bar. After calling this function,
-calls to L<C<start()>|"start / pbar_start">, L<C<update()>|"update / pbar_update">
-and L<C<finish()>|"finish / pbar_finish"> produce no output.
+calls to L<C<start()>|"start / pbar_start">.
+L<C<update()>|"update / pbar_update"> and
+L<C<finish()>|"finish / pbar_finish"> produce no output.
 
 =over 4
 
@@ -259,9 +259,6 @@ sub disable
     $private_func_update = sub {};
 
     $private_func_finish = sub {};
-
-    # make STDOUT cold (buffered)
-    select((select(STDOUT), $|=0)[0]);
 }
 
 sub pbar_disable

@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-11-20.16
+# Last modified: 2008-11-21.14
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -27,7 +27,7 @@ BEGIN
 {
   # try to get bash compatible shell
   $ENV{'SHELL'} = '@SHELL@' if exists $ENV{'DJGPP'};
-  $|=1; # disable line buffer for print statements
+  # $|=1; # disable line buffer for print statements
 }
 # SETTINGS         - END
 

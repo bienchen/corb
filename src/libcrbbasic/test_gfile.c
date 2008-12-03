@@ -47,17 +47,21 @@
 #include "inc_strg.h"
 #include "memmgr.h"
 #include "errormsg.h"
-/*#include "mprintf.h"*/
+#include "mprintf.h"
 #include "gfile.h"
 
 
 int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
    GFile* file;
-   char c_file[] = "gfile.c";
+   char c_file[] = "test_read.txt";
    int ret_val = 0;
+   int error;
+   size_t sizeof_buf = 0;
+   char* test = NULL;
 
    /* open file */
+   THROW_WARN_MSG ("Trying to OPEN  file \"%s\".", c_file);
    file = GFILE_OPEN(c_file, strlen (c_file), GFILE_VOID, "r");
    if (file == NULL)
    {
@@ -65,8 +69,13 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
+   THROW_WARN_MSG ("Trying to READ  file \"%s\".", c_file);
+   while (gfile_getline (&error, &test, &sizeof_buf, file) > 0)
+   {
+      mprintf ("%s\n", test);
+   }
 
-
+   THROW_WARN_MSG ("Trying to CLOSE file \"%s\".", c_file);
    ret_val = gfile_close (file);
    if (ret_val == EOF)
    {
@@ -82,6 +91,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    /* try to open again */
 
 
+   XFREE (test);
    FREE_MEMORY_MANAGER;
 
    return EXIT_SUCCESS;

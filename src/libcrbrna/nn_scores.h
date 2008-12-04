@@ -46,10 +46,10 @@
 extern "C" {
 #endif
 
+#include "alphabet.h"
+
 #ifndef NN_SCORES_H
 #define NN_SCORES_H
-
-#include "alphabet.h"
 
 /* indeces for multiloop arrays */
 enum stem_indeces {

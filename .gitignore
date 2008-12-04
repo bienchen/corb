@@ -53,12 +53,29 @@ src/libcrbrna/test_rna
 src/libcrbrna/test_secstruct
 
 
-# ignore binaries, tarballs made by "make dist"
+# ignore binaries, tarballs... made by "make"
 /corb-*.tar.gz
 /src/corb
+share/misc/bin/ex_cmp_er2de_rnaeval
+share/doc/*.html
+share/doc/*.pdf
 
 # ignore cpowner file used by emacs helper
 /cpowner
+
+# ignore documentation intermediates
+share/doc/*.aux
+share/doc/*.cp
+share/doc/*.cps
+share/doc/*.fn
+share/doc/*.ky
+share/doc/*.log
+share/doc/*.pg
+share/doc/*.toc
+share/doc/*.tp
+share/doc/*.vr
+share/doc/stamp-1
+share/doc/stamp-vti
 
 # ignore cache files from emacs' semantic package
 semantic.cache

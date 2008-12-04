@@ -1,14 +1,588 @@
-@c -*-texinfo-*-
+@node Coding
+@chapter Code --- Notes and Coding Rules
+
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
+
 @cindex Coding rules
 @cindex Writing code
 @cindex Rules for code
 @cindex Notes on code
 @cindex Coding style
 @cindex Style of code
-start with short desc whats in this chapter desc. single sections? or in menu?
-section for general stuff?
-section language specific
-subsection c, perl, m4...
+Since @corb{} is a cooperative software project, a common layout is regarded
+indispensable. This starts at code layout --- blocks, use of whitespaces,
+indentation, @dots{} ---, function names, documentation and goes on with how to
+write manuals.
+
+Here we describe general notes and rules, first. In the second part of this
+chapter a set of language specific rules is listed.
+
+
+@menu
+* General rules::               
+* Language rules::              
+@end menu
+
+
+@node General rules, Language rules, Coding, Coding
+@section General rules
+@cindex General rules
+This is a set of rules applying to all programming languages used in @corb{}.
+If you find one of these general rules not to be applicable to a certain
+language please notify the author of the manual.
+
+
+@menu
+* Philosophy::                  
+* Licensing::                   
+* Documenting::                 
+* Tabs::                        
+* Indentation::                 
+* Line size::                   
+* Punctuation::                 
+* Spell checking::              
+@end menu
+
+
+@node Philosophy, Licensing, General rules, General rules
+@subsection Philosophy
+Have a look at some example files. There is a standard layout for making
+functions stand out. Please do not use your own layout, even if it is prettier.
+The aim is consistency and predictability.
+
+
+@node Licensing, Documenting, Philosophy, General rules
+@subsection Licensing
+@cindex Licensing
+All your contributions have to be put covered by the GPL. Documentation 
+goes with the FDL. See... for details. If you do not want to put your code
+under the GPL/ FDL, you can not use @corb{} for your project and we can not
+keep it in @corb{}.
+
+
+@node Documenting, Tabs, Licensing, General rules
+@subsection Documenting
+@cindex Documentation
+Document all your stuff. That is files and functions as well as programs.
+See... for details on how to document.
+
+
+@node Tabs, Indentation, Documenting, General rules
+@subsection Tabs
+@cindex Tabs
+There are @emph{no} tab characters. Use spaces. Use two spaces to indent in
+functions and loops.
+
+The only exception are @file{Makefiles}. If you have to write your own targets
+(e.g. to extend an Automake target) you still need tabs to precede rules.
+
+
+@node  Indentation, Line size, Tabs, General rules
+@subsection Indentation
+@cindex Indentation
+@cindex Parenthesis
+@cindex Block layout
+Indentation is almost pure Kernighan and Ritchie with three spaces. Block
+parenthesis line up with the introducing statement.
+In Emacs this can be achieved by setting @code{c-default-style} @code{ellemtel}.
+
+
+@node Line size, Punctuation, Indentation, General rules
+@subsection Line size
+Try to make code readable in a window of 80 columns or printed page of 80
+columns. This may mean shortening your line or breaking it in a place you think
+makes it more readable for others.
+
+
+@node Punctuation, Spell checking, Line size, General rules
+@subsection Punctuation
+@cindex Punctuation
+There should usually be a space after punctuation, for exactly the same reasons
+as in English (helping readability). Commas and semi-colons definitely want to
+be followed by a space.
+
+Do not write 
+@example
+   for (a=0;a<lim;a++)
+@end example
+@noindent
+Do
+@example
+   for (a = 0; a < lim; a++)
+@end example
+@noindent
+If the line is going to go beyond 79 spaces, delicately delete spaces while
+trying to keep readability.
+
+
+@node Spell checking,  , Punctuation, General rules
+@subsection Spell checking
+- spell check documentation/ comments in code
+
+
+@node Language rules,  , General rules, Coding
+@section Language rules
+@cindex Language rules
+
+This section declares rules for the programming languages used in @corb{}.
+
+
+@menu
+* C::                           
+@end menu
+
+
+@node C,  , Language rules, Language rules
+@subsection C
+@cindex C rules
+@cindex Coding rules for C
+
+
+@menu
+* CFLAGS::                      
+* typedef::                     
+* Include files::               
+* Boolean::                     
+* Assertions::                  
+* Macros::                      
+* Multidimensional arrays::     
+* Conditional compilation::     
+* Testing::                     
+* Visibility::                  
+* External Libraries::          
+@end menu
+
+
+@node CFLAGS, typedef, C, C
+@subsubsection @env{CFLAGS}
+@cindex @env{CFLAGS}
+While writing code for @corb{} you have to compile with special @env{CFLAGS}
+enabled. For our build system these are set by running @command{configure} with
+options @option{--enable-development} and @option{--with-development}:
+@example
+./configure --enable-development --with-development
+@end example
+The flags used for developing are very restrictive and pedantic. This should
+assure a very high level of compatibility among different systems.
+
+Several compilers are supported beside @gcc{}. It is definitively a good idea to
+check your code with all supported and freely available compilers. For more
+details see...
+
+
+@node typedef, Include files, CFLAGS, C
+@subsubsection @code{typedef}
+@cindex @code{typedef} rules
+With its information-hiding approach, @code{typedef}s are allowed in @corb{}.
+Structures which are hidden from public should be @code{typedef}ed by default.
+
+
+@node Include files, Boolean, typedef, C
+@subsubsection Include files
+@cindex Include rules
+@cindex Header
+@cindex @code{#ifdef}
+@cindex @code{#ifndef}
+@cindex @code{__cplusplus}
+@emph{All} source files must include @file{config.h} as topmost header. This is
+the configurational header of the GNU build system and is created by the
+@command{configure} script.
+
+Standard headers should follow the configurational header immediately. After
+this the @corb{} headers should go.
+
+All headers of a library are exported into a library-header named
+@file{crb@i{library}.h}. This header is then included by external
+sources instead of invoking module headers.
+
+Since some systems do not cover the ANSI C standard entirely, some standard
+headers have to be invoked by including @file{crbbasic.h}, the header of
+@libcrbbasic{}. This library provides access to certain headers after an
+evaluation of the configurational header. Headers covered by @libcrbbasic{}
+are:
+@itemize @bullet
+  @item @file{stdbool.h}
+  @item @file{pthread.h}
+  @item @file{sting.h}/ @file{strings.h}
+@end itemize
+
+Your own header files must start with the license header (see ...), followed by
+the documentation header (see ...). Everything C in a header has to be enclosed
+in
+@example
+   #ifdef __cplusplus
+   extern "C" @{
+   #endif
+@end example
+@noindent
+and
+@example
+   #ifdef __cplusplus
+   @}
+   #endif
+@end example
+@noindent
+Of course do not forget to surround your header code by a named conditional to
+prevent multiple inclusion:
+@example
+   #ifndef YOUR_HEADER_H
+   #define YOUR_HEADER_H
+
+   header code @dots{}
+
+   #endif /* YOUR_HEADER_H */
+@end example
+
+
+@node Boolean, Assertions, Include files, C
+@subsubsection Boolean
+Do not add your own type with a name like ``boolean'' for true/ false. This is
+already handled by @corb{} in library @libcrbbasic{}. Thus, a type
+@code{bool} with values @code{true}/ @code{false} is available by including
+@file{crbbasic.h}.
+
+
+@node Assertions, Macros, Boolean, C
+@subsubsection Assertions
+@cindex @code{assert}
+@cindex Input checking
+@cindex Check parameters
+@cindex Parameter checking
+When writing functions which could be used by other developers, usually
+functions declared @code{extern}, there has to be some checking on the input
+parameters. In @corb{} this is done via assertions (invoked by
+@file{assert.h}), which are turned off by default. The basic idea is to force
+the developer to hand over only secure input to functions. With this there is
+no more need for function-side checks in the productive version of @corb{} and
+thus assertions are removed from the binary.
+
+By this we avoid the overhead of checking for the normal user. And since we
+know, that there is no such overhead, we can also use assertions at points
+where it is really expensive, e.g. recursive functions. Usually putting an
+@code{assert(SOMETHING)} only raises the constant of your running time so your
+code will run longer, not endlessly.
+
+Since assertions are not available by default, you must not do anything else
+beside checking for values in an @code{assert}-statement. Something like
+@example
+   assert(var = function());
+
+   function_to_work_with_new_value_of(var);
+@end example
+@noindent
+is definitively @strong{NOT ALLOWED}.
+
+To turn on assertions while developing, just run the @command{configure} script
+with @option{--enable-assert}. Usually you want all development features
+enabled so it is a better idea to use @option{--enable-development} which
+invokes @option{--enable-assert} automatically.
+
+
+@node Macros, Multidimensional arrays, Assertions, C
+@subsubsection Macros
+@cindex Macros
+@cindex @code{#define}
+@cindex @code{__FILE__}
+@cindex @code{__LINE__}
+We do not make extensive use of macros.
+
+We do @emph{not} use functional macros. The problem with functional macros is
+parameter evaluation. Each time a parameter is used in macro code, it is
+evaluated. Assume we have a macro to find the smaller of two values:
+@example
+   #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+@end example
+@noindent
+Now we use this macro with two variables:
+@example
+   min = MIN(i++, j++);
+@end example
+@noindent
+Evaluates to:
+@example
+   min = (i++) < (j++) ? (i++) : (j++);
+@end example
+@noindent
+Additionally macros of such type will increase the running time of your code
+when used with function calls as parameters.
+
+We @emph{never} use variables names in macros. For example some people use
+macros for loops:
+@example
+   #define FOR_LOOP(X) for (i = 0; i < (X); i++)
+@end example
+@noindent
+Such macros always assume that certain variables are in current scope. This
+makes code hard to understand/ debug. So the ``correct'' loop macro would be:
+@example
+   #define FOR_LOOP(I, X) for ((I) = 0; (I) < (X); (I)++)
+@end example
+@noindent
+Since this is sort of a functional macro, we do not use this at all.
+
+Nevertheless, macros are allowed for constant values. But try to avoid them
+where possible, e.g. for some magic integer values you should use the
+@code{enum} construct. Or use global constants for values which are only seen
+by one module. Especially on character arrays the compiler while benefit on
+this. 
+
+There is only one case where macros are recommended. In some situations you
+would like to see the file and the line number where a problem occurs in a
+message. For this, C provides the @code{__FILE__} and @code{__LINE__} macros.
+If you have a function, which takes the file and line number as arguments, wrap
+the function by a macro and hide these arguments. E.g. the @corb{} memory
+allocation functions use this:
+@example
+   #define XMALLOC(SIZE)                \
+      xmalloc(SIZE, __FILE__, __LINE__)
+@end example
+@noindent
+This assures that we can immediately catch the point where a memory block was
+allocated but never freed.
+
+Macro names are written in all upper case letters and use underscores as spaces.
+
+
+@node Multidimensional arrays, Conditional compilation, Macros, C
+@subsubsection Multidimensional arrays
+@cindex Enumerations
+@cindex @code{enum}
+@cindex Multidimensional arrays
+@cindex Multivalue lists
+Most of the time we use different values than 0 or 1 in our code, these values
+have a special meaning and thus we give them special names. The same holds for
+multidimensional arrays. If we have more than 1 dimension, we probably have a
+list of certain attributes. To improve readability/ make code more
+comprehendible, we use the attribute names as indices.
+
+For naming values, C provides the @code{enumeration} type. Beside giving us
+names for our attributes, it also tells us the size of a particular dimension. 
+This is achieved by adding an extra name at the end of the @code{enum} list.
+
+Here is a little example on how to use @code{enum}s and arrays:
+
+Assume you want to store a list of loops of an RNA secondary structure. Since a
+loop can always be determined by it's closing base pair, we just need an 2D
+array as storage:
+@example
+  int** loops;
+@end example
+@noindent
+Now assume you store 5' bases in address @code{loops[i][0]} and 3' bases in
+@code{loops[i][1]}. As you have written this code by yourself, you know where
+everything goes. But how should anybody else figure out what is the 5' or the
+3' position? This would require code inspection or, you just name to the
+storage of the pairing partners:
+@example
+  enum 
+  @{
+    p5_base = 0,
+    p3_base,
+    n_bases
+  @};
+@end example
+@noindent
+Additionally to @code{p5_base} and @code{p3_base} you have a value
+@code{n_bases}. This is automatically set to 2 and should be used for
+allocating the array:
+@example
+  loops = (int**) XMALLOC_2D(n, n_bases, sizeof(**int));
+@end example
+@noindent
+Later you decide also to store the loop size together with the pairing partners.
+With @code{enum}s this only means adding an additional value:
+@example
+  enum 
+  @{
+    p5_base = 0,
+    p3_base,
+    size,
+    n_bases
+  @};
+@end example
+@noindent
+Now the size can be stored in @code{loops[i][size]}. Since you used
+@code{n_bases} for the allocation you do not have to change anything because
+now it is magically set to 3.
+
+naming scheme
+- everything lc/ uc?
+- name for enums?
+
+
+@node Conditional compilation, Testing, Multidimensional arrays, C
+@subsubsection Conditional compilation
+@cindex Conditional compilation
+@cindex @code{#ifdef}
+@cindex @code{#ifndef}
+@cindex @code{__GNUC__}
+@cindex @code{ptrhead}
+@cindex @posix{} Threads
+We do not make extensive use of conditional compilation.
+
+Conditional compilation is used to enable/ disable certain features in an
+application in the build phase. Thereby the preprocessor is used to evaluate
+macros which represent the configuration options:
+@example
+  #ifndef HAS_FEATURE
+    @dots{}
+  #else
+    @dots{}
+  #endif
+@end example
+@noindent
+Conditional compilation makes code hard to debug. Therefore it should not be
+used broadly. Anyway, there are only rare cases where it is needed.
+
+Nevertheless, there are three scenarios, where conditional compilations seems
+to be unavoidable:
+@itemize @bullet
+  @item Additional library functions
+  @item Making use of special compiler features
+  @item Optimisation techniques
+@end itemize
+
+For a broad discussion of external libraries and @corb{}, please refer to
+@ref{External Libraries}. In principle, one can not set up rules for the use of
+conditional compilation and libraries. This is due to the many ways you can
+invoke libraries in your code. So the rule is just to be ``careful'' on this
+issue. @strong{An example can be found in the code of the gfile module...}
+
+One scenario where we encourage you to use conditional compilation is for
+enabling @emph{additional} checking/ optimisation techniques of certain
+compilers. This case is best explained by an example.
+
+The GNU Compiler Collection provides a set of certain attributes to
+declarations (see @uref{http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Function-Attributes.html#Function-Attributes, the @gcc{} manual}). To use such function
+attributes, you have to check which compiler is currently in use. The @gcc{}
+defines the @code{__GNUC__} macro to contain the version number if invoked. 
+This can easily be used to determine if it is safe to turn on @gcc{}s
+@code{malloc}
+ attribute:
+@example
+  void*
+  xmalloc(const size_t, const char*, const int)
+  #if defined(__GNUC__) && (__GNUC__ > 2)
+       __attribute__((malloc))
+  #endif /* __GNUC__ */
+  ;
+@end example
+
+Another issue, where conditional compilation seems to be unavoidable, is
+hardware depending optimisation. The idea of @corb{} is to have everything
+implemented to work everywhere. So as a start you will not code for a certain
+machine type but in generalised C. Once there is a standard solution, you might
+think about some optimisations, e.g. parallelising your code. This is where
+conditional compilation may be considered.  It can be used as a switch to
+enable certain features like @posix{} threads in multi core environments.
+
+In principle, there are two ways to switch between two versions of an
+algorithm: In code and via separate declarations. Mixing two different versions
+of one algorithm in one function, using macros as switches is definitively
+unwanted. This is not only hard to debug, for larger code segments it is
+regarded as impossible to read code without slipping something. Therefore we
+switch between different implementations of the same function. Thereby no
+preprocessor directive occurs in code but on the level of declaration. 
+
+Explicitly this means, that we duplicate a function to be optimised, leave the general version unchanged and optimise the copy. Both versions are then wrapped into preprocessor conditionals. On major code changes this probably means that we have to do changes twice/ recreate the optimised copy by cut n' paste but we gain very much better readability.
+
+Again, do not:
+@example
+  void function_foobar (void)
+  @{
+     /* bar code */
+     @dots{}
+
+     #ifdef FEATURE_FOO
+        /* foo code */
+        @dots{}
+     #endif
+
+     /* more bar code */
+     @dots{}
+
+     #ifdef FEATURE_FOO
+        /* more foo code */
+        @dots{}
+     #endif          
+
+     #ifndef FEATURE_FOO
+        /* exceptional bar code only to be used if FOO is not available */
+        @dots{}
+     #endif
+
+     @dots{}
+  @}
+@end example
+@noindent
+Do:
+@example
+  #ifdef FEATURE_FOO  /* we have FOO */
+  void function_foobar (void)
+  @{
+     /* bar code */
+     @dots{}
+
+     /* foo code */
+     @dots{}
+
+     /* more bar code */
+     @dots{}
+
+     /* more foo code */
+     @dots{}
+  @}
+  #else               /* no FOO available */
+  void function_foobar (void)
+  @{
+     /* bar code */
+     @dots{}
+
+     /* more bar code */
+     @dots{}
+
+     /* exceptional bar code only to be used if FOO is not available */
+     @dots{}
+  @}
+  #endif
+@end example
+
+As everywhere in live, there is one exception for the function spliting. When
+using @posix{} threads, you probably need mutexes. If the only change to a
+function while using threads is switching on and off or waiting for a mutex,
+you might do this within the generalised code. In @libcrbbasic{} this is
+already used at some points without obfuscating the code.
+
+The macro signaling whether @posix{} threads are enabled or not is called
+@code{HAVE_PTHREAD}.
+
+Last but not least a little hint: Conditional compilation is in fact used
+everywhere in the @corb{} code -- in the @code{__cplusplus} check in each
+header. But lets just say this is OK.
+
+
+@node Testing, Visibility, Conditional compilation, C
+@subsubsection Testing
+@cindex Test your code
+@cindex Unit tests
+
+- if possible: calc no. from other consts
+
+@node Visibility, External Libraries, Testing, C
+@subsubsection Visibility
+macros, enums, structs, ...
+
+@node External Libraries,  , Visibility, C
+@subsubsection External Libraries
+
+libraries
+Given an appropriate license, you can use external libraries in corb
+- not extensive use
+- only license:
+- try to make sure library is available on all systems
+- only additional, corb must compile without library
+
+- function names: static for modules: precede by 's': s_gfile
+- create macro for C macros

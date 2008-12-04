@@ -1,0 +1,13 @@
+@node Preface, Onomastics, For the impatient, Top
+@unnumbered Preface
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+Declare intention of this manual here:
+This
+is a description of internals, conventions and how to change the code.
+
+- errors can always occur and everywhere
+- on errors notify/ correct, e.g. speaking of makefiles term of target and rule mixed up

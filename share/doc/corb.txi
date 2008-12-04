@@ -4,9 +4,24 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
+@c POSIX nameplate
+@macro posix{}
+POSIX
+@end macro
+
 @c Format of CoRB tools and CoRB nameplate itself
 @macro crbtool{tool}
 @sansserif{\tool\}
+@end macro
+
+@c Format a library name
+@macro crblib{lib}
+@code{\lib\}
+@end macro
+
+@c several CoRB libs predefined
+@macro libcrbbasic{}
+@crblib{libcrbbasic}
 @end macro
 
 @c several CoRB tools predefiend
@@ -16,6 +31,11 @@
 @c CoRB nameplate
 @macro corb{}
 @crbtool{CoRB}
+@end macro
+
+@c GCC nameplate
+@macro gcc{}
+@crbtool{GCC}
 @end macro
 
 @c title of the CoRB development handbook

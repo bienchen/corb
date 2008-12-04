@@ -89,6 +89,9 @@ gfile_rewind (GFile*);
 unsigned long
 gfile_getline (int*, char**, size_t*, GFile*);
 
+unsigned long
+gfile_getline_tab (int*, char**, size_t*, GFile*);
+
 #endif /* GFILE_H */
 
 #ifdef __cplusplus

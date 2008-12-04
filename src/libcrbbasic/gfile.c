@@ -236,36 +236,58 @@ s_gfile_store_char (const char c,
    return 0;
 }
 
-/** @brief Read a line form file.
+/** @brief Read a line from file up to a certain delimiter.
  *
- * Basic function for reading lines from text files. The data read is stored in
- * @c buf. The size of @c buf is determined by @c size. If the line to be read
- * is longer than @c size, @c buf is reallocated to fit the line and @c size is
- * updated. If the line read is shorter than @c size @c buf is not changed in
- * size. Each line read is terminated by a null character while any newline
- * character is chopped of. Since a text file can contain null characters you
- * should not iterate over a line until '\0' occurs in @c buf.\n
+ * Basic function for reading lines from text files. A line is terminated by a
+ * set of delimiters to be provided. If the delimiter list @c delim is empty,
+ * the whole file will be read into @c buf. While reading, characters can be
+ * translated according to a given table @c tr. Thereby the character to be
+ * translated has to be stored in column @c GFILE_TR_FROM and its complement in
+ * @c GFILE_TR_TO. Alltogether the table has @c GFILE_TR_N columns. The data
+ * read is stored in @c buf. The size of @c buf is determined by @c size. If
+ * the line to be read is longer than @c size, @c buf is reallocated to fit the
+ * line and @c size is updated. If the line read is shorter than @c size @c buf
+ * is not changed in size. Each line read is terminated by a null character
+ * while any delimiter character is chopped of. Since a text file can contain
+ * null characters you should not iterate over a line until '\0' occurs in
+ * @c buf.\n
  * @c error is used to signal read failures. For successful reading @c error is
  * 0. Has only to be checked if 0 is returned, otherwise @c error is 0.\n
  * Returns 0 if the end of file is reached or on error. Otherwise the length of
- * the line read. If 0 is returned, @c ptr is undefined but still allocated.
+ * the line read. If 0 is returned, @c ptr is undefined but still allocated.\n
+ * Since the translation and delimiter tables are searched linearily, they
+ * should not be to large.
  *
- * @param[out] error   Container for error values.
- * @param[out] buf     Storage for the line read.
- * @param[in/out] size Size of @c buf.
- * @param[in] stream   File to be read.
+ * @param[out] error     Container for error values.
+ * @param[out] buf       Storage for the line read.
+ * @param[in/out] size   Size of @c buf.
+ * @param[in] tr         Translation table. May be @c NULL if @c tr_size = 0.
+ * @param[in] tr_size    No. of entries in @c tr.
+ * @param[in] delim      Delimiters list. May be @c NULL if @c delim_size = 0.
+ * @param[in] delim_size No. of delimiters.
+ * @param[in] stream     File to be read.
  */
-unsigned long
-gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
+static __inline__ unsigned long
+gfile_getdelim_tr (int* error,
+                   char** buf,
+                   size_t* size,
+                   const char** tr,
+                   const unsigned long tr_size,
+                   const char* delim,
+                   const unsigned long delim_size,
+                   GFile* stream)
 {
    int c;                       /* current character */
    unsigned long length = 0;    /* length of current line */
+   unsigned long i;
 
    assert (error);
    assert (buf);
    assert (size);
    assert (stream);
    assert (stream->fileptr.uc);
+   assert ((tr_size == 0) || ((tr != NULL) && (*tr != NULL)));
+   assert ((delim_size == 0) || (delim != NULL));
 
    if (stream->type == GFILE_UNCOMPRESSED)
    {
@@ -280,10 +302,22 @@ gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
          }
 
          /* check line end criteria */
-         if ((*buf)[length] == '\n')
+         for (i = 0; i < delim_size; i++)
          {
-            (*buf)[length] = '\0';
-            return length + 1;
+            if ((*buf)[length] == delim[i])
+            {
+               (*buf)[length] = '\0';
+               return length + 1;
+            }
+         }
+
+         /* translate */
+         for (i = 0; i < tr_size; i++)
+         {
+            if ((*buf)[length] == tr[i][GFILE_TR_FROM])
+            {
+               (*buf)[length] = tr[i][GFILE_TR_TO];
+            }
          }
 
          length++;
@@ -315,4 +349,34 @@ gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
    }
 
    return length;
+}
+
+/** @brief Read a line from file.
+ *
+ * Basic function for reading lines from text files. The data read is stored in
+ * @c buf. The size of @c buf is determined by @c size. If the line to be read
+ * is longer than @c size, @c buf is reallocated to fit the line and @c size is
+ * updated. If the line read is shorter than @c size @c buf is not changed in
+ * size. Each line read is terminated by a null character while any newline
+ * character is chopped of. Since a text file can contain null characters you
+ * should not iterate over a line until '\0' occurs in @c buf.\n
+ * @c error is used to signal read failures. For successful reading @c error is
+ * 0. Has only to be checked if 0 is returned, otherwise @c error is 0.\n
+ * Returns 0 if the end of file is reached or on error. Otherwise the length of
+ * the line read. If 0 is returned, @c ptr is undefined but still allocated.
+ *
+ * @param[out] error   Container for error values.
+ * @param[out] buf     Storage for the line read.
+ * @param[in/out] size Size of @c buf.
+ * @param[in] stream   File to be read.
+ */
+unsigned long
+gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
+{
+   char delim[] = {'\n'};
+
+   return gfile_getdelim_tr (error, buf, size,
+                             NULL, 0,
+                             delim, sizeof (delim) / sizeof (*delim),
+                             stream);
 }

@@ -60,6 +60,12 @@ enum {
    GFILE_MEM_ERROR
 };
 
+enum {
+   GFILE_TR_FROM = 0,
+   GFILE_TR_TO,
+   GFILE_TR_N
+};
+
 typedef struct GFile GFile;
 
 

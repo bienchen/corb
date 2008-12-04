@@ -70,7 +70,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    }
 
    THROW_WARN_MSG ("Trying to READ   file \"%s\".", c_file);
-   while (gfile_getline (&error, &test, &sizeof_buf, file) > 0)
+   while (gfile_getline_verbatim (&error, &test, &sizeof_buf, file) > 0)
    {
       mprintf ("%s\n", test);
    }

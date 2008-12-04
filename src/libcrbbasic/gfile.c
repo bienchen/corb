@@ -412,7 +412,7 @@ gfile_getdelim_tr (int* error,
  * @param[in] stream   File to be read.
  */
 unsigned long
-gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
+gfile_getline_verbatim (int* error, char** buf, size_t* size, GFile* stream)
 {
    char delim[] = {'\n'};
 
@@ -424,8 +424,9 @@ gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
 
 /** @brief Read a line form file and translate tabulators into whitespaces.
  *
- * Basically does the same as @c gfile_getline() BUT translates tabulators into
- * whitespaces. For more details please refer to the @c gfile_getline().
+ * Basically does the same as @c gfile_getline_verbatim() BUT translates
+ * tabulators into whitespaces. For more details please refer to the
+ * @c gfile_getline_verbatim().
  *
  * @param[out] error   Container for error values.
  * @param[out] buf     Storage for the line read.

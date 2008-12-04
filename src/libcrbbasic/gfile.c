@@ -422,7 +422,7 @@ gfile_getline_verbatim (int* error, char** buf, size_t* size, GFile* stream)
                              stream);
 }
 
-/** @brief Read a line form file and translate tabulators into whitespaces.
+/** @brief Read a line from file and translate tabulators into whitespaces.
  *
  * Basically does the same as @c gfile_getline_verbatim() BUT translates
  * tabulators into whitespaces. For more details please refer to the
@@ -437,6 +437,30 @@ unsigned long
 gfile_getline_tab (int* error, char** buf, size_t* size, GFile* stream)
 {
    char delim[] = {'\n'};
+   char tr[][GFILE_TR_N]  = {{'\t',' '}};
+
+   return gfile_getdelim_tr (error, buf, size,
+                             tr, sizeof (tr) / sizeof (*tr),
+                             delim, sizeof (delim) / sizeof (*delim),
+                             stream);   
+}
+
+/** @brief Read a line from file.
+ *
+ * Basically does the same as @c gfile_getline_verbatim() but a line ends on
+ * newline or the shell command symbol '#'. Additionally translates
+ * tabulators into whitespaces. For more details please refer to the
+ * @c gfile_getline_verbatim().
+ *
+ * @param[out] error   Container for error values.
+ * @param[out] buf     Storage for the line read.
+ * @param[in/out] size Size of @c buf.
+ * @param[in] stream   File to be read.
+ */
+unsigned long
+gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
+{
+   char delim[] = {'\n', '#'};
    char tr[][GFILE_TR_N]  = {{'\t',' '}};
 
    return gfile_getdelim_tr (error, buf, size,

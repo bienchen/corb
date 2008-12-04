@@ -89,6 +89,20 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       mprintf ("%s\n", test);
    }
 
+   THROW_WARN_MSG ("Trying to REWIND file \"%s\".", c_file);
+   ret_val = gfile_rewind (file);
+   if (ret_val)
+   {
+      THROW_ERROR_MSG ("Could not rewind \"%s\".", c_file);      
+   }
+
+   THROW_WARN_MSG ("Trying to READ   file \"%s\" with checks for comments.",
+                   c_file);
+   while (gfile_getline (&error, &test, &sizeof_buf, file))
+   {
+      mprintf ("%s\n", test);
+   }
+
    THROW_WARN_MSG ("Trying to CLOSE file \"%s\".", c_file);
    ret_val = gfile_close (file);
    if (ret_val == EOF)

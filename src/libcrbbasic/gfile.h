@@ -54,6 +54,12 @@ typedef enum {
    GFILE_UNCOMPRESSED
 } GFileType;
 
+enum {
+   GFILE_UNKNOWN_TYPE = 1,
+   GFILE_READ_ERROR,
+   GFILE_MEM_ERROR
+};
+
 typedef struct GFile GFile;
 
 
@@ -69,15 +75,6 @@ gfile_open (const char*, const unsigned long, const GFileType, const char*,
 
 int
 gfile_close (GFile*);
-
-size_t
-gfile_fread (int*, void*, size_t, size_t, GFile*);
-
-size_t
-gfile_fread_tab (int*, char*, size_t, size_t, GFile*);
-
-size_t
-gfile_fread_comment (const char, int*, char*, const size_t, GFile*);
 
 unsigned long
 gfile_getline (int*, char**, size_t*, GFile*);

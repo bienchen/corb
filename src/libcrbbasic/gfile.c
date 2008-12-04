@@ -453,22 +453,6 @@ gfile_fread_comment_sh (int* error,
    return n_read;
 }
 
-/** @brief Read a line form file.
- *
- * Basic function for reading lines from text files. The data read is stored in
- * @c ptr. The size of @c ptr is determined by @c size. If the line to be read
- * is longer than @c size, @c ptr is reallocated to fit the line and @c size is
- * updated. If the line read is shorter than @c size @c ptr is not changed in
- * size. Each line read is terminated the null character while any newline
- * character is chopped of. Since a text file can contain null characters you
- * should not iterate over a line until '\0' occurs in @c ptr.\n
- * @c error is used to signal read failures. For successful reading @c error is
- * 0. Has only to be checked if 0 is returned, otherwise @c error is 0.\n
- * Returns 0 if the end of file is reached or on error. Otherwise the length of
- * the line read. If 0 is returned, @c ptr is unchanged.
- *
- * @param[out] error Container for error values.
- */
 static __inline__ int
 s_gfile_store_char (const char c,
                     char** buf,
@@ -495,6 +479,25 @@ s_gfile_store_char (const char c,
    return 0;
 }
 
+/** @brief Read a line form file.
+ *
+ * Basic function for reading lines from text files. The data read is stored in
+ * @c buf. The size of @c buf is determined by @c size. If the line to be read
+ * is longer than @c size, @c buf is reallocated to fit the line and @c size is
+ * updated. If the line read is shorter than @c size @c buf is not changed in
+ * size. Each line read is terminated by a null character while any newline
+ * character is chopped of. Since a text file can contain null characters you
+ * should not iterate over a line until '\0' occurs in @c buf.\n
+ * @c error is used to signal read failures. For successful reading @c error is
+ * 0. Has only to be checked if 0 is returned, otherwise @c error is 0.\n
+ * Returns 0 if the end of file is reached or on error. Otherwise the length of
+ * the line read. If 0 is returned, @c ptr is undefined but still allocated.
+ *
+ * @param[out] error   Container for error values.
+ * @param[out] buf     Storage for the line read.
+ * @param[in/out] size Size of @c buf.
+ * @param[in] stream   File to be read.
+ */
 unsigned long
 gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
 {

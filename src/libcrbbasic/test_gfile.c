@@ -54,7 +54,7 @@
 int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
    GFile* file;
-   char c_file[] = "test_read.txt";
+   char c_file[] = "test_gfile.c";
    int ret_val = 0;
    int error;
    size_t sizeof_buf = 0;

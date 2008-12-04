@@ -82,7 +82,9 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       THROW_ERROR_MSG ("Could not rewind \"%s\".", c_file);      
    }
 
-   THROW_WARN_MSG ("Trying to CLOSE  file \"%s\".", c_file);
+   gfile_getline_tab (&error, &test, &sizeof_buf, file);
+
+   THROW_WARN_MSG ("Trying to CLOSE file \"%s\".", c_file);
    ret_val = gfile_close (file);
    if (ret_val == EOF)
    {

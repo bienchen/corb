@@ -311,7 +311,7 @@ static __inline__ unsigned long
 gfile_getdelim_tr (int* error,
                    char** buf,
                    size_t* size,
-                   const char** tr,
+                   char tr[][GFILE_TR_N],
                    const unsigned long tr_size,
                    const char* delim,
                    const unsigned long delim_size,
@@ -435,5 +435,11 @@ gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
 unsigned long
 gfile_getline_tab (int* error, char** buf, size_t* size, GFile* stream)
 {
-   
+   char delim[] = {'\n'};
+   char tr[][GFILE_TR_N]  = {{'\t',' '}};
+
+   return gfile_getdelim_tr (error, buf, size,
+                             tr, sizeof (tr) / sizeof (*tr),
+                             delim, sizeof (delim) / sizeof (*delim),
+                             stream);   
 }

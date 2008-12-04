@@ -43,6 +43,7 @@
 
 #include <config.h>
 #include <stddef.h>
+#include <errno.h>
 #include <assert.h>
 #include "errormsg.h"
 #include "memmgr.h"
@@ -199,6 +200,45 @@ gfile_close (GFile* gfile)
    return ret_val;
 }
 
+/** @brief Reset the current file position to the beginning.
+ *
+ * Sets the file position of a file stream to the beginning. Can be usd for
+ * rereading a file.\n
+ * Returns
+ *        @c GFILE_UNKNOWN_TYPE if the type of file is unsupported,
+ *        @c GFILE_REWIND_ERROR for problems on rewinding,
+ *        0 otherwise.
+ *
+ * @param[in] stream File to be reseted
+ */
+int
+gfile_rewind (GFile* stream)
+{
+   assert (stream);
+   assert (stream->fileptr.uc);
+   assert (stream->path);
+
+   if (stream->type == GFILE_UNCOMPRESSED)
+   {
+      errno = 0;
+      rewind (stream->fileptr.uc);
+      if (errno != 0)
+      {
+         THROW_ERROR_MSG ("Rewinding file \"%s\" failed:",
+                       str_get (stream->path));
+         return GFILE_REWIND_ERROR;
+      }
+   }
+   else
+   {
+      THROW_ERROR_MSG ("Rewinding file \"%s\" failed: Unknown file type",
+                       str_get (stream->path));
+      return GFILE_UNKNOWN_TYPE;
+   }
+
+   return 0;
+}
+
 /** @brief Store a character in a buffer and enlarge buffer if needed.
  *
  * Function assumes that it is used iteratively. Therefore only reallocs
@@ -286,6 +326,7 @@ gfile_getdelim_tr (int* error,
    assert (size);
    assert (stream);
    assert (stream->fileptr.uc);
+   assert (stream->path);
    assert ((tr_size == 0) || ((tr != NULL) && (*tr != NULL)));
    assert ((delim_size == 0) || (delim != NULL));
 

@@ -61,7 +61,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    char* test = NULL;
 
    /* open file */
-   THROW_WARN_MSG ("Trying to OPEN  file \"%s\".", c_file);
+   THROW_WARN_MSG ("Trying to OPEN   file \"%s\".", c_file);
    file = GFILE_OPEN(c_file, strlen (c_file), GFILE_VOID, "r");
    if (file == NULL)
    {
@@ -69,13 +69,20 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
-   THROW_WARN_MSG ("Trying to READ  file \"%s\".", c_file);
+   THROW_WARN_MSG ("Trying to READ   file \"%s\".", c_file);
    while (gfile_getline (&error, &test, &sizeof_buf, file) > 0)
    {
       mprintf ("%s\n", test);
    }
 
-   THROW_WARN_MSG ("Trying to CLOSE file \"%s\".", c_file);
+   THROW_WARN_MSG ("Trying to REWIND file \"%s\".", c_file);
+   ret_val = gfile_rewind (file);
+   if (ret_val)
+   {
+      THROW_ERROR_MSG ("Could not rewind \"%s\".", c_file);      
+   }
+
+   THROW_WARN_MSG ("Trying to CLOSE  file \"%s\".", c_file);
    ret_val = gfile_close (file);
    if (ret_val == EOF)
    {

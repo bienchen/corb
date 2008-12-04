@@ -57,7 +57,8 @@ typedef enum {
 enum {
    GFILE_UNKNOWN_TYPE = 1,
    GFILE_READ_ERROR,
-   GFILE_MEM_ERROR
+   GFILE_MEM_ERROR,
+   GFILE_REWIND_ERROR
 };
 
 enum {
@@ -81,6 +82,9 @@ gfile_open (const char*, const unsigned long, const GFileType, const char*,
 
 int
 gfile_close (GFile*);
+
+int
+gfile_rewind (GFile*);
 
 unsigned long
 gfile_getline (int*, char**, size_t*, GFile*);

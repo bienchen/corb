@@ -211,7 +211,6 @@ gfile_close (GFile* gfile)
  *
  * @param[in] stream File to be reseted
  */
-<<<<<<< HEAD:src/libcrbbasic/gfile.c
 int
 gfile_rewind (GFile* stream)
 {
@@ -415,7 +414,7 @@ gfile_getdelim_tr (int* error,
 unsigned long
 gfile_getline_verbatim (int* error, char** buf, size_t* size, GFile* stream)
 {
-   char delim[] = {'\n'};
+   char delim[] = {CRB_LF};
 
    return gfile_getdelim_tr (error, buf, size,
                              NULL, 0,
@@ -437,8 +436,8 @@ gfile_getline_verbatim (int* error, char** buf, size_t* size, GFile* stream)
 unsigned long
 gfile_getline_tab (int* error, char** buf, size_t* size, GFile* stream)
 {
-   char delim[] = {'\n'};
-   char tr[][GFILE_TR_N]  = {{'\t',' '}};
+   char delim[] = {CRB_LF};
+   char tr[][GFILE_TR_N]  = {{CRB_TAB,' '}};
 
    return gfile_getdelim_tr (error, buf, size,
                              tr, sizeof (tr) / sizeof (*tr),
@@ -461,8 +460,8 @@ gfile_getline_tab (int* error, char** buf, size_t* size, GFile* stream)
 unsigned long
 gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
 {
-   char delim[] = {'\n', '#'};
-   char tr[][GFILE_TR_N]  = {{'\t',' '}};
+   char delim[] = {CRB_LF, CRB_COM};
+   char tr[][GFILE_TR_N]  = {{CRB_TAB,' '}};
 
    return gfile_getdelim_tr (error, buf, size,
                              tr, sizeof (tr) / sizeof (*tr),

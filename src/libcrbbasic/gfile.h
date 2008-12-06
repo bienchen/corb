@@ -69,6 +69,8 @@ enum {
 
 /* line feed character */
 #define CRB_LF '\n'
+#define CRB_TAB '\t'
+#define CRB_COM '#'
 
 typedef struct GFile GFile;
 

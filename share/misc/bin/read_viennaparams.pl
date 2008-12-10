@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-11-05.16
+# Last modified: 2008-12-10.16
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -27,7 +27,7 @@ BEGIN
 {
   # try to get bash compatible shell
   $ENV{'SHELL'} = '@SHELL@' if exists $ENV{'DJGPP'};
-  $|=1; # dissable line buffer for print statements
+  # $|=1; # dissable line buffer for print statements
 }
 # SETTINGS         - END
 
@@ -43,6 +43,7 @@ use Pod::Usage;
 
 
 # PRIVATE packages - BEGIN
+use CorbIO qw(:all);
 # PRIVATE packages - END
 
 # CONSTANTS        - BEGIN
@@ -56,20 +57,10 @@ my @BASES = ('a', 'c', 'g', 'u');
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
-my $Verbose          = 0;
 # GLOBALS          - END
 
 
 # FUNCTIONS        - BEGIN
-# write message if in verbose mode
-#   verbose_msg(message)
-sub verbose_msg($)
-{
-    my ($message) = @_;
-
-    print $message if $Verbose;
-}
-
 # write warning
 #   warning_msg(message)
 sub warning_msg($)
@@ -114,6 +105,7 @@ sub parseargs(\%)
     my  $optcatchresult = 0;
     my  $help;
     my  $man;
+    my  $verbose;
 
     # wrap the signal handler for warnings to copy them to our message space
     local $SIG{__WARN__} = sub
@@ -128,7 +120,7 @@ sub parseargs(\%)
         'int21_energies!'    => \$argument_hashref->{int21_energies},
         'int22_energies!'    => \$argument_hashref->{int22_energies},
         'mismatch_interior!' => \$argument_hashref->{mismatch_interior},
-        'verbose!'           => \$Verbose,
+        'verbose!'           => \$verbose,
         'help'               => \$help,
         'man'                => \$man
                                 );
@@ -138,6 +130,11 @@ sub parseargs(\%)
     if (defined($help)) { return 2 }
 
     if (defined($man)) { return 3 }
+
+    if ($verbose)
+    {
+        enable_verbose;
+    }
 
     # check that one param file was given
     if ($#ARGV != 0)
@@ -387,21 +384,21 @@ sub fetch_parameters($ \%)
         # read tables in separated functions
         if ($_ =~ /\#\s+int21\_energies\s*$/)
         {
-            verbose_msg("  Reading int21_energy table...");
+            msg_verbose("  Reading int21_energy table...");
             fetch_int21_energies(*FH, %{$param_hashref});
-            verbose_msg("done\n");
+            msg_verbose("done\n");
         }
         if ($_ =~ /\#\s+int22_energies/)
         {
-            verbose_msg("  Reading int22_energy table...");
+            msg_verbose("  Reading int22_energy table...");
             fetch_int22_energies(*FH, %{$param_hashref});
-            verbose_msg("done\n");
+            msg_verbose("done\n");
         }
         if ($_ =~ /\#\s+mismatch\_interior/)
         {
-            verbose_msg("  Reading mismatch_interior table...");
+            msg_verbose("  Reading mismatch_interior table...");
             fetch_mismatch_interior_energies(*FH, %{$param_hashref});
-            verbose_msg("done\n");
+            msg_verbose("done\n");
         }
     }
 

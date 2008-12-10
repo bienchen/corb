@@ -1,4 +1,4 @@
-# Last modified: 2008-11-28.19
+# Last modified: 2008-12-09.16
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -54,10 +54,11 @@ sides in general. For a really cool progress bar please refer to the
 B<C<Term::ProgressBar>> package from CPAN. This is definitively what you should
 use in productive scripts.
 
-All write operations of C<PBar> utilise Perl's C<syswrite> function. Hence we
-have no problem with buffered filehandles. But you should be careful with
-writing own stuff to C<STDOUT> in a loop while using the C<PBar>
-L<C<update()>|"update / pbar_update"> function.
+Since C<PBar> just writes to C<STDOUT>, there could arise some problems with
+line buffering. Therefore L<C<start()>|"start / pbar_start"> assures that
+buffering is disabled while printing a bar. With
+L<C<finish()>|"finish / pbar_finish"> the state before utilising the progress
+bar is restored.
 
 =cut
 
@@ -69,22 +70,20 @@ use warnings;
 
 BEGIN {
     use Exporter   ();
-    our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
+    our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, @EXPORT_FAIL, %EXPORT_TAGS);
     
     # set the version for version checking
     $VERSION     = 0.02;
     
     @ISA         = qw(Exporter);
     @EXPORT      = ();
-    %EXPORT_TAGS = (PBarControl => [qw(&pbar_enable
+    %EXPORT_TAGS = (pbarcontrol => [qw(&pbar_enable
                                        &pbar_disable
                                        &pbar_start
                                        &pbar_update
                                        &pbar_finish)]);
-    @EXPORT_OK   = qw(&pbar_enable
-                      &pbar_disable
-                      &pbar_start &pbar_update
-                      &pbar_finish);
+
+    Exporter::export_ok_tags('pbarcontrol');
 }
 our @EXPORT_OK;
 
@@ -153,9 +152,9 @@ sub enable
         $pbar_hashref->{time} = time;
         $pbar_hashref->{tdiff} = 0;
 
-        syswrite(STDOUT,
-                 sprintf("\n %3.0f%% [%s%*s ETA --:--:-- YY-MM-DD",
-                         $pbar_hashref->{port}, $pbar_hashref->{bar},
+        $|++;
+        print(sprintf("\n %3.0f%% [%s%*s ETA --:--:-- YY-MM-DD",
+                      $pbar_hashref->{port}, $pbar_hashref->{bar},
                 ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1), "]"));
     };
 
@@ -189,8 +188,7 @@ sub enable
             my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)
                 = localtime(time + $eta);
 
-            syswrite(STDOUT,
-                  sprintf("\r %3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
+            print(sprintf("\r %3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
                           $pbar_hashref->{port},
                           $pbar_hashref->{bar},
                        ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1),
@@ -219,10 +217,10 @@ sub enable
         $pbar_hashref->{bar} = sprintf("% *s", $pbar_hashref->{lw}, "");
         $pbar_hashref->{bar} =~ s/\s/=/g;
 
-        syswrite(STDOUT,
-                 sprintf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
-                         $pbar_hashref->{bar},
-                         $hou, $min, $sec));
+        print(sprintf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
+                      $pbar_hashref->{bar},
+                      $hou, $min, $sec));
+        $|--;
     };
 }
 

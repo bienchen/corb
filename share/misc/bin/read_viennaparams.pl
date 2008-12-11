@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-12-10.16
+# Last modified: 2008-12-11.09
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -61,15 +61,6 @@ my @BASES = ('a', 'c', 'g', 'u');
 
 
 # FUNCTIONS        - BEGIN
-# write warning
-#   warning_msg(message)
-sub warning_msg($)
-{
-    my ($message) = @_;
-
-    print STDERR "WARNING:".$message;
-}
-
 # write error
 #   error_msg(message)
 sub error_msg_and_die($)

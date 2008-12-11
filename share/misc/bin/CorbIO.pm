@@ -1,4 +1,4 @@
-# Last modified: 2008-12-09.13
+# Last modified: 2008-12-10.17
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -60,6 +60,8 @@ Following tags are defined:
     L<C<is_verbose()>|"is_verbose">,
     L<C<msg_verbose()>|"msg_verbose">)
 
+=item * msg - Additional messaging functions (L<C<msg_warning()>|"msg_warning">)
+
 =item * all - all functions from the tags above
 
 =back
@@ -87,7 +89,8 @@ BEGIN {
     %EXPORT_TAGS = (verbose => [qw(enable_verbose
                                    disable_verbose
                                    is_verbose
-                                   msg_verbose)]
+                                   msg_verbose)],
+                    msg => [qw(msg_warning)]
                    );
 
     # add all the other tags to the ":all" tag,
@@ -228,7 +231,7 @@ hence output might be buffered.
 
 =item message
 
-The message to be written if in verbose mode.
+The message to be written if in verbose mode. Has to be provided as scalar.
 
 =back
 
@@ -247,18 +250,12 @@ sub msg_verbose
     return &$private_func_msg_verbose (@_);
 }
 
-=head2 finish / pbar_finish
+=head2 msg_warning
 
-This function finalises the progress bar. Any former printing of the bar to
-STDOUT is overwritten by a new bar with 100% values. Should be called after a
-loop. Calling without issuing L<C<start()>|"start / pbar_start"> before,
-will lead to warnings/ errors. This is just because we are accessing some
-values which have to be initialised, first. Calling without the use of the 
-L<C<update()>|"update / pbar_update"> function in the loop does not make much
-sense. In this case you will just see a jump in the progress bar from 0%
-(L<C<start()>|"start / pbar_start">) to 100%
-(L<C<finish()>|"finish / pbar_finish">).  Only produces some output after
-L<C<enable()>|"enable / pbar_enable"> was issued.
+Just writes a warning message to C<STDERR>. There is nothing special about this
+but the message is preceeded by "WARNING:". This goes into the direction of the
+GNU coding standards and should give as a unified look for all messages of our
+scripts.
 
 =over 4
 
@@ -266,42 +263,25 @@ L<C<enable()>|"enable / pbar_enable"> was issued.
 
 =over 4
 
-=item progressbar
+=item message
 
-A hash to store all data of a particular progress bar. Is modified by this
-function. Has to be initialised by L<C<start()>|"start / pbar_start"> before.
-Has to be provided as reference while using
-L<C<pbar_finish()>|"finish / pbar_finish">.
+The message to be written. Has to be provided as scalar.
 
 =back
 
 =item EXAMPLE
 
-     my %pbar;
-     my $count = 100;
-
-     PBar::start(%pbar, $count);
-
-     for (my $i = 0; $i < $count; $i++)
-     {
-        print $i;
-        PBar::update(%pbar, $i);
-     }
-
-     PBar::finish(%pbar);
+     msg_warning("This is a warning.");
 
 =back
 
 =cut
 
-sub finish(\%)
+sub msg_warning($)
 {
-#    return &$private_func_finish (@_);
-}
+    my ($msg) = @_;
 
-sub pbar_finish
-{
-#    return &$private_func_finish (@_);
+    print STDERR "WARNING:".$msg;
 }
 
 =pod

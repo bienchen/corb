@@ -375,6 +375,9 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       error = scmf_rna_opt_data_secstruct_init (data);
    }
 
+   mfprintf (stderr, "TREATMENT of fixed sites: If both sites of a pair are "
+             "fixed, delete from list?\n");
+
    /* set our special function for calc. cols.: Iterate over sec.struct., not
       sequence matrix! */
    if (!error)
@@ -406,7 +409,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    /* collate */
    if (!error)
    {
-      /*seqmatrix_print_2_stdout (2, sm);*/
+      seqmatrix_print_2_stdout (2, sm);
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
       error = seqmatrix_collate_mv (sm, data);
    }

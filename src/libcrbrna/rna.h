@@ -166,6 +166,11 @@ rna_secstruct_calculate_DG (const NN_scores*, const Rna*);
 unsigned long
 rna_secstruct_get_noof_stacks (const Rna*);
 
+void
+rna_secstruct_get_i_geometry_stack (unsigned long*, unsigned long*,
+                                    const unsigned long,
+                                    const Rna*);
+
 unsigned long
 rna_secstruct_get_noof_hairpins (const Rna*);
 
@@ -184,6 +189,96 @@ rna_secstruct_get_i_end_hairpin (const unsigned long, const Rna*);
 
 unsigned long
 rna_secstruct_get_i_size_hairpin (const unsigned long, const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_stems_extloop (const Rna*);
+
+unsigned long
+rna_secstruct_get_i_5p_stem_extloop (const unsigned long, const Rna*);
+
+unsigned long
+rna_secstruct_get_i_3p_stem_extloop (const unsigned long, const Rna*);
+
+void
+rna_secstruct_get_i_stem_extloop (unsigned long*, unsigned long*,
+                                  const unsigned long, const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_5pdangles_extloop (const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_3pdangles_extloop (const Rna*);
+
+void
+rna_secstruct_get_i_5pdangle_extloop (unsigned long*,
+                                      unsigned long*,
+                                      unsigned long*,
+                                      const unsigned long,
+                                      const Rna*);
+
+void
+rna_secstruct_get_i_3pdangle_extloop (unsigned long*,
+                                      unsigned long*,
+                                      unsigned long*,
+                                      const unsigned long,
+                                      const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_multiloops (const Rna*);
+
+unsigned long
+rna_secstruct_get_i_noof_stems_multiloop (unsigned long, const Rna*);
+
+void
+rna_secstruct_get_i_stem_multiloop (unsigned long*, unsigned long*,
+                                    const unsigned long,
+                                    const unsigned long,
+                                    const Rna*);
+
+unsigned long
+rna_secstruct_get_i_noof_5pdangles_multiloop (unsigned long, const Rna*);
+
+void
+rna_secstruct_get_i_5pdangle_multiloop (unsigned long*,
+                                        unsigned long*,
+                                        unsigned long*,
+                                        const unsigned long,
+                                        const unsigned long,
+                                        const Rna*);
+
+unsigned long
+rna_secstruct_get_i_noof_3pdangles_multiloop (unsigned long, const Rna*);
+
+void
+rna_secstruct_get_i_3pdangle_multiloop (unsigned long*,
+                                        unsigned long*,
+                                        unsigned long*,
+                                        const unsigned long,
+                                        const unsigned long,
+                                        const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_bulges (const Rna*);
+
+void
+rna_secstruct_get_geometry_bulge (unsigned long*, unsigned long*,
+                                  unsigned long*, unsigned long*,
+                                  unsigned long*,
+                                  const unsigned long,
+                                  const Rna*);
+
+unsigned long
+rna_secstruct_get_noof_internals (const Rna*);
+
+void
+rna_secstruct_get_geometry_internal (unsigned long*,
+                                     unsigned long*,
+                                     unsigned long*,
+                                     unsigned long*,
+                                     unsigned long*,
+                                     unsigned long*,
+                                     const unsigned long,
+                                     const Rna*);
 
 #endif /* RNA_H */
 

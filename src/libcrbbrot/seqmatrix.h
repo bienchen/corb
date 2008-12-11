@@ -82,10 +82,14 @@ float
 seqmatrix_get_probability (const unsigned long, const unsigned long,
                             const SeqMatrix*);
 
-/********************************   Altering   ********************************/
+float
+seqmatrix_get_eeff (const unsigned long, const unsigned long,
+                    const SeqMatrix*);
 
-void
-seqmatrix_set_current_matrix_zero (SeqMatrix*);
+float
+seqmatrix_get_gas_constant (const SeqMatrix*);
+
+/********************************   Altering   ********************************/
 
 int
 seqmatrix_init (const unsigned long,
@@ -96,9 +100,21 @@ seqmatrix_init (const unsigned long,
 #define SEQMATRIX_INIT(A, B, SM)                         \
    seqmatrix_init (A, B, SM, __FILE__, __LINE__)
 
+
 void
-seqmatrix_set_cell (const float, const unsigned long, const unsigned long,
+seqmatrix_set_eeff_matrix_zero (SeqMatrix*);
+
+void
+seqmatrix_set_eeff (const float,
+                    const unsigned long,
+                    const unsigned long,
                     SeqMatrix*);
+
+void
+seqmatrix_add_2_eeff (const float,
+                                const unsigned long,
+                                const unsigned long,
+                                SeqMatrix*);
 
 void
 seqmatrix_set_gas_constant (const float, SeqMatrix*);

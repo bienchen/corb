@@ -743,6 +743,23 @@ rna_secstruct_get_noof_stacks (const Rna* this)
    return secstruct_get_noof_stacks (this->structure);
 }
 
+/** @brief Get the 5' and 3' base of a stem base pair 
+ *
+ * @param[in] i     5' base container.
+ * @param[in] j     3' base container.
+ * @param[in] stack no. of stack.
+ * @param[in] this  Rna object.
+ */
+void
+rna_secstruct_get_i_geometry_stack (unsigned long* i, unsigned long* j,
+                                const unsigned long stack,
+                                const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_geometry_stack (i, j, stack, this->structure);
+}
+
 unsigned long
 rna_secstruct_get_noof_hairpins (const Rna* this)
 {
@@ -798,4 +815,314 @@ rna_secstruct_get_i_size_hairpin (const unsigned long i, const Rna* this)
    assert (this);
 
    return secstruct_get_i_size_hairpin (i, this->structure);
+}
+
+/** @brief Get no. of stems in an external loop.
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_stems_extloop (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_stems_extloop (this->structure);
+}
+
+/** @brief Get the 5' base of the ith stem of the external loop of a structure.
+ *
+ * @param[in] i Index of stem.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_5p_stem_extloop (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_5p_stem_extloop (i, this->structure);
+}
+
+/** @brief Get the 3' base of the ith stem of the external loop of a structure.
+ *
+ * @param[in] i Index of stem.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_3p_stem_extloop (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_3p_stem_extloop (i, this->structure);
+}
+
+/** @brief Get the 5' and 3' base position of the ith stem in an external loop.
+ *
+ * @param[out] p5 5' psoition.
+ * @param[out] p3 3' position.
+ * @param[in]  i    Stem.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_stem_extloop (unsigned long* p5,
+                                  unsigned long* p3,
+                                  const unsigned long i,
+                                  const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_stem_extloop (p5, p3, i, this->structure);
+}
+
+/** @brief Get the number of 5' dangles in an external loop.
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_5pdangles_extloop (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_5pdangles_extloop (this->structure);
+}
+
+/** @brief Get the number of 3' dangles in an external loop.
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_3pdangles_extloop (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_3pdangles_extloop (this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 5' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 5' dangling end.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_5pdangle_extloop (unsigned long* p5,
+                                      unsigned long* p3,
+                                      unsigned long* fb,
+                                      const unsigned long i,
+                                      const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_5pdangle_extloop (p5,  p3, fb, i, this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 3' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 3' dangling end.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_3pdangle_extloop (unsigned long* p5,
+                                      unsigned long* p3,
+                                      unsigned long* fb,
+                                      const unsigned long i,
+                                      const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_3pdangle_extloop (p5,  p3, fb, i, this->structure);
+}
+
+/** @brief Get no. of multiloops in a secondary structure 
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_multiloops (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_multiloops (this->structure);
+}
+
+/** @brief Get no. of stems of a certain multiloop 
+ *
+ * @param[in] i index of multiloop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_noof_stems_multiloop (unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_noof_stems_multiloop (i, this->structure);
+}
+
+/** @brief Get the 5' and 3' base position of a stem in an multiloop.
+ *
+ * @param[out] p5 5' psoition.
+ * @param[out] p3 3' position.
+ * @param[in]  i    Stem.
+ * @param[in]  j    Multiloop.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_stem_multiloop (unsigned long* p5, unsigned long* p3,
+                                    const unsigned long i,
+                                    const unsigned long j,
+                                    const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_stem_multiloop (p5, p3, i, j, this->structure);
+}
+
+/** @brief Get the no. of 5' dangling ends involved in a certain multiloop. 
+ *
+ * @param[in] i Index of multiloop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_noof_5pdangles_multiloop (unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_noof_5pdangles_multiloop (i, this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 5' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 5' dangling end.
+ * @param[in]  j  jth multiloop.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_5pdangle_multiloop (unsigned long* p5,
+                                        unsigned long* p3,
+                                        unsigned long* fb,
+                                        const unsigned long i,
+                                        const unsigned long j,
+                                        const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_5pdangle_multiloop (p5, p3, fb, i, j, this->structure);
+}
+
+/** @brief Get the no. of 3' dangling ends involved in a certain multiloop. 
+ *
+ * @param[in] i Index of multiloop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_noof_3pdangles_multiloop (unsigned long i,
+                                              const Rna* this)
+{
+   assert (this);
+   
+   return secstruct_get_i_noof_3pdangles_multiloop (i, this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 3' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 3' dangling end.
+ * @param[in]  j  jth multiloop.
+ * @param[in]  this Secondary structure.
+ */
+void
+rna_secstruct_get_i_3pdangle_multiloop (unsigned long* p5,
+                                        unsigned long* p3,
+                                        unsigned long* fb,
+                                        const unsigned long i,
+                                        const unsigned long j,
+                                        const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_3pdangle_multiloop (p5, p3, fb, i, j, this->structure);
+}
+
+/** @brief get the no. of bulge loops of a 2D structure
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_bulges (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_bulges (this->structure);
+}
+
+/** @brief Retrieve bulge loop geometry in one go.
+ *
+ * @param[in/out] i1   Base i of opening pair.
+ * @param[in/out] j1   Base j of opening pair.
+ * @param[in/out] i2   Base i of closing pair.
+ * @param[in/out] j2   Base j of closing pair
+ * @param[in/out] size Size of the loop.
+ * @param[in]     i    No. of bulge.
+ * @param[in]     this Rna object.
+ */
+void
+rna_secstruct_get_geometry_bulge (unsigned long* i1,
+                                  unsigned long* j1,
+                                  unsigned long* i2,
+                                  unsigned long* j2,
+                                  unsigned long* size,
+                                  const unsigned long i,
+                                  const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_geometry_bulge (i1, j1, i2, j2, size, i, this->structure);
+}
+
+/** @brief get the no. of internal loops of a 2D structure
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_internals (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_internals (this->structure);
+}
+
+/** @brief get the geometry of a certain internal loop.
+ *
+ * @param[out] i1    Base i of opening pair.
+ * @param[out] j1    Base j of opening pair.
+ * @param[out] i2    Base i of closing pair.
+ * @param[out] j2    Base j of closing pair.
+ * @param[out] size1 Size of first loop.
+ * @param[out] size2 Size of 2nd loop.
+ * @param[in] i      Index of loop.
+ * @param[in] this   Rna object.
+ */
+void
+rna_secstruct_get_geometry_internal (unsigned long* i1,
+                                     unsigned long* j1,
+                                     unsigned long* i2,
+                                     unsigned long* j2,
+                                     unsigned long* size1,
+                                     unsigned long* size2,
+                                     const unsigned long i,
+                                     const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_geometry_internal (i1, j1, i2, j2, size1, size2, i,
+                                    this->structure);
 }

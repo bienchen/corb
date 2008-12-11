@@ -50,6 +50,8 @@
 
 int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
+   unsigned long i1, j1, i2, j2, size1, size2;
+
    Rna* rna;
    SecStruct* structure;
    char test_string[] = 
@@ -177,15 +179,16 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
-   if (   (secstruct_get_i_start_internal (0, structure) != 40)
-       || (secstruct_get_i_end_internal (0, structure) != 71)
-       || (secstruct_get_i_size_internal (0, structure) != 3))
+secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2, 0,
+                                 structure);
+
+   if (   (i1 != 40)
+       || (j1 != 71)
+       || (size1 != 3))
    {
       THROW_ERROR_MSG ("Internal loop was stored with wrong geometry, "
                        "expected: start 40, end 71, size 3, is: %lu, %lu, %lu",
-                       secstruct_get_i_start_internal (0, structure),
-                       secstruct_get_i_end_internal (0, structure),
-                       secstruct_get_i_size_internal (0, structure));
+                       i1, j1, size1);
       secstruct_delete (structure);
       return EXIT_FAILURE;      
    }
@@ -459,11 +462,11 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
-   if (secstruct_get_i_noof_stems_extloop (structure) != 1)
+   if (secstruct_get_noof_stems_extloop (structure) != 1)
    {
       THROW_ERROR_MSG ("Failed to find right number of base pairs for the "
                        "external loop. Expected: 1, found: %lu",
-                       secstruct_get_i_noof_stems_extloop (structure));
+                       secstruct_get_noof_stems_extloop (structure));
       secstruct_delete (structure);
       return EXIT_FAILURE;
    }

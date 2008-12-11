@@ -229,18 +229,50 @@ seqmatrix_get_probability (const unsigned long row, const unsigned long col,
    return sm->prob_m[row][col];
 }
 
+/** @brief Get the effective energye stored in a certain site and state.
+ *
+ * Retruns the value of a cell of the effective energy matrix.
+ *
+ * @params[in] row Row.
+ * @params[in] col Column.
+ * @params[in] sm Sequence matrix.
+ */
+float
+seqmatrix_get_eeff (const unsigned long row, const unsigned long col,
+                    const SeqMatrix* sm)
+{
+   assert (sm);
+   assert (sm->calc_m);
+   assert (row < sm->rows);
+   assert (col < sm->cols);
+
+   return sm->calc_m[row][col];
+}
+
+/** @brief Get the gas constant.
+ *
+ * @params[in] sm Sequence matrix
+ */
+float
+seqmatrix_get_gas_constant (const SeqMatrix* sm)
+{
+   assert (sm);
+
+   return sm->gas_constant;
+}
+
 /********************************   Altering   ********************************/
 
-/** @brief Sets the cells of a matrix to 0.
+/** @brief Sets the cells of the effective energy matrix to 0.
  *
- * This function can be used to set all cells of the currently enabled matrix
+ * This function can be used to set all cells of the effective energy matrix
  * to 0. Should usually onlly be used when writing coloumn/ row iteration of
  * the scmf simulation by yourself.
  *
  * @param[in] sm sequence matrix.
  */
 void
-seqmatrix_set_current_matrix_zero (SeqMatrix* sm)
+seqmatrix_set_eeff_matrix_zero (SeqMatrix* sm)
 {
    sm->calc_m = 
       (float**) matrix2d_set_zero ((void**)sm->calc_m,
@@ -378,21 +410,11 @@ seqmatrix_calc_eeff_row_scmf (const unsigned long col,
    assert (sm);
    assert (sm->calc_cell_energy);
 
-/*    if (sm->curr_matrix == F_Mtrx) */
-/*    { */
-/*       new_matrix = S_Mtrx; */
-/*    } */
-
    for (j = 0; j < sm->rows; j++)
    {
-/*       sm->matrix[new_matrix][j][col] = sm->calc_cell_energy (j, col, */
-/*                                                              sco, */
-/*                                                              sm); */
       sm->calc_m[j][col] = sm->calc_cell_energy (j, col,
                                                  sco,
                                                  sm);
-/*       sm->matrix[new_matrix][j][col] = */
-/*          expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(sm->gas_constant*t))); */
 
       sm->calc_m[j][col] =
          expf ((-1.0f) * (sm->calc_m[j][col]/(sm->gas_constant*t)));
@@ -502,7 +524,7 @@ seqmatrix_init (const unsigned long rows,
    return 0;
 }
 
-/** @brief Set a value for a certain cell of a matrix.
+/** @brief Set a certain cell of the effective energy matrix.
  *
  * @param[in] value Value to be set.
  * @param[in] row Row index.
@@ -510,8 +532,9 @@ seqmatrix_init (const unsigned long rows,
  * @param[in] sm Sequence matrix.
  */
 void
-seqmatrix_set_cell (const float value,
-                    const unsigned long row, const unsigned long col,
+seqmatrix_set_eeff (const float value,
+                    const unsigned long row,
+                    const unsigned long col,
                     SeqMatrix* sm)
 {
    assert (sm);
@@ -519,6 +542,28 @@ seqmatrix_set_cell (const float value,
    assert (col < sm->cols);
 
    sm->calc_m[row][col] = value;
+}
+
+/** @brief Add a number to a certain cell of the effective energy matrix.
+ *
+ * @param[in] value Value to be set.
+ * @param[in] row Row index.
+ * @param[in] cell Cell index.
+ * @param[in] sm Sequence matrix.
+ */
+void
+seqmatrix_add_2_eeff (const float value,
+                      const unsigned long row,
+                      const unsigned long col,
+                      SeqMatrix* sm)
+{
+   assert (sm);
+   assert (row < sm->rows);
+   assert (col < sm->cols);
+   /*assert (sm->calc_m[row][col] == 0); just for checking that cell was
+     correctly set to 0*/
+
+   sm->calc_m[row][col] += value;
 }
 
 /** @brief Set gas constant.
@@ -781,8 +826,6 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    assert (sm->calc_eeff_col);
    assert (sco);
 
-   /*seqmatrix_print_2_stdout (6, sm);*/
-
    /* perform for a certain number of steps */
    t = 0;
    while ((!error) && (t < steps))
@@ -837,7 +880,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 
          /* shouldn't s be calculated on the no. of unfixed cols? */
          s = (s / sm->cols) * (-1.0f);
-         
+
          if (s < s_thresh) 
          {
             mfprintf (stdout, "Entropy dropout: %f\n", s);

@@ -61,7 +61,11 @@ ARRAY_CREATE_CLASS(HairpinLoop);
 
 /* structure to store stacks */
 typedef struct {
-/* TODO: only i1, j1 needed (can then be called i and j) */
+/* TODO: Is it sensible to store both pairs here? E.g. for working on a duplex?
+         5' ------------------- 3' in this case, the last stack is not followed
+             |||||||||||||||||     by a closing bp of some loop!!!
+         3' ------------------- 5'
+*/
       unsigned long i, j;
 } StackLoop;
 
@@ -474,7 +478,7 @@ secstruct_find_interactions (const unsigned long* pairs,
       }
    }
 
-   mprintf ("Stacked base piars:\n");
+   mprintf ("Stacked base pairs:\n");
    secstruct_fprintf_stacks (stdout, this);
    mprintf ("\nHairpin loops:\n");
    secstruct_fprintf_hairpins (stdout, this);
@@ -622,6 +626,28 @@ secstruct_get_i_3p_stack (const unsigned long i, const SecStruct* this)
    return ARRAY_ACCESS(this->stack, i).j;
 }
 
+/** @brief Get the 5' and 3' base of a stem base pair 
+ *
+ * @param[in] i     5' base container.
+ * @param[in] j     3' base container.
+ * @param[in] stack no. of stack.
+ * @param[in] this  Secondary structure.
+ */
+void
+secstruct_get_i_geometry_stack (unsigned long* i, unsigned long* j,
+                                const unsigned long stack,
+                                const SecStruct* this)
+{
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->stack));
+   assert (ARRAY_CURRENT (this->stack) > stack);
+   assert (i);
+   assert (j);
+
+   *i = ARRAY_ACCESS(this->stack, stack).i;
+   *j = ARRAY_ACCESS(this->stack, stack).j;
+}
+
 /** @brief get the no. of bulge loops of a 2D structure
  *
  * @param[in] this Secondary structure.
@@ -680,6 +706,41 @@ secstruct_get_i_size_bulge (const unsigned long i, const SecStruct* this)
    return ARRAY_ACCESS(this->bulge_loop, i).size;
 }
 
+/** @brief Retrieve bulge loop geometry in one go.
+ *
+ * @param[in/out] i1   Base i of opening pair.
+ * @param[in/out] j1   Base j of opening pair.
+ * @param[in/out] i2   Base i of closing pair.
+ * @param[in/out] j2   Base j of closing pair
+ * @param[in/out] size Size of the loop.
+ * @param[in]     i    No. of bulge.
+ * @param[in]     this Secondary structure.
+ */
+void
+secstruct_get_geometry_bulge (unsigned long* i1,
+                              unsigned long* j1,
+                              unsigned long* i2,
+                              unsigned long* j2,
+                              unsigned long* size,
+                              const unsigned long i,
+                              const SecStruct* this)
+{
+   assert(this);
+   assert (ARRAY_NOT_NULL (this->bulge_loop));
+   assert (ARRAY_CURRENT (this->bulge_loop) > i);
+   assert(i1);
+   assert(j1);
+   assert(i2);
+   assert(j2);
+   assert(size);
+
+   *i1 = ARRAY_ACCESS(this->bulge_loop, i).i1;
+   *j1 = ARRAY_ACCESS(this->bulge_loop, i).j1;
+   *i2 = ARRAY_ACCESS(this->bulge_loop, i).i2;
+   *j2 = ARRAY_ACCESS(this->bulge_loop, i).j2;
+   *size = ARRAY_ACCESS(this->bulge_loop, i).size;
+}
+
 /** @brief get the no. of internal loops of a 2D structure
  *
  * @param[in] this Secondary structure.
@@ -693,49 +754,43 @@ secstruct_get_noof_internals (const SecStruct* this)
    return ARRAY_CURRENT (this->internal_loop);
 }
 
-/** @brief get the start base of the ith internal loop of a 2D structure
+/** @brief get the geometry of a certain internal loop.
  *
- * @param[in] i Index of loop.
- * @param[in] this Secondary structure.
+ * @param[out] i1    Base i of opening pair.
+ * @param[out] j1    Base j of opening pair.
+ * @param[out] i2    Base i of closing pair.
+ * @param[out] j2    Base j of closing pair.
+ * @param[out] size1 Size of first loop.
+ * @param[out] size2 Size of 2nd loop.
+ * @param[in] i      Index of loop.
+ * @param[in] this   Secondary structure.
  */
-unsigned long
-secstruct_get_i_start_internal (const unsigned long i, const SecStruct* this)
+void
+secstruct_get_geometry_internal (unsigned long* i1,
+                                 unsigned long* j1,
+                                 unsigned long* i2,
+                                 unsigned long* j2,
+                                 unsigned long* size1,
+                                 unsigned long* size2,
+                                 const unsigned long i,
+                                 const SecStruct* this)
 {
-   assert (this);
+   assert(this);
    assert (ARRAY_NOT_NULL (this->internal_loop));
    assert (ARRAY_CURRENT (this->internal_loop) > i);
+   assert(i1);
+   assert(j1);
+   assert(size1);
+   assert(i2);
+   assert(j2);
+   assert(size2);
 
-   return ARRAY_ACCESS(this->internal_loop, i).i1;
-}
-
-/** @brief get the last base of the ith internal loop of a 2D structure
- *
- * @param[in] i Index of loop.
- * @param[in] this Secondary structure.
- */
-unsigned long
-secstruct_get_i_end_internal (const unsigned long i, const SecStruct* this)
-{
-   assert (this);
-   assert (ARRAY_NOT_NULL (this->internal_loop));
-   assert (ARRAY_CURRENT (this->internal_loop) > i);
-
-   return ARRAY_ACCESS(this->internal_loop, i).j1;
-}
-
-/** @brief get the no. of unpaired bases of the ith internal loop
- *
- * @param[in] i Index of loop.
- * @param[in] this Secondary structure.
- */
-unsigned long
-secstruct_get_i_size_internal (const unsigned long i, const SecStruct* this)
-{
-   assert (this);
-   assert (ARRAY_NOT_NULL (this->internal_loop));
-   assert (ARRAY_CURRENT (this->internal_loop) > i);
-
-   return ARRAY_ACCESS(this->internal_loop, i).size1;
+   *i1    = ARRAY_ACCESS(this->internal_loop, i).i1;
+   *j1    = ARRAY_ACCESS(this->internal_loop, i).j1;
+   *size1 = ARRAY_ACCESS(this->internal_loop, i).size1;
+   *i2    = ARRAY_ACCESS(this->internal_loop, i).i2;
+   *j2    = ARRAY_ACCESS(this->internal_loop, i).j2;
+   *size2 = ARRAY_ACCESS(this->internal_loop, i).size2;
 }
 
 /** @brief get the no. of multiloops of a 2D structure
@@ -826,6 +881,31 @@ secstruct_get_i_3p_stem_multiloop (const unsigned long i,
    return (ARRAY_ACCESS (this->multi_loop, j).stems[i][P3_Strand]);
 }
 
+/** @brief Get the 5' and 3' base position of a stem in an multiloop.
+ *
+ * @param[out] p5 5' psoition.
+ * @param[out] p3 3' position.
+ * @param[in]  i    Stem.
+ * @param[in]  j    Multiloop.
+ * @param[in]  this Secondary structure.
+ */
+void
+secstruct_get_i_stem_multiloop (unsigned long* p5, unsigned long* p3,
+                                const unsigned long i,
+                                const unsigned long j,
+                                const SecStruct* this)
+{
+   assert(this);
+   assert (ARRAY_NOT_NULL (this->multi_loop));
+   assert (ARRAY_CURRENT (this->multi_loop) > j);
+   assert (ARRAY_ACCESS (this->multi_loop, j).nstems > i);
+   assert(p5);
+   assert(p3);
+
+   *p5 = ARRAY_ACCESS (this->multi_loop, j).stems[i][P5_Strand];
+   *p3 = ARRAY_ACCESS (this->multi_loop, j).stems[i][P3_Strand];
+}
+
 /** @brief Get the no. of 5' dangles (???dangling ends???) involved in a certain multiloop. 
  *
  * @param[in] i Index of multiloop.
@@ -900,6 +980,37 @@ secstruct_get_i_dangle_5pdangle_multiloop (const unsigned long i,
    assert (ARRAY_ACCESS (this->multi_loop, j).ndangle5 > i);
 
    return (ARRAY_ACCESS (this->multi_loop, j).dangle5[i][Ne_Dangle]);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 5' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 5' dangling end.
+ * @param[in]  j  jth multiloop.
+ * @param[in]  this Secondary structure.
+ */
+void
+secstruct_get_i_5pdangle_multiloop (unsigned long* p5,
+                                    unsigned long* p3,
+                                    unsigned long* fb,
+                                    const unsigned long i,
+                                    const unsigned long j,
+                                    const SecStruct* this)
+{
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->multi_loop));
+   assert (ARRAY_CURRENT (this->multi_loop) > j);
+   assert (ARRAY_ACCESS (this->multi_loop, j).dangle5 != NULL);
+   assert (ARRAY_ACCESS (this->multi_loop, j).ndangle5 > i);
+   assert (p5);
+   assert (p3);
+   assert (fb);
+
+   *p5 = ARRAY_ACCESS (this->multi_loop, j).dangle5[i][P5_Dangle];
+   *p3 = ARRAY_ACCESS (this->multi_loop, j).dangle5[i][P3_Dangle];
+   *fb = ARRAY_ACCESS (this->multi_loop, j).dangle5[i][Ne_Dangle];
 }
 
 /** @brief Get the no. of 3' dangles (???dangling ends???) involved in a certain multiloop. 
@@ -978,6 +1089,37 @@ secstruct_get_i_dangle_3pdangle_multiloop (const unsigned long i,
    return (ARRAY_ACCESS (this->multi_loop, j).dangle3[i][Ne_Dangle]);
 }
 
+/** @brief Get the ith 5', 3' and free base of a 3' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 3' dangling end.
+ * @param[in]  j  jth multiloop.
+ * @param[in]  this Secondary structure.
+ */
+void
+secstruct_get_i_3pdangle_multiloop (unsigned long* p5,
+                                    unsigned long* p3,
+                                    unsigned long* fb,
+                                    const unsigned long i,
+                                    const unsigned long j,
+                                    const SecStruct* this)
+{
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->multi_loop));
+   assert (ARRAY_CURRENT (this->multi_loop) > j);
+   assert (ARRAY_ACCESS (this->multi_loop, j).dangle3 != NULL);
+   assert (ARRAY_ACCESS (this->multi_loop, j).ndangle3 > i);
+   assert (p5);
+   assert (p3);
+   assert (fb);
+
+   *p5 = ARRAY_ACCESS (this->multi_loop, j).dangle3[i][P5_Dangle];
+   *p3 = ARRAY_ACCESS (this->multi_loop, j).dangle3[i][P3_Dangle];
+   *fb = ARRAY_ACCESS (this->multi_loop, j).dangle3[i][Ne_Dangle];
+}
+
 /** @brief get the no. of unpaired bases of an external loop of a 2D structure
  *
  * @param[in] this Secondary structure.
@@ -995,7 +1137,7 @@ secstruct_get_i_noof_unpaired_extloop (const SecStruct* this)
  * @param[in] this Secondary structure.
  */
 unsigned long
-secstruct_get_i_noof_stems_extloop (const SecStruct* this)
+secstruct_get_noof_stems_extloop (const SecStruct* this)
 {
    assert (this);
 
@@ -1034,6 +1176,30 @@ secstruct_get_i_3p_stem_extloop (const unsigned long i,
    return (this->ext_loop.stems[i][P3_Strand]);
 }
 
+/** @brief Get the 5' and 3' base position of a stem in an external loop.
+ *
+ * @param[out] p5 5' psoition.
+ * @param[out] p3 3' position.
+ * @param[in]  i    Stem.
+ * @param[in]  this Secondary structure.
+ */
+void
+secstruct_get_i_stem_extloop (unsigned long* p5,
+                              unsigned long* p3,
+                              const unsigned long i,
+                              const SecStruct* this)
+{
+   assert(this);
+   assert (this->ext_loop.stems);
+   assert (this->ext_loop.nstems > i);
+   assert(p5);
+   assert(p3);
+
+   *p5 = this->ext_loop.stems[i][P5_Strand];
+   *p3 = this->ext_loop.stems[i][P3_Strand];
+}
+
+
 /** @brief Get the no. of 5' dangles involved in an external loop. 
  *
  * @param[in] this Secondary structure.
@@ -1069,6 +1235,7 @@ secstruct_get_i_5p_3pdangle_extloop (const unsigned long i,
                                      const SecStruct* this)
 {
    assert (this);
+   assert (this->ext_loop.dangle3);
    assert (this->ext_loop.ndangle3 > i);
 
    return (this->ext_loop.dangle3[i][P5_Dangle]);
@@ -1085,6 +1252,7 @@ secstruct_get_i_3p_3pdangle_extloop (const unsigned long i,
                                      const SecStruct* this)
 {
    assert (this);
+   assert (this->ext_loop.dangle3);
    assert (this->ext_loop.ndangle3 > i);
 
    return (this->ext_loop.dangle3[i][P3_Dangle]);
@@ -1101,6 +1269,7 @@ secstruct_get_i_5p_5pdangle_extloop (const unsigned long i,
                                      const SecStruct* this)
 {
    assert (this);
+   assert (this->ext_loop.dangle5);
    assert (this->ext_loop.ndangle5 > i);
 
    return (this->ext_loop.dangle5[i][P5_Dangle]);
@@ -1117,9 +1286,64 @@ secstruct_get_i_3p_5pdangle_extloop (const unsigned long i,
                                      const SecStruct* this)
 {
    assert (this);
+   assert (this->ext_loop.dangle5);
    assert (this->ext_loop.ndangle5 > i);
 
    return (this->ext_loop.dangle5[i][P3_Dangle]);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 5' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 5' dangling end.
+ * @param[in]  this Secondary structure.
+ */
+void
+secstruct_get_i_5pdangle_extloop (unsigned long* p5,
+                                   unsigned long* p3,
+                                   unsigned long* fb,
+                                   const unsigned long i,
+                                   const SecStruct* this)
+{
+   assert (this);
+   assert (this->ext_loop.dangle5);
+   assert (this->ext_loop.ndangle5 > i);
+   assert (p5);
+   assert (p3);
+   assert (fb);
+
+   *p5 = this->ext_loop.dangle5[i][P5_Dangle];
+   *p3 = this->ext_loop.dangle5[i][P3_Dangle];
+   *fb = this->ext_loop.dangle5[i][Ne_Dangle];
+}
+
+/** @brief Get the ith 5', 3' and free base of a 3' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 3' dangling end.
+ * @param[in]  this Secondary structure.
+ */
+void
+secstruct_get_i_3pdangle_extloop (unsigned long* p5,
+                                  unsigned long* p3,
+                                  unsigned long* fb,
+                                  const unsigned long i,
+                                  const SecStruct* this)
+{
+   assert (this);
+   assert (this->ext_loop.dangle3);
+   assert (this->ext_loop.ndangle3 > i);
+   assert (p5);
+   assert (p3);
+   assert (fb);
+
+   *p5 = this->ext_loop.dangle3[i][P5_Dangle];
+   *p3 = this->ext_loop.dangle3[i][P3_Dangle];
+   *fb = this->ext_loop.dangle3[i][Ne_Dangle];
 }
 
 /*********************************    Misc    *********************************/
@@ -1180,12 +1404,12 @@ secstruct_calculate_DG (const char* seq, const NN_scores* scores,
    /* bulge loops */
    for (k = 0; k < ARRAY_CURRENT (this->bulge_loop); k++)
    {
-      Gb += nn_scores_get_G_bulge_loop (seq,
-                                        ARRAY_ACCESS (this->bulge_loop, k).i1,
-                                        ARRAY_ACCESS (this->bulge_loop, k).j1,
-                                        ARRAY_ACCESS (this->bulge_loop, k).i2,
-                                        ARRAY_ACCESS (this->bulge_loop, k).j2,
-                                        ARRAY_ACCESS (this->bulge_loop, k).size,
+      Gb += nn_scores_get_G_bulge_loop (
+                                     seq[ARRAY_ACCESS (this->bulge_loop, k).i1],
+                                     seq[ARRAY_ACCESS (this->bulge_loop, k).j1],
+                                     seq[ARRAY_ACCESS (this->bulge_loop, k).i2],
+                                     seq[ARRAY_ACCESS (this->bulge_loop, k).j2],
+                                     ARRAY_ACCESS (this->bulge_loop, k).size,
                                         scores);
    }
 

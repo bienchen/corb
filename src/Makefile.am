@@ -1,4 +1,4 @@
-# Last modified: 2008-10-06.14
+# Last modified: 2008-12-05.11
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -25,6 +25,8 @@ SUBDIRS = libcrbfallback libcrbbasic libcrbrna libcrbbrot libcrbapps
 
 noinst_HEADERS = crb_cmdline.h
 
+# is there any particular reason we used LDADD and not corb_LDADD in the first
+# place?
 LDADD =                                 \
 	libcrbapps/libcrbapps.a         \
 	libcrbbasic/libcrbbasic.a       \
@@ -37,6 +39,12 @@ corb_SOURCES =       \
 	crb_cmdline.c\
 	corb.c
 
+#corb_LDADD =                                 \
+#	libcrbapps/libcrbapps.a         \
+#	libcrbbasic/libcrbbasic.a       \
+#	libcrbbrot/libcrbbrot.a         \
+#	libcrbrna/libcrbrna.a           \
+#	libcrbfallback/libcrbfallback.a
 
 #dnl Local variables:
 #dnl eval: (add-hook 'write-file-hooks 'time-stamp)

@@ -39,6 +39,10 @@
  *  Revision History:
  *         - 2008Jul03 bienert: created
  *
+ *  ToDo:
+ *         - change scheme->bp_idx_size to be non quadratic
+ *           (get rid of sqrt testing, calc. quadratic size on demand)
+ *         - functions: all seq. related input in 5' to 3' order,e.g.get_G_int12
  */
 
 
@@ -65,9 +69,9 @@
 #define NN_NINIO_MAX 300
 
 struct NN_scores {
-      long** G_stack;                        /* stacking energies */
+      int** G_stack;                         /* stacking energies */
       unsigned long G_stack_size;
-      long** G_mm_stack;                     /* stacks with one mismatch */
+      int** G_mm_stack;                     /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
       int* G_hairpin_loop;                   /* hairpin loops */
       unsigned long G_hairpin_loop_size;
@@ -86,7 +90,7 @@ struct NN_scores {
       unsigned long G_int11_size;
       int***** G_int21;                      /* 2x1 loops */
       unsigned long G_int21_size;
-      int****** G_int22;                      /* 2x1 loops */
+      int****** G_int22;                      /* 2x2 loops */
       unsigned long G_int22_size;
       int*** G_mismatch_interior;             /* interior loop closing bp */
       unsigned long G_mismatch_interior_size;
@@ -237,10 +241,10 @@ allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
    this->G_stack_size = this->bp_allowed_size;
    
    /* allocate matrix */
-   this->G_stack = (long**) XOBJ_MALLOC_2D (this->G_stack_size,
-                                            this->G_stack_size,
-                                            sizeof (**this->G_stack),
-                                            file, line);
+   this->G_stack = (int**) XOBJ_MALLOC_2D (this->G_stack_size,
+                                           this->G_stack_size,
+                                           sizeof (**this->G_stack),
+                                           file, line);
    this->G_stack_size *= this->G_stack_size;
    
    if (this->G_stack == NULL)
@@ -251,7 +255,7 @@ allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
    /*for (i = 0; i < this->G_stack_size; i++)
    {
       this->G_stack[0][i] = 0;
-      }*/
+   }*/
 
    /* regular pairs */
    /* AU AU */
@@ -299,7 +303,7 @@ allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
    
    /* UA UA */
    /* 5'- UA
-      AU -5'*/
+          AU -5'*/
    this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
       [(int) this->bp_idx[(int)u][(int)a]] = -130;
    
@@ -482,10 +486,10 @@ allocate_init_G_mm_stack_size (char a, char u, char g, char c,
 {
    this->G_mm_stack_size = size * size;
    
-   this->G_mm_stack = (long**) XOBJ_MALLOC_2D (this->bp_allowed_size,
-                                               this->G_mm_stack_size,
-                                               sizeof (**this->G_mm_stack),
-                                               file, line);
+   this->G_mm_stack = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size,
+                                              this->G_mm_stack_size,
+                                              sizeof (**this->G_mm_stack),
+                                              file, line);
    this->G_mm_stack_size *= this->bp_allowed_size;
 
    if (this->G_mm_stack == NULL)
@@ -2028,6 +2032,13 @@ allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
    this->non_gc_penalty_for_bp[(int)this->bp_idx[g][u]] = 50;
    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][a]] = 50;
    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][g]] = 50;
+
+/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[c][g]] = -200; */
+/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[g][c]] = -200; */
+/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[a][u]] = -150; */
+/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[g][u]] = -150; */
+/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][a]] = -150; */
+/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][g]] = -150; */
 
    return 0;
 }
@@ -10740,7 +10751,6 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
    this->G_int22[bp1][bp2][u][u][u][g] =   90; /*       G */
    this->G_int22[bp1][bp2][u][u][u][u] =  110; /*       U */
 
-/*yy*/
    /* AU */
    bp1 = this->bp_idx[a][u];
    /*   CG */
@@ -12292,7 +12302,6 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
    this->G_int22[bp1][bp2][u][u][u][g] =  130; /*       G */
    this->G_int22[bp1][bp2][u][u][u][u] =   80; /*       U */
 
-/*yy*/
    /* UA */
    bp1 = this->bp_idx[u][a];
    /*   CG */
@@ -14072,7 +14081,7 @@ allocate_init_tetra_loop (const char a,
    char* l;
 
    this->tetra_loop_size = 30;
-   this->tetra_loop = (char**) XOBJ_MALLOC_2D (this->tetra_loop_size, D_TL,
+   this->tetra_loop = (char**) XOBJ_MALLOC_2D (this->tetra_loop_size,(D_TL + 1),
                                                sizeof (**this->tetra_loop),
                                                file, line);
    if (this->tetra_loop == NULL)
@@ -14086,152 +14095,152 @@ allocate_init_tetra_loop (const char a,
 
    /* GGGGAC -300 */
    l = this->tetra_loop[0];
-   l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[0] = -300;
 
    /* GGUGAC -300 */
    l = this->tetra_loop[1];
-   l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[1] = -300;
 
    /* CGAAAG -300 */
    l = this->tetra_loop[2];
-   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[2] = -300;
 
    /* GGAGAC -300 */
    l = this->tetra_loop[3];
-   l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[3] = -300;
 
    /* CGCAAG -300 */
    l = this->tetra_loop[4];
-   l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[4] = -300;
 
    /* GGAAAC -300 */
    l = this->tetra_loop[5];
-   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[5] = -300;
 
    /* CGGAAG -300 */
    l = this->tetra_loop[6];
-   l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[6] = -300;
 
    /* CUUCGG -300 */
    l = this->tetra_loop[7];
-   l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g;
+   l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[7] = -300;
 
    /* CGUGAG -300 */
    l = this->tetra_loop[8];
-   l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[8] = -300;
 
    /* CGAAGG -250 */
    l = this->tetra_loop[9];
-   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[9] = -250;
 
    /* CUACGG -250 */
    l = this->tetra_loop[10];
-   l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g;
+   l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[10] = -250;
 
    /* GGCAAC -250 */
    l = this->tetra_loop[11];
-   l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[11] = -250;
 
    /* CGCGAG -250 */
    l = this->tetra_loop[12];
-   l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[12] = -250;
 
    /* UGAGAG -250 */
    l = this->tetra_loop[13];
-   l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g;
+   l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[13] = -250;
 
    /* CGAGAG -200 */
    l = this->tetra_loop[14];
-   l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[14] = -200;
 
    /* AGAAAU -200 */
    l = this->tetra_loop[15];
-   l[0] = a; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = u;
+   l[0] = a; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[15] = -200;
 
    /* CGUAAG -200 */
    l = this->tetra_loop[16];
-   l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[16] = -200;
 
    /* CUAACG -200 */
    l = this->tetra_loop[17];
-   l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g;
+   l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[17] = -200;
 
    /* UGAAAG -200 */
    l = this->tetra_loop[18];
-   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g;
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[18] = -200;
  
    /* GGAAGC -150 */
    l = this->tetra_loop[19];
-   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[19] = -150;
 
    /* GGGAAC -150 */
    l = this->tetra_loop[20];
-   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[20] = -150;
 
    /* UGAAAA -150 */
    l = this->tetra_loop[21];
-   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a;
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
    this->G_tetra_loop[21] = -150;
  
    /* AGCAAU -150 */
    l = this->tetra_loop[22];
-   l[0] = a; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = u;
+   l[0] = a; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[22] = -150;
  
    /* AGUAAU -150 */
    l = this->tetra_loop[23];
-   l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u;
+   l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[23] = -150;
 
    /* CGGGAG -150 */
    l = this->tetra_loop[24];
-   l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g;
+   l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[24] = -150;
 
    /* AGUGAU -150 */
    l = this->tetra_loop[25];
-   l[0] = a; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = u;
+   l[0] = a; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[25] = -150;
 
    /* GGCGAC -150 */
    l = this->tetra_loop[26];
-   l[0] = g; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[26] = -150;
 
    /* GGGAGC -150 */
    l = this->tetra_loop[27];
-   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = g; l[5] = c;
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[27] = -150;
 
    /* GUGAAC -150 */
    l = this->tetra_loop[28];
-   l[0] = g; l[1] = u; l[2] = g; l[3] = a; l[4] = a; l[5] = c;
+   l[0] = g; l[1] = u; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[28] = -150;
  
    /* UGGAAA -150 */
    l = this->tetra_loop[29];
-   l[0] = u; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = a;
+   l[0] = u; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
    this->G_tetra_loop[29] = -150;
 
 
@@ -14447,6 +14456,54 @@ nn_scores_delete (NN_scores* this)
 
 /*********************************   Access   *********************************/
 
+/** @brief Return size of a tetra loop.
+ *
+ * Obviously this is 4. But we have to use this function for charma.
+ *
+ * @params[in] this The scoring scheme.
+ */
+unsigned long
+nn_scores_get_size_tetra_loop (const NN_scores* this)
+{
+   assert (this);
+
+   return D_TL - 2;             /* remove closing bp */
+}
+
+/** @brief Return no. of tetra loop parameters.
+ *
+ * Just the no. of parameterised tetra loops.
+ *
+ * @param[in] this The scoring scheme.
+ */
+unsigned long
+nn_scores_get_no_of_tetra_loops (const NN_scores* this)
+{
+   assert (this);
+
+   return this->tetra_loop_size;
+}
+
+/** Get the sequence of a certain tetra loop.
+ *
+ * Returns a pointer to the sequence of a tetra loop from the parameter table.
+ * Since you got no copy of the sequence, you must NOT free it after use! Be
+ * sure to access only indeces smaller than
+ * @c nn_scores_get_no_of_tetra_loops(). Please note that the sequence are
+ * stored in transformed form.
+ *
+ * @param[in] i Index of loop to fetch from parameter table.
+ * @param[in] this The scoring scheme.
+ */
+const char*
+nn_scores_get_tetra_loop (const unsigned long i, const NN_scores* this)
+{
+   assert (this);
+   assert (i < this->tetra_loop_size);
+
+   return this->tetra_loop[i];
+}
+
 /** @brief Return number of allowed base pairs in a schoring scheme.
  *
  * @params[in]  i position of base pair.
@@ -14465,6 +14522,53 @@ nn_scores_get_allowed_basepair (const unsigned i,
 
    b5[0] = scheme->bp_allowed[i][0];
    b3[0] = scheme->bp_allowed[i][1];
+}
+
+/** @brief Get penalty for non-GC closing base pairs 
+ *
+ * @param[in] i 5' pairing partner.
+ * @param[in] j 3' pairing partner.
+ * @param[in] this Scoring scheme
+ */
+int
+nn_scores_get_G_non_gc_penalty_for_bp (const int i, const int j,
+                                       const NN_scores* this)
+{
+   assert (this);
+   assert (this->non_gc_penalty_for_bp);
+   assert (this->bp_idx);
+   assert (i < sqrtf ((float) this->bp_idx_size));
+   assert (j < sqrtf ((float) this->bp_idx_size));
+
+   return this->non_gc_penalty_for_bp[(int)this->bp_idx[i][j]];
+}
+
+int
+nn_scores_get_G_dangle5 (const int i, const int j, const int im1,
+                         const NN_scores* this)
+{
+   assert (this);
+   assert (this->G_dangle5);
+   assert (this->bp_idx);
+   assert (i < sqrtf ((float) this->bp_idx_size));
+   assert (j < sqrtf ((float) this->bp_idx_size));
+   assert (im1 < sqrtf ((float) this->bp_idx_size));
+
+   return this->G_dangle5[(int)this->bp_idx[i][j]][im1];
+}
+
+int
+nn_scores_get_G_dangle3 (const int i, const int j, const int jp1,
+                         const NN_scores* this)
+{
+   assert (this);
+   assert (this->G_dangle3);
+   assert (this->bp_idx);
+   assert (i < sqrtf ((float) this->bp_idx_size));
+   assert (j < sqrtf ((float) this->bp_idx_size));
+   assert (jp1 < sqrtf ((float) this->bp_idx_size));
+
+   return this->G_dangle3[(int)this->bp_idx[i][j]][jp1];
 }
 
 int
@@ -14504,7 +14608,6 @@ nn_scores_get_G_extloop_multiloop (const char* seq,
    /* 5' dangle */
    for (i = 0; i < ndangle5; i++)
    {
-
       G += scheme->G_dangle5[
          (int)scheme->bp_idx[
             (int)seq[dangle5[i][P5_Dangle]]
@@ -14547,7 +14650,7 @@ nn_scores_get_G_extloop_multiloop (const char* seq,
  * @params[in] ip1 i+1 component of the downstream pair.
  * @params[in] scheme The scoring scheme.
  */
-long
+int
 nn_scores_get_G_stack (const char i, const char j,
                        const char jm1, const char ip1,
                        const NN_scores* scheme)
@@ -14576,7 +14679,7 @@ nn_scores_get_G_stack (const char i, const char j,
  * @params[in] l position i+1.
  * @params[in] scheme The scoring scheme.
  */
-long
+int
 nn_scores_get_G_mm_stack (const char i, const char j,
                           const char k, const char l,
                           const NN_scores* scheme)
@@ -14620,7 +14723,6 @@ tetra_loop_cmp_seq (const char* seq,
  *
  * @param[in] seq transformed RNA sequence.
  * @param[in] i i component of the closing base pair.
- * @param[in] j j component of the closing base pair.
  * @param[in] this scoring sceme.
  */
 int
@@ -14684,16 +14786,14 @@ int nn_scores_get_G_hairpin_mismatch (const int i,
                                       const unsigned long size,
                                       const NN_scores* this)
 {
+
    /* mismatch penalty for the mismatch interior to the closing basepair of
       the hairpin. triloops get non-parameterised mismatch penalty */
    if (size == D_MM_H)
    {
       return this->non_gc_penalty_for_bp[(int)this->bp_idx[i][j]];
    }
-   else
-   {
-      return this->G_mismatch_hairpin[(int)this->bp_idx[i][j]][ip1][jm1];
-   }   
+   return this->G_mismatch_hairpin[(int)this->bp_idx[i][j]][ip1][jm1];
 }
 
 /** @brief Returns the score for a hairpin loop of certain size.
@@ -14733,11 +14833,46 @@ nn_scores_get_G_hairpin_loop (const char* seq,
                                           this);
 
    /* tetraloop bonus */
-   if (size == 4)
+   if (size == nn_scores_get_size_tetra_loop(this))
    {
       G += nn_scores_get_G_tetra_loop (seq, i, this);
    }
    /* mfprintf (stderr, "G= %d\n", G); */
+   return G;
+}
+
+/** @brief Energy for both closing base pairs of a bulge loop.
+ *
+ * @param[in] i1 Partner i of the first pair.
+ * @param[in] j1 Partner j of the first pair.
+ * @param[in] i2 Partner i of the 2nd pair.
+ * @param[in] j2 Partner j of the 2nd pair.
+ * @param[in] size Size of the loop.
+ * @param[in] this Scoring scheme.
+ */
+int
+nn_scores_get_G_bulge_stack (const int i1, const int j1,
+                             const int j2, const int i2,
+                             const unsigned long size,
+                             const NN_scores* this)
+{
+   int G = 0;
+ 
+   assert (this);
+   assert (this->non_gc_penalty_for_bp);
+
+   if (size == 1)
+   {
+      G += nn_scores_get_G_stack (i1, j1, j2, i2, this);
+   }
+   else
+   {
+      /* bulge loops larger than 1 get penalty term for non-gc closing
+         basepairs */
+      G += this->non_gc_penalty_for_bp[(int)this->bp_idx[i1][j1]];
+      G += this->non_gc_penalty_for_bp[(int)this->bp_idx[j2][i2]];
+   }
+
    return G;
 }
 
@@ -14749,22 +14884,25 @@ nn_scores_get_G_hairpin_loop (const char* seq,
  * @params[in] this Scoring scheme.
  */
 int
-nn_scores_get_G_bulge_loop (const char* seq,
-                            const unsigned long i1,
-                            const unsigned long j1,
-                            const unsigned long i2,
-                            const unsigned long j2,
+nn_scores_get_G_bulge_loop (const int i1, const int j1,
+                            const int i2, const int j2,
                             const unsigned long size,
                             const NN_scores* this)
 {
    int G = 0;
 
-   assert (seq);
    assert (this);
    assert (this->G_bulge_loop);
    assert (this->non_gc_penalty_for_bp);
-   assert (i1 < j1);
-   assert (i2 < j2);
+   assert (this->bp_idx);
+   assert (i1 < sqrtf ((float) this->bp_idx_size));
+   assert (j1 < sqrtf ((float) this->bp_idx_size));
+   assert (i2 < sqrtf ((float) this->bp_idx_size));
+   assert (j2 < sqrtf ((float) this->bp_idx_size));
+   assert (  (unsigned) this->bp_idx[i1][j1] 
+           < this->bp_allowed_size);
+   assert (  (unsigned) this->bp_idx[j2][i2] 
+           < this->bp_allowed_size);
 
    if (size < this->G_bulge_loop_size)
    {
@@ -14777,21 +14915,163 @@ nn_scores_get_G_bulge_loop (const char* seq,
                   logf((float) size / (this->G_bulge_loop_size - 1)));
    }
 
-   if (size == 1)
-   {
-      G += nn_scores_get_G_stack (seq[i1], seq[j1], seq[j2], seq[i2], this);
-   }
-   else
-   {
-      /* bulge loops larger than 1 get penalty term for non-gc closing
-         basepairs */
-      G += this->non_gc_penalty_for_bp[
-         (int)this->bp_idx[(int)seq[i1]][(int)seq[j1]]];
-      G += this->non_gc_penalty_for_bp[
-         (int)this->bp_idx[(int)seq[j2]][(int)seq[i2]]];
-   }
+   G += nn_scores_get_G_bulge_stack (i1, j1, j2, i2, size, this);
 
    return G;
+}
+
+/* int */
+/* nn_scores_get_G_bulge_loop (const char* seq, */
+/*                             const unsigned long i1, */
+/*                             const unsigned long j1, */
+/*                             const unsigned long i2, */
+/*                             const unsigned long j2, */
+/*                             const unsigned long size, */
+/*                             const NN_scores* this) */
+/* { */
+/*    int G = 0; */
+
+/*    assert (seq); */
+/*    assert (this); */
+/*    assert (this->G_bulge_loop); */
+/*    assert (this->non_gc_penalty_for_bp); */
+/*    assert (i1 < j1); */
+/*    assert (i2 < j2); */
+
+/*    if (size < this->G_bulge_loop_size) */
+/*    { */
+/*       G += this->G_bulge_loop[size]; */
+/*    } */
+/*    else */
+/*    { */
+/*       G += this->G_bulge_loop[this->G_bulge_loop_size - 1] */
+/*          + (int) (NN_LXC37 * */
+/*                   logf((float) size / (this->G_bulge_loop_size - 1))); */
+/*    } */
+
+/* /\*    if (size == 1) *\/ */
+/* /\*    { *\/ */
+/* /\*       G += nn_scores_get_G_stack (seq[i1], seq[j1], seq[j2], seq[i2], this); *\/ */
+/* /\*    } *\/ */
+/* /\*    else *\/ */
+/* /\*    { *\/ */
+/* /\*       /\\* bulge loops larger than 1 get penalty term for non-gc closing *\/ */
+/* /\*          basepairs *\\/ *\/ */
+/* /\*       G += this->non_gc_penalty_for_bp[ *\/ */
+/* /\*          (int)this->bp_idx[(int)seq[i1]][(int)seq[j1]]]; *\/ */
+/* /\*       G += this->non_gc_penalty_for_bp[ *\/ */
+/* /\*          (int)this->bp_idx[(int)seq[j2]][(int)seq[i2]]]; *\/ */
+/* /\*    } *\/ */
+
+/*    G += nn_scores_get_G_bulge_stack ((int)seq[i1], (int)seq[j1], */
+/*                                      (int)seq[j2], (int)seq[i2], */
+/*                                      size, */
+/*                                      this); */
+
+/*    return G; */
+/* } */
+
+/* note: everything given 5' -> 3' direction */
+int
+nn_scores_get_G_internal_2x2_loop (const int i1,
+                                   const int j1,
+                                   const int i1p1,
+                                   const int i2m1,
+                                   const int j2,
+                                   const int i2,
+                                   const int j2p1,
+                                   const int j1m1,
+                                   const NN_scores* this)
+{
+   assert (this);
+   assert (this->bp_idx);
+   assert (this->G_int22);
+   assert (i1 < sqrtf ((float) this->bp_idx_size));
+   assert (j1 < sqrtf ((float) this->bp_idx_size));
+   assert (i2 < sqrtf ((float) this->bp_idx_size));
+   assert (j2 < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[i1][j1]
+                      * this->bp_idx[j2][i2] 
+                      * i1p1
+                      * i2m1
+                      * j2p1
+                      * j1m1)
+                      < this->G_int22_size);
+
+   return this->G_int22[(int)this->bp_idx[i1][j1]] /* bp 1 */
+                       [(int)this->bp_idx[j2][i2]] /* bp 2 */
+                       [i1p1][i2m1][j2p1][j1m1];   /* unpaired bases */
+}
+
+int
+nn_scores_get_G_internal_1x2_loop (const int i1,
+                                   const int j1,
+                                   const int i1p1,
+                                   const int j2p1,
+                                   const int j1m1,
+                                   const int j2,
+                                   const int i2,
+                                   const NN_scores* this)
+{
+   assert (this);
+   assert (this->bp_idx);
+   assert (this->G_int21);
+   assert (i1 < sqrtf ((float) this->bp_idx_size));
+   assert (j1 < sqrtf ((float) this->bp_idx_size));
+   assert (i2 < sqrtf ((float) this->bp_idx_size));
+   assert (j2 < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[i1][j1]
+                      * this->bp_idx[j2][i2]
+                      * i1p1
+                      * j2p1
+                      * j1m1)
+           < this->G_int21_size);
+
+   return this->G_int21[(int)this->bp_idx[i1][j1]] /* bp 1 */
+                       [(int)this->bp_idx[j2][i2]] /* bp 2 */
+                       [i1p1][j2p1][j1m1];         /* unpaired bases */
+}
+
+int
+nn_scores_get_G_internal_1x1_loop (const int i1,
+                                   const int j1,
+                                   const int i1p1,
+                                   const int j1m1,
+                                   const int i2,
+                                   const int j2,
+                                   const NN_scores* this)
+{
+   assert (this);
+   assert (this->bp_idx);
+   assert (this->G_int11);
+   assert (i1 < sqrtf ((float) this->bp_idx_size));
+   assert (j1 < sqrtf ((float) this->bp_idx_size));
+   assert (i2 < sqrtf ((float) this->bp_idx_size));
+   assert (j2 < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[i1][j1] * this->bp_idx[j2][i2] * i1p1 * j1m1)
+           < this->G_int11_size);
+
+   return this->G_int11[(int)this->bp_idx[i1][j1]] /* bp 1 */
+                       [(int)this->bp_idx[j2][i2]] /* bp 2 */
+                       [i1p1][j1m1];               /* unpaired bases */
+}
+
+int
+nn_scores_get_G_mismatch_interior (const int i,
+                                   const int j,
+                                   const int ip,
+                                   const int jm,
+                                   const NN_scores* this)
+{
+   assert (this);
+   assert (this->bp_idx);
+   assert (this->G_mismatch_interior);
+   assert (i < sqrtf ((float) this->bp_idx_size));
+   assert (j < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[i][j] * ip * jm)
+           < this->G_mismatch_interior_size);
+
+   return this->G_mismatch_interior[(int)this->bp_idx[i][j]][ip][jm];
 }
 
 int
@@ -14841,7 +15121,7 @@ nn_scores_get_G_internal_loop (const char* seq,
    else if ((size1 == 2) && (size2 == 1))
    {
       /* 2x1 internal loop */
-      /* note switched order of pt1 and pt2 compared to 1x2 loop */
+      /* note switched order of bp1 and bp2 compared to 1x2 loop */
       return this->G_int21[bp2][bp1][bj2p][bi1p][bi2m];
    }
    else if ((size1 == 2) && (size2 == 2))
@@ -15020,7 +15300,7 @@ nn_scores_fprintf_G_stack (FILE* stream,
 {
    unsigned long i, j;
    int d5, u5, d3, u3;
-   long tmp;
+   int tmp;
    int rprec;
    unsigned long pline_width = 2;
    unsigned long matrix_edge;
@@ -15121,7 +15401,7 @@ nn_scores_fprintf_G_stack (FILE* stream,
             u3 = scheme->bp_allowed[j][0];
             d3 = scheme->bp_allowed[j][1];
 
-            msprintf (string, "%*ld", rprec,
+            msprintf (string, "%*d", rprec,
                       scheme->G_stack[(int) scheme->bp_idx[u5][d5]]
                                      [(int) scheme->bp_idx[u3][d3]]);
             string += rprec;
@@ -15150,7 +15430,7 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
 {
    unsigned long i, j, k;
    int d, u;
-   long tmp;
+   int tmp;
    int rprec;
    unsigned long pline_width = 2;
    unsigned long matrix_rows;
@@ -15254,7 +15534,7 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
             msprintf (string, " | ");
             string += 3;
             
-            msprintf (string, "%*ld", rprec,
+            msprintf (string, "%*d", rprec,
                       scheme->G_mm_stack[(int) scheme->bp_idx[u][d]]
                                      [(int) scheme->bp_idx[j][k]]);
             string += rprec;

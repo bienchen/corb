@@ -100,6 +100,11 @@ secstruct_get_i_5p_stack (const unsigned long, const SecStruct*);
 unsigned long
 secstruct_get_i_3p_stack (const unsigned long, const SecStruct*);
 
+void
+secstruct_get_i_geometry_stack (unsigned long*, unsigned long*,
+                                const unsigned long,
+                                const SecStruct*);
+
 /* bulge loops */
 unsigned long
 secstruct_get_noof_bulges (const SecStruct*);
@@ -113,18 +118,26 @@ secstruct_get_i_end_bulge (const unsigned long, const SecStruct*);
 unsigned long
 secstruct_get_i_size_bulge (const unsigned long, const SecStruct*);
 
+void
+secstruct_get_geometry_bulge (unsigned long*, unsigned long*,
+                              unsigned long*, unsigned long*,
+                              unsigned long*,
+                              const unsigned long,
+                              const SecStruct*);
+
 /* internal loops */
 unsigned long
 secstruct_get_noof_internals (const SecStruct*);
 
-unsigned long
-secstruct_get_i_start_internal (const unsigned long, const SecStruct*);
-
-unsigned long
-secstruct_get_i_end_internal (const unsigned long, const SecStruct*);
-
-unsigned long
-secstruct_get_i_size_internal (const unsigned long, const SecStruct*);
+void
+secstruct_get_geometry_internal (unsigned long*,
+                                 unsigned long*,
+                                 unsigned long*,
+                                 unsigned long*,
+                                 unsigned long*,
+                                 unsigned long*,
+                                 const unsigned long,
+                                 const SecStruct*);
 
 /* multiloops */
 unsigned long
@@ -144,9 +157,14 @@ unsigned long
 secstruct_get_i_3p_stem_multiloop (const unsigned long, const unsigned long,
                                    const SecStruct*);
 
+void
+secstruct_get_i_stem_multiloop (unsigned long*, unsigned long*,
+                                const unsigned long,
+                                const unsigned long,
+                                const SecStruct*);
+
 unsigned long
-secstruct_get_i_noof_5pdangles_multiloop (unsigned long,
-                                          const SecStruct*);
+secstruct_get_i_noof_5pdangles_multiloop (unsigned long, const SecStruct*);
 
 unsigned long
 secstruct_get_i_5p_5pdangle_multiloop (const unsigned long, const unsigned long,
@@ -160,6 +178,14 @@ unsigned long
 secstruct_get_i_dangle_5pdangle_multiloop (const unsigned long,
                                            const unsigned long,
                                            const SecStruct*);
+
+void
+secstruct_get_i_5pdangle_multiloop (unsigned long*,
+                                    unsigned long*,
+                                    unsigned long*,
+                                    const unsigned long,
+                                    const unsigned long,
+                                    const SecStruct*);
 
 unsigned long
 secstruct_get_i_noof_3pdangles_multiloop (unsigned long, const SecStruct*);
@@ -177,18 +203,30 @@ secstruct_get_i_dangle_3pdangle_multiloop (const unsigned long,
                                            const unsigned long,
                                            const SecStruct*);
 
+void
+secstruct_get_i_3pdangle_multiloop (unsigned long*,
+                                    unsigned long*,
+                                    unsigned long*,
+                                    const unsigned long,
+                                    const unsigned long,
+                                    const SecStruct*);
+
 /* external loops */
 unsigned long
 secstruct_get_i_noof_unpaired_extloop (const SecStruct*);
 
 unsigned long
-secstruct_get_i_noof_stems_extloop (const SecStruct*);
+secstruct_get_noof_stems_extloop (const SecStruct*);
 
 unsigned long
 secstruct_get_i_5p_stem_extloop (const unsigned long, const SecStruct*);
 
 unsigned long
 secstruct_get_i_3p_stem_extloop (const unsigned long, const SecStruct*);
+
+void
+secstruct_get_i_stem_extloop (unsigned long*, unsigned long*,
+                              const unsigned long, const SecStruct*);
 
 unsigned long
 secstruct_get_noof_5pdangles_extloop (const SecStruct*);
@@ -207,6 +245,20 @@ secstruct_get_i_5p_5pdangle_extloop (const unsigned long, const SecStruct*);
 
 unsigned long
 secstruct_get_i_3p_5pdangle_extloop (const unsigned long, const SecStruct*);
+
+void
+secstruct_get_i_5pdangle_extloop (unsigned long*,
+                                  unsigned long*,
+                                  unsigned long*,
+                                  const unsigned long,
+                                  const SecStruct*);
+
+void
+secstruct_get_i_3pdangle_extloop (unsigned long*,
+                                  unsigned long*,
+                                  unsigned long*,
+                                  const unsigned long,
+                                  const SecStruct*);
 
 int
 secstruct_calculate_DG (const char*, const NN_scores*, const SecStruct*);

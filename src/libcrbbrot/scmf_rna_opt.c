@@ -1549,6 +1549,11 @@ scmf_rna_opt_calc_internal (const unsigned long row,
          }
       }
    }
+   /* for each site of the loop 4 bases are involved */
+   cell_i1 = cell_i1 / 4;       /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 4;       /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 4;       /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 4;       /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
    seqmatrix_add_2_eeff (cell_j2, row, j2, sm);
@@ -1612,6 +1617,11 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                            this->scores);
       }
    }
+   /* for each site of the loop 4 bases are involved */
+   cell_i1 = cell_i1 / 4;       /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 4;       /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 4;       /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 4;       /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
    seqmatrix_add_2_eeff (cell_j2, row, j2 + 1, sm);
@@ -1728,6 +1738,11 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
          }
       }
    }
+   /* 8 bases are involved in a 2x2 loop */
+   cell_i1 = cell_i1 / 8; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 8; /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 8; /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 8; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
    seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
@@ -1819,6 +1834,11 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
          }
       }
    }
+   /* 8 bases are involved in a 2x2 loop */
+   cell_i1 = cell_i1 / 8; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 8; /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 8; /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 8; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
    seqmatrix_add_2_eeff (cell_i2, row, i2 - 1, sm);
    seqmatrix_add_2_eeff (cell_j2, row, j2 + 1, sm);
@@ -1934,6 +1954,11 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
          }
       }
    }
+   /* 7 bases are involved in a 1x2 loop*/
+   cell_i1 = cell_i1 / 7; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 7; /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 7; /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 7; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
    seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
@@ -2008,29 +2033,14 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
                                                                  bj2,
                                                                  bi2,
                                                                  this->scores);
-               /*mfprintf (stderr, "%c%c %c %c %c %c%c: %f %d %f\n",
-                         alphabet_no_2_base (bi, this->sigma),
-                         alphabet_no_2_base (bj, this->sigma),
-                         alphabet_no_2_base (m, this->sigma),
-                         alphabet_no_2_base (row, this->sigma),
-                         alphabet_no_2_base (n, this->sigma),
-                         alphabet_no_2_base (bj2, this->sigma),
-                         alphabet_no_2_base (bi2, this->sigma),
-                         p,
-                         nn_scores_get_G_internal_1x2_loop (bi,
-                                                            bj,
-                                                            m,
-                                                            row,
-                                                            n,
-                                                            bj2,
-                                                            bi2,
-                                                            this->scores),
-                                                            cell_i2);*/
             }
          }
       }
    }
-
+   /* 7 bases are involved in a 1x2 loop*/
+   cell_i1 = cell_i1 / 7; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 7; /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 7; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
    seqmatrix_add_2_eeff (cell_i2, row, j2 + 1, sm);
@@ -2119,6 +2129,11 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
          }
       }
    }
+   /* each of the 6 bases involved in this loop gets an energy contribution */
+   cell_i1 = cell_i1 / 6; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 6; /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 6; /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 6; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
    seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
@@ -2161,6 +2176,9 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
          }
       }
    }
+   /* each of the 6 bases involved in this loop gets an energy contribution */
+   cell_i1 = cell_i1 / 6; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 6; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
 }
@@ -2278,7 +2296,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       n = rna_secstruct_get_noof_internals (this->rna);
       for (i = 0; i < n; i++)
       {
-         /* SB scmf_rna_opt_calc_internals (r, i, sm, this); */  
+         /*SB scmf_rna_opt_calc_internals (r, i, sm, this); */
       }      
 
       /* hairpin loops */

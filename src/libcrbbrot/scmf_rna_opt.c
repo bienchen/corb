@@ -1204,16 +1204,11 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
          cell3p += (seqmatrix_get_probability(bpp, p5pos, sm)
                     * nn_scores_get_G_non_gc_penalty_for_bp (bpp, row,
                                                              this->scores));
-         /*mprintf ("%lu %c%c: %10f %3i | %c%c %10f %3i\n", k,
-                  alphabet_no_2_base (row, this->sigma),
-                  alphabet_no_2_base (bpp, this->sigma), cell5p,
-                  nn_scores_get_G_non_gc_penalty_for_bp (row, bpp,
-                                                         this->scores),
-                  alphabet_no_2_base (bpp, this->sigma),
-                  alphabet_no_2_base (row, this->sigma), cell3p,
-                  nn_scores_get_G_non_gc_penalty_for_bp (bpp, row,
-                  this->scores));*/
       }
+      /* usually the non_gc_penalty counts per pair, we
+         spread it over the involved bases */
+      cell5p = cell5p / 2; /* SB 08-12-11 */
+      cell3p = cell3p / 2; /* SB 08-12-11 */
       seqmatrix_add_2_eeff (cell5p, row, p5pos, sm);
       seqmatrix_add_2_eeff (cell3p, row, p3pos, sm);
    }
@@ -1242,19 +1237,11 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
                        * nn_scores_get_G_dangle5 (row, bpp, m, this->scores));
             cell3p += (p3p * seqmatrix_get_probability(m, fbpos, sm)
                        * nn_scores_get_G_dangle5 (bpp, row, m, this->scores));
-
-            /*mprintf ("%lu %lu %c%c - %c: %10f %3i %f | %10f %3i %f\n", row, k,
-                     alphabet_no_2_base (row, this->sigma),
-                     alphabet_no_2_base (bpp, this->sigma),
-                     alphabet_no_2_base (m, this->sigma),
-                     cell5p,
-                     nn_scores_get_G_dangle5 (row, bpp, m, this->scores),
-                     (p5p * seqmatrix_get_probability(m, fbpos, sm)),
-                     cell3p,
-                     nn_scores_get_G_dangle5 (bpp, row, m, this->scores),
-                     (p3p * seqmatrix_get_probability(m, fbpos, sm)));*/
          }
       }
+      /* all 3 bases get equal contribution */
+      cell5p = cell5p / 3; /* SB 08-12-11 */
+      cell3p = cell3p / 3; /* SB 08-12-11 */
       seqmatrix_add_2_eeff (cell5p, row, p5pos, sm);
       seqmatrix_add_2_eeff (cell3p, row, p3pos, sm);
 
@@ -1267,16 +1254,8 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
          cell5p += (seqmatrix_get_probability(bi, p5pos, sm)
                     * seqmatrix_get_probability(bj, p3pos, sm)
                     * nn_scores_get_G_dangle5 (bi, bj, row, this->scores));
-
-         /*mprintf ("%lu %lu %c%c - %c: %10f %3i %f\n", row, k,
-                  alphabet_no_2_base (bi, this->sigma),
-                  alphabet_no_2_base (bj, this->sigma),
-                  alphabet_no_2_base (row, this->sigma),
-                  cell5p,
-                  nn_scores_get_G_dangle5 (bi, bj, row, this->scores),
-                  (seqmatrix_get_probability(bi, p5pos, sm)
-                  * seqmatrix_get_probability(bj, p3pos, sm)));*/
       }
+      cell5p = cell5p / 3; /* SB 08-12-11 */
       seqmatrix_add_2_eeff (cell5p, row, fbpos, sm);
    }
 
@@ -1304,19 +1283,11 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
                        * nn_scores_get_G_dangle3 (row, bpp, m, this->scores));
             cell3p += (p3p * seqmatrix_get_probability(m, fbpos, sm)
                        * nn_scores_get_G_dangle3 (bpp, row, m, this->scores));
-
-            /*mprintf ("%lu %lu %c%c - %c: %11f %4i %f | %11f %4i %f\n",row, k, 
-                     alphabet_no_2_base (row, this->sigma),
-                     alphabet_no_2_base (bpp, this->sigma),
-                     alphabet_no_2_base (m, this->sigma),
-                     cell5p,
-                     nn_scores_get_G_dangle3 (row, bpp, m, this->scores),
-                     (p5p * seqmatrix_get_probability(m, fbpos, sm)),
-                     cell3p,
-                     nn_scores_get_G_dangle3 (bpp, row, m, this->scores),
-                     (p3p * seqmatrix_get_probability(m, fbpos, sm)));*/
          }
       }
+      /* all 3 bases get equal contribution */
+      cell5p = cell5p / 3; /* SB 08-12-11 */
+      cell3p = cell3p / 3; /* SB 08-12-11 */
       seqmatrix_add_2_eeff (cell5p, row, p5pos, sm);
       seqmatrix_add_2_eeff (cell3p, row, p3pos, sm);
 
@@ -1339,6 +1310,7 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
                   (seqmatrix_get_probability(bi, p5pos, sm)
                   * seqmatrix_get_probability(bj, p3pos, sm)));*/
       }
+      cell3p = cell3p / 3; /* SB 08-12-11 */
       seqmatrix_add_2_eeff (cell3p, row, fbpos, sm);
    }
 }
@@ -2317,7 +2289,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       n = rna_secstruct_get_noof_multiloops (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_multi_loop (r, i, sm, this); */
+         /* SB scmf_rna_opt_calc_multi_loop (r, i, sm, this);*/
       }
 
       /* negative energy? */

@@ -14470,6 +14470,20 @@ nn_scores_get_size_tetra_loop (const NN_scores* this)
    return D_TL - 2;             /* remove closing bp */
 }
 
+/** @brief Return size of a tetra loop including its closing base pair.
+ *
+ * Obviously this is 6. But we have to use this function for charma.
+ *
+ * @params[in] this The scoring scheme.
+ */
+unsigned long
+nn_scores_get_size_tetra_loop_full (const NN_scores* this)
+{
+   assert (this);
+
+   return D_TL;
+}
+
 /** @brief Return no. of tetra loop parameters.
  *
  * Just the no. of parameterised tetra loops.

@@ -953,6 +953,9 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
    }
    
    /* store eeff */
+   /* 4 bases make one mismatch/ closing bp */
+   cell5p = cell5p / 4; /* SB 08-12-12 */
+   cell3p = cell3p / 4; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell5p, row, start, sm);
    seqmatrix_add_2_eeff (cell3p, row,   end, sm);
 
@@ -979,12 +982,16 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
                                                       this->scores);
       }
    }
+   /* 4 bases make one mismatch/ closing bp */
+   cell5p = cell5p / 4; /* SB 08-12-12 */
+   cell3p = cell3p / 4; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell5p, row, start + 1, sm);
    seqmatrix_add_2_eeff (cell3p, row, end - 1  , sm);
 
    /* modeling tetraloops */
    if (size == nn_scores_get_size_tetra_loop(this->scores))
    {
+      size = nn_scores_get_size_tetra_loop_full(this->scores);
       /* loop over all tetraloops */
       n_tetra_loops = nn_scores_get_no_of_tetra_loops (this->scores);
       for (k = 0; k < n_tetra_loops; k++)
@@ -994,8 +1001,8 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
          update_prob5p = 1.0;
 
          /* calc eeff on base of ALL involved bases 
-            this is the loop size + 2 for the closing bp */
-         for (l = 0; l < size + 2; l++)
+            this is the loop size and its closing bp */
+         for (l = 0; l < size; l++)
          {
             update_prob5p *= seqmatrix_get_probability(t_loop[l],
                                                        start + l,
@@ -1006,7 +1013,7 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
             nn_scores_get_G_tetra_loop (t_loop, 0,this->scores) / size;
 
          /* add eeff to matching cells */
-         for (l = 0; l < size + 2; l++)
+         for (l = 0; l < size; l++)
          {
             if ((unsigned) t_loop[l] == row)
             {
@@ -2303,7 +2310,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       n = rna_secstruct_get_noof_hairpins (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_hairpin (r, i, sm, this); */
+         /* SB scmf_rna_opt_calc_hairpin (r, i, sm, this); */
       }
 
       /* multiloops */

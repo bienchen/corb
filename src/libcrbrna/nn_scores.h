@@ -90,6 +90,9 @@ unsigned long
 nn_scores_get_size_tetra_loop (const NN_scores*);
 
 unsigned long
+nn_scores_get_size_tetra_loop_full (const NN_scores*);
+
+unsigned long
 nn_scores_get_no_of_tetra_loops (const NN_scores*);
 
 const char*

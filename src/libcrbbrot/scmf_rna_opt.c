@@ -1438,21 +1438,26 @@ scmf_rna_opt_calc_stack (const unsigned long row,
             * seqmatrix_get_probability(bj, j - 1, sm);
 
          cell_i += (seqmatrix_get_probability(bpp, j, sm) * p
-                    * nn_scores_get_G_stack (row, bpp, bj, bi, this->scores) / 2); /* SB */
+                  * nn_scores_get_G_stack (row, bpp, bj, bi, this->scores));
 
          cell_j += (seqmatrix_get_probability(bpp, i, sm) * p
-                    * nn_scores_get_G_stack (bpp, row, bj, bi, this->scores) / 2); /* SB */
+                    * nn_scores_get_G_stack (bpp, row, bj, bi, this->scores));
 
          p = seqmatrix_get_probability( bi, i, sm)
             * seqmatrix_get_probability(bj, j, sm);
 
          cell_ip1 += (seqmatrix_get_probability(bpp, j - 1, sm) * p
-                      * nn_scores_get_G_stack (bi, bj, bpp, row, this->scores) / 2); /* SB */
+                      * nn_scores_get_G_stack (bi, bj, bpp, row, this->scores));
 
          cell_jm1 += (seqmatrix_get_probability(bpp, i + 1, sm) * p
-                      * nn_scores_get_G_stack (bi, bj, row, bpp, this->scores) / 2); /* SB */
+                      * nn_scores_get_G_stack (bi, bj, row, bpp, this->scores));
       }
    }
+   /* we distribute the energy values on 4 bases */
+   cell_i   = cell_i   / 4; /* SB 08-12-12 */
+   cell_j   = cell_j   / 4; /* SB 08-12-12 */
+   cell_ip1 = cell_ip1 / 4; /* SB 08-12-12 */
+   cell_jm1 = cell_jm1 / 4; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i,   row, i,     sm);
    seqmatrix_add_2_eeff (cell_j,   row, j,     sm);
    seqmatrix_add_2_eeff (cell_ip1, row, i + 1, sm);
@@ -1461,13 +1466,13 @@ scmf_rna_opt_calc_stack (const unsigned long row,
 
 static __inline__ void
 scmf_rna_opt_calc_internal (const unsigned long row,
-                            unsigned long allowed_bp __attribute__((unused)),
-                            unsigned long alpha_size __attribute__((unused)),
-                            unsigned long i1 __attribute__((unused)),
-                            unsigned long j1 __attribute__((unused)),
-                            unsigned long i2 __attribute__((unused)),
-                            unsigned long j2 __attribute__((unused)),
-                            SeqMatrix* sm __attribute__((unused)),
+                            unsigned long allowed_bp,
+                            unsigned long alpha_size,
+                            unsigned long i1,
+                            unsigned long j1,
+                            unsigned long i2,
+                            unsigned long j2,
+                            SeqMatrix* sm,
                             Scmf_Rna_Opt_data* this)
 {
    unsigned long k, l, m;
@@ -2248,13 +2253,13 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       /*seqmatrix_print_2_stdout (2, sm);*/
       /* process structure components */
       /* external loop */
-      scmf_rna_opt_calc_ext_loop (r, sm, this);
+      /*SB scmf_rna_opt_calc_ext_loop (r, sm, this); */
 
       /* stacking pairs */
       n = rna_secstruct_get_noof_stacks (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_stack (r, i, sm, this);*/
+         /*SB scmf_rna_opt_calc_stack (r, i, sm, this); */
       }
 
       /* bulge loops */

@@ -1378,11 +1378,11 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
 
          cell_i1 += (seqmatrix_get_probability(bpp, j1pos, sm) * p
                      * nn_scores_get_G_bulge_stack (row, bpp, bj, bi,
-                                                    size, this->scores)/2); /* SB */
+                                                    size, this->scores));
 
          cell_j1 += (seqmatrix_get_probability(bpp, i1pos, sm) * p
                      * nn_scores_get_G_bulge_stack (bpp, row, bj, bi,
-                                                    size, this->scores)/2); /* SB */
+                                                    size, this->scores));
 
          /* design 2nd pair */
          p = seqmatrix_get_probability(bi, i1pos, sm)
@@ -1390,14 +1390,19 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
 
          cell_i2 += (seqmatrix_get_probability(bpp, j2pos, sm) * p
                      * nn_scores_get_G_bulge_stack (bi, bj, bpp, row,
-                                                    size, this->scores)/2); /* SB */
+                                                    size, this->scores));
 
          cell_j2 += (seqmatrix_get_probability(bpp, i2pos, sm) * p
                      * nn_scores_get_G_bulge_stack (bi, bj, row, bpp,
-                                                    size, this->scores)/2); /* SB */
+                                                    size, this->scores));
       }
    }
 
+   /* we have 2 base pairs, so we spread on 4 */
+   cell_i1 = cell_i1 / 4; /* SB 08-12-12 */
+   cell_j1 = cell_j1 / 4; /* SB 08-12-12 */
+   cell_i2 = cell_i2 / 4; /* SB 08-12-12 */
+   cell_j2 = cell_j2 / 4; /* SB 08-12-12 */
    seqmatrix_add_2_eeff (cell_i1, row, i1pos, sm);
    seqmatrix_add_2_eeff (cell_j1, row, j1pos, sm);
    seqmatrix_add_2_eeff (cell_i2, row, i2pos, sm);
@@ -2266,14 +2271,14 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       n = rna_secstruct_get_noof_bulges (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_bulge (r, i, sm, this);*/
+         /*SB scmf_rna_opt_calc_bulge (r, i, sm, this); */
       }
 
       /* internal loops */
       n = rna_secstruct_get_noof_internals (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_internals (r, i, sm, this);  */       
+         /* SB scmf_rna_opt_calc_internals (r, i, sm, this); */  
       }      
 
       /* hairpin loops */

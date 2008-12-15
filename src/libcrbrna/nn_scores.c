@@ -2118,6 +2118,7 @@ allocate_init_int21 (const int a, const int u, const int g, const int c,
                       * no_of_b
                       * no_of_b;
 
+   /* BEGIN_INT21_ENERGIES */
    /* CG */
    bp1 = this->bp_idx[c][g];
    /*   CG */
@@ -4511,6 +4512,7 @@ allocate_init_int21 (const int a, const int u, const int g, const int c,
    this->G_int21[bp1][bp2][u][u][c] = 320; /*     C */
    this->G_int21[bp1][bp2][u][u][g] = 550; /*     G */
    this->G_int21[bp1][bp2][u][u][u] = 270; /*     U */
+   /* END_INT21_ENERGIES */
 
    return 0;
 }

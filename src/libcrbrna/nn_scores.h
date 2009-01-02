@@ -76,9 +76,9 @@ nn_scores_new (const char*, const int);
 #define NN_SCORES_NEW nn_scores_new (__FILE__, __LINE__)
 
 NN_scores*
-nn_scores_new_init (Alphabet*, const char*, const int);
+nn_scores_new_init (unsigned long, Alphabet*, const char*, const int);
 
-#define NN_SCORES_NEW_INIT(A) nn_scores_new_init (A, __FILE__, __LINE__)
+#define NN_SCORES_NEW_INIT(A, B) nn_scores_new_init (A, B, __FILE__, __LINE__)
 
 void
 nn_scores_delete (NN_scores*);

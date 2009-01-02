@@ -61,7 +61,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
    
-   scores = NN_SCORES_NEW_INIT (sigma);
+   scores = NN_SCORES_NEW_INIT (0, sigma);
    if (scores == NULL)
    {
       THROW_ERROR_MSG ("Could not setup scoring scheme");

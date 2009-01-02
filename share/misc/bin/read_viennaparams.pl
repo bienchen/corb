@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-01-02.21
+# Last modified: 2009-01-02.22
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -825,7 +825,7 @@ sub output_int11_energies(\%)
                 {
                     $j = $_;
                     push @out, sprintf("   this->G_int11[bp1][bp2][".
-                                       $BASES[$i]."][".$BASES[$j]."] = %*i;",
+                                       $BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
                                 $dig, ${$param_hashref->{$bp1}{$bp2}}[$i][$j]);
                     
                     push @out, " /* ";
@@ -935,7 +935,7 @@ sub output_int21_energies(\%)
                     {
                         $j = $_;
                         push @out, sprintf("   this->G_int21[bp1][bp2][$b][".
-                               $BASES[$i]."][".$BASES[$j]."] = %*i;",
+                               $BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
                              $dig, ${$param_hashref->{$bp1}{$bp2}{$b}}[$i][$j]);
 
                         push @out, " /* ";
@@ -1059,7 +1059,7 @@ sub output_int22_energies(\%)
                         {
                             $j = $_;
                   push @out, sprintf("   this->G_int22[bp1][bp2][$b1][$b2]["
-                         .$BASES[$i]."][".$BASES[$j]."] = %*i;",
+                         .$BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
                       $dig, ${$param_hashref->{$bp1}{$bp2}{$b1}{$b2}}[$i][$j]);
 
                             push @out, " /* ";
@@ -1166,7 +1166,7 @@ sub output_mismatch_interior_energies(\%)
             {
                 $j = $_;
                 push @out, sprintf("   this->G_mismatch_interior[bp1][".
-                       $BASES[$i]."][".$BASES[$j]."] = %*i;",
+                       $BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
                        $dig, ${$param_hashref->{$bp1}}[$i][$j]);
                 
                 push @out, " /* ".uc($BASES[$i]).uc($BASES[$j])." */\n";
@@ -1228,7 +1228,7 @@ sub output_mismatch_hairpin_energies(\%)
             {
                 $j = $_;
                 push @out, sprintf("   this->G_mismatch_hairpin[bp1][".
-                       $BASES[$i]."][".$BASES[$j]."] = %*i;",
+                       $BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
                        $dig, ${$param_hashref->{$bp1}}[$i][$j]);
                 
                 push @out, " /* ".uc($BASES[$i]).uc($BASES[$j])." */\n";
@@ -1303,7 +1303,7 @@ sub output_mismatch_stack_energies(\% \%)
                 
                 push @out, sprintf("   this->G_mm_stack[bp1][(int) "
                                    ."this->bp_idx["
-                       .$BASES[$i]."][".$BASES[$j]."]] = %*i;\n",
+                       .$BASES[$i]."][".$BASES[$j]."]] = %*i - offset;\n",
                        $dig, int((${$hairpin_hashref->{$bp1}}[$i][$j]
                                   + ${$interior_hashref->{$bp1}}[$i][$j])/2));
             }
@@ -1365,7 +1365,9 @@ sub output_stacking_energies(\%)
             push @out, "                [(int) this->bp_idx[(int)"
                 .substr($bp2, 0, 1)."][(int)"
                 .substr($bp2, 1, 1)."]] = ";
-            push @out, sprintf("%*i;\n", $dig, $param_hashref->{$bp1}{$bp2});
+            push @out, sprintf("%*i - offset;\n",
+                               $dig,
+                               $param_hashref->{$bp1}{$bp2});
 
             push @out, "\n";            
         }
@@ -1417,7 +1419,7 @@ sub output_dangle5_energies(\@)
                 .substr($bp, 0, 1)."]["
                 .substr($bp, 1, 1)."]]["
                 .$b."] = ";
-            push @out, sprintf("%*i;\n", $dig, ${$param_aryref}[$i][$j]);      
+            push @out, sprintf("%*i - offset;\n", $dig, ${$param_aryref}[$i][$j]);      
         }
         push @out, "\n";
     }
@@ -1468,7 +1470,7 @@ sub output_dangle3_energies(\@)
                 .substr($bp, 0, 1)."]["
                 .substr($bp, 1, 1)."]]["
                 .$b."] = ";
-            push @out, sprintf("%*i;\n", $dig, ${$param_aryref}[$i][$j]);      
+            push @out, sprintf("%*i - offset;\n", $dig, ${$param_aryref}[$i][$j]);      
         }
         push @out, "\n";
     }
@@ -1519,7 +1521,7 @@ sub output_hairpins_energies(\@)
         }
         else
         {
-            push @out, sprintf("%*i", $dig, $_);
+            push @out, sprintf("%*i - offset", $dig, $_);
         }
 
         push @out, ";\n";
@@ -1572,7 +1574,7 @@ sub output_internals_energies(\@)
         }
         else
         {
-            push @out, sprintf("%*i", $dig, $_);
+            push @out, sprintf("%*i - offset", $dig, $_);
         }
 
         push @out, ";\n";
@@ -1625,7 +1627,7 @@ sub output_bulges_energies(\@)
         }
         else
         {
-            push @out, sprintf("%*i", $dig, $_);
+            push @out, sprintf("%*i - offset", $dig, $_);
         }
 
         push @out, ";\n";
@@ -1721,7 +1723,7 @@ sub output_tetraloop_energies(\%)
                                       ."l[5] = $b6; l[6] = \'\\0\';\n";
                             push @out, sprintf("   this->G_tetra_loop[%*i] = ",
                                                $dig_idx, $no)
-                                .sprintf("%*i;\n\n", $dig,
+                                .sprintf("%*i - offset;\n\n", $dig,
                                   $tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6});
 
                             $no++;

@@ -1,4 +1,4 @@
-# Last modified: 2008-12-09.16
+# Last modified: 2008-12-17.18
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -67,7 +67,8 @@ package PBar;
 
 use strict;
 use warnings;
-
+use CorbIO qw(:all);
+disable_msg_caller ('PBar');
 BEGIN {
     use Exporter   ();
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, @EXPORT_FAIL, %EXPORT_TAGS);

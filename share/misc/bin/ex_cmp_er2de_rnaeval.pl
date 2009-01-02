@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-12-10.17
+# Last modified: 2008-12-22.12
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -27,6 +27,7 @@ BEGIN
 {
   # try to get bash compatible shell
   $ENV{'SHELL'} = '@SHELL@' if exists $ENV{'DJGPP'};
+  $|++;
 }
 # SETTINGS         - END
 
@@ -999,15 +1000,6 @@ my @TESTSEQS = (
 
 
 # FUNCTIONS        - BEGIN
-# write error
-#   error_msg(message)
-sub error_msg_and_die($)
-{
-    my ($message) = @_;
-
-    die("$0:ERROR:".$message);
-}
-
 # parse the arguments of the script and store them in a hash
 #   parseargs(argument_hashref, error_msgref)
 sub parseargs(\%)
@@ -1021,7 +1013,7 @@ sub parseargs(\%)
     # wrap the signal handler for warnings to copy them to our message space
     local $SIG{__WARN__} = sub
                            {
-                               error_msg_and_die("@_");
+                               msg_error_and_die("@_");
                            };
 
     # set defaults
@@ -1609,9 +1601,10 @@ sub call_er2de ($ $)
     my ($seq, $struct) = @_;
 
     #print "$seq $struct\n";
+    local $SIG{PIPE} = sub { die "spooler pipe broke" };
     unless(open(FH, "../../../src/corb \"er2de $seq $struct\" |"))
     {
-        error_msg_and_die ("Could not start er2de\n");
+        msg_error_and_die ("Could not start er2de\n");
     }
 
     foreach (<FH>)
@@ -1633,9 +1626,9 @@ sub call_rnaeval ($ $)
     my ($seq, $struct) = @_;
 
     #print "$seq $struct\n";
-    unless(open(FH, "echo \"$seq\n$struct\" | ./RNAeval -d2 |"))
+    unless(open(FH, "echo \"$seq\n$struct\" | ./RNAeval -d2  2>&1 |"))
     {
-        error_msg_and_die ("Could not start RNAeval\n");
+        msg_error_and_die ("Could not start RNAeval\n");
     }
 
     foreach (<FH>)
@@ -1660,9 +1653,9 @@ sub cmp_G($ $)
 
     if ($G_er2de != $G_rnaeval)
     {
-        error_msg_and_die ("Test of \"$seq\", "
+        msg_error_and_die ("Test of \"$seq\", "
                           ."\"$struct\" failed: G(er2de) = $G_er2de, "
-                          ."G(RNAeval) = $G_rnaeval\n");
+                          ."G(RNAeval) = $G_rnaeval");
     }
     #else
     #{

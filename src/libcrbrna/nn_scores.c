@@ -69,35 +69,35 @@
 #define NN_NINIO_MAX 300
 
 struct NN_scores {
-      int** G_stack;                         /* stacking energies */
+      /*c*/int** G_stack;                         /* stacking energies */
       unsigned long G_stack_size;
-      int** G_mm_stack;                     /* stacks with one mismatch */
+      /*c*/int** G_mm_stack;                     /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
-      int* G_hairpin_loop;                   /* hairpin loops */
+      /*c*/int* G_hairpin_loop;                   /* hairpin loops */
       unsigned long G_hairpin_loop_size;
-      int*** G_mismatch_hairpin;             /* hairpin loop closing bp */
+      /*c*/int*** G_mismatch_hairpin;        /* hairpin loop closing bp */
       unsigned long G_mismatch_hairpin_size;
-      int* non_gc_penalty_for_bp;            /* penalty for closing non-GC */
-      char** tetra_loop;                     /* sorted list of possible loops */
-      int* G_tetra_loop;                     /* scores */
+      /*c*/int* non_gc_penalty_for_bp;         /* penalty for closing non-GC */
+      /*c*/char** tetra_loop;               /* sorted list of possible loops */
+      /*c*/int* G_tetra_loop;                     /* scores */
       unsigned long tetra_loop_size;
-      int* G_bulge_loop;                     /* bulge loops */
+      /*c*/int* G_bulge_loop;                     /* bulge loops */
       unsigned long G_bulge_loop_size;
       /* internal loops */
-      int* G_internal_loop;                  /* generic loops */
+      /*c*/int* G_internal_loop;                  /* generic loops */
       unsigned long G_internal_loop_size;
-      int**** G_int11;                       /* 1x1 loops */
+      /*c*/int**** G_int11;                       /* 1x1 loops */
       unsigned long G_int11_size;
-      int***** G_int21;                      /* 2x1 loops */
+      /*c*/int***** G_int21;                      /* 2x1 loops */
       unsigned long G_int21_size;
-      int****** G_int22;                      /* 2x2 loops */
+      /*c*/int****** G_int22;                      /* 2x2 loops */
       unsigned long G_int22_size;
-      int*** G_mismatch_interior;             /* interior loop closing bp */
+      /*c*/int*** G_mismatch_interior;           /* interior loop closing bp */
       unsigned long G_mismatch_interior_size;
       /* internal loops */
-      int** G_dangle5;                       /* 5' dangling end, bp + base */
+      /*c*/int** G_dangle5;                    /* 5' dangling end, bp + base */
       unsigned long G_dangle5_size;
-      int** G_dangle3;                       /* 3' dangling end, bp + base */
+      /*c*/int** G_dangle3;                    /* 3' dangling end, bp + base */
       unsigned long G_dangle3_size;
       char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
@@ -257,233 +257,235 @@ allocate_init_G_stack (char a, char u, char g, char c, NN_scores* this,
       this->G_stack[0][i] = 0;
    }*/
 
-   /* regular pairs */
-   /* AU AU */
-   /* 5'- AU 
-      UA -5' */
-   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-      [(int) this->bp_idx[(int)a][(int)u]] = -110;
-
-   /* AU UA */
-   /* 5'- AA
-      UU -5' */
-   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-      [(int) this->bp_idx[(int)u][(int)a]] = -90;
-   
-   /* AU UG */
-   /* 5'- AG
-      UU -5' */
-   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-      [(int) this->bp_idx[(int)u][(int)g]] = -60;
-   
-   
-   /* AU GU */
-   /* 5'- AU
-      UG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-      [(int) this->bp_idx[(int)g][(int)u]] = -140;      
-   
-   /* AU CG */
-   /* 5'- AG
-      UC -5'*/
-   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-      [(int) this->bp_idx[(int)c][(int)g]] = -210;        
-   
-   /* AU GC */
-   /* 5'- AC
-      UG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
-      [(int) this->bp_idx[(int)g][(int)c]] = -220; 
-   
-   /* UA AU */
-   /* 5'- UU 
-      AA  -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-      [(int) this->bp_idx[(int)a][(int)u]] = -90;
-   
-   /* UA UA */
-   /* 5'- UA
-          AU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-      [(int) this->bp_idx[(int)u][(int)a]] = -130;
-   
-   /* UA UG */
-   /* 5'- UG
-      AU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-      [(int) this->bp_idx[(int)u][(int)g]] = -100;
-   
-   /* UA GU */
-   /* 5'- UU
-      AG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-      [(int) this->bp_idx[(int)g][(int)u]] = -130;
-   
-   /* UA CG */
-   /* 5'- UG
-      AC -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-      [(int) this->bp_idx[(int)c][(int)g]] = -210;
-   
-   /* UA GC */
-   /* 5'- UC
-      AG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
-      [(int) this->bp_idx[(int)g][(int)c]] = -240;
-   
-   /* UG AU */
-   /* 5'- UU
-      GA -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-      [(int) this->bp_idx[(int)a][(int)u]] = -60;
-   
-   /* UG UA */
-   /* 5'- UA 
-      GU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-      [(int) this->bp_idx[(int)u][(int)a]] = -100;
-   
-   /* UG UG */
-   /* 5'- UG 
-      GU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-      [(int) this->bp_idx[(int)u][(int)g]] = 30;
-   
-   /* UG GU*/
-   /* 5'- UU 
-      GG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-      [(int) this->bp_idx[(int)g][(int)u]] = -50;
-   
-   /* UG CG */
-   /* 5'- UG 
-      GC -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-      [(int) this->bp_idx[(int)c][(int)g]] = -140;
-   
-   /* UG GC */
-   /* 5'- UC 
-      GG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
-      [(int) this->bp_idx[(int)g][(int)c]] = -150;
-   
-   /* GU AU */
-   /* 5'- GU 
-      UA -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-      [(int) this->bp_idx[(int)a][(int)u]] = -140;
-   
-   /* GU UA */
-   /* 5'- GA 
-      UU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-      [(int) this->bp_idx[(int)u][(int)a]] = -130;
-   
-   /* GU UG */
-   /* 5'- GG 
-      UU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-      [(int) this->bp_idx[(int)u][(int)g]] = -50;
-   
-   /* GU GU */
-   /* 5'- GU 
-      UG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-      [(int) this->bp_idx[(int)g][(int)u]] = 130;
-   
-   /* GU CG */
-   /* 5'- GG 
-      UC -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-      [(int) this->bp_idx[(int)c][(int)g]] = -210;
-   
-   /* GU GC */
-   /* 5'- GC 
-      UG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
-      [(int) this->bp_idx[(int)g][(int)c]] = -250;
-   
-   /* CG AU */
-   /* 5'- C
-      G -5'*/
-   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-      [(int) this->bp_idx[(int)a][(int)u]] = -210;
-   
-   /* CG UA */
-   /* 5'- CA
-      GU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-      [(int) this->bp_idx[(int)u][(int)a]] = -210;
-   
-   /* CG UG */
+   /* BEGIN_STACKING_ENERGIES */
+   /* CG CG */
    /* 5'- CG
-          GU -5'*/
+          GC - 5' */
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-      [(int) this->bp_idx[(int)u][(int)g]] = -140;
+                [(int) this->bp_idx[(int)c][(int)g]] = -240;
+
+   /* CG GC */
+   /* 5'- CC
+          GG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                [(int) this->bp_idx[(int)g][(int)c]] = -330;
 
    /* CG GU */
    /* 5'- CU
-          GG -5'*/
+          GG - 5' */
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-      [(int) this->bp_idx[(int)g][(int)u]] = -210;
-   
-   /* CG CG */
+                [(int) this->bp_idx[(int)g][(int)u]] = -210;
+
+   /* CG UG */
    /* 5'- CG
-          GC -5'*/
+          GU - 5' */
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-      [(int) this->bp_idx[(int)c][(int)g]] = -240;
-   
-   /* CG GC */
-   /* 5'- CC
-          GG -5'*/
+                [(int) this->bp_idx[(int)u][(int)g]] = -140;
+
+   /* CG AU */
+   /* 5'- CU
+          GA - 5' */
    this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
-      [(int) this->bp_idx[(int)g][(int)c]] = -330;
-   
-   /* GC AU */
-   /* 5'- GU
-          CA -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-      [(int) this->bp_idx[(int)a][(int)u]] = -220;
-   
-   /* GC UA */
-   /* 5'- GA
-          CU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-      [(int) this->bp_idx[(int)u][(int)a]] = -240;
-   
-   /* GC UG */
-   /* 5'- GG
-          CU -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-      [(int) this->bp_idx[(int)u][(int)g]] = -150;
-   
-   /* GC GU */
-   /* 5'- GU
-          CG -5'*/
-   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-      [(int) this->bp_idx[(int)g][(int)u]] = -250;
-   
+                [(int) this->bp_idx[(int)a][(int)u]] = -210;
+
+   /* CG UA */
+   /* 5'- CA
+          GU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)c][(int)g]]
+                [(int) this->bp_idx[(int)u][(int)a]] = -210;
+
    /* GC CG */
    /* 5'- GG
-          CC -5'*/
+          CC - 5' */
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-      [(int) this->bp_idx[(int)c][(int)g]] = -330;
-   
+                [(int) this->bp_idx[(int)c][(int)g]] = -330;
+
    /* GC GC */
    /* 5'- GC
-          CG -5'*/
+          CG - 5' */
    this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
-      [(int) this->bp_idx[(int)g][(int)c]] = -340;
-   
+                [(int) this->bp_idx[(int)g][(int)c]] = -340;
+
+   /* GC GU */
+   /* 5'- GU
+          CG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                [(int) this->bp_idx[(int)g][(int)u]] = -250;
+
+   /* GC UG */
+   /* 5'- GG
+          CU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                [(int) this->bp_idx[(int)u][(int)g]] = -150;
+
+   /* GC AU */
+   /* 5'- GU
+          CA - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                [(int) this->bp_idx[(int)a][(int)u]] = -220;
+
+   /* GC UA */
+   /* 5'- GA
+          CU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)c]]
+                [(int) this->bp_idx[(int)u][(int)a]] = -240;
+
+   /* GU CG */
+   /* 5'- GG
+          UC - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                [(int) this->bp_idx[(int)c][(int)g]] = -210;
+
+   /* GU GC */
+   /* 5'- GC
+          UG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                [(int) this->bp_idx[(int)g][(int)c]] = -250;
+
+   /* GU GU */
+   /* 5'- GU
+          UG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                [(int) this->bp_idx[(int)g][(int)u]] =  130;
+
+   /* GU UG */
+   /* 5'- GG
+          UU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                [(int) this->bp_idx[(int)u][(int)g]] =  -50;
+
+   /* GU AU */
+   /* 5'- GU
+          UA - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                [(int) this->bp_idx[(int)a][(int)u]] = -140;
+
+   /* GU UA */
+   /* 5'- GA
+          UU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)g][(int)u]]
+                [(int) this->bp_idx[(int)u][(int)a]] = -130;
+
+   /* UG CG */
+   /* 5'- UG
+          GC - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                [(int) this->bp_idx[(int)c][(int)g]] = -140;
+
+   /* UG GC */
+   /* 5'- UC
+          GG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                [(int) this->bp_idx[(int)g][(int)c]] = -150;
+
+   /* UG GU */
+   /* 5'- UU
+          GG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                [(int) this->bp_idx[(int)g][(int)u]] =  -50;
+
+   /* UG UG */
+   /* 5'- UG
+          GU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                [(int) this->bp_idx[(int)u][(int)g]] =   30;
+
+   /* UG AU */
+   /* 5'- UU
+          GA - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                [(int) this->bp_idx[(int)a][(int)u]] =  -60;
+
+   /* UG UA */
+   /* 5'- UA
+          GU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)g]]
+                [(int) this->bp_idx[(int)u][(int)a]] = -100;
+
+   /* AU CG */
+   /* 5'- AG
+          UC - 5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                [(int) this->bp_idx[(int)c][(int)g]] = -210;
+
+   /* AU GC */
+   /* 5'- AC
+          UG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                [(int) this->bp_idx[(int)g][(int)c]] = -220;
+
+   /* AU GU */
+   /* 5'- AU
+          UG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                [(int) this->bp_idx[(int)g][(int)u]] = -140;
+
+   /* AU UG */
+   /* 5'- AG
+          UU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                [(int) this->bp_idx[(int)u][(int)g]] =  -60;
+
+   /* AU AU */
+   /* 5'- AU
+          UA - 5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                [(int) this->bp_idx[(int)a][(int)u]] = -110;
+
+   /* AU UA */
+   /* 5'- AA
+          UU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)a][(int)u]]
+                [(int) this->bp_idx[(int)u][(int)a]] =  -90;
+
+   /* UA CG */
+   /* 5'- UG
+          AC - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                [(int) this->bp_idx[(int)c][(int)g]] = -210;
+
+   /* UA GC */
+   /* 5'- UC
+          AG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                [(int) this->bp_idx[(int)g][(int)c]] = -240;
+
+   /* UA GU */
+   /* 5'- UU
+          AG - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                [(int) this->bp_idx[(int)g][(int)u]] = -130;
+
+   /* UA UG */
+   /* 5'- UG
+          AU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                [(int) this->bp_idx[(int)u][(int)g]] = -100;
+
+   /* UA AU */
+   /* 5'- UU
+          AA - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                [(int) this->bp_idx[(int)a][(int)u]] =  -90;
+
+   /* UA UA */
+   /* 5'- UA
+          AU - 5' */
+   this->G_stack[(int) this->bp_idx[(int)u][(int)a]]
+                [(int) this->bp_idx[(int)u][(int)a]] = -130;
+
+   /* END_STACKING_ENERGIES */
 
    return 0;
 }
 
 static int
-allocate_init_G_mm_stack_size (char a, char u, char g, char c,
+allocate_init_G_mm_stack_size (int a, int u, int g, int c,
                                unsigned long size, NN_scores* this,
                                const char* file, const int line)
 {
+   unsigned long bp1;
+
    this->G_mm_stack_size = size * size;
    
    this->G_mm_stack = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size,
@@ -502,422 +504,330 @@ allocate_init_G_mm_stack_size (char a, char u, char g, char c,
       this->G_mm_stack[0][i] = 0;
       }*/
 
-      /* stacks containing a mismatch */
-      /* mi: param from mismatch_interior table */
-      /* mh: param from mismatch_hairpin */
+   /* BEGIN_MISMATCH_STACK */
+   /* stacks containing a mismatch */
+   /* mi: param from mismatch_interior table */
+   /* mh: param from mismatch_hairpin */
 
-      /* AU AA */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)a]] = 20;
-      /* AU AU */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)u]] = 20;
-      /* AU AG */
-      /* mi: -40 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)g]] = -35;
-      /* AU AC */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)c]] = 10;
+   bp1 = this->bp_idx[c][g];
+   /* CG AA */
+   /* mh: -150 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][a]] =  -75;
+   /* CG AC */
+   /* mh: -150 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][c]] =  -75;
+   /* CG AG */
+   /* mh: -140 mi: -110*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][g]] = -125;
+   /* CG AU */
+   /* mh: -180 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][u]] =  -90;
 
-      /* AU UA */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)a]] = 20;
-      /* AU UU */
-      /* mi: 0 mh: -110 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)u]] = -55;
-      /* AU UG */
-      /* mi: 70 mh: -60 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)g]] = 5;
-      /* AU UC */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)c]] = 20;
+   /* CG CA */
+   /* mh: -100 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][a]] =  -50;
+   /* CG CC */
+   /* mh: -90 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][c]] =  -45;
+   /* CG CG */
+   /* mh: -290 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][g]] = -145;
+   /* CG CU */
+   /* mh: -80 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][u]] =  -40;
 
-      /* AU GA */
-      /* mi: -40 mh: -110 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)a]] = -75;
-      /* AU GU */
-      /* mi: 70 mh: 20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)u]] = 45;
-      /* AU GG */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)g]] = 25;
-      /* AU GC */
-      /* mi: 70 mh: -120 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)c]] = -25;
+   /* CG GA */
+   /* mh: -220 mi: -110*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][a]] = -165;
+   /* CG GC */
+   /* mh: -200 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][c]] = -100;
+   /* CG GG */
+   /* mh: -160 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][g]] =  -80;
+   /* CG GU */
+   /* mh: -110 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][u]] =  -55;
 
-      /* AU CA */
-      /* mi: 70 mh: -10 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)a]] = 30;
-      /* AU CU */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)u]] = 25;
-      /* AU CG */
-      /* mi: 70 mh: -150 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)g]] = -40;
-      /* AU CC */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)a][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)c]] = 25;
+   /* CG UA */
+   /* mh: -170 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][a]] =  -85;
+   /* CG UC */
+   /* mh: -140 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][c]] =  -70;
+   /* CG UG */
+   /* mh: -180 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][g]] =  -90;
+   /* CG UU */
+   /* mh: -200 mi: -70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][u]] = -135;
 
+   bp1 = this->bp_idx[g][c];
+   /* GC AA */
+   /* mh: -110 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][a]] =  -55;
+   /* GC AC */
+   /* mh: -150 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][c]] =  -75;
+   /* GC AG */
+   /* mh: -130 mi: -110*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][g]] = -120;
+   /* GC AU */
+   /* mh: -210 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][u]] = -105;
 
-      /* UA AA */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)a][(int)a]] = 10;
-      /* UA AU */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)a][(int)u]] = 10;
-      /* UA AG */
-      /* mi: -40 mh: -60 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)a][(int)g]] = -50;
-      /* UA AC */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)a][(int)c]] = 20;
+   /* GC CA */
+   /* mh: -110 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][a]] =  -55;
+   /* GC CC */
+   /* mh: -70 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][c]] =  -35;
+   /* GC CG */
+   /* mh: -240 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][g]] = -120;
+   /* GC CU */
+   /* mh: -50 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][u]] =  -25;
 
-      /* UA UA */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)u][(int)a]] = 20;
-      /* UA UU */
-      /* mi: 0 mh: -80 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)u][(int)u]] = -40;
-      /* UA UG */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)u][(int)g]] = 10;
-      /* UA UC */
-      /* mi: 70 mh: -10 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)u][(int)c]] = 30;
+   /* GC GA */
+   /* mh: -240 mi: -110*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][a]] = -175;
+   /* GC GC */
+   /* mh: -290 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][c]] = -145;
+   /* GC GG */
+   /* mh: -140 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][g]] =  -70;
+   /* GC GU */
+   /* mh: -120 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][u]] =  -60;
 
-      /* UA GA */
-      /* mi: -40 mh: -140 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)g][(int)a]] = -90;
-      /* UA GU */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)g][(int)u]] = 25;
-      /* UA GG */
-      /* mi: 70 mh: -70 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)g][(int)g]] = 0;
-      /* UA GC */
-      /*mi: 70 mh: -120 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)g][(int)c]] = -25;
+   /* GC UA */
+   /* mh: -190 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][a]] =  -95;
+   /* GC UC */
+   /* mh: -100 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][c]] =  -50;
+   /* GC UG */
+   /* mh: -220 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][g]] = -110;
+   /* GC UU */
+   /* mh: -150 mi: -70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][u]] = -110;
 
-      /* UA CA */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)c][(int)a]] = 25;
-      /* UA CU */
-      /* mi: 70 mh: 0 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)c][(int)u]] = 35;
-      /* UA CG */
-      /* mi: 70 mh: -120 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)c][(int)g]] = -25;
-      /* UA CC */
-      /* mi: 70 mh: -10 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)a]]
-                      [(int) this->bp_idx[(int)c][(int)c]] = 30;
+   bp1 = this->bp_idx[g][u];
+   /* GU AA */
+   /* mh: 20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][a]] =   45;
+   /* GU AC */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][c]] =   10;
+   /* GU AG */
+   /* mh: -30 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][g]] =  -35;
+   /* GU AU */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][u]] =   20;
 
-      /* UG AA */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)a]] = 10;
-      /* UG AU */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)u]] = 10;
-      /* UG AG */
-      /* mi: -40 mh: -60 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)g]] = -50;
-      /* UG AC */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)c]] = 20;
+   /* GU CA */
+   /* mh: -10 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][a]] =   30;
+   /* GU CC */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][c]] =   25;
+   /* GU CG */
+   /* mh: -150 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][g]] =  -40;
+   /* GU CU */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][u]] =   25;
 
-      /* UG UA */
-      /* mi: 70 mh: -60 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)a]] = 5;
-      /* UG UU */
-      /* mi: 0 mh: -80 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)u]] = -40;
-      /* UG UG */
-      /* mi: 70 mh: -60 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)g]] = 5;
-      /* UG UC */
-      /* mi: 70 mh: -10 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)c]] = 30;
+   /* GU GA */
+   /* mh: -90 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][a]] =  -65;
+   /* GU GC */
+   /* mh: -110 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][c]] =  -20;
+   /* GU GG */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][g]] =   20;
+   /* GU GU */
+   /* mh: 0 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][u]] =   35;
 
-      /* UG GA */
-      /* mi: -40 mh: -80 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)a]] = -60;
-      /* UG GU */
-      /* mi: 70 mh: -70 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)u]] = 0;
-      /* UG GG */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)g]] = 20;
-      /* UG GC */
-      /* mi: 70 mh: -120 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)c]] = -25;
+   /* GU UA */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][a]] =   20;
+   /* GU UC */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][c]] =   20;
+   /* GU UG */
+   /* mh: -40 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][g]] =   15;
+   /* GU UU */
+   /* mh: -110 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][u]] =  -55;
 
-      /* UG CA */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)a]] = 25;
-      /* UG CU */
-      /* mi: 70 mh: 0 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)u]] = 35;
-      /* UG CG */
-      /* mi: 70 mh: -170 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)g]] = -50;
-      /* UG CC */
-      /* mi: 70 mh: -10 */
-      this->G_mm_stack[(int) this->bp_idx[(int)u][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)c]] = 30;
+   bp1 = this->bp_idx[u][g];
+   /* UG AA */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][a]] =   10;
+   /* UG AC */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][c]] =   20;
+   /* UG AG */
+   /* mh: -60 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][g]] =  -50;
+   /* UG AU */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][u]] =   10;
 
+   /* UG CA */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][a]] =   25;
+   /* UG CC */
+   /* mh: -10 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][c]] =   30;
+   /* UG CG */
+   /* mh: -170 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][g]] =  -50;
+   /* UG CU */
+   /* mh: 0 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][u]] =   35;
 
-      /* GU AA */
-      /* mi: 70 mh: 20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)a]] = 45;
-      /* GU AU */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)u]] = 20;
-      /* GU AG */
-      /* mi: -40 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)g]] = -35;
-      /* GU AC */
-      /* mi: 70 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)a][(int)c]] = 10;
+   /* UG GA */
+   /* mh: -80 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][a]] =  -60;
+   /* UG GC */
+   /* mh: -120 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][c]] =  -25;
+   /* UG GG */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][g]] =   20;
+   /* UG GU */
+   /* mh: -70 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][u]] =    0;
 
-      /* GU UA */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)a]] = 20;
-      /* GU UU */
-      /* mi: 0 mh: -110 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)u]] = -55;
-      /* GU UG */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)g]] = 20;
-      /* GU UC */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)u][(int)c]] = 20;
+   /* UG UA */
+   /* mh: -60 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][a]] =    5;
+   /* UG UC */
+   /* mh: -10 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][c]] =   30;
+   /* UG UG */
+   /* mh: -60 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][g]] =    5;
+   /* UG UU */
+   /* mh: -80 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][u]] =  -40;
 
-      /* GU GA */
-      /* mi: -40 mh: -90 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)a]] = -65;
-      /* GU GU */
-      /* mi: 70 mh: 0 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)u]] = 35;
-      /* GU GG */
-      /* mi: 70 mh: -30 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)g]] = 20;
-      /* GU GC */
-      /* mi: 70 mh: -110*/
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)g][(int)c]] = -20;
+   bp1 = this->bp_idx[a][u];
+   /* AU AA */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][a]] =   20;
+   /* AU AC */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][c]] =   10;
+   /* AU AG */
+   /* mh: -30 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][g]] =  -35;
+   /* AU AU */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][u]] =   20;
 
-      /* GU CA */
-      /* mi: 70 mh: -10 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)a]] = 30;
-      /* GU CU */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)u]] = 25;
-      /* GU CG */
-      /* mi: 70 mh: -150 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)g]] = -40;
-      /* GU CC */
-      /* mi: 70 mh: -20 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)u]]
-                      [(int) this->bp_idx[(int)c][(int)c]] = 25;
+   /* AU CA */
+   /* mh: -10 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][a]] =   30;
+   /* AU CC */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][c]] =   25;
+   /* AU CG */
+   /* mh: -150 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][g]] =  -40;
+   /* AU CU */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][u]] =   25;
 
+   /* AU GA */
+   /* mh: -110 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][a]] =  -75;
+   /* AU GC */
+   /* mh: -120 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][c]] =  -25;
+   /* AU GG */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][g]] =   25;
+   /* AU GU */
+   /* mh: 20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][u]] =   45;
 
-      /* GC AA */
-      /* mi: 0 mh: -110 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)a][(int)a]] = -55;
-      /* GC AU */
-      /* mi: 0 mh: -210 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)a][(int)u]] = -105;
-      /* GC AG */
-      /* mi: -110 mh: -130 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)a][(int)g]] = -120;
-      /* GC AC */
-      /* mi: 0 mh: -150 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)a][(int)c]] = -75;
+   /* AU UA */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][a]] =   20;
+   /* AU UC */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][c]] =   20;
+   /* AU UG */
+   /* mh: -60 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][g]] =    5;
+   /* AU UU */
+   /* mh: -110 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][u]] =  -55;
 
-      /* GC UA */
-      /* mi: 0 mh: -190 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)u][(int)a]] = -145;
-      /* GC UU */
-      /* mi: -70 mh: -150 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)u][(int)u]] = -110;
-      /* GC UG */
-      /* mi: 0 mh: -220 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)u][(int)g]] = -110;
-      /* GC UC */
-      /* mi: 0 mh: -100 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)u][(int)c]] = -50;
+   bp1 = this->bp_idx[u][a];
+   /* UA AA */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][a]] =   10;
+   /* UA AC */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][c]] =   20;
+   /* UA AG */
+   /* mh: -60 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][g]] =  -50;
+   /* UA AU */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[a][u]] =   10;
 
-      /* GC GA */
-      /* mi: -110 mh: -240 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)g][(int)a]] = -175;
-      /* GC GU */
-      /* mi: 0 mh: -120 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)g][(int)u]] = -60;
-      /* GC GG */
-      /* mi: 0 mh: -140 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)g][(int)g]] = -70;
-      /* GC GC */
-      /* mi: 0 mh: -290 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)g][(int)c]] = -145;
+   /* UA CA */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][a]] =   25;
+   /* UA CC */
+   /* mh: -10 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][c]] =   30;
+   /* UA CG */
+   /* mh: -120 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][g]] =  -25;
+   /* UA CU */
+   /* mh: 0 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[c][u]] =   35;
 
-      /* GC CA */
-      /* mi: 0 mh: -110 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)c][(int)a]] = -55;
-      /* GC CU */
-      /* mi: 0 mh: -50 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)c][(int)u]] = -25;
-      /* GC CG */
-      /* mi: 0 mh: -240 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)c][(int)g]] = -120;
-      /* GC CC */
-      /* mi: 0 mh: -70 */
-      this->G_mm_stack[(int) this->bp_idx[(int)g][(int)c]]
-                      [(int) this->bp_idx[(int)c][(int)c]] = -35;
+   /* UA GA */
+   /* mh: -140 mi: -40*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][a]] =  -90;
+   /* UA GC */
+   /* mh: -120 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][c]] =  -25;
+   /* UA GG */
+   /* mh: -70 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][g]] =    0;
+   /* UA GU */
+   /* mh: -20 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[g][u]] =   25;
 
+   /* UA UA */
+   /* mh: -30 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][a]] =   20;
+   /* UA UC */
+   /* mh: -10 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][c]] =   30;
+   /* UA UG */
+   /* mh: -50 mi: 70*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][g]] =   10;
+   /* UA UU */
+   /* mh: -80 mi: 0*/
+   this->G_mm_stack[bp1][(int) this->bp_idx[u][u]] =  -40;
 
-      /* CG AA */
-      /* mi: 0 mh: -150 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)a]] = -75;
-      /* CG AU */
-      /* mi: 0 mh: -180 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)u]] = -90;
-      /* CG AG */
-      /* mi: -110 mh: -140 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)g]] = -125;
-      /* CG AC */
-      /* mi: 0 mh: -150 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)a][(int)c]] = -75;
-
-      /* CG UA */
-      /* mi: 0 mh: -170 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)a]] = -85;
-      /* CG UU */
-      /* mi: -70 mh: -200 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)u]] = -135;
-      /* CG UG */
-      /* mi: 0 mh: -180 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)g]] = -90;
-      /* CG UC */
-      /* mi: 0 mh: -140 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)u][(int)c]] = -70;
-
-      /* CG GA */
-      /* mi: -110 mh: -220 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)a]] = -165;
-      /* CG GU */
-      /* mi: 0 mh: -110 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)u]] = -55;
-      /* CG GG */
-      /* mi: 0 mh: -160 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)g]] = -80;
-      /* CG GC */
-      /* mi: 0 mh: -200 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)g][(int)c]] = -100;
-
-      /* CG CA */
-      /* mi: 0 mh: -100 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                   [(int) this->bp_idx[(int)c][(int)a]] = -50;
-      /* CG CU */
-      /* mi: 0 mh: -80 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)u]] = -40;
-      /* CG CG */
-      /* mi: 0 mh: -290 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)g]] = -145;
-
-      /* CG CC */
-      /* mi: 0 mh: -90 */
-      this->G_mm_stack[(int) this->bp_idx[(int)c][(int)g]]
-                      [(int) this->bp_idx[(int)c][(int)c]] = -45;
+   /* END_MISMATCH_STACK */
 
    return 0;
 }
@@ -935,7 +845,8 @@ allocate_init_hairpin_loop (NN_scores* this, const char* file, const int line)
       return 1;        
    }
 
-   this->G_hairpin_loop[ 0] = INT_UNDEF; /* min. loop length is 3 */
+   /* BEGIN_HAIRPINS */
+   this->G_hairpin_loop[ 0] = INT_UNDEF;
    this->G_hairpin_loop[ 1] = INT_UNDEF;
    this->G_hairpin_loop[ 2] = INT_UNDEF;
    this->G_hairpin_loop[ 3] = 570;
@@ -966,6 +877,7 @@ allocate_init_hairpin_loop (NN_scores* this, const char* file, const int line)
    this->G_hairpin_loop[28] = 761;
    this->G_hairpin_loop[29] = 765;
    this->G_hairpin_loop[30] = 769;
+   /* END_HAIRPINS */
 
    return 0;
 }
@@ -975,7 +887,9 @@ allocate_init_mismatch_hairpin (int a, int u, int g, int c,
                                 const unsigned long no_of_b,
                                 NN_scores* this,
                                 const char* file, const int line)
-{
+{   
+   unsigned long bp1;
+
    /* allocate memory */
    this->G_mismatch_hairpin
       = (int***) XOBJ_MALLOC_ND(sizeof (***this->G_mismatch_hairpin),
@@ -988,132 +902,140 @@ allocate_init_mismatch_hairpin (int a, int u, int g, int c,
    }
    this->G_mismatch_hairpin_size = this->bp_allowed_size * no_of_b * no_of_b;
 
-   /* store values this->bp_idx[][] */
+   /* BEGIN_MISMATCH_HAIRPIN */
    /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][a] = -150; /* AA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][c] = -150; /* AC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][g] = -140; /* AG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][a][u] = -180; /* AU */
+   bp1 = this->bp_idx[c][g];
+   this->G_mismatch_hairpin[bp1][a][a] = -150; /* AA */
+   this->G_mismatch_hairpin[bp1][a][c] = -150; /* AC */
+   this->G_mismatch_hairpin[bp1][a][g] = -140; /* AG */
+   this->G_mismatch_hairpin[bp1][a][u] = -180; /* AU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][a] = -100; /* CA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][c] =  -90; /* CC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][g] = -290; /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][c][u] =  -80; /* CU */
+   this->G_mismatch_hairpin[bp1][c][a] = -100; /* CA */
+   this->G_mismatch_hairpin[bp1][c][c] =  -90; /* CC */
+   this->G_mismatch_hairpin[bp1][c][g] = -290; /* CG */
+   this->G_mismatch_hairpin[bp1][c][u] =  -80; /* CU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][a] = -220; /* GA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][c] = -200; /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][g] = -160; /* GG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][g][u] = -110; /* GU */
+   this->G_mismatch_hairpin[bp1][g][a] = -220; /* GA */
+   this->G_mismatch_hairpin[bp1][g][c] = -200; /* GC */
+   this->G_mismatch_hairpin[bp1][g][g] = -160; /* GG */
+   this->G_mismatch_hairpin[bp1][g][u] = -110; /* GU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][a] = -170; /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][c] = -140; /* UC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][g] = -180; /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[c][g]][u][u] = -200; /* UU */
+   this->G_mismatch_hairpin[bp1][u][a] = -170; /* UA */
+   this->G_mismatch_hairpin[bp1][u][c] = -140; /* UC */
+   this->G_mismatch_hairpin[bp1][u][g] = -180; /* UG */
+   this->G_mismatch_hairpin[bp1][u][u] = -200; /* UU */
 
    /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][a] = -110; /* AA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][c] = -150; /* AC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][g] = -130; /* AG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][a][u] = -210; /* AU */
+   bp1 = this->bp_idx[g][c];
+   this->G_mismatch_hairpin[bp1][a][a] = -110; /* AA */
+   this->G_mismatch_hairpin[bp1][a][c] = -150; /* AC */
+   this->G_mismatch_hairpin[bp1][a][g] = -130; /* AG */
+   this->G_mismatch_hairpin[bp1][a][u] = -210; /* AU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][a] = -110; /* CA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][c] =  -70; /* CC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][g] = -240; /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][c][u] =  -50; /* CU */
+   this->G_mismatch_hairpin[bp1][c][a] = -110; /* CA */
+   this->G_mismatch_hairpin[bp1][c][c] =  -70; /* CC */
+   this->G_mismatch_hairpin[bp1][c][g] = -240; /* CG */
+   this->G_mismatch_hairpin[bp1][c][u] =  -50; /* CU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][a] = -240; /* GA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][c] = -290; /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][g] = -140; /* GG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][g][u] = -120; /* GU */
+   this->G_mismatch_hairpin[bp1][g][a] = -240; /* GA */
+   this->G_mismatch_hairpin[bp1][g][c] = -290; /* GC */
+   this->G_mismatch_hairpin[bp1][g][g] = -140; /* GG */
+   this->G_mismatch_hairpin[bp1][g][u] = -120; /* GU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][a] = -190; /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][c] = -100; /* UC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][g] = -220; /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][c]][u][u] = -150; /* UU */
+   this->G_mismatch_hairpin[bp1][u][a] = -190; /* UA */
+   this->G_mismatch_hairpin[bp1][u][c] = -100; /* UC */
+   this->G_mismatch_hairpin[bp1][u][g] = -220; /* UG */
+   this->G_mismatch_hairpin[bp1][u][u] = -150; /* UU */
 
    /* GU */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][a] =  20; /* AA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][c] = -50; /* AC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][g] = -30; /* AG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][a][u] = -30; /* AU */
+   bp1 = this->bp_idx[g][u];
+   this->G_mismatch_hairpin[bp1][a][a] =   20; /* AA */
+   this->G_mismatch_hairpin[bp1][a][c] =  -50; /* AC */
+   this->G_mismatch_hairpin[bp1][a][g] =  -30; /* AG */
+   this->G_mismatch_hairpin[bp1][a][u] =  -30; /* AU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][a] =  -10; /* CA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][c] =  -20; /* CC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][g] = -150; /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][c][u] =  -20; /* CU */
+   this->G_mismatch_hairpin[bp1][c][a] =  -10; /* CA */
+   this->G_mismatch_hairpin[bp1][c][c] =  -20; /* CC */
+   this->G_mismatch_hairpin[bp1][c][g] = -150; /* CG */
+   this->G_mismatch_hairpin[bp1][c][u] =  -20; /* CU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][a] =  -90; /* GA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][c] = -110; /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][g] =  -30; /* GG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][g][u] =    0; /* GU */
+   this->G_mismatch_hairpin[bp1][g][a] =  -90; /* GA */
+   this->G_mismatch_hairpin[bp1][g][c] = -110; /* GC */
+   this->G_mismatch_hairpin[bp1][g][g] =  -30; /* GG */
+   this->G_mismatch_hairpin[bp1][g][u] =    0; /* GU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][a] =  -30; /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][c] =  -30; /* UC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][g] =  -40; /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[g][u]][u][u] = -110; /* UU */
+   this->G_mismatch_hairpin[bp1][u][a] =  -30; /* UA */
+   this->G_mismatch_hairpin[bp1][u][c] =  -30; /* UC */
+   this->G_mismatch_hairpin[bp1][u][g] =  -40; /* UG */
+   this->G_mismatch_hairpin[bp1][u][u] = -110; /* UU */
 
    /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][a] = -50; /* AA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][c] = -30; /* AC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][g] = -60; /* AG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][a][u] = -50; /* AU */
+   bp1 = this->bp_idx[u][g];
+   this->G_mismatch_hairpin[bp1][a][a] =  -50; /* AA */
+   this->G_mismatch_hairpin[bp1][a][c] =  -30; /* AC */
+   this->G_mismatch_hairpin[bp1][a][g] =  -60; /* AG */
+   this->G_mismatch_hairpin[bp1][a][u] =  -50; /* AU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][a] =  -20; /* CA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][c] =  -10; /* CC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][g] = -170; /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][c][u] =    0; /* CU */
+   this->G_mismatch_hairpin[bp1][c][a] =  -20; /* CA */
+   this->G_mismatch_hairpin[bp1][c][c] =  -10; /* CC */
+   this->G_mismatch_hairpin[bp1][c][g] = -170; /* CG */
+   this->G_mismatch_hairpin[bp1][c][u] =    0; /* CU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][a] =  -80; /* GA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][c] = -120; /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][g] =  -30; /* GG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][g][u] =  -70; /* GU */
+   this->G_mismatch_hairpin[bp1][g][a] =  -80; /* GA */
+   this->G_mismatch_hairpin[bp1][g][c] = -120; /* GC */
+   this->G_mismatch_hairpin[bp1][g][g] =  -30; /* GG */
+   this->G_mismatch_hairpin[bp1][g][u] =  -70; /* GU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][a] = -60; /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][c] = -10; /* UC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][g] = -60; /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][g]][u][u] = -80; /* UU */
+   this->G_mismatch_hairpin[bp1][u][a] =  -60; /* UA */
+   this->G_mismatch_hairpin[bp1][u][c] =  -10; /* UC */
+   this->G_mismatch_hairpin[bp1][u][g] =  -60; /* UG */
+   this->G_mismatch_hairpin[bp1][u][u] =  -80; /* UU */
 
    /* AU */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][a] = -30; /* AA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][c] = -50; /* AC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][g] = -30; /* AG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][a][u] = -30; /* AU */
+   bp1 = this->bp_idx[a][u];
+   this->G_mismatch_hairpin[bp1][a][a] =  -30; /* AA */
+   this->G_mismatch_hairpin[bp1][a][c] =  -50; /* AC */
+   this->G_mismatch_hairpin[bp1][a][g] =  -30; /* AG */
+   this->G_mismatch_hairpin[bp1][a][u] =  -30; /* AU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][a] =  -10; /* CA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][c] =  -20; /* CC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][g] = -150; /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][c][u] =  -20; /* CU */
+   this->G_mismatch_hairpin[bp1][c][a] =  -10; /* CA */
+   this->G_mismatch_hairpin[bp1][c][c] =  -20; /* CC */
+   this->G_mismatch_hairpin[bp1][c][g] = -150; /* CG */
+   this->G_mismatch_hairpin[bp1][c][u] =  -20; /* CU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][a] = -110; /* GA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][c] = -120; /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][g] =  -20; /* GG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][g][u] =   20; /* GU */
+   this->G_mismatch_hairpin[bp1][g][a] = -110; /* GA */
+   this->G_mismatch_hairpin[bp1][g][c] = -120; /* GC */
+   this->G_mismatch_hairpin[bp1][g][g] =  -20; /* GG */
+   this->G_mismatch_hairpin[bp1][g][u] =   20; /* GU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][a] =  -30; /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][c] =  -30; /* UC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][g] =  -60; /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[a][u]][u][u] = -110; /* UU */
+   this->G_mismatch_hairpin[bp1][u][a] =  -30; /* UA */
+   this->G_mismatch_hairpin[bp1][u][c] =  -30; /* UC */
+   this->G_mismatch_hairpin[bp1][u][g] =  -60; /* UG */
+   this->G_mismatch_hairpin[bp1][u][u] = -110; /* UU */
 
    /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][a] = -50; /* AA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][c] = -30; /* AC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][g] = -60; /* AG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][a][u] = -50; /* AU */
+   bp1 = this->bp_idx[u][a];
+   this->G_mismatch_hairpin[bp1][a][a] =  -50; /* AA */
+   this->G_mismatch_hairpin[bp1][a][c] =  -30; /* AC */
+   this->G_mismatch_hairpin[bp1][a][g] =  -60; /* AG */
+   this->G_mismatch_hairpin[bp1][a][u] =  -50; /* AU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][a] =  -20; /* CA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][c] =  -10; /* CC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][g] = -120; /* CG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][c][u] =    0; /* CU */
+   this->G_mismatch_hairpin[bp1][c][a] =  -20; /* CA */
+   this->G_mismatch_hairpin[bp1][c][c] =  -10; /* CC */
+   this->G_mismatch_hairpin[bp1][c][g] = -120; /* CG */
+   this->G_mismatch_hairpin[bp1][c][u] =    0; /* CU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][a] = -140; /* GA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][c] = -120; /* GC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][g] =  -70; /* GG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][g][u] =  -20; /* GU */
+   this->G_mismatch_hairpin[bp1][g][a] = -140; /* GA */
+   this->G_mismatch_hairpin[bp1][g][c] = -120; /* GC */
+   this->G_mismatch_hairpin[bp1][g][g] =  -70; /* GG */
+   this->G_mismatch_hairpin[bp1][g][u] =  -20; /* GU */
 
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][a] = -30; /* UA */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][c] = -10; /* UC */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][g] = -50; /* UG */
-   this->G_mismatch_hairpin[(int)this->bp_idx[u][a]][u][u] = -80; /* UU */
+   this->G_mismatch_hairpin[bp1][u][a] =  -30; /* UA */
+   this->G_mismatch_hairpin[bp1][u][c] =  -10; /* UC */
+   this->G_mismatch_hairpin[bp1][u][g] =  -50; /* UG */
+   this->G_mismatch_hairpin[bp1][u][u] =  -80; /* UU */
+
+   /* END_MISMATCH_HAIRPIN */
 
    return 0;
 }
@@ -1138,6 +1060,7 @@ allocate_init_mismatch_interior (int a, int u, int g, int c,
    }
    this->G_mismatch_interior_size = this->bp_allowed_size * no_of_b * no_of_b;
 
+   /* BEGIN_MISMATCH_INTERIOR */
    /* CG */
    bp1 = this->bp_idx[c][g];
    this->G_mismatch_interior[bp1][a][a] =    0; /* AA */
@@ -1270,6 +1193,8 @@ allocate_init_mismatch_interior (int a, int u, int g, int c,
    this->G_mismatch_interior[bp1][u][g] =   70; /* UG */
    this->G_mismatch_interior[bp1][u][u] =    0; /* UU */
 
+   /* END_MISMATCH_INTERIOR */
+
    return 0;
 }
 
@@ -1286,7 +1211,8 @@ allocate_init_internal_loop (NN_scores* this, const char* file, const int line)
       return 1;
    }
 
-   this->G_internal_loop[ 0] = INT_UNDEF; /* min. loop length is 2 */
+   /* BEGIN_INTERNALS */
+   this->G_internal_loop[ 0] = INT_UNDEF;
    this->G_internal_loop[ 1] = INT_UNDEF;
    this->G_internal_loop[ 2] = 410;
    this->G_internal_loop[ 3] = 510;
@@ -1317,6 +1243,7 @@ allocate_init_internal_loop (NN_scores* this, const char* file, const int line)
    this->G_internal_loop[28] = 361;
    this->G_internal_loop[29] = 365;
    this->G_internal_loop[30] = 369;
+   /* END_INTERNALS */
 
    return 0;
 }
@@ -1346,6 +1273,7 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
                       * no_of_b
                       * no_of_b;
 
+   /* BEGIN_INT11_ENERGIES */
    /* CG */
    bp1 = this->bp_idx[c][g];
    /*    CG */
@@ -1412,7 +1340,7 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
    this->G_int11[bp1][bp2][c][c] =  110; /*   C */
    this->G_int11[bp1][bp2][c][g] =  110; /*   G */
    this->G_int11[bp1][bp2][c][u] =  110; /*   U */
-   this->G_int11[bp1][bp2][g][a] =  110 ; /* G A */
+   this->G_int11[bp1][bp2][g][a] =  110; /* G A */
    this->G_int11[bp1][bp2][g][c] =  110; /*   C */
    this->G_int11[bp1][bp2][g][g] = -100; /*   G */
    this->G_int11[bp1][bp2][g][u] =  110; /*   U */
@@ -1568,7 +1496,7 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
    this->G_int11[bp1][bp2][u][g] =  110; /*   G */
    this->G_int11[bp1][bp2][u][u] =  110; /*   U */
 
-   /* GU */ 
+   /* GU */
    bp1 = this->bp_idx[g][u];
    /*    CG */
    bp2 = this->bp_idx[c][g];
@@ -1678,7 +1606,8 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
    this->G_int11[bp1][bp2][u][c] =  170; /*   C */
    this->G_int11[bp1][bp2][u][g] =  170; /*   G */
    this->G_int11[bp1][bp2][u][u] =  170; /*   U */
-   /* UG */ 
+
+   /* UG */
    bp1 = this->bp_idx[u][g];
    /*    CG */
    bp2 = this->bp_idx[c][g];
@@ -1788,6 +1717,7 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
    this->G_int11[bp1][bp2][u][c] =  170; /*   C */
    this->G_int11[bp1][bp2][u][g] =  170; /*   G */
    this->G_int11[bp1][bp2][u][u] =  170; /*   U */
+
    /* AU */
    bp1 = this->bp_idx[a][u];
    /*    CG */
@@ -1898,6 +1828,7 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
    this->G_int11[bp1][bp2][u][c] =  170; /*   C */
    this->G_int11[bp1][bp2][u][g] =  170; /*   G */
    this->G_int11[bp1][bp2][u][u] =  150; /*   U */
+
    /* UA */
    bp1 = this->bp_idx[u][a];
    /*    CG */
@@ -2009,6 +1940,9 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
    this->G_int11[bp1][bp2][u][g] =  170; /*   G */
    this->G_int11[bp1][bp2][u][u] =  180; /*   U */
 
+   /* END_INT11_ENERGIES */
+
+
    return 0;
 }
 
@@ -2026,19 +1960,12 @@ allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
       return 1;
    }
 
-   this->non_gc_penalty_for_bp[(int)this->bp_idx[c][g]] = 0;
-   this->non_gc_penalty_for_bp[(int)this->bp_idx[g][c]] = 0;
    this->non_gc_penalty_for_bp[(int)this->bp_idx[a][u]] = 50;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[c][g]] =  0;
+   this->non_gc_penalty_for_bp[(int)this->bp_idx[g][c]] =  0;
    this->non_gc_penalty_for_bp[(int)this->bp_idx[g][u]] = 50;
    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][a]] = 50;
    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][g]] = 50;
-
-/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[c][g]] = -200; */
-/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[g][c]] = -200; */
-/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[a][u]] = -150; */
-/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[g][u]] = -150; */
-/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][a]] = -150; */
-/*    this->non_gc_penalty_for_bp[(int)this->bp_idx[u][g]] = -150; */
 
    return 0;
 }
@@ -2056,7 +1983,8 @@ allocate_init_bulge_loop (NN_scores* this, const char* file, const int line)
       return 1;        
    }
 
-   this->G_bulge_loop[ 0] = INT_UNDEF; /* min. loop length is 1 */
+   /* BEGIN_BULGES */
+   this->G_bulge_loop[ 0] = INT_UNDEF;
    this->G_bulge_loop[ 1] = 380;
    this->G_bulge_loop[ 2] = 280;
    this->G_bulge_loop[ 3] = 320;
@@ -2087,6 +2015,7 @@ allocate_init_bulge_loop (NN_scores* this, const char* file, const int line)
    this->G_bulge_loop[28] = 602;
    this->G_bulge_loop[29] = 605;
    this->G_bulge_loop[30] = 609;
+   /* END_BULGES */
 
    return 0;
 }
@@ -4512,6 +4441,7 @@ allocate_init_int21 (const int a, const int u, const int g, const int c,
    this->G_int21[bp1][bp2][u][u][c] = 320; /*     C */
    this->G_int21[bp1][bp2][u][u][g] = 550; /*     G */
    this->G_int21[bp1][bp2][u][u][u] = 270; /*     U */
+
    /* END_INT21_ENERGIES */
 
    return 0;
@@ -4546,6 +4476,7 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
                       * no_of_b
                       * no_of_b;
 
+   /* BEGIN_INT22_ENERGIES */
    /* CG */
    bp1 = this->bp_idx[c][g];
    /*   CG */
@@ -6097,7 +6028,6 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
    this->G_int22[bp1][bp2][u][u][u][g] =   30; /*       G */
    this->G_int22[bp1][bp2][u][u][u][u] =   30; /*       U */
 
-/*yy*/
    /* GC */
    bp1 = this->bp_idx[g][c];
    /*   CG */
@@ -7649,7 +7579,6 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
    this->G_int22[bp1][bp2][u][u][u][g] =  -10; /*       G */
    this->G_int22[bp1][bp2][u][u][u][u] =   30; /*       U */
 
-/*yy*/
    /* GU */
    bp1 = this->bp_idx[g][u];
    /*   CG */
@@ -9201,7 +9130,6 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
    this->G_int22[bp1][bp2][u][u][u][g] =  130; /*       G */
    this->G_int22[bp1][bp2][u][u][u][u] =   80; /*       U */
 
-/*yy*/
    /* UG */
    bp1 = this->bp_idx[u][g];
    /*   CG */
@@ -13855,7 +13783,7 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
    this->G_int22[bp1][bp2][u][u][u][g] =   90; /*       G */
    this->G_int22[bp1][bp2][u][u][u][u] =  110; /*       U */
 
-/*yy*/
+   /* END_INT22_ENERGIES */
 
 
    return 0;
@@ -13878,6 +13806,7 @@ allocate_init_dangle5 (const int a, const int u, const int g, const int c,
       return 1;
    }   
 
+   /* BEGIN_DANGLE_5 */
    /* CG */
    this->G_dangle5[(int)this->bp_idx[c][g]][a] = -50;
    this->G_dangle5[(int)this->bp_idx[c][g]][c] = -30;
@@ -13890,7 +13819,7 @@ allocate_init_dangle5 (const int a, const int u, const int g, const int c,
    this->G_dangle5[(int)this->bp_idx[g][c]][g] =   0;
    this->G_dangle5[(int)this->bp_idx[g][c]][u] =   0;
 
-   /* GU */ 
+   /* GU */
    this->G_dangle5[(int)this->bp_idx[g][u]][a] = -30;
    this->G_dangle5[(int)this->bp_idx[g][u]][c] = -30;
    this->G_dangle5[(int)this->bp_idx[g][u]][g] = -40;
@@ -13914,6 +13843,8 @@ allocate_init_dangle5 (const int a, const int u, const int g, const int c,
    this->G_dangle5[(int)this->bp_idx[u][a]][g] = -20;
    this->G_dangle5[(int)this->bp_idx[u][a]][u] = -20;
 
+   /* END_DANGLE_5 */
+
    return 0;
 }
 
@@ -13934,6 +13865,7 @@ allocate_init_dangle3 (const int a, const int u, const int g, const int c,
       return 1;
    }   
 
+   /* BEGIN_DANGLE_3 */
    /* CG */
    this->G_dangle3[(int)this->bp_idx[c][g]][a] = -110;
    this->G_dangle3[(int)this->bp_idx[c][g]][c] =  -40;
@@ -13946,29 +13878,31 @@ allocate_init_dangle3 (const int a, const int u, const int g, const int c,
    this->G_dangle3[(int)this->bp_idx[g][c]][g] = -170;
    this->G_dangle3[(int)this->bp_idx[g][c]][u] = -120;
 
-   /* GU */ 
-   this->G_dangle3[(int)this->bp_idx[g][u]][a] = -70;
-   this->G_dangle3[(int)this->bp_idx[g][u]][c] = -10;
-   this->G_dangle3[(int)this->bp_idx[g][u]][g] = -70;
-   this->G_dangle3[(int)this->bp_idx[g][u]][u] = -10;
+   /* GU */
+   this->G_dangle3[(int)this->bp_idx[g][u]][a] =  -70;
+   this->G_dangle3[(int)this->bp_idx[g][u]][c] =  -10;
+   this->G_dangle3[(int)this->bp_idx[g][u]][g] =  -70;
+   this->G_dangle3[(int)this->bp_idx[g][u]][u] =  -10;
 
    /* UG */
-   this->G_dangle3[(int)this->bp_idx[u][g]][a] = -80;
-   this->G_dangle3[(int)this->bp_idx[u][g]][c] = -50;
-   this->G_dangle3[(int)this->bp_idx[u][g]][g] = -80;
-   this->G_dangle3[(int)this->bp_idx[u][g]][u] = -60;
+   this->G_dangle3[(int)this->bp_idx[u][g]][a] =  -80;
+   this->G_dangle3[(int)this->bp_idx[u][g]][c] =  -50;
+   this->G_dangle3[(int)this->bp_idx[u][g]][g] =  -80;
+   this->G_dangle3[(int)this->bp_idx[u][g]][u] =  -60;
 
    /* AU */
-   this->G_dangle3[(int)this->bp_idx[a][u]][a] = -70;
-   this->G_dangle3[(int)this->bp_idx[a][u]][c] = -10;
-   this->G_dangle3[(int)this->bp_idx[a][u]][g] = -70;
-   this->G_dangle3[(int)this->bp_idx[a][u]][u] = -10;
+   this->G_dangle3[(int)this->bp_idx[a][u]][a] =  -70;
+   this->G_dangle3[(int)this->bp_idx[a][u]][c] =  -10;
+   this->G_dangle3[(int)this->bp_idx[a][u]][g] =  -70;
+   this->G_dangle3[(int)this->bp_idx[a][u]][u] =  -10;
 
    /* UA */
-   this->G_dangle3[(int)this->bp_idx[u][a]][a] = -80;
-   this->G_dangle3[(int)this->bp_idx[u][a]][c] = -50;
-   this->G_dangle3[(int)this->bp_idx[u][a]][g] = -80;
-   this->G_dangle3[(int)this->bp_idx[u][a]][u] = -60;
+   this->G_dangle3[(int)this->bp_idx[u][a]][a] =  -80;
+   this->G_dangle3[(int)this->bp_idx[u][a]][c] =  -50;
+   this->G_dangle3[(int)this->bp_idx[u][a]][g] =  -80;
+   this->G_dangle3[(int)this->bp_idx[u][a]][u] =  -60;
+
+   /* END_DANGLE_3 */
 
    return 0;
 }
@@ -14095,156 +14029,158 @@ allocate_init_tetra_loop (const char a,
                                             * this->tetra_loop_size,
                                             file, line);
 
-   /* GGGGAC -300 */
-   l = this->tetra_loop[0];
-   l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[0] = -300;
-
-   /* GGUGAC -300 */
-   l = this->tetra_loop[1];
-   l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[1] = -300;
-
-   /* CGAAAG -300 */
-   l = this->tetra_loop[2];
-   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[2] = -300;
-
-   /* GGAGAC -300 */
-   l = this->tetra_loop[3];
-   l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[3] = -300;
-
-   /* CGCAAG -300 */
-   l = this->tetra_loop[4];
-   l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[4] = -300;
-
-   /* GGAAAC -300 */
-   l = this->tetra_loop[5];
-   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[5] = -300;
-
-   /* CGGAAG -300 */
-   l = this->tetra_loop[6];
-   l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[6] = -300;
-
-   /* CUUCGG -300 */
-   l = this->tetra_loop[7];
-   l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[7] = -300;
-
-   /* CGUGAG -300 */
-   l = this->tetra_loop[8];
-   l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[8] = -300;
-
-   /* CGAAGG -250 */
-   l = this->tetra_loop[9];
-   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[9] = -250;
-
-   /* CUACGG -250 */
-   l = this->tetra_loop[10];
-   l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[10] = -250;
-
-   /* GGCAAC -250 */
-   l = this->tetra_loop[11];
-   l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[11] = -250;
-
-   /* CGCGAG -250 */
-   l = this->tetra_loop[12];
-   l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[12] = -250;
-
-   /* UGAGAG -250 */
-   l = this->tetra_loop[13];
-   l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[13] = -250;
-
-   /* CGAGAG -200 */
-   l = this->tetra_loop[14];
-   l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[14] = -200;
-
+   /* BEGIN_TETRA_LOOPS */
    /* AGAAAU -200 */
-   l = this->tetra_loop[15];
+   l = this->tetra_loop[ 0];
    l[0] = a; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
-   this->G_tetra_loop[15] = -200;
+   this->G_tetra_loop[ 0] = -200;
 
-   /* CGUAAG -200 */
-   l = this->tetra_loop[16];
-   l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[16] = -200;
-
-   /* CUAACG -200 */
-   l = this->tetra_loop[17];
-   l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[17] = -200;
-
-   /* UGAAAG -200 */
-   l = this->tetra_loop[18];
-   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[18] = -200;
- 
-   /* GGAAGC -150 */
-   l = this->tetra_loop[19];
-   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[19] = -150;
-
-   /* GGGAAC -150 */
-   l = this->tetra_loop[20];
-   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[20] = -150;
-
-   /* UGAAAA -150 */
-   l = this->tetra_loop[21];
-   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
-   this->G_tetra_loop[21] = -150;
- 
    /* AGCAAU -150 */
-   l = this->tetra_loop[22];
+   l = this->tetra_loop[ 1];
    l[0] = a; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
-   this->G_tetra_loop[22] = -150;
- 
-   /* AGUAAU -150 */
-   l = this->tetra_loop[23];
-   l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
-   this->G_tetra_loop[23] = -150;
+   this->G_tetra_loop[ 1] = -150;
 
-   /* CGGGAG -150 */
-   l = this->tetra_loop[24];
-   l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
-   this->G_tetra_loop[24] = -150;
+   /* AGUAAU -150 */
+   l = this->tetra_loop[ 2];
+   l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
+   this->G_tetra_loop[ 2] = -150;
 
    /* AGUGAU -150 */
-   l = this->tetra_loop[25];
+   l = this->tetra_loop[ 3];
    l[0] = a; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = u; l[6] = '\0';
-   this->G_tetra_loop[25] = -150;
+   this->G_tetra_loop[ 3] = -150;
+
+   /* CGAAAG -300 */
+   l = this->tetra_loop[ 4];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[ 4] = -300;
+
+   /* CGAAGG -250 */
+   l = this->tetra_loop[ 5];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[ 5] = -250;
+
+   /* CGAGAG -200 */
+   l = this->tetra_loop[ 6];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[ 6] = -200;
+
+   /* CGCAAG -300 */
+   l = this->tetra_loop[ 7];
+   l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[ 7] = -300;
+
+   /* CGCGAG -250 */
+   l = this->tetra_loop[ 8];
+   l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[ 8] = -250;
+
+   /* CGGAAG -300 */
+   l = this->tetra_loop[ 9];
+   l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[ 9] = -300;
+
+   /* CGGGAG -150 */
+   l = this->tetra_loop[10];
+   l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[10] = -150;
+
+   /* CGUAAG -200 */
+   l = this->tetra_loop[11];
+   l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[11] = -200;
+
+   /* CGUGAG -300 */
+   l = this->tetra_loop[12];
+   l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[12] = -300;
+
+   /* CUAACG -200 */
+   l = this->tetra_loop[13];
+   l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[13] = -200;
+
+   /* CUACGG -250 */
+   l = this->tetra_loop[14];
+   l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[14] = -250;
+
+   /* CUUCGG -300 */
+   l = this->tetra_loop[15];
+   l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[15] = -300;
+
+   /* GGAAAC -300 */
+   l = this->tetra_loop[16];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[16] = -300;
+
+   /* GGAAGC -150 */
+   l = this->tetra_loop[17];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[17] = -150;
+
+   /* GGAGAC -300 */
+   l = this->tetra_loop[18];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[18] = -300;
+
+   /* GGCAAC -250 */
+   l = this->tetra_loop[19];
+   l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[19] = -250;
 
    /* GGCGAC -150 */
-   l = this->tetra_loop[26];
+   l = this->tetra_loop[20];
    l[0] = g; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[26] = -150;
+   this->G_tetra_loop[20] = -150;
+
+   /* GGGAAC -150 */
+   l = this->tetra_loop[21];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[21] = -150;
 
    /* GGGAGC -150 */
-   l = this->tetra_loop[27];
+   l = this->tetra_loop[22];
    l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[27] = -150;
+   this->G_tetra_loop[22] = -150;
+
+   /* GGGGAC -300 */
+   l = this->tetra_loop[23];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[23] = -300;
+
+   /* GGUGAC -300 */
+   l = this->tetra_loop[24];
+   l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[24] = -300;
 
    /* GUGAAC -150 */
-   l = this->tetra_loop[28];
+   l = this->tetra_loop[25];
    l[0] = g; l[1] = u; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
-   this->G_tetra_loop[28] = -150;
- 
+   this->G_tetra_loop[25] = -150;
+
+   /* UGAAAA -150 */
+   l = this->tetra_loop[26];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
+   this->G_tetra_loop[26] = -150;
+
+   /* UGAAAG -200 */
+   l = this->tetra_loop[27];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[27] = -200;
+
+   /* UGAGAG -250 */
+   l = this->tetra_loop[28];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[28] = -250;
+
    /* UGGAAA -150 */
    l = this->tetra_loop[29];
    l[0] = u; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
    this->G_tetra_loop[29] = -150;
 
+   /* END_TETRA_LOOPS */
 
    /*nn_scores_fprintf_tetra_loop(stderr, this, sigma);
      mfprintf (stderr, "\n\n");*/
@@ -14711,7 +14647,7 @@ nn_scores_get_G_mm_stack (const char i, const char j,
            < scheme->bp_allowed_size);
    assert (  (unsigned) scheme->bp_idx[(int)k][(int)l]
              < (scheme->G_mm_stack_size / scheme->bp_allowed_size));
-   
+
    return scheme->G_mm_stack[(int) scheme->bp_idx[(int)i][(int)j]]
                             [(int) scheme->bp_idx[(int)k][(int)l]];
 }

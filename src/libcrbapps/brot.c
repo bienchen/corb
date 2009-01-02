@@ -39,6 +39,9 @@
  *  Revision History:
  *         - 2008Feb28 bienert: created
  *
+ *  ToDo:
+ *         - tryout a little equilibration phase for each temperature step
+ *           (suggested by Thomas Huber)
  */
 
 
@@ -597,6 +600,7 @@ brot_main(const char *cmdline)
   
    if (retval == 0)
    {
+      seqmatrix_print_2_stdout (2, sm);
       mprintf ("%s\n", scmf_rna_opt_data_get_seq(sim_data));
    }   
 

@@ -1452,10 +1452,10 @@ static __inline__ void
 scmf_rna_opt_calc_internal (const unsigned long row,
                             unsigned long allowed_bp,
                             unsigned long alpha_size,
-                            unsigned long i1,
-                            unsigned long j1,
-                            unsigned long i2,
-                            unsigned long j2,
+                            unsigned long pi1,
+                            unsigned long pj1,
+                            unsigned long pi2,
+                            unsigned long pj2,
                             SeqMatrix* sm,
                             Scmf_Rna_Opt_data* this)
 {
@@ -1483,9 +1483,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
          for (m = 0; m < alpha_size; m++)
          {
             /* i1 */
-            p = seqmatrix_get_probability(bpp, j1, sm)
-               * seqmatrix_get_probability(l, i1 + 1, sm)
-               * seqmatrix_get_probability(m, j1 - 1, sm);
+            p = seqmatrix_get_probability(bpp, pj1, sm)
+               * seqmatrix_get_probability(l, pi1 + 1, sm)
+               * seqmatrix_get_probability(m, pj1 - 1, sm);
 
             cell_i1 += p * nn_scores_get_G_mismatch_interior (row,
                                                               bpp,
@@ -1494,9 +1494,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                               this->scores);
             
             /* j1 */
-            p = seqmatrix_get_probability(bpp, i1, sm)
-               * seqmatrix_get_probability(l, i1 + 1, sm)
-               * seqmatrix_get_probability(m, j1 - 1, sm);
+            p = seqmatrix_get_probability(bpp, pi1, sm)
+               * seqmatrix_get_probability(l, pi1 + 1, sm)
+               * seqmatrix_get_probability(m, pj1 - 1, sm);
 
             cell_j1 += p * nn_scores_get_G_mismatch_interior (bpp,
                                                               row,
@@ -1505,9 +1505,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                               this->scores);
 
             /* j2 */
-            p = seqmatrix_get_probability(bpp, i2, sm)
-               * seqmatrix_get_probability(l, j2 + 1, sm)
-               * seqmatrix_get_probability(m, i2 - 1, sm);
+            p = seqmatrix_get_probability(bpp, pi2, sm)
+               * seqmatrix_get_probability(l, pj2 + 1, sm)
+               * seqmatrix_get_probability(m, pi2 - 1, sm);
 
             cell_j2 += p * nn_scores_get_G_mismatch_interior (row,
                                                               bpp,
@@ -1516,9 +1516,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                               this->scores);
 
             /* i2 */
-            p = seqmatrix_get_probability(bpp, j2, sm)
-               * seqmatrix_get_probability(l, j2 + 1, sm)
-               * seqmatrix_get_probability(m, i2 - 1, sm);
+            p = seqmatrix_get_probability(bpp, pj2, sm)
+               * seqmatrix_get_probability(l, pj2 + 1, sm)
+               * seqmatrix_get_probability(m, pi2 - 1, sm);
 
             cell_i2 += p * nn_scores_get_G_mismatch_interior (bpp,
                                                               row,
@@ -1533,10 +1533,10 @@ scmf_rna_opt_calc_internal (const unsigned long row,
    cell_j1 = cell_j1 / 4;       /* SB 08-12-12 */
    cell_i2 = cell_i2 / 4;       /* SB 08-12-12 */
    cell_j2 = cell_j2 / 4;       /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
-   seqmatrix_add_2_eeff (cell_j2, row, j2, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1, sm);
+   seqmatrix_add_2_eeff (cell_j2, row, pj2, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pi2, sm);
 
    /* design unpaired bases */
    cell_i1 = 0.0f;
@@ -1552,9 +1552,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
       for (l = 0; l < alpha_size; l++)
       {
          /* i1 + 1 */
-         p = seqmatrix_get_probability(bi, i1, sm)
-            * seqmatrix_get_probability(bj, j1, sm)
-            * seqmatrix_get_probability(l, j1 - 1, sm);
+         p = seqmatrix_get_probability(bi, pi1, sm)
+            * seqmatrix_get_probability(bj, pj1, sm)
+            * seqmatrix_get_probability(l, pj1 - 1, sm);
 
          cell_i1 += p * nn_scores_get_G_mismatch_interior (bi,
                                                            bj,
@@ -1563,9 +1563,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                            this->scores);
 
          /* j1 - 1 */
-         p = seqmatrix_get_probability(bi, i1, sm)
-            * seqmatrix_get_probability(bj, j1, sm)
-            * seqmatrix_get_probability(l, i1 + 1, sm);
+         p = seqmatrix_get_probability(bi, pi1, sm)
+            * seqmatrix_get_probability(bj, pj1, sm)
+            * seqmatrix_get_probability(l, pi1 + 1, sm);
 
          cell_j1 += p * nn_scores_get_G_mismatch_interior (bi,
                                                            bj,
@@ -1574,9 +1574,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                            this->scores);
 
          /* j2 + 1 */
-         p = seqmatrix_get_probability(bj, j2, sm)
-            * seqmatrix_get_probability(bi, i2, sm)
-            * seqmatrix_get_probability(l, i2 - 1, sm);
+         p = seqmatrix_get_probability(bj, pj2, sm)
+            * seqmatrix_get_probability(bi, pi2, sm)
+            * seqmatrix_get_probability(l, pi2 - 1, sm);
 
          cell_j2 += p * nn_scores_get_G_mismatch_interior (bj,
                                                            bi,
@@ -1585,9 +1585,9 @@ scmf_rna_opt_calc_internal (const unsigned long row,
                                                            this->scores);
 
          /* i2 - 1 */
-         p = seqmatrix_get_probability(bj, j2, sm)
-            * seqmatrix_get_probability(bi, i2, sm)
-            * seqmatrix_get_probability(l, j2 + 1, sm);
+         p = seqmatrix_get_probability(bj, pj2, sm)
+            * seqmatrix_get_probability(bi, pi2, sm)
+            * seqmatrix_get_probability(l, pj2 + 1, sm);
         
          cell_i2 += p * nn_scores_get_G_mismatch_interior (bj,
                                                            bi,
@@ -1601,20 +1601,20 @@ scmf_rna_opt_calc_internal (const unsigned long row,
    cell_j1 = cell_j1 / 4;       /* SB 08-12-12 */
    cell_i2 = cell_i2 / 4;       /* SB 08-12-12 */
    cell_j2 = cell_j2 / 4;       /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
-   seqmatrix_add_2_eeff (cell_j2, row, j2 + 1, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, i2 - 1, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1 + 1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1 - 1, sm);
+   seqmatrix_add_2_eeff (cell_j2, row, pj2 + 1, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pi2 - 1, sm);
 }
 
 static __inline__ void
 scmf_rna_opt_calc_int22 (const unsigned long row,
                          unsigned long allowed_bp,
                          unsigned long alpha_size,
-                         unsigned long i1,
-                         unsigned long j1,
-                         unsigned long i2,
-                         unsigned long j2,
+                         unsigned long pi1,
+                         unsigned long pj1,
+                         unsigned long pi2,
+                         unsigned long pj2,
                          SeqMatrix* sm,
                          Scmf_Rna_Opt_data* this)
 {
@@ -1640,11 +1640,11 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
       {
          nn_scores_get_allowed_basepair (l, &bi2, &bj2, this->scores);
 
-         p_bp2 = seqmatrix_get_probability(bj2, j2, sm)
-            * seqmatrix_get_probability(bi2, i2, sm);
+         p_bp2 = seqmatrix_get_probability(bj2, pj2, sm)
+            * seqmatrix_get_probability(bi2, pi2, sm);
 
-         p_bp1 = seqmatrix_get_probability(bi2, i1, sm)
-            * seqmatrix_get_probability(bj2, j1, sm);
+         p_bp1 = seqmatrix_get_probability(bi2, pi1, sm)
+            * seqmatrix_get_probability(bj2, pj1, sm);
 
          /* for all bases */
          for (m = 0; m < alpha_size; m++)
@@ -1652,21 +1652,21 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
             /* for all bases */
             for (n = 0; n < alpha_size; n++)
             {
-               p_bi1pi2m = seqmatrix_get_probability(m, i1 + 1, sm)
-                  * seqmatrix_get_probability(n, i2 - 1, sm);
+               p_bi1pi2m = seqmatrix_get_probability(m, pi1 + 1, sm)
+                  * seqmatrix_get_probability(n, pi2 - 1, sm);
 
                /* for all bases */
                for (o = 0; o < alpha_size; o++)
                {
-                  p_bj2p = p_bi1pi2m * seqmatrix_get_probability(o, j2 + 1, sm);
+                  p_bj2p = p_bi1pi2m * seqmatrix_get_probability(o, pj2 + 1, sm);
 
                   /* for all bases */
                   for (p = 0; p < alpha_size; p++)
                   {
                      /* i1 */
                      pr =p_bj2p * p_bp2
-                        * seqmatrix_get_probability(p, j1 - 1, sm)
-                        * seqmatrix_get_probability(bpp, j1, sm);
+                        * seqmatrix_get_probability(p, pj1 - 1, sm)
+                        * seqmatrix_get_probability(bpp, pj1, sm);
 
                      cell_i1 += pr *
                         nn_scores_get_G_internal_2x2_loop (row, bpp,
@@ -1677,8 +1677,8 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
 
                      /* j1 */
                      pr = p_bj2p * p_bp2
-                        * seqmatrix_get_probability(p, j1 - 1, sm)
-                        * seqmatrix_get_probability(bpp, i1, sm);
+                        * seqmatrix_get_probability(p, pj1 - 1, sm)
+                        * seqmatrix_get_probability(bpp, pi1, sm);
 
                      cell_j1 += pr *
                         nn_scores_get_G_internal_2x2_loop (bpp, row,
@@ -1689,8 +1689,8 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
 
                      /* i2 */
                      pr = p_bj2p * p_bp1
-                        * seqmatrix_get_probability(p, j1 - 1, sm)
-                        * seqmatrix_get_probability(bpp, j2, sm);
+                        * seqmatrix_get_probability(p, pj1 - 1, sm)
+                        * seqmatrix_get_probability(bpp, pj2, sm);
 
                      cell_i2 += pr *
                         nn_scores_get_G_internal_2x2_loop (bi2, bj2,
@@ -1701,8 +1701,8 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
 
                      /* j2 */
                      pr = p_bj2p *  p_bp1
-                        * seqmatrix_get_probability(p, j1 - 1, sm)
-                        * seqmatrix_get_probability(bpp, i2, sm);
+                        * seqmatrix_get_probability(p, pj1 - 1, sm)
+                        * seqmatrix_get_probability(bpp, pi2, sm);
 
                      cell_j2 += pr *
                         nn_scores_get_G_internal_2x2_loop (bi2, bj2,
@@ -1722,10 +1722,10 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
    cell_j1 = cell_j1 / 8; /* SB 08-12-12 */
    cell_i2 = cell_i2 / 8; /* SB 08-12-12 */
    cell_j2 = cell_j2 / 8; /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
-   seqmatrix_add_2_eeff (cell_j2, row, j2, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pi2, sm);
+   seqmatrix_add_2_eeff (cell_j2, row, pj2, sm);
 
    /* design unpaired bases */
    cell_i1 = 0.0f;
@@ -1737,16 +1737,16 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
    {
       nn_scores_get_allowed_basepair (k, &bi, &bj, this->scores);
 
-      p_bp1 = seqmatrix_get_probability(bi, i1, sm)
-         * seqmatrix_get_probability(bj, j1, sm);
+      p_bp1 = seqmatrix_get_probability(bi, pi1, sm)
+         * seqmatrix_get_probability(bj, pj1, sm);
 
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
       {
          nn_scores_get_allowed_basepair (l, &bi2, &bj2, this->scores);
 
-         p_bp2 =  seqmatrix_get_probability(bj2, j2, sm)
-            * seqmatrix_get_probability(bi2, i2, sm);
+         p_bp2 =  seqmatrix_get_probability(bj2, pj2, sm)
+            * seqmatrix_get_probability(bi2, pi2, sm);
 
          /* for all bases */
          for (m = 0; m < alpha_size; m++)
@@ -1759,9 +1759,9 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
                {
                   /* i1 + 1 */
                   pr = p_bp1 * p_bp2
-                     * seqmatrix_get_probability(m, i2 - 1, sm)
-                     * seqmatrix_get_probability(n, j2 + 1, sm)
-                     * seqmatrix_get_probability(o, j1 - 1, sm);
+                     * seqmatrix_get_probability(m, pi2 - 1, sm)
+                     * seqmatrix_get_probability(n, pj2 + 1, sm)
+                     * seqmatrix_get_probability(o, pj1 - 1, sm);
 
                   cell_i1 += pr *
                         nn_scores_get_G_internal_2x2_loop (bi, bj,
@@ -1772,9 +1772,9 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
 
                   /* i2 - 1 */
                   pr = p_bp1 * p_bp2
-                     * seqmatrix_get_probability(m, i1 + 1, sm)
-                     * seqmatrix_get_probability(n, j2 + 1, sm)
-                     * seqmatrix_get_probability(o, j1 - 1, sm);
+                     * seqmatrix_get_probability(m, pi1 + 1, sm)
+                     * seqmatrix_get_probability(n, pj2 + 1, sm)
+                     * seqmatrix_get_probability(o, pj1 - 1, sm);
 
                   cell_i2 += pr *
                         nn_scores_get_G_internal_2x2_loop (bi, bj,
@@ -1785,9 +1785,9 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
 
                   /* j2 + 1 */
                   pr = p_bp1 * p_bp2
-                     * seqmatrix_get_probability(m, i1 + 1, sm)
-                     * seqmatrix_get_probability(n, i2 - 1, sm)
-                     * seqmatrix_get_probability(o, j1 - 1, sm);
+                     * seqmatrix_get_probability(m, pi1 + 1, sm)
+                     * seqmatrix_get_probability(n, pi2 - 1, sm)
+                     * seqmatrix_get_probability(o, pj1 - 1, sm);
 
                   cell_j2 += pr *
                         nn_scores_get_G_internal_2x2_loop (bi, bj,
@@ -1798,9 +1798,9 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
 
                   /* j1 - 1 */
                   pr = p_bp1 * p_bp2
-                     * seqmatrix_get_probability(m, i1 + 1, sm)
-                     * seqmatrix_get_probability(n, i2 - 1, sm)
-                     * seqmatrix_get_probability(o, j2 + 1, sm);
+                     * seqmatrix_get_probability(m, pi1 + 1, sm)
+                     * seqmatrix_get_probability(n, pi2 - 1, sm)
+                     * seqmatrix_get_probability(o, pj2 + 1, sm);
                   
                   cell_j1 += pr *
                         nn_scores_get_G_internal_2x2_loop (bi, bj,
@@ -1818,20 +1818,20 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
    cell_j1 = cell_j1 / 8; /* SB 08-12-12 */
    cell_i2 = cell_i2 / 8; /* SB 08-12-12 */
    cell_j2 = cell_j2 / 8; /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, i2 - 1, sm);
-   seqmatrix_add_2_eeff (cell_j2, row, j2 + 1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1 + 1, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pi2 - 1, sm);
+   seqmatrix_add_2_eeff (cell_j2, row, pj2 + 1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1 - 1, sm);
 }
 
 static void
 scmf_rna_opt_calc_int12 (const unsigned long row,
                          unsigned long allowed_bp,
                          unsigned long alpha_size,
-                         unsigned long i1,
-                         unsigned long j1,
-                         unsigned long i2,
-                         unsigned long j2,
+                         unsigned long pi1,
+                         unsigned long pj1,
+                         unsigned long pi2,
+                         unsigned long pj2,
                          SeqMatrix* sm,
                          Scmf_Rna_Opt_data* this)
 {
@@ -1854,11 +1854,11 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
       {
          nn_scores_get_allowed_basepair (l, &bi, &bj, this->scores);
 
-         p_bp2 = seqmatrix_get_probability(bi, i2, sm)
-            * seqmatrix_get_probability(bj, j2, sm);
+         p_bp2 = seqmatrix_get_probability(bi, pi2, sm)
+            * seqmatrix_get_probability(bj, pj2, sm);
 
-         p_bp1 = seqmatrix_get_probability(bi, i1, sm)
-            * seqmatrix_get_probability(bj, j1, sm);
+         p_bp1 = seqmatrix_get_probability(bi, pi1, sm)
+            * seqmatrix_get_probability(bj, pj1, sm);
 
          /* for all bases */
          for (m = 0; m < alpha_size; m++)
@@ -1867,16 +1867,16 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
             /* for all bases */
             for (n = 0; n < alpha_size; n++)
             {
-               p_bb = seqmatrix_get_probability(m, i1 + 1, sm)
-                  * seqmatrix_get_probability(n, j1 - 1, sm);
+               p_bb = seqmatrix_get_probability(m, pi1 + 1, sm)
+                  * seqmatrix_get_probability(n, pj1 - 1, sm);
 
                /* for all bases */
                for (o = 0; o < alpha_size; o++)
                {
                   /* i1 */
                   p =  p_bp2 * p_bb
-                     * seqmatrix_get_probability(bpp, j1, sm)
-                     * seqmatrix_get_probability(o, j2 + 1, sm);
+                     * seqmatrix_get_probability(bpp, pj1, sm)
+                     * seqmatrix_get_probability(o, pj2 + 1, sm);
 
                   cell_i1 += p * nn_scores_get_G_internal_1x2_loop (row,
                                                                     bpp,
@@ -1889,8 +1889,8 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
 
                   /* j1 */
                   p =  p_bp2 * p_bb
-                     * seqmatrix_get_probability(bpp, i1, sm)
-                     * seqmatrix_get_probability(o, j2 + 1, sm);
+                     * seqmatrix_get_probability(bpp, pi1, sm)
+                     * seqmatrix_get_probability(o, pj2 + 1, sm);
 
                   cell_j1 += p * nn_scores_get_G_internal_1x2_loop (bpp,
                                                                     row,
@@ -1903,8 +1903,8 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
 
                   /* i2 */
                   p =  p_bp1 * p_bb
-                     * seqmatrix_get_probability(bpp,  j2, sm)
-                     * seqmatrix_get_probability(o, j2 + 1, sm);
+                     * seqmatrix_get_probability(bpp,  pj2, sm)
+                     * seqmatrix_get_probability(o, pj2 + 1, sm);
 
                   cell_i2 += p * nn_scores_get_G_internal_1x2_loop (bi,
                                                                     bj,
@@ -1917,8 +1917,8 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
 
                /* j2 */
                p =  p_bp1 * p_bb
-                  * seqmatrix_get_probability(bpp,  i2, sm)
-                  * seqmatrix_get_probability(o, j2 + 1, sm);
+                  * seqmatrix_get_probability(bpp,  pi2, sm)
+                  * seqmatrix_get_probability(o, pj2 + 1, sm);
                
                cell_j2 += p * nn_scores_get_G_internal_1x2_loop (bi,
                                                                  bj,
@@ -1938,10 +1938,10 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
    cell_j1 = cell_j1 / 7; /* SB 08-12-12 */
    cell_i2 = cell_i2 / 7; /* SB 08-12-12 */
    cell_j2 = cell_j2 / 7; /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
-   seqmatrix_add_2_eeff (cell_j2, row, j2, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pi2, sm);
+   seqmatrix_add_2_eeff (cell_j2, row, pj2, sm);
 
    /* design unpaired bases */
    cell_i1 = 0.0f;
@@ -1953,16 +1953,16 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
    {
       nn_scores_get_allowed_basepair (k, &bi, &bj, this->scores);
 
-      p_bp1 = seqmatrix_get_probability(bi, i1, sm)
-         * seqmatrix_get_probability(bj, j1, sm);
+      p_bp1 = seqmatrix_get_probability(bi, pi1, sm)
+         * seqmatrix_get_probability(bj, pj1, sm);
 
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
       {
          nn_scores_get_allowed_basepair (l, &bi2, &bj2, this->scores);
 
-         p_bp2 = p_bp1 * seqmatrix_get_probability(bi2,  i2, sm)
-            * seqmatrix_get_probability(bj2, j2, sm);
+         p_bp2 = p_bp1 * seqmatrix_get_probability(bi2,  pi2, sm)
+            * seqmatrix_get_probability(bj2, pj2, sm);
 
          /* for all bases */
          for (m = 0; m < alpha_size; m++)
@@ -1973,8 +1973,8 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
             {
                /* i1 + 1 */
                p =  p_bp2
-                  * seqmatrix_get_probability(n, j2 + 1, sm)
-                  * seqmatrix_get_probability(m, j1 - 1, sm);
+                  * seqmatrix_get_probability(n, pj2 + 1, sm)
+                  * seqmatrix_get_probability(m, pj1 - 1, sm);
 
                cell_i1 += p * nn_scores_get_G_internal_1x2_loop (bi,
                                                                  bj,
@@ -1987,8 +1987,8 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
 
                /* j1 - 1 */
                p =  p_bp2
-                  * seqmatrix_get_probability(n, j2 + 1, sm)
-                  * seqmatrix_get_probability(m, i1 + 1, sm);
+                  * seqmatrix_get_probability(n, pj2 + 1, sm)
+                  * seqmatrix_get_probability(m, pi1 + 1, sm);
 
                cell_j1 += p * nn_scores_get_G_internal_1x2_loop (bi,
                                                                  bj,
@@ -2001,8 +2001,8 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
 
                /* j2 + 1 */
                p =  p_bp2
-                  * seqmatrix_get_probability(n, j1 - 1, sm)
-                  * seqmatrix_get_probability(m, i1 + 1, sm);
+                  * seqmatrix_get_probability(n, pj1 - 1, sm)
+                  * seqmatrix_get_probability(m, pi1 + 1, sm);
 
                cell_i2 += p * nn_scores_get_G_internal_1x2_loop (bi,
                                                                  bj,
@@ -2020,17 +2020,17 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
    cell_i1 = cell_i1 / 7; /* SB 08-12-12 */
    cell_j1 = cell_j1 / 7; /* SB 08-12-12 */
    cell_i2 = cell_i2 / 7; /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, j2 + 1, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1 + 1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1 - 1, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pj2 + 1, sm);
 }
 
 static __inline__ void
 scmf_rna_opt_calc_int11 (const unsigned long row,
                          unsigned long allowed_bp,
                          unsigned long alpha_size,
-                         unsigned long i1, unsigned long j1,
-                         unsigned long i2, unsigned long j2,
+                         unsigned long pi1, unsigned long pj1,
+                         unsigned long pi2, unsigned long pj2,
                          SeqMatrix* sm,
                          Scmf_Rna_Opt_data* this)
 {
@@ -2053,11 +2053,11 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
       {
          nn_scores_get_allowed_basepair (l, &bi, &bj, this->scores);
          
-         p_bp2 = seqmatrix_get_probability(bi, i2, sm)
-            * seqmatrix_get_probability(bj, j2, sm);
+         p_bp2 = seqmatrix_get_probability(bi, pi2, sm)
+            * seqmatrix_get_probability(bj, pj2, sm);
          
-         p_bp1 = seqmatrix_get_probability(bi, i1, sm)
-            * seqmatrix_get_probability(bj, j1, sm);
+         p_bp1 = seqmatrix_get_probability(bi, pi1, sm)
+            * seqmatrix_get_probability(bj, pj1, sm);
          
          /* for all bases */
          for (m = 0; m < alpha_size; m++)
@@ -2065,20 +2065,20 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
             /* for all bases */
             for (n = 0; n < alpha_size; n++)
             {
-               p = seqmatrix_get_probability(bpp, j1, sm)
+               p = seqmatrix_get_probability(bpp, pj1, sm)
                   * p_bp2
-                  * seqmatrix_get_probability(m, i1 + 1, sm)
-                  * seqmatrix_get_probability(n, j1 - 1, sm);
+                  * seqmatrix_get_probability(m, pi1 + 1, sm)
+                  * seqmatrix_get_probability(n, pj1 - 1, sm);
                
                cell_i1 += p * nn_scores_get_G_internal_1x1_loop (row, bpp,
                                                                  m, n,
                                                                  bi, bj,
                                                                  this->scores);
 
-               p = seqmatrix_get_probability(bpp, i1, sm)
+               p = seqmatrix_get_probability(bpp, pi1, sm)
                   * p_bp2
-                  * seqmatrix_get_probability(m, i1 + 1, sm)
-                  * seqmatrix_get_probability(n, j1 - 1, sm);
+                  * seqmatrix_get_probability(m, pi1 + 1, sm)
+                  * seqmatrix_get_probability(n, pj1 - 1, sm);
                
                cell_j1 += p * nn_scores_get_G_internal_1x1_loop (bpp, row,
                                                                  m, n,
@@ -2086,9 +2086,9 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
                                                                  this->scores);
                
                p = p_bp1
-                  * seqmatrix_get_probability(bpp, j2, sm)
-                  * seqmatrix_get_probability(m, i1 + 1, sm)
-                  * seqmatrix_get_probability(n, j1 - 1, sm);
+                  * seqmatrix_get_probability(bpp, pj2, sm)
+                  * seqmatrix_get_probability(m, pi1 + 1, sm)
+                  * seqmatrix_get_probability(n, pj1 - 1, sm);
                
                cell_i2 += p * nn_scores_get_G_internal_1x1_loop (bi, bj,
                                                                  m, n,
@@ -2096,9 +2096,9 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
                                                                  this->scores);
                
                p = p_bp1
-                  * seqmatrix_get_probability(bpp, i2, sm)
-                  * seqmatrix_get_probability(m, i1 + 1, sm)
-                  * seqmatrix_get_probability(n, j1 - 1, sm);
+                  * seqmatrix_get_probability(bpp, pi2, sm)
+                  * seqmatrix_get_probability(m, pi1 + 1, sm)
+                  * seqmatrix_get_probability(n, pj1 - 1, sm);
                
                cell_j2 += p * nn_scores_get_G_internal_1x1_loop (bi, bj,
                                                                  m, n,
@@ -2113,10 +2113,10 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
    cell_j1 = cell_j1 / 6; /* SB 08-12-12 */
    cell_i2 = cell_i2 / 6; /* SB 08-12-12 */
    cell_j2 = cell_j2 / 6; /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1, sm);
-   seqmatrix_add_2_eeff (cell_i2, row, i2, sm);
-   seqmatrix_add_2_eeff (cell_j2, row, j2, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1, sm);
+   seqmatrix_add_2_eeff (cell_i2, row, pi2, sm);
+   seqmatrix_add_2_eeff (cell_j2, row, pj2, sm);
 
    /* design unpaired bases */
    cell_i1 = 0.0f;
@@ -2126,8 +2126,8 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
    {
       nn_scores_get_allowed_basepair (k, &bi, &bj, this->scores);
       
-      p_bp1 = seqmatrix_get_probability(bi, i1, sm)
-         * seqmatrix_get_probability(bj, j1, sm);
+      p_bp1 = seqmatrix_get_probability(bi, pi1, sm)
+         * seqmatrix_get_probability(bj, pj1, sm);
       
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
@@ -2135,19 +2135,19 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
          nn_scores_get_allowed_basepair (l, &bi2, &bj2, this->scores);
          
          p_bp2 = p_bp1
-            * seqmatrix_get_probability(bi2, i2, sm)
-            * seqmatrix_get_probability(bj2, j2, sm);
+            * seqmatrix_get_probability(bi2, pi2, sm)
+            * seqmatrix_get_probability(bj2, pj2, sm);
          
          /* for all bases */
          for (m = 0; m < alpha_size; m++)
          {
-            cell_i1 += p_bp2 * seqmatrix_get_probability(m, j1 - 1, sm)
+            cell_i1 += p_bp2 * seqmatrix_get_probability(m, pj1 - 1, sm)
                * nn_scores_get_G_internal_1x1_loop (bi, bj,
                                                     row, m,
                                                     bi2, bj2,
                                                     this->scores);
             
-            cell_j1 += p_bp2 * seqmatrix_get_probability(m, i1 + 1, sm)
+            cell_j1 += p_bp2 * seqmatrix_get_probability(m, pi1 + 1, sm)
                * nn_scores_get_G_internal_1x1_loop (bi, bj,
                                                     m, row,
                                                     bi2, bj2,
@@ -2158,8 +2158,8 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
    /* each of the 6 bases involved in this loop gets an energy contribution */
    cell_i1 = cell_i1 / 6; /* SB 08-12-12 */
    cell_j1 = cell_j1 / 6; /* SB 08-12-12 */
-   seqmatrix_add_2_eeff (cell_i1, row, i1 + 1, sm);
-   seqmatrix_add_2_eeff (cell_j1, row, j1 - 1, sm);
+   seqmatrix_add_2_eeff (cell_i1, row, pi1 + 1, sm);
+   seqmatrix_add_2_eeff (cell_j1, row, pj1 - 1, sm);
 }
 
 void
@@ -2168,13 +2168,13 @@ scmf_rna_opt_calc_internals (const unsigned long row,
                              SeqMatrix* sm,
                              Scmf_Rna_Opt_data* this)
 {
-   unsigned long i1, j1, size1;
-   unsigned long i2, j2, size2;
+   unsigned long pi1, pj1, size1;
+   unsigned long pi2, pj2, size2;
    unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    unsigned long alpha_size = alphabet_size (this->sigma);
 
    /* fetch loop geometry */
-   rna_secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2,
+   rna_secstruct_get_geometry_internal (&pi1, &pj1, &pi2, &pj2, &size1, &size2,
                                         loop,
                                         this->rna);
 
@@ -2186,31 +2186,31 @@ scmf_rna_opt_calc_internals (const unsigned long row,
    {
       /* 1x1 internal loop */
       scmf_rna_opt_calc_int11 (row, allowed_bp, alpha_size, 
-                               i1, j1, i2, j2, sm, this);
+                               pi1, pj1, pi2, pj2, sm, this);
    }
    else if ((size1 == 1) && (size2 == 2))
    {
       /* 1x2 internal loop */
       scmf_rna_opt_calc_int12 (row, allowed_bp, alpha_size, 
-                               i1, j1, i2, j2, sm, this);
+                               pi1, pj1, pi2, pj2, sm, this);
    }
    else if ((size1 == 2) && (size2 == 1))
    {
       /* 2x1 internal loop */
       scmf_rna_opt_calc_int12 (row, allowed_bp, alpha_size, 
-                               j2, i2, j1, i1, sm, this);
+                               pj2, pi2, pj1, pi1, sm, this);
    }
    else if ((size1 == 2) && (size2 == 2))
    {
       /* 2x2 internal loop */
       scmf_rna_opt_calc_int22 (row, allowed_bp, alpha_size, 
-                               i1, j1, i2, j2, sm, this);
+                               pi1, pj1, pi2, pj2, sm, this);
    }
    else
    {
       /* generic internal loop */
       scmf_rna_opt_calc_internal (row, allowed_bp, alpha_size, 
-                                  i1, j1, i2, j2, sm, this);      
+                                  pi1, pj1, pi2, pj2, sm, this);      
    }
 }
 
@@ -2255,7 +2255,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       /*seqmatrix_print_2_stdout (2, sm);*/
       /* process structure components */
       /* external loop */
-      /*SB scmf_rna_opt_calc_ext_loop (r, sm, this); */
+      scmf_rna_opt_calc_ext_loop (r, sm, this);
 
       /* stacking pairs */
       n = rna_secstruct_get_noof_stacks (this->rna);

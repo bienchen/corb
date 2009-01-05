@@ -1,4 +1,4 @@
-# Last modified: 2008-11-12.15
+# Last modified: 2009-01-05.22
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 

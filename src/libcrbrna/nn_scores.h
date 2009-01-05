@@ -84,6 +84,12 @@ void
 nn_scores_delete (NN_scores*);
 
 
+/********************************   Altering   ********************************/
+
+void
+nn_scores_add_thermal_noise (long int seedval, NN_scores*);
+
+
 /*********************************   Access   *********************************/
 
 unsigned long

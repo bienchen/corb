@@ -47,9 +47,9 @@
 
 
 #include <config.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <math.h>
 #include <libcrbbasic/crbbasic.h>
 /*#include "alphabet.h"*/
 #include "nn_scores.h"
@@ -69,35 +69,35 @@
 #define NN_NINIO_MAX 300
 
 struct NN_scores {
-      /*c*/float** G_stack;                         /* stacking energies */
+      float** G_stack;                         /* stacking energies */
       unsigned long G_stack_size;
-      /*c*/float** G_mm_stack;                   /* stacks with one mismatch */
+      float** G_mm_stack;                   /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
-      /*c*/float* G_hairpin_loop;                   /* hairpin loops */
+      float* G_hairpin_loop;                   /* hairpin loops */
       unsigned long G_hairpin_loop_size;
-      /*c*/float*** G_mismatch_hairpin;        /* hairpin loop closing bp */
+      float*** G_mismatch_hairpin;        /* hairpin loop closing bp */
       unsigned long G_mismatch_hairpin_size;
-      /*c*/float* non_gc_penalty_for_bp;      /* penalty for closing non-GC */
+      float* non_gc_penalty_for_bp;      /* penalty for closing non-GC */
       char** tetra_loop;               /* sorted list of possible loops */
-      /*c*/float* G_tetra_loop;                     /* scores */
+      float* G_tetra_loop;                     /* scores */
       unsigned long tetra_loop_size;
-      /*c*/float* G_bulge_loop;                     /* bulge loops */
+      float* G_bulge_loop;                     /* bulge loops */
       unsigned long G_bulge_loop_size;
       /* internal loops */
-      /*c*/float* G_internal_loop;                  /* generic loops */
+      float* G_internal_loop;                  /* generic loops */
       unsigned long G_internal_loop_size;
-      /*c*/float**** G_int11;                       /* 1x1 loops */
+      float**** G_int11;                       /* 1x1 loops */
       unsigned long G_int11_size;
-      /*c*/float***** G_int21;                      /* 2x1 loops */
+      float***** G_int21;                      /* 2x1 loops */
       unsigned long G_int21_size;
-      /*c*/float****** G_int22;                      /* 2x2 loops */
+      float****** G_int22;                      /* 2x2 loops */
       unsigned long G_int22_size;
-      /*c*/float*** G_mismatch_interior;         /* interior loop closing bp */
+      float*** G_mismatch_interior;         /* interior loop closing bp */
       unsigned long G_mismatch_interior_size;
       /* internal loops */
-      /*c*/float** G_dangle5;                  /* 5' dangling end, bp + base */
+      float** G_dangle5;                  /* 5' dangling end, bp + base */
       unsigned long G_dangle5_size;
-      /*c*/float** G_dangle3;                 /* 3' dangling end, bp + base */
+      float** G_dangle3;                 /* 3' dangling end, bp + base */
       unsigned long G_dangle3_size;
       char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
@@ -205,8 +205,8 @@ allocate_init_bp_idx (unsigned long size,
    /* place indeces of allowed base pairs at the begining of the table */
    for (i = 0; (unsigned long) i < this->bp_allowed_size; i++)
    {
-      this->bp_idx[(int) this->bp_allowed[i][0]]
-                  [(int) this->bp_allowed[i][1]] = i;
+      this->bp_idx[(int) this->bp_allowed[(int) i][0]]
+                  [(int) this->bp_allowed[(int) i][1]] = i;
    }
 
    this->bp_idx[(int) a][(int) a] = i; /* AA */
@@ -14409,6 +14409,33 @@ nn_scores_delete (NN_scores* this)
 }
 
 
+/********************************   Altering   ********************************/
+/** @brief Change the parameters in a scoring scheme by "random" values.
+ *
+ * This function could be used to add thermal noise to the Nearest Neighbour
+ * scoring scheme. This means adding tiny bits of random numbers to each
+ * parameter in the tables. This is neccessary at least for designing sequences,
+ * if the scoring scheme contains equal values for different base
+ * combinations.\n
+ * To assure reproductibility, the initial seed for the random number generator
+ * is a parameter @c seedval to be defined.
+ *
+ * @params[in] seedval seed for the random number generator.
+ * @params[in/ out] this scoring scheme to be changed.
+ */
+void
+nn_scores_add_thermal_noise (long int seedval,
+                             NN_scores* this __attribute__((unused)))
+{
+   assert (this);
+
+   /* init random number generator */
+   srand48 (seedval);
+
+   mfprintf (stderr, "Seed: %f\n", (float) drand48());
+}
+
+
 /*********************************   Access   *********************************/
 
 /** @brief Return size of a tetra loop.
@@ -14821,8 +14848,8 @@ nn_scores_get_G_hairpin_loop (const char* seq,
  * @param[in] this Scoring scheme.
  */
 float
-nn_scores_get_G_bulge_stack (const int i1, const int j1,
-                             const int j2, const int i2,
+nn_scores_get_G_bulge_stack (const int bi1, const int bj1,
+                             const int bj2, const int bi2,
                              const unsigned long size,
                              const NN_scores* this)
 {
@@ -14833,14 +14860,14 @@ nn_scores_get_G_bulge_stack (const int i1, const int j1,
 
    if (size == 1)
    {
-      G += nn_scores_get_G_stack (i1, j1, j2, i2, this);
+      G += nn_scores_get_G_stack (bi1, bj1, bj2, bi2, this);
    }
    else
    {
       /* bulge loops larger than 1 get penalty term for non-gc closing
          basepairs */
-      G += this->non_gc_penalty_for_bp[(int)this->bp_idx[i1][j1]];
-      G += this->non_gc_penalty_for_bp[(int)this->bp_idx[j2][i2]];
+      G += this->non_gc_penalty_for_bp[(int)this->bp_idx[bi1][bj1]];
+      G += this->non_gc_penalty_for_bp[(int)this->bp_idx[bj2][bi2]];
    }
 
    return G;
@@ -14854,8 +14881,8 @@ nn_scores_get_G_bulge_stack (const int i1, const int j1,
  * @params[in] this Scoring scheme.
  */
 float
-nn_scores_get_G_bulge_loop (const int i1, const int j1,
-                            const int i2, const int j2,
+nn_scores_get_G_bulge_loop (const int bi1, const int bj1,
+                            const int bi2, const int bj2,
                             const unsigned long size,
                             const NN_scores* this)
 {
@@ -14865,13 +14892,13 @@ nn_scores_get_G_bulge_loop (const int i1, const int j1,
    assert (this->G_bulge_loop);
    assert (this->non_gc_penalty_for_bp);
    assert (this->bp_idx);
-   assert (i1 < sqrtf ((float) this->bp_idx_size));
-   assert (j1 < sqrtf ((float) this->bp_idx_size));
-   assert (i2 < sqrtf ((float) this->bp_idx_size));
-   assert (j2 < sqrtf ((float) this->bp_idx_size));
-   assert (  (unsigned) this->bp_idx[i1][j1] 
+   assert (bi1 < sqrtf ((float) this->bp_idx_size));
+   assert (bj1 < sqrtf ((float) this->bp_idx_size));
+   assert (bi2 < sqrtf ((float) this->bp_idx_size));
+   assert (bj2 < sqrtf ((float) this->bp_idx_size));
+   assert (  (unsigned) this->bp_idx[bi1][bj1] 
            < this->bp_allowed_size);
-   assert (  (unsigned) this->bp_idx[j2][i2] 
+   assert (  (unsigned) this->bp_idx[bj2][bi2] 
            < this->bp_allowed_size);
 
    if (size < this->G_bulge_loop_size)
@@ -14885,94 +14912,94 @@ nn_scores_get_G_bulge_loop (const int i1, const int j1,
                   logf((float) size / (this->G_bulge_loop_size - 1)));
    }
 
-   G += nn_scores_get_G_bulge_stack (i1, j1, j2, i2, size, this);
+   G += nn_scores_get_G_bulge_stack (bi1, bj1, bj2, bi2, size, this);
 
    return G;
 }
 
 /* note: everything given 5' -> 3' direction */
 float
-nn_scores_get_G_internal_2x2_loop (const int i1,
-                                   const int j1,
-                                   const int i1p1,
-                                   const int i2m1,
-                                   const int j2,
-                                   const int i2,
-                                   const int j2p1,
-                                   const int j1m1,
+nn_scores_get_G_internal_2x2_loop (const int bi1,
+                                   const int bj1,
+                                   const int bi1p1,
+                                   const int bi2m1,
+                                   const int bj2,
+                                   const int bi2,
+                                   const int bj2p1,
+                                   const int bj1m1,
                                    const NN_scores* this)
 {
    assert (this);
    assert (this->bp_idx);
    assert (this->G_int22);
-   assert (i1 < sqrtf ((float) this->bp_idx_size));
-   assert (j1 < sqrtf ((float) this->bp_idx_size));
-   assert (i2 < sqrtf ((float) this->bp_idx_size));
-   assert (j2 < sqrtf ((float) this->bp_idx_size));
-   assert ((unsigned)(this->bp_idx[i1][j1]
-                      * this->bp_idx[j2][i2] 
-                      * i1p1
-                      * i2m1
-                      * j2p1
-                      * j1m1)
+   assert (bi1 < sqrtf ((float) this->bp_idx_size));
+   assert (bj1 < sqrtf ((float) this->bp_idx_size));
+   assert (bi2 < sqrtf ((float) this->bp_idx_size));
+   assert (bj2 < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[bi1][bj1]
+                      * this->bp_idx[bj2][bi2] 
+                      * bi1p1
+                      * bi2m1
+                      * bj2p1
+                      * bj1m1)
                       < this->G_int22_size);
 
-   return this->G_int22[(int)this->bp_idx[i1][j1]] /* bp 1 */
-                       [(int)this->bp_idx[j2][i2]] /* bp 2 */
-                       [i1p1][i2m1][j2p1][j1m1];   /* unpaired bases */
+   return this->G_int22[(int)this->bp_idx[bi1][bj1]] /* bp 1 */
+                       [(int)this->bp_idx[bj2][bi2]] /* bp 2 */
+                       [bi1p1][bi2m1][bj2p1][bj1m1];   /* unpaired bases */
 }
 
 float
-nn_scores_get_G_internal_1x2_loop (const int i1,
-                                   const int j1,
-                                   const int i1p1,
-                                   const int j2p1,
-                                   const int j1m1,
-                                   const int j2,
-                                   const int i2,
+nn_scores_get_G_internal_1x2_loop (const int bi1,
+                                   const int bj1,
+                                   const int bi1p1,
+                                   const int bj2p1,
+                                   const int bj1m1,
+                                   const int bj2,
+                                   const int bi2,
                                    const NN_scores* this)
 {
    assert (this);
    assert (this->bp_idx);
    assert (this->G_int21);
-   assert (i1 < sqrtf ((float) this->bp_idx_size));
-   assert (j1 < sqrtf ((float) this->bp_idx_size));
-   assert (i2 < sqrtf ((float) this->bp_idx_size));
-   assert (j2 < sqrtf ((float) this->bp_idx_size));
-   assert ((unsigned)(this->bp_idx[i1][j1]
-                      * this->bp_idx[j2][i2]
-                      * i1p1
-                      * j2p1
-                      * j1m1)
+   assert (bi1 < sqrtf ((float) this->bp_idx_size));
+   assert (bj1 < sqrtf ((float) this->bp_idx_size));
+   assert (bi2 < sqrtf ((float) this->bp_idx_size));
+   assert (bj2 < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[bi1][bj1]
+                      * this->bp_idx[bj2][bi2]
+                      * bi1p1
+                      * bj2p1
+                      * bj1m1)
            < this->G_int21_size);
 
-   return this->G_int21[(int)this->bp_idx[i1][j1]] /* bp 1 */
-                       [(int)this->bp_idx[j2][i2]] /* bp 2 */
-                       [i1p1][j2p1][j1m1];         /* unpaired bases */
+   return this->G_int21[(int)this->bp_idx[bi1][bj1]] /* bp 1 */
+                       [(int)this->bp_idx[bj2][bi2]] /* bp 2 */
+                       [bi1p1][bj2p1][bj1m1];         /* unpaired bases */
 }
 
 float
-nn_scores_get_G_internal_1x1_loop (const int i1,
-                                   const int j1,
-                                   const int i1p1,
-                                   const int j1m1,
-                                   const int i2,
-                                   const int j2,
+nn_scores_get_G_internal_1x1_loop (const int bi1,
+                                   const int bj1,
+                                   const int bi1p1,
+                                   const int bj1m1,
+                                   const int bi2,
+                                   const int bj2,
                                    const NN_scores* this)
 {
    assert (this);
    assert (this->bp_idx);
    assert (this->G_int11);
-   assert (i1 < sqrtf ((float) this->bp_idx_size));
-   assert (j1 < sqrtf ((float) this->bp_idx_size));
-   assert (i2 < sqrtf ((float) this->bp_idx_size));
-   assert (j2 < sqrtf ((float) this->bp_idx_size));
-   assert ((unsigned)(this->bp_idx[i1][j1] * this->bp_idx[j2][i2] * i1p1 * j1m1)
+   assert (bi1 < sqrtf ((float) this->bp_idx_size));
+   assert (bj1 < sqrtf ((float) this->bp_idx_size));
+   assert (bi2 < sqrtf ((float) this->bp_idx_size));
+   assert (bj2 < sqrtf ((float) this->bp_idx_size));
+   assert ((unsigned)(this->bp_idx[bi1][bj1] * this->bp_idx[bj2][bi2] * bi1p1 * bj1m1)
            < this->G_int11_size);
 
-   return this->G_int11[(int)this->bp_idx[i1][j1]] /* bp 1 */
-                       [(int)this->bp_idx[j2][i2]] /* bp 2 */
-                       [i1p1][j1m1];               /* unpaired bases */
+   return this->G_int11[(int)this->bp_idx[bi1][bj1]] /* bp 1 */
+                       [(int)this->bp_idx[bj2][bi2]] /* bp 2 */
+                       [bi1p1][bj1m1];               /* unpaired bases */
 }
 
 float
@@ -14997,15 +15024,15 @@ float
 nn_scores_get_G_internal_loop (const char* seq,
                                const unsigned long size1,
                                const unsigned long size2,
-                               const unsigned long i1,
-                               const unsigned long j1,
-                               const unsigned long i2,
-                               const unsigned long j2,
+                               const unsigned long pi1,
+                               const unsigned long pj1,
+                               const unsigned long pi2,
+                               const unsigned long pj2,
                                const NN_scores* this)
 {
    float G = 0;
    int bp1, bp2;
-   int bi1p, bi2m, bj2p, bj1m;  /* bi1p = seq[i1 + 1] */
+   int bi1p, bi2m, bj2p, bj1m;  /* bi1p = seq[pi1 + 1] */
    unsigned long size;
 
    assert (seq);
@@ -15015,17 +15042,17 @@ nn_scores_get_G_internal_loop (const char* seq,
    assert (this->G_int21);
    assert (this->G_int22);
    assert (this->G_mismatch_interior);
-   assert (i1 < j1);
-   assert (i1 < i2);
-   assert (i2 < j2);
-   assert (j2 < j1);
+   assert (pi1 < pj1);
+   assert (pi1 < pi2);
+   assert (pi2 < pj2);
+   assert (pj2 < pj1);
 
-   bp1 =  (int)this->bp_idx[(int)seq[i1]][(int)seq[j1]];
-   bp2 =  (int)this->bp_idx[(int)seq[j2]][(int)seq[i2]];
-   bi1p = (int)seq[i1 + 1];
-   bi2m = (int)seq[i2 - 1];
-   bj2p = (int)seq[j2 + 1];
-   bj1m = (int)seq[j1 - 1];
+   bp1 =  (int)this->bp_idx[(int)seq[pi1]][(int)seq[pj1]];
+   bp2 =  (int)this->bp_idx[(int)seq[pj2]][(int)seq[pi2]];
+   bi1p = (int)seq[pi1 + 1];
+   bi2m = (int)seq[pi2 - 1];
+   bj2p = (int)seq[pj2 + 1];
+   bj1m = (int)seq[pj1 - 1];
 
    if ((size1 == 1) && (size2 == 1))
    {

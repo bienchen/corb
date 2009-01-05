@@ -343,7 +343,7 @@ secstruct_find_interactions (const unsigned long* pairs,
                              const unsigned long size,
                              SecStruct* this)
 {
-   unsigned long i, p, q, size1, size2, i1, j1, i2, j2;
+   unsigned long i, p, q, size1, size2, pi1, pj1, pi2, pj2;
    unsigned long remains = size;
    int error = 0;
 
@@ -398,37 +398,37 @@ secstruct_find_interactions (const unsigned long* pairs,
                   the same */
                size1 = p - i - 1;
                size2 = pairs[i] - q - 1;
-               i1 = i;
-               j1 = pairs[i];
-               i2 = p;
-               j2 = pairs[p];
+               pi1 = i;
+               pj1 = pairs[i];
+               pi2 = p;
+               pj2 = pairs[p];
                
                if ((size1 == 0) && (size2 == 0))
                {
                   /* stacking pair of base pairs */
-                  StackLoop st = { .i = i1, .j = j1};
+                  StackLoop st = { .i = pi1, .j = pj1};
                   ARRAY_PUSH(this->stack, st, StackLoop,
                              { error = ERR_RNA_ALLOC; });
                }
                else if ((size1 == 0) || (size2 == 0))
                {
                   /* bulge loop */
-                  BulgeLoop bg = { .i1 = i1, .j1 = j1, .i2 = i2, .j2 = j2,
+                  BulgeLoop bg = { .i1 = pi1, .j1 = pj1, .i2 = pi2, .j2 = pj2,
                                    .size = (size1 > size2 ? size1 : size2) };
                   ARRAY_PUSH(this->bulge_loop, bg, BulgeLoop,
                              { error = ERR_RNA_ALLOC; });
                   /*mfprintf (stderr, "Found bulge: Start %lu, %lu, stop: "
-                    "%lu, %lu, size: %lu\n", i1, j1, i2, j2, bg.size);*/
+                    "%lu, %lu, size: %lu\n", pi1, pj1, pi2, pj2, bg.size);*/
                }
                else
                {
                   /* generic internal loop */
-                  IntLoop in = { .i1 = i1, .j1 = j1, .i2 = i2, .j2 = j2,
+                  IntLoop in = { .i1 = pi1, .j1 = pj1, .i2 = pi2, .j2 = pj2,
                                  .size1 = size1, .size2 = size2};
                   ARRAY_PUSH(this->internal_loop, in, IntLoop,
                              { error = ERR_RNA_ALLOC; });
                   /*mfprintf (stderr, "Found internal: Start %lu, %lu, stop: "
-                            "%lu, %lu, size: %lu, %lu\n", i1, j1, i2, j2,
+                            "%lu, %lu, size: %lu, %lu\n", pi1, pj1, pi2, pj2,
                             size1, size2);*/
                }
             }
@@ -717,10 +717,10 @@ secstruct_get_i_size_bulge (const unsigned long i, const SecStruct* this)
  * @param[in]     this Secondary structure.
  */
 void
-secstruct_get_geometry_bulge (unsigned long* i1,
-                              unsigned long* j1,
-                              unsigned long* i2,
-                              unsigned long* j2,
+secstruct_get_geometry_bulge (unsigned long* pi1,
+                              unsigned long* pj1,
+                              unsigned long* pi2,
+                              unsigned long* pj2,
                               unsigned long* size,
                               const unsigned long i,
                               const SecStruct* this)
@@ -728,16 +728,16 @@ secstruct_get_geometry_bulge (unsigned long* i1,
    assert(this);
    assert (ARRAY_NOT_NULL (this->bulge_loop));
    assert (ARRAY_CURRENT (this->bulge_loop) > i);
-   assert(i1);
-   assert(j1);
-   assert(i2);
-   assert(j2);
+   assert(pi1);
+   assert(pj1);
+   assert(pi2);
+   assert(pj2);
    assert(size);
 
-   *i1 = ARRAY_ACCESS(this->bulge_loop, i).i1;
-   *j1 = ARRAY_ACCESS(this->bulge_loop, i).j1;
-   *i2 = ARRAY_ACCESS(this->bulge_loop, i).i2;
-   *j2 = ARRAY_ACCESS(this->bulge_loop, i).j2;
+   *pi1 = ARRAY_ACCESS(this->bulge_loop, i).i1;
+   *pj1 = ARRAY_ACCESS(this->bulge_loop, i).j1;
+   *pi2 = ARRAY_ACCESS(this->bulge_loop, i).i2;
+   *pj2 = ARRAY_ACCESS(this->bulge_loop, i).j2;
    *size = ARRAY_ACCESS(this->bulge_loop, i).size;
 }
 
@@ -766,10 +766,10 @@ secstruct_get_noof_internals (const SecStruct* this)
  * @param[in] this   Secondary structure.
  */
 void
-secstruct_get_geometry_internal (unsigned long* i1,
-                                 unsigned long* j1,
-                                 unsigned long* i2,
-                                 unsigned long* j2,
+secstruct_get_geometry_internal (unsigned long* pi1,
+                                 unsigned long* pj1,
+                                 unsigned long* pi2,
+                                 unsigned long* pj2,
                                  unsigned long* size1,
                                  unsigned long* size2,
                                  const unsigned long i,
@@ -778,18 +778,18 @@ secstruct_get_geometry_internal (unsigned long* i1,
    assert(this);
    assert (ARRAY_NOT_NULL (this->internal_loop));
    assert (ARRAY_CURRENT (this->internal_loop) > i);
-   assert(i1);
-   assert(j1);
+   assert(pi1);
+   assert(pj1);
    assert(size1);
-   assert(i2);
-   assert(j2);
+   assert(pi2);
+   assert(pj2);
    assert(size2);
 
-   *i1    = ARRAY_ACCESS(this->internal_loop, i).i1;
-   *j1    = ARRAY_ACCESS(this->internal_loop, i).j1;
+   *pi1    = ARRAY_ACCESS(this->internal_loop, i).i1;
+   *pj1    = ARRAY_ACCESS(this->internal_loop, i).j1;
    *size1 = ARRAY_ACCESS(this->internal_loop, i).size1;
-   *i2    = ARRAY_ACCESS(this->internal_loop, i).i2;
-   *j2    = ARRAY_ACCESS(this->internal_loop, i).j2;
+   *pi2    = ARRAY_ACCESS(this->internal_loop, i).i2;
+   *pj2    = ARRAY_ACCESS(this->internal_loop, i).j2;
    *size2 = ARRAY_ACCESS(this->internal_loop, i).size2;
 }
 

@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-01-05.23
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -16,6 +16,10 @@ dnl GNU General Public License for more details.
 dnl 
 dnl You should have received a copy of the GNU General Public License
 dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
+
+################################################################################
+#######     Internal macros: Macros only to be used within this file     #######
+################################################################################
 
 # _CRB_SET_CFLAGS_WARNINGS_GCC(compiler, variable)
 # ---------------------
@@ -68,6 +72,24 @@ AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_SUNCC],
 ]dnl# macro-body
         )
 
+# _CRB_SET_CFLAGS_TO_INVOKE_POSIX
+# ---------------------------
+# Set the the macro _XOPEN_SOURCE to a value of 600. This invokes all POSIX
+# compliant functions (ISO C) plus the X/Open System Interfaces extensions
+# (XSI). The macro has to be defined at the compiler level since it is
+# required to be set before any header is included. See
+# http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+# for further informations.
+AC_DEFUN([_CRB_SET_CFLAGS_TO_INVOKE_POSIX],
+[dnl# macro-body
+ CFLAGS="${CFLAGS} -D_XOPEN_SOURCE=600"
+]dnl# macro-body
+        )
+
+################################################################################
+#########        Public macros: Macros to set certain CFLAGS           #########
+################################################################################
+
 # CRB_SET_CFLAGS_WARNINGS
 # -------------------
 # Set warning-flags for the compiler. The options to request or suppress
@@ -85,10 +107,14 @@ AC_DEFUN([CRB_SET_CFLAGS_WARNINGS],
          [cc],  [_CRB_SET_CFLAGS_WARNINGS_SUNCC([$CC], [_crb_ver])],
          [_crb_ver="${CC} unknown, no automatic development flag setting"]
         )dnl# AS_CASE
+ dnl# _XOPEN_SOURCE is not a compiler option but a macro to be defined for all
+ dnl# compilers
+ _CRB_SET_CFLAGS_TO_INVOKE_POSIX
  AC_MSG_RESULT([$_crb_ver])
 ]dnl# macro-body
         )
  
+
 dnl# Local variables:
 dnl# eval: (add-hook 'write-file-hooks 'time-stamp)
 dnl# time-stamp-start: "Last modified: "

@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-01-02.22
+# Last modified: 2009-01-05.10
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -58,7 +58,7 @@ my $U = 3;
 my @ALPHA = ($A, $C, $G, $U);
 my @BASEPAIRS = ('cg', 'gc', 'gu', 'ug', 'au', 'ua');
 my @BASES = ('a', 'c', 'g', 'u');
-my $UNDEF_ENERGY = 'INT_UNDEF';
+my $UNDEF_ENERGY = 'FLOAT_UNDEF';
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
@@ -217,6 +217,7 @@ sub read_en_matrix_stream_offbone(\* $)
     my ($FH, $rows) = @_;
     my $i = 1;
     my @table = ();
+    my ($a, $c, $g, $u);
 
     while (<$FH>)
     {
@@ -1165,10 +1166,19 @@ sub output_mismatch_interior_energies(\%)
             foreach (@ALPHA)
             {
                 $j = $_;
-                push @out, sprintf("   this->G_mismatch_interior[bp1][".
-                       $BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
-                       $dig, ${$param_hashref->{$bp1}}[$i][$j]);
-                
+#                if (${$param_hashref->{$bp1}}[$i][$j] != 0)
+#                {
+                    push @out, sprintf("   this->G_mismatch_interior[bp1][".
+                                 $BASES[$i]."][".$BASES[$j]."] = %*i - offset;",
+                                       $dig, ${$param_hashref->{$bp1}}[$i][$j]);
+#                }
+#                else
+#                {
+#                    push @out, sprintf("   this->G_mismatch_interior[bp1][".
+#                                $BASES[$i]."][".$BASES[$j]."] = %*s - offset;",
+#                                       $dig, "0.0f");
+#                }
+
                 push @out, " /* ".uc($BASES[$i]).uc($BASES[$j])." */\n";
             }
             push @out, "\n";

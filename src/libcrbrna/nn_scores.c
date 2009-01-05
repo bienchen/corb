@@ -61,7 +61,7 @@
 #define D_INT21 5               /* dimensionality of G_int21 table */
 #define D_INT22 6               /* dimensionality of G_int22 table */
 #define D_TL   6                /* size of a tetraloop + closing bp */
-#define NN_LXC37 107.856        /* ask marco about this */
+#define NN_LXC37 107.856f       /* ask marco about this */
 #define NN_ML_OFFSET 340
 #define NN_ML_UNPAIRED 0
 #define NN_ML_STEMS 40
@@ -69,35 +69,35 @@
 #define NN_NINIO_MAX 300
 
 struct NN_scores {
-      /*c*/int** G_stack;                         /* stacking energies */
+      /*c*/float** G_stack;                         /* stacking energies */
       unsigned long G_stack_size;
-      /*c*/int** G_mm_stack;                     /* stacks with one mismatch */
+      /*c*/float** G_mm_stack;                   /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
-      /*c*/int* G_hairpin_loop;                   /* hairpin loops */
+      /*c*/float* G_hairpin_loop;                   /* hairpin loops */
       unsigned long G_hairpin_loop_size;
-      /*c*/int*** G_mismatch_hairpin;        /* hairpin loop closing bp */
+      /*c*/float*** G_mismatch_hairpin;        /* hairpin loop closing bp */
       unsigned long G_mismatch_hairpin_size;
-      /*c*/int* non_gc_penalty_for_bp;         /* penalty for closing non-GC */
-      /*c*/char** tetra_loop;               /* sorted list of possible loops */
-      /*c*/int* G_tetra_loop;                     /* scores */
+      /*c*/float* non_gc_penalty_for_bp;      /* penalty for closing non-GC */
+      char** tetra_loop;               /* sorted list of possible loops */
+      /*c*/float* G_tetra_loop;                     /* scores */
       unsigned long tetra_loop_size;
-      /*c*/int* G_bulge_loop;                     /* bulge loops */
+      /*c*/float* G_bulge_loop;                     /* bulge loops */
       unsigned long G_bulge_loop_size;
       /* internal loops */
-      /*c*/int* G_internal_loop;                  /* generic loops */
+      /*c*/float* G_internal_loop;                  /* generic loops */
       unsigned long G_internal_loop_size;
-      /*c*/int**** G_int11;                       /* 1x1 loops */
+      /*c*/float**** G_int11;                       /* 1x1 loops */
       unsigned long G_int11_size;
-      /*c*/int***** G_int21;                      /* 2x1 loops */
+      /*c*/float***** G_int21;                      /* 2x1 loops */
       unsigned long G_int21_size;
-      /*c*/int****** G_int22;                      /* 2x2 loops */
+      /*c*/float****** G_int22;                      /* 2x2 loops */
       unsigned long G_int22_size;
-      /*c*/int*** G_mismatch_interior;           /* interior loop closing bp */
+      /*c*/float*** G_mismatch_interior;         /* interior loop closing bp */
       unsigned long G_mismatch_interior_size;
       /* internal loops */
-      /*c*/int** G_dangle5;                    /* 5' dangling end, bp + base */
+      /*c*/float** G_dangle5;                  /* 5' dangling end, bp + base */
       unsigned long G_dangle5_size;
-      /*c*/int** G_dangle3;                    /* 3' dangling end, bp + base */
+      /*c*/float** G_dangle3;                 /* 3' dangling end, bp + base */
       unsigned long G_dangle3_size;
       char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
@@ -192,7 +192,7 @@ allocate_init_bp_idx (unsigned long size,
                       char a, char u, char g, char c, NN_scores* this,
                       const char* file, const int line)
 {
-   unsigned long i;
+   char i;
 
    this->bp_idx = (char**) XOBJ_MALLOC_2D (size, size, sizeof (**this->bp_idx),
                                            file, line);
@@ -202,8 +202,8 @@ allocate_init_bp_idx (unsigned long size,
    }
    this->bp_idx_size = size * size;
 
-   /* place indeces of allowed base pairs at the begining og the table */
-   for (i = 0; i < this->bp_allowed_size; i++)
+   /* place indeces of allowed base pairs at the begining of the table */
+   for (i = 0; (unsigned long) i < this->bp_allowed_size; i++)
    {
       this->bp_idx[(int) this->bp_allowed[i][0]]
                   [(int) this->bp_allowed[i][1]] = i;
@@ -234,7 +234,7 @@ allocate_init_bp_idx (unsigned long size,
 
 static int
 allocate_init_G_stack (char a, char u, char g, char c,
-                       unsigned long offset,
+                       float offset,
                        NN_scores* this,
                        const char* file, const int line)
 {
@@ -243,21 +243,16 @@ allocate_init_G_stack (char a, char u, char g, char c,
    this->G_stack_size = this->bp_allowed_size;
    
    /* allocate matrix */
-   this->G_stack = (int**) XOBJ_MALLOC_2D (this->G_stack_size,
-                                           this->G_stack_size,
-                                           sizeof (**this->G_stack),
-                                           file, line);
+   this->G_stack = (float**) XOBJ_MALLOC_2D (this->G_stack_size,
+                                             this->G_stack_size,
+                                             sizeof (**this->G_stack),
+                                             file, line);
    this->G_stack_size *= this->G_stack_size;
    
    if (this->G_stack == NULL)
    {
       return 1;
    }
-
-   /*for (i = 0; i < this->G_stack_size; i++)
-   {
-      this->G_stack[0][i] = 0;
-   }*/
 
    /* BEGIN_STACKING_ENERGIES */
    /* CG CG */
@@ -484,7 +479,7 @@ allocate_init_G_stack (char a, char u, char g, char c,
 static int
 allocate_init_G_mm_stack_size (int a, int u, int g, int c,
                                unsigned long size,
-                               unsigned long offset,
+                               float offset,
                                NN_scores* this,
                                const char* file, const int line)
 {
@@ -492,10 +487,10 @@ allocate_init_G_mm_stack_size (int a, int u, int g, int c,
 
    this->G_mm_stack_size = size * size;
    
-   this->G_mm_stack = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size,
-                                              this->G_mm_stack_size,
-                                              sizeof (**this->G_mm_stack),
-                                              file, line);
+   this->G_mm_stack = (float**) XOBJ_MALLOC_2D (this->bp_allowed_size,
+                                                this->G_mm_stack_size,
+                                                sizeof (**this->G_mm_stack),
+                                                file, line);
    this->G_mm_stack_size *= this->bp_allowed_size;
 
    if (this->G_mm_stack == NULL)
@@ -837,23 +832,23 @@ allocate_init_G_mm_stack_size (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_hairpin_loop (unsigned long offset, NN_scores* this,
+allocate_init_hairpin_loop (float offset, NN_scores* this,
                             const char* file, const int line)
 {
 
    this->G_hairpin_loop_size = 31;
-   this->G_hairpin_loop = XOBJ_MALLOC (  this->G_hairpin_loop_size
-                                       * sizeof (this->G_hairpin_loop[0]),
-                                         file, line);
+   this->G_hairpin_loop = (float*) XOBJ_MALLOC (  this->G_hairpin_loop_size
+                                            * sizeof (this->G_hairpin_loop[0]),
+                                                  file, line);
    if (this->G_hairpin_loop == NULL)
    {
       return 1;        
    }
 
    /* BEGIN_HAIRPINS */
-   this->G_hairpin_loop[ 0] = INT_UNDEF;
-   this->G_hairpin_loop[ 1] = INT_UNDEF;
-   this->G_hairpin_loop[ 2] = INT_UNDEF;
+   this->G_hairpin_loop[ 0] = FLOAT_UNDEF;
+   this->G_hairpin_loop[ 1] = FLOAT_UNDEF;
+   this->G_hairpin_loop[ 2] = FLOAT_UNDEF;
    this->G_hairpin_loop[ 3] = 570 - offset;
    this->G_hairpin_loop[ 4] = 560 - offset;
    this->G_hairpin_loop[ 5] = 560 - offset;
@@ -890,7 +885,7 @@ allocate_init_hairpin_loop (unsigned long offset, NN_scores* this,
 static int
 allocate_init_mismatch_hairpin (int a, int u, int g, int c,
                                 const unsigned long no_of_b,
-                                unsigned long offset,
+                                float offset,
                                 NN_scores* this,
                                 const char* file, const int line)
 {   
@@ -898,10 +893,10 @@ allocate_init_mismatch_hairpin (int a, int u, int g, int c,
 
    /* allocate memory */
    this->G_mismatch_hairpin
-      = (int***) XOBJ_MALLOC_ND(sizeof (***this->G_mismatch_hairpin),
-                                D_MM_H,
-                                file, line,
-                                this->bp_allowed_size, no_of_b, no_of_b);
+      = (float***) XOBJ_MALLOC_ND(sizeof (***this->G_mismatch_hairpin),
+                                  D_MM_H,
+                                  file, line,
+                                  this->bp_allowed_size, no_of_b, no_of_b);
    if (this->G_mismatch_hairpin == NULL)
    {
       return 1;        
@@ -1049,7 +1044,7 @@ allocate_init_mismatch_hairpin (int a, int u, int g, int c,
 static int
 allocate_init_mismatch_interior (int a, int u, int g, int c,
                                  const unsigned long no_of_b,
-                                 unsigned long offset,
+                                 float offset,
                                  NN_scores* this,
                                  const char* file, const int line)
 {
@@ -1057,10 +1052,10 @@ allocate_init_mismatch_interior (int a, int u, int g, int c,
 
    /* allocate memory */
    this->G_mismatch_interior
-      = (int***) XOBJ_MALLOC_ND(sizeof (***this->G_mismatch_interior),
-                                D_MM_I,
-                                file, line,
-                                this->bp_allowed_size, no_of_b, no_of_b);
+      = (float***) XOBJ_MALLOC_ND(sizeof (***this->G_mismatch_interior),
+                                  D_MM_I,
+                                  file, line,
+                                  this->bp_allowed_size, no_of_b, no_of_b);
    if (this->G_mismatch_interior == NULL)
    {
       return 1;        
@@ -1206,7 +1201,7 @@ allocate_init_mismatch_interior (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_internal_loop (unsigned long offset, NN_scores* this,
+allocate_init_internal_loop (float offset, NN_scores* this,
                              const char* file, const int line)
 {
 
@@ -1220,8 +1215,8 @@ allocate_init_internal_loop (unsigned long offset, NN_scores* this,
    }
 
    /* BEGIN_INTERNALS */
-   this->G_internal_loop[ 0] = INT_UNDEF;
-   this->G_internal_loop[ 1] = INT_UNDEF;
+   this->G_internal_loop[ 0] = FLOAT_UNDEF;
+   this->G_internal_loop[ 1] = FLOAT_UNDEF;
    this->G_internal_loop[ 2] = 410 - offset;
    this->G_internal_loop[ 3] = 510 - offset;
    this->G_internal_loop[ 4] = 170 - offset;
@@ -1259,20 +1254,20 @@ allocate_init_internal_loop (unsigned long offset, NN_scores* this,
 static int
 allocate_init_int11 (const int a, const int u, const int g, const int c,
                      const unsigned long no_of_b,
-                     unsigned long offset,
+                     float offset,
                      NN_scores* this,
                      const char* file, const int line)
 {
    unsigned long bp1, bp2;
 
    /* allocate memory */
-   this->G_int11 = (int****) XOBJ_MALLOC_ND(sizeof (****this->G_int11),
-                                            D_INT11,
-                                            file, line,
-                                            this->bp_allowed_size,
-                                            this->bp_allowed_size,
-                                            no_of_b,
-                                            no_of_b);
+   this->G_int11 = (float****) XOBJ_MALLOC_ND(sizeof (****this->G_int11),
+                                              D_INT11,
+                                              file, line,
+                                              this->bp_allowed_size,
+                                              this->bp_allowed_size,
+                                              no_of_b,
+                                              no_of_b);
    if (this->G_int11 == NULL)
    {
       return 1;        
@@ -1956,14 +1951,14 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
 
 static int
 allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
-                                     unsigned long offset,
+                                     float offset,
                                      NN_scores* this,
                                      const char* file, const int line)
 {
-   this->non_gc_penalty_for_bp = (int*) XOBJ_MALLOC (
-                                        sizeof (*this->non_gc_penalty_for_bp)
-                                        * this->bp_allowed_size,
-                                        file, line);
+   this->non_gc_penalty_for_bp = /*(float*)*/ XOBJ_MALLOC (
+      sizeof (*this->non_gc_penalty_for_bp)
+      * this->bp_allowed_size,
+      file, line);
    if (this->non_gc_penalty_for_bp == NULL)
    {
       return 1;
@@ -1980,7 +1975,7 @@ allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_bulge_loop (unsigned long offset, NN_scores* this,
+allocate_init_bulge_loop (float offset, NN_scores* this,
                           const char* file, const int line)
 {
 
@@ -1994,7 +1989,7 @@ allocate_init_bulge_loop (unsigned long offset, NN_scores* this,
    }
 
    /* BEGIN_BULGES */
-   this->G_bulge_loop[ 0] = INT_UNDEF;
+   this->G_bulge_loop[ 0] = FLOAT_UNDEF;
    this->G_bulge_loop[ 1] = 380 - offset;
    this->G_bulge_loop[ 2] = 280 - offset;
    this->G_bulge_loop[ 3] = 320 - offset;
@@ -2033,21 +2028,21 @@ allocate_init_bulge_loop (unsigned long offset, NN_scores* this,
 static int
 allocate_init_int21 (const int a, const int u, const int g, const int c,
                      const unsigned long no_of_b,
-                     unsigned long offset,
+                     float offset,
                      NN_scores* this,
                      const char* file, const int line)
 {
    unsigned long bp1, bp2;
 
    /* allocate memory */
-   this->G_int21 = (int*****) XOBJ_MALLOC_ND(sizeof (*****this->G_int21),
-                                             D_INT21,
-                                             file, line,
-                                             this->bp_allowed_size,
-                                             this->bp_allowed_size,
-                                             no_of_b,
-                                             no_of_b,
-                                             no_of_b);
+   this->G_int21 = (float*****) XOBJ_MALLOC_ND(sizeof (*****this->G_int21),
+                                               D_INT21,
+                                               file, line,
+                                               this->bp_allowed_size,
+                                               this->bp_allowed_size,
+                                               no_of_b,
+                                               no_of_b,
+                                               no_of_b);
    if (this->G_int21 == NULL)
    {
       return 1;        
@@ -4461,22 +4456,22 @@ allocate_init_int21 (const int a, const int u, const int g, const int c,
 static int
 allocate_init_int22 (const int a, const int u, const int g, const int c,
                      const unsigned long no_of_b,
-                     unsigned long offset,
+                     float offset,
                      NN_scores* this,
                      const char* file, const int line)
 {
    unsigned long bp1, bp2;
 
    /* allocate memory */
-   this->G_int22 = (int******) XOBJ_MALLOC_ND(sizeof (******this->G_int22),
-                                              D_INT22,
-                                              file, line,
-                                              this->bp_allowed_size,
-                                              this->bp_allowed_size,
-                                              no_of_b,
-                                              no_of_b,
-                                              no_of_b,
-                                              no_of_b);
+   this->G_int22 = (float******) XOBJ_MALLOC_ND(sizeof (******this->G_int22),
+                                                D_INT22,
+                                                file, line,
+                                                this->bp_allowed_size,
+                                                this->bp_allowed_size,
+                                                no_of_b,
+                                                no_of_b,
+                                                no_of_b,
+                                                no_of_b);
    if (this->G_int22 == NULL)
    {
       return 1;        
@@ -13803,11 +13798,11 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
 static int
 allocate_init_dangle5 (const int a, const int u, const int g, const int c, 
                        const unsigned long size,
-                       unsigned long offset,
+                       float offset,
                        NN_scores* this,
                        const char* file, const int line)
 {
-   this->G_dangle5 = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
+   this->G_dangle5 = (float**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
                                              sizeof (**this->G_dangle5),
                                              file, line);
 
@@ -13863,13 +13858,13 @@ allocate_init_dangle5 (const int a, const int u, const int g, const int c,
 static int
 allocate_init_dangle3 (const int a, const int u, const int g, const int c, 
                        const unsigned long size,
-                       unsigned long offset,
+                       float offset,
                        NN_scores* this,
                        const char* file, const int line)
 {
-   this->G_dangle3 = (int**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
-                                             sizeof (**this->G_dangle3),
-                                             file, line);
+   this->G_dangle3 = (float**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
+                                               sizeof (**this->G_dangle3),
+                                               file, line);
 
    this->G_dangle3_size = this->bp_allowed_size * size;
 
@@ -13926,7 +13921,7 @@ tetra_loop_swap_entries (unsigned long src, unsigned long dest,
 {
    unsigned long i;
    char tmp[D_TL];
-   int G_tmp;
+   float G_tmp;
    char* ctmp;
 
    /* copy scores first */
@@ -14024,7 +14019,7 @@ allocate_init_tetra_loop (const char a,
                           const char u,
                           const char g,
                           const char c,
-                          unsigned long offset,
+                          float offset,
                           NN_scores* this,
                           const char* file, const int line)
 {
@@ -14039,7 +14034,7 @@ allocate_init_tetra_loop (const char a,
       return 1;
    }
 
-   this->G_tetra_loop = (int*) XOBJ_MALLOC (sizeof (*this->G_tetra_loop)
+   this->G_tetra_loop = (float*) XOBJ_MALLOC (sizeof (*this->G_tetra_loop)
                                             * this->tetra_loop_size,
                                             file, line);
 
@@ -14227,7 +14222,7 @@ allocate_init_tetra_loop (const char a,
  * @param[in] line fill with calling line.
  */
 NN_scores*
-nn_scores_new_init (unsigned long offset, Alphabet* sigma,
+nn_scores_new_init (float offset, Alphabet* sigma,
                     const char* file, const int line)
 {
    NN_scores* this;
@@ -14504,7 +14499,7 @@ nn_scores_get_allowed_basepair (const unsigned i,
  * @param[in] j 3' pairing partner.
  * @param[in] this Scoring scheme
  */
-int
+float
 nn_scores_get_G_non_gc_penalty_for_bp (const int i, const int j,
                                        const NN_scores* this)
 {
@@ -14517,7 +14512,7 @@ nn_scores_get_G_non_gc_penalty_for_bp (const int i, const int j,
    return this->non_gc_penalty_for_bp[(int)this->bp_idx[i][j]];
 }
 
-int
+float
 nn_scores_get_G_dangle5 (const int i, const int j, const int im1,
                          const NN_scores* this)
 {
@@ -14531,7 +14526,7 @@ nn_scores_get_G_dangle5 (const int i, const int j, const int im1,
    return this->G_dangle5[(int)this->bp_idx[i][j]][im1];
 }
 
-int
+float
 nn_scores_get_G_dangle3 (const int i, const int j, const int jp1,
                          const NN_scores* this)
 {
@@ -14545,7 +14540,7 @@ nn_scores_get_G_dangle3 (const int i, const int j, const int jp1,
    return this->G_dangle3[(int)this->bp_idx[i][j]][jp1];
 }
 
-int
+float
 nn_scores_get_G_extloop_multiloop (const char* seq,
                                    const unsigned long unpaired,
                                    const unsigned long nstems,
@@ -14558,7 +14553,7 @@ nn_scores_get_G_extloop_multiloop (const char* seq,
                                    const NN_scores* scheme)
 {
    unsigned long i;
-   int G = 0;
+   float G = 0;
 
    assert (scheme);
    assert (scheme->non_gc_penalty_for_bp);
@@ -14624,9 +14619,9 @@ nn_scores_get_G_extloop_multiloop (const char* seq,
  * @params[in] ip1 i+1 component of the downstream pair.
  * @params[in] scheme The scoring scheme.
  */
-int
-nn_scores_get_G_stack (const char i, const char j,
-                       const char jm1, const char ip1,
+float
+nn_scores_get_G_stack (const int i, const int j,
+                       const int jm1, const int ip1,
                        const NN_scores* scheme)
 {
    assert (scheme);
@@ -14636,13 +14631,13 @@ nn_scores_get_G_stack (const char i, const char j,
    assert (j < sqrtf ((float) scheme->bp_idx_size));
    assert (ip1 < sqrtf ((float) scheme->bp_idx_size));
    assert (jm1 < sqrtf ((float) scheme->bp_idx_size));
-   assert (scheme->bp_idx[(int)i][(int)j] 
+   assert (scheme->bp_idx[i][j] 
            < sqrtf ((float) scheme->G_stack_size));
-   assert (  scheme->bp_idx[(int)jm1][(int)ip1]
+   assert (  scheme->bp_idx[jm1][ip1]
              < sqrtf ((float) scheme->G_stack_size));
    
-   return scheme->G_stack[(int) scheme->bp_idx[(int)i][(int)j]]
-                         [(int) scheme->bp_idx[(int)jm1][(int)ip1]];
+   return scheme->G_stack[(int) scheme->bp_idx[i][j]]
+                         [(int) scheme->bp_idx[jm1][ip1]];
 }
 
 /** @brief Return the mismatch stacking score for a set of bases.
@@ -14653,7 +14648,7 @@ nn_scores_get_G_stack (const char i, const char j,
  * @params[in] l position i+1.
  * @params[in] scheme The scoring scheme.
  */
-int
+float
 nn_scores_get_G_mm_stack (const char i, const char j,
                           const char k, const char l,
                           const NN_scores* scheme)
@@ -14699,7 +14694,7 @@ tetra_loop_cmp_seq (const char* seq,
  * @param[in] i i component of the closing base pair.
  * @param[in] this scoring sceme.
  */
-int
+float
 nn_scores_get_G_tetra_loop (const char* seq,
                             const unsigned long i,
                             const NN_scores* this)
@@ -14753,12 +14748,13 @@ nn_scores_get_G_tetra_loop (const char* seq,
  * @param[in] size Loop size.
  * @param[in] this Scores.
  */
-int nn_scores_get_G_hairpin_mismatch (const int i,
-                                      const int j,
-                                      const int ip1,
-                                      const int jm1,
-                                      const unsigned long size,
-                                      const NN_scores* this)
+float
+nn_scores_get_G_hairpin_mismatch (const int i,
+                                  const int j,
+                                  const int ip1,
+                                  const int jm1,
+                                  const unsigned long size,
+                                  const NN_scores* this)
 {
 
    /* mismatch penalty for the mismatch interior to the closing basepair of
@@ -14777,14 +14773,14 @@ int nn_scores_get_G_hairpin_mismatch (const int i,
  * @params[in] size Length of the loop (unpaired bases only).
  * @params[in] this Scoring scheme.
  */
-int
+float
 nn_scores_get_G_hairpin_loop (const char* seq,
                               const unsigned long i,
                               const unsigned long j,
                               const unsigned long size,
                               const NN_scores* this)
 {
-   int G = 0;
+   float G = 0;
 
    assert (seq);
    assert (this);
@@ -14797,7 +14793,7 @@ nn_scores_get_G_hairpin_loop (const char* seq,
    else
    {
       G += this->G_hairpin_loop[this->G_hairpin_loop_size - 1]
-         + (int) (NN_LXC37 
+         + /*(int)*/ (NN_LXC37 
                   * logf((float) size / (this->G_hairpin_loop_size - 1)));
    }
 
@@ -14824,13 +14820,13 @@ nn_scores_get_G_hairpin_loop (const char* seq,
  * @param[in] size Size of the loop.
  * @param[in] this Scoring scheme.
  */
-int
+float
 nn_scores_get_G_bulge_stack (const int i1, const int j1,
                              const int j2, const int i2,
                              const unsigned long size,
                              const NN_scores* this)
 {
-   int G = 0;
+   float G = 0;
  
    assert (this);
    assert (this->non_gc_penalty_for_bp);
@@ -14857,13 +14853,13 @@ nn_scores_get_G_bulge_stack (const int i1, const int j1,
  * @params[in] size Length of the loop (unpaired bases only).
  * @params[in] this Scoring scheme.
  */
-int
+float
 nn_scores_get_G_bulge_loop (const int i1, const int j1,
                             const int i2, const int j2,
                             const unsigned long size,
                             const NN_scores* this)
 {
-   int G = 0;
+   float G = 0;
 
    assert (this);
    assert (this->G_bulge_loop);
@@ -14894,59 +14890,8 @@ nn_scores_get_G_bulge_loop (const int i1, const int j1,
    return G;
 }
 
-/* int */
-/* nn_scores_get_G_bulge_loop (const char* seq, */
-/*                             const unsigned long i1, */
-/*                             const unsigned long j1, */
-/*                             const unsigned long i2, */
-/*                             const unsigned long j2, */
-/*                             const unsigned long size, */
-/*                             const NN_scores* this) */
-/* { */
-/*    int G = 0; */
-
-/*    assert (seq); */
-/*    assert (this); */
-/*    assert (this->G_bulge_loop); */
-/*    assert (this->non_gc_penalty_for_bp); */
-/*    assert (i1 < j1); */
-/*    assert (i2 < j2); */
-
-/*    if (size < this->G_bulge_loop_size) */
-/*    { */
-/*       G += this->G_bulge_loop[size]; */
-/*    } */
-/*    else */
-/*    { */
-/*       G += this->G_bulge_loop[this->G_bulge_loop_size - 1] */
-/*          + (int) (NN_LXC37 * */
-/*                   logf((float) size / (this->G_bulge_loop_size - 1))); */
-/*    } */
-
-/* /\*    if (size == 1) *\/ */
-/* /\*    { *\/ */
-/* /\*       G += nn_scores_get_G_stack (seq[i1], seq[j1], seq[j2], seq[i2], this); *\/ */
-/* /\*    } *\/ */
-/* /\*    else *\/ */
-/* /\*    { *\/ */
-/* /\*       /\\* bulge loops larger than 1 get penalty term for non-gc closing *\/ */
-/* /\*          basepairs *\\/ *\/ */
-/* /\*       G += this->non_gc_penalty_for_bp[ *\/ */
-/* /\*          (int)this->bp_idx[(int)seq[i1]][(int)seq[j1]]]; *\/ */
-/* /\*       G += this->non_gc_penalty_for_bp[ *\/ */
-/* /\*          (int)this->bp_idx[(int)seq[j2]][(int)seq[i2]]]; *\/ */
-/* /\*    } *\/ */
-
-/*    G += nn_scores_get_G_bulge_stack ((int)seq[i1], (int)seq[j1], */
-/*                                      (int)seq[j2], (int)seq[i2], */
-/*                                      size, */
-/*                                      this); */
-
-/*    return G; */
-/* } */
-
 /* note: everything given 5' -> 3' direction */
-int
+float
 nn_scores_get_G_internal_2x2_loop (const int i1,
                                    const int j1,
                                    const int i1p1,
@@ -14977,7 +14922,7 @@ nn_scores_get_G_internal_2x2_loop (const int i1,
                        [i1p1][i2m1][j2p1][j1m1];   /* unpaired bases */
 }
 
-int
+float
 nn_scores_get_G_internal_1x2_loop (const int i1,
                                    const int j1,
                                    const int i1p1,
@@ -15006,7 +14951,7 @@ nn_scores_get_G_internal_1x2_loop (const int i1,
                        [i1p1][j2p1][j1m1];         /* unpaired bases */
 }
 
-int
+float
 nn_scores_get_G_internal_1x1_loop (const int i1,
                                    const int j1,
                                    const int i1p1,
@@ -15030,7 +14975,7 @@ nn_scores_get_G_internal_1x1_loop (const int i1,
                        [i1p1][j1m1];               /* unpaired bases */
 }
 
-int
+float
 nn_scores_get_G_mismatch_interior (const int i,
                                    const int j,
                                    const int ip,
@@ -15048,7 +14993,7 @@ nn_scores_get_G_mismatch_interior (const int i,
    return this->G_mismatch_interior[(int)this->bp_idx[i][j]][ip][jm];
 }
 
-int
+float
 nn_scores_get_G_internal_loop (const char* seq,
                                const unsigned long size1,
                                const unsigned long size2,
@@ -15058,7 +15003,7 @@ nn_scores_get_G_internal_loop (const char* seq,
                                const unsigned long j2,
                                const NN_scores* this)
 {
-   int G = 0;
+   float G = 0;
    int bp1, bp2;
    int bi1p, bi2m, bj2p, bj1m;  /* bi1p = seq[i1 + 1] */
    unsigned long size;
@@ -15274,7 +15219,7 @@ nn_scores_fprintf_G_stack (FILE* stream,
 {
    unsigned long i, j;
    int d5, u5, d3, u3;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 2;
    unsigned long matrix_edge;
@@ -15375,7 +15320,7 @@ nn_scores_fprintf_G_stack (FILE* stream,
             u3 = scheme->bp_allowed[j][0];
             d3 = scheme->bp_allowed[j][1];
 
-            msprintf (string, "%*d", rprec,
+            msprintf (string, "%*.0f", rprec,
                       scheme->G_stack[(int) scheme->bp_idx[u5][d5]]
                                      [(int) scheme->bp_idx[u3][d3]]);
             string += rprec;
@@ -15404,7 +15349,7 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
 {
    unsigned long i, j, k;
    int d, u;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 2;
    unsigned long matrix_rows;
@@ -15508,7 +15453,7 @@ nn_scores_fprintf_mm_G_stack (FILE* stream,
             msprintf (string, " | ");
             string += 3;
             
-            msprintf (string, "%*d", rprec,
+            msprintf (string, "%*.0f", rprec,
                       scheme->G_mm_stack[(int) scheme->bp_idx[u][d]]
                                      [(int) scheme->bp_idx[j][k]]);
             string += rprec;
@@ -15535,7 +15480,8 @@ void
 nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
 {
    unsigned long i;
-   int rprec, rprec_idx, tmp, pline_width = 0;
+   int rprec, rprec_idx, pline_width = 1;
+   float tmp;
    char* string;
    char* string_start;
    char* en_undef;
@@ -15548,26 +15494,21 @@ nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
    {
       rprec = 0;
       tmp = scheme->G_hairpin_loop[i];
-      if (tmp == INT_UNDEF)
+
+      if (tmp < FLOAT_UNDEF)
       {
-         tmp = 0;
+         if (tmp < 0)
+         {
+            tmp *= (-1);
+            rprec++;
+         }
+         
+         if (tmp > 0)
+         {
+            rprec += floorf (log10f ((float) tmp) + 1);
+         }
       }
 
-      if (tmp < 0)
-      {
-         tmp *= (-1);
-         rprec++;
-      }
-      
-      if (tmp > 0)
-      {
-         rprec += floorf (log10f ((float) tmp) + 1);
-      }
-      else
-      {
-         rprec += 1;
-      }
-      
       if (rprec > pline_width) 
       {
          pline_width = rprec;
@@ -15611,13 +15552,13 @@ nn_scores_fprintf_G_hairpin_loop (FILE* stream, const NN_scores* scheme)
       msprintf (string, ": ");
       string+= 2;
 
-      if (scheme->G_hairpin_loop[i] == INT_UNDEF)
+      if (scheme->G_hairpin_loop[i] < FLOAT_UNDEF)
       {
-         msprintf (string, "%s", en_undef);         
+         msprintf (string, "%*.0f", rprec, scheme->G_hairpin_loop[i]);  
       }
       else
       {
-         msprintf (string, "%*i", rprec, scheme->G_hairpin_loop[i]);
+         msprintf (string, "%s", en_undef);
       }
       string+= rprec;
 
@@ -15645,7 +15586,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
                                       const Alphabet* sigma)
 {
    unsigned long i, j, k;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 2;
    unsigned long x;             /* 3' base of loop pair */
@@ -15683,7 +15624,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
             /* get no. of digits */
             if (tmp > 0)
             {
-               rprec += floorf (log10f ((float) tmp) + 1);
+               rprec += floorf (log10f (tmp) + 1);
             }
             else
             {
@@ -15761,7 +15702,7 @@ nn_scores_fprintf_G_mismatch_hairpin (FILE* stream,
          string++;
          for (k = 0; k < x; k++)
          {
-            msprintf (string, " | %*i", rprec,
+            msprintf (string, " | %*.0f", rprec,
                       scheme->G_mismatch_hairpin[i][j][k]);
             string += rprec;
             string += 3;
@@ -15788,7 +15729,8 @@ void
 nn_scores_fprintf_G_bulge_loop (FILE* stream, const NN_scores* scheme)
 {
    unsigned long i;
-   int rprec, rprec_idx, tmp, pline_width = 0;
+   int rprec, rprec_idx, pline_width = 1;
+   float tmp;
    char* string;
    char* string_start;
    char* en_undef;
@@ -15801,24 +15743,19 @@ nn_scores_fprintf_G_bulge_loop (FILE* stream, const NN_scores* scheme)
    {
       rprec = 0;
       tmp = scheme->G_bulge_loop[i];
-      if (tmp == INT_UNDEF)
-      {
-         tmp = 0;
-      }
 
-      if (tmp < 0)
+      if (tmp < FLOAT_UNDEF)
       {
-         tmp *= (-1);
-         rprec++;
-      }
-      
-      if (tmp > 0)
-      {
-         rprec += floorf (log10f ((float) tmp) + 1);
-      }
-      else
-      {
-         rprec += 1;
+         if (tmp < 0)
+         {
+            tmp *= (-1);
+            rprec++;
+         }
+
+         if (tmp > 0)
+         {
+            rprec += floorf (log10f (tmp) + 1);
+         }
       }
       
       if (rprec > pline_width) 
@@ -15864,13 +15801,13 @@ nn_scores_fprintf_G_bulge_loop (FILE* stream, const NN_scores* scheme)
       msprintf (string, ": ");
       string+= 2;
 
-      if (scheme->G_bulge_loop[i] == INT_UNDEF)
+      if (scheme->G_bulge_loop[i] < FLOAT_UNDEF)
       {
-         msprintf (string, "%s", en_undef);         
+         msprintf (string, "%*.0f", rprec, scheme->G_bulge_loop[i]);
       }
       else
       {
-         msprintf (string, "%*i", rprec, scheme->G_bulge_loop[i]);
+         msprintf (string, "%s", en_undef);         
       }
       string+= rprec;
 
@@ -15898,7 +15835,7 @@ nn_scores_fprintf_non_gc_penalty_for_bp(FILE* stream,
                                         const Alphabet* sigma)
 {
    unsigned long i;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 2;
    char* string;
@@ -15958,7 +15895,7 @@ nn_scores_fprintf_non_gc_penalty_for_bp(FILE* stream,
                 alphabet_no_2_base (scheme->bp_allowed[i][1], sigma));
       string += 4;
 
-      msprintf (string, "%*i", rprec, scheme->non_gc_penalty_for_bp[i]);
+      msprintf (string, "%*.0f", rprec, scheme->non_gc_penalty_for_bp[i]);
       string += rprec;
 
       string[0] = '\n';
@@ -15983,7 +15920,7 @@ nn_scores_fprintf_tetra_loop(FILE* stream,
                              const Alphabet* sigma)
 {
    unsigned long i, j;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 2;
    char* string;
@@ -16056,7 +15993,7 @@ nn_scores_fprintf_tetra_loop(FILE* stream,
       /*msprintf (string, "-%i", scheme->tetra_loop[i][j]);*/
       string += 2; 
 
-      msprintf (string, ": %*i", rprec, scheme->G_tetra_loop[i]);
+      msprintf (string, ": %*.0f", rprec, scheme->G_tetra_loop[i]);
       string += rprec;
       string += 2;
 
@@ -16082,7 +16019,7 @@ nn_scores_fprintf_G_dangle5(FILE* stream,
                             const Alphabet* sigma)
 {
    unsigned long i, j;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 1;
    unsigned long columns;
@@ -16170,7 +16107,7 @@ nn_scores_fprintf_G_dangle5(FILE* stream,
          msprintf (string, " | ");
          string += 3;
          
-         msprintf (string, "%*d", rprec,
+         msprintf (string, "%*.0f", rprec,
                    scheme->G_dangle5[i][j]);
          string += rprec;
       }
@@ -16197,7 +16134,7 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
                             const Alphabet* sigma)
 {
    unsigned long i, j;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 1;
    unsigned long columns;
@@ -16285,7 +16222,7 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
          msprintf (string, " | ");
          string += 3;
          
-         msprintf (string, "%*d", rprec,
+         msprintf (string, "%*.0f", rprec,
                    scheme->G_dangle3[i][j]);
          string += rprec;
       }
@@ -16302,8 +16239,8 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
 
 static int
 get_ndigits_matrix (const unsigned long cols,
-                    const unsigned long rows,
-                    int** matrix)
+                     const unsigned long rows,
+                     float** matrix)
 {
    int tmp = 0;
    int cval;
@@ -16314,17 +16251,17 @@ get_ndigits_matrix (const unsigned long cols,
    {
       for (j = 0; j < cols; j++)
       {
-         if (matrix[i][j] == 0)
+         if (matrix[i][j] > 0)
          {
-            cval = 0;
+            cval = floorf (log10f (matrix[i][j]) + 1);
          }
          else if (matrix[i][j] < 0)
          {
-            cval = floorf (log10f ((float) matrix[i][j] * (-1)) + 2);
+            cval = floorf (log10f (matrix[i][j] * (-1)) + 2);
          }
          else
          {
-            cval = floorf (log10f ((float) matrix[i][j]) + 1);
+            cval = 0;
          }
          
          if (cval > tmp)
@@ -16352,7 +16289,8 @@ void
 nn_scores_fprintf_G_internal_loop (FILE* stream, const NN_scores* scheme)
 {
    unsigned long i;
-   int rprec, rprec_idx, tmp, pline_width = 0;
+   int rprec, rprec_idx, pline_width = 1;
+   float tmp;
    char* string;
    char* string_start;
    char* en_undef;
@@ -16365,24 +16303,19 @@ nn_scores_fprintf_G_internal_loop (FILE* stream, const NN_scores* scheme)
    {
       rprec = 0;
       tmp = scheme->G_internal_loop[i];
-      if (tmp == INT_UNDEF)
-      {
-         tmp = 0;
-      }
 
-      if (tmp < 0)
+      if (tmp < FLOAT_UNDEF)
       {
-         tmp *= (-1);
-         rprec++;
-      }
-      
-      if (tmp > 0)
-      {
-         rprec += floorf (log10f ((float) tmp) + 1);
-      }
-      else
-      {
-         rprec += 1;
+         if (tmp < 0)
+         {
+            tmp *= (-1);
+            rprec++;
+         }
+         
+         if (tmp > 0)
+         {
+            rprec += floorf (log10f (tmp) + 1);
+         }
       }
       
       if (rprec > pline_width) 
@@ -16428,13 +16361,13 @@ nn_scores_fprintf_G_internal_loop (FILE* stream, const NN_scores* scheme)
       msprintf (string, ": ");
       string+= 2;
 
-      if (scheme->G_internal_loop[i] == INT_UNDEF)
+      if (scheme->G_internal_loop[i] < FLOAT_UNDEF)
       {
-         msprintf (string, "%s", en_undef);         
+         msprintf (string, "%*.0f", rprec, scheme->G_internal_loop[i]);  
       }
       else
       {
-         msprintf (string, "%*i", rprec, scheme->G_internal_loop[i]);
+         msprintf (string, "%s", en_undef);
       }
       string+= rprec;
 
@@ -16559,7 +16492,7 @@ nn_scores_fprintf_G_int11 (FILE* stream,
 
             for (l = 0; l < asize; l++)
             {
-               msprintf (string, " | %*i", rprec, scheme->G_int11[i][j][k][l]);
+               msprintf (string, " | %*.0f", rprec, scheme->G_int11[i][j][k][l]);
                string += 3 + rprec;
             }
 
@@ -16699,7 +16632,7 @@ nn_scores_fprintf_G_int21 (FILE* stream,
                
             for (m = 0; m < asize; m++)
             {
-               msprintf (string, " | %*i",
+               msprintf (string, " | %*.0f",
                          rprec, scheme->G_int21[i][j][k][l][m]);
                string += 3 + rprec;
             }
@@ -16748,8 +16681,8 @@ nn_scores_fprintf_G_int22 (FILE* stream,
             for (l = 0; l < asize; l++)
             {
                tmp = get_ndigits_matrix (asize,
-                                         asize,
-                                         scheme->G_int22[i][j][k][l]);
+                                          asize,
+                                          scheme->G_int22[i][j][k][l]);
                if (tmp > rprec)
                {
                   rprec = tmp;
@@ -16850,7 +16783,7 @@ nn_scores_fprintf_G_int22 (FILE* stream,
                   
                   for (n = 0; n < asize; n++)
                   {
-                     msprintf (string, " | %*i",
+                     msprintf (string, " | %*.0f",
                                rprec, scheme->G_int22[i][j][k][l][m][n]);
                      string += 3 + rprec;
                   }
@@ -16884,7 +16817,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
                                        const Alphabet* sigma)
 {
    unsigned long i, j, k;
-   int tmp;
+   float tmp;
    int rprec;
    unsigned long pline_width = 2;
    unsigned long x;             /* 3' base of loop pair */
@@ -17000,7 +16933,7 @@ nn_scores_fprintf_G_mismatch_interior (FILE* stream,
          string++;
          for (k = 0; k < x; k++)
          {
-            msprintf (string, " | %*i", rprec,
+            msprintf (string, " | %*.0f", rprec,
                       scheme->G_mismatch_interior[i][j][k]);
             string += rprec;
             string += 3;

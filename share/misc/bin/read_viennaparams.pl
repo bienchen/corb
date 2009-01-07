@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-01-05.10
+# Last modified: 2009-01-06.17
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -762,9 +762,9 @@ sub fetch_parameters($ \% \%)
     close($fh);
 }
 
-sub output_int11_energies(\%)
+sub output_int11_energies(\% \$ \$)
 {
-    my ($param_hashref) = @_;
+    my ($param_hashref, $max_ref, $min_ref) = @_;
     my ($bp1, $bp2);
     my ($i, $j);
     my $tmp = 1;
@@ -855,6 +855,15 @@ sub output_int11_energies(\%)
                     {
                         $c2 = 0;
                     }
+
+                    if (${$param_hashref->{$bp1}{$bp2}}[$i][$j] > $$max_ref)
+                    {
+                        $$max_ref = ${$param_hashref->{$bp1}{$bp2}}[$i][$j];
+                    }
+                    if (${$param_hashref->{$bp1}{$bp2}}[$i][$j] < $$min_ref)
+                    {
+                        $$min_ref = ${$param_hashref->{$bp1}{$bp2}}[$i][$j];
+                    }
                 }
                 #print "\n";                    
             }
@@ -865,9 +874,9 @@ sub output_int11_energies(\%)
     return @out;
 }
 
-sub output_int21_energies(\%)
+sub output_int21_energies(\% \$ \$)
 {
-    my ($param_hashref) = @_;
+    my ($param_hashref, $max_ref, $min_ref) = @_;
     my ($bp1, $bp2, $b);
     my ($i, $j);
     my $tmp = 0;
@@ -970,6 +979,19 @@ sub output_int21_energies(\%)
                         {
                             $c2 = 0;
                         }
+
+                        if (${$param_hashref->{$bp1}{$bp2}{$b}}[$i][$j]
+                            > $$max_ref)
+                        {
+                            $$max_ref =
+                                ${$param_hashref->{$bp1}{$bp2}{$b}}[$i][$j];
+                        }
+                        if (${$param_hashref->{$bp1}{$bp2}{$b}}[$i][$j]
+                            < $$min_ref)
+                        {
+                            $$min_ref =
+                                ${$param_hashref->{$bp1}{$bp2}{$b}}[$i][$j];
+                        }
                     }
                     #print "\n";                    
                 }
@@ -981,9 +1003,9 @@ sub output_int21_energies(\%)
     return @out;
 }
 
-sub output_int22_energies(\%)
+sub output_int22_energies(\% \$ \$)
 {
-    my ($param_hashref) = @_;
+    my ($param_hashref, $max_ref, $min_ref) = @_;
     my ($bp1, $bp2, $b1, $b2);
     my ($i, $j);
     my $tmp = 0;
@@ -1106,7 +1128,20 @@ sub output_int22_energies(\%)
                                 $c3 = 0;
                             }
                             push @out, " ".uc($BASES[$j])." */\n";
-                        }                
+
+                           if (${$param_hashref->{$bp1}{$bp2}{$b1}{$b2}}[$i][$j]
+                                > $$max_ref)
+                            {
+                                $$max_ref =
+                              ${$param_hashref->{$bp1}{$bp2}{$b1}{$b2}}[$i][$j];
+                            }
+                           if (${$param_hashref->{$bp1}{$bp2}{$b1}{$b2}}[$i][$j]
+                                < $$min_ref)
+                            {
+                                $$min_ref =
+                              ${$param_hashref->{$bp1}{$bp2}{$b1}{$b2}}[$i][$j];
+                            }
+                        }           
                     }
                 }
             }
@@ -1117,9 +1152,9 @@ sub output_int22_energies(\%)
     return @out;
 }
 
-sub output_mismatch_interior_energies(\%)
+sub output_mismatch_interior_energies(\% \$ \$)
 {
-    my ($param_hashref) = @_;
+    my ($param_hashref, $max_ref, $min_ref) = @_;
     my $bp1;
     my ($i, $j);
     my $tmp = 0;
@@ -1180,6 +1215,15 @@ sub output_mismatch_interior_energies(\%)
 #                }
 
                 push @out, " /* ".uc($BASES[$i]).uc($BASES[$j])." */\n";
+
+                if (${$param_hashref->{$bp1}}[$i][$j] > $$max_ref)
+                {
+                    $$max_ref = ${$param_hashref->{$bp1}}[$i][$j];
+                }
+                if (${$param_hashref->{$bp1}}[$i][$j] < $$min_ref)
+                {
+                    $$min_ref = ${$param_hashref->{$bp1}}[$i][$j];
+                }
             }
             push @out, "\n";
         }
@@ -1188,9 +1232,9 @@ sub output_mismatch_interior_energies(\%)
     return @out;
 }
 
-sub output_mismatch_hairpin_energies(\%)
+sub output_mismatch_hairpin_energies(\% \$ \$)
 {
-    my ($param_hashref) = @_;
+    my ($param_hashref, $max_ref, $min_ref) = @_;
     my $bp1;
     my ($i, $j);
     my $tmp = 0;
@@ -1242,6 +1286,15 @@ sub output_mismatch_hairpin_energies(\%)
                        $dig, ${$param_hashref->{$bp1}}[$i][$j]);
                 
                 push @out, " /* ".uc($BASES[$i]).uc($BASES[$j])." */\n";
+
+                if (${$param_hashref->{$bp1}}[$i][$j] > $$max_ref)
+                {
+                    $$max_ref = ${$param_hashref->{$bp1}}[$i][$j];
+                }
+                if (${$param_hashref->{$bp1}}[$i][$j] < $$min_ref)
+                {
+                    $$min_ref = ${$param_hashref->{$bp1}}[$i][$j];
+                }
             }
             push @out, "\n";
         }
@@ -1324,9 +1377,9 @@ sub output_mismatch_stack_energies(\% \%)
     return @out;
 }
 
-sub output_stacking_energies(\%)
+sub output_stacking_energies(\% \$ \$)
 {
-    my ($param_hashref) = @_;
+    my ($param_hashref, $max_ref, $min_ref) = @_;
     my ($bp1, $bp2);
     my ($i, $j);
     my $tmp = 0;
@@ -1379,15 +1432,23 @@ sub output_stacking_energies(\%)
                                $dig,
                                $param_hashref->{$bp1}{$bp2});
 
-            push @out, "\n";            
+            push @out, "\n";
+            if ($param_hashref->{$bp1}{$bp2} > $$max_ref)
+            {
+                $$max_ref = $param_hashref->{$bp1}{$bp2};
+            }
+            if ($param_hashref->{$bp1}{$bp2} < $$min_ref)
+            {
+                $$min_ref = $param_hashref->{$bp1}{$bp2};
+            }
         }
     }
     return @out;
 }
 
-sub output_dangle5_energies(\@)
+sub output_dangle5_energies(\@ \$ \$)
 {
-    my ($param_aryref) = @_;
+    my ($param_aryref, $max_ref, $min_ref) = @_;
     my ($bp, $b);
     my ($i, $j);
     my $tmp = 0;
@@ -1429,16 +1490,24 @@ sub output_dangle5_energies(\@)
                 .substr($bp, 0, 1)."]["
                 .substr($bp, 1, 1)."]]["
                 .$b."] = ";
-            push @out, sprintf("%*i - offset;\n", $dig, ${$param_aryref}[$i][$j]);      
+            push @out, sprintf("%*i - offset;\n", $dig, ${$param_aryref}[$i][$j]);
+            if (${$param_aryref}[$i][$j] > $$max_ref)
+            {
+                $$max_ref = ${$param_aryref}[$i][$j];
+            }
+            if (${$param_aryref}[$i][$j] < $$min_ref)
+            {
+                $$min_ref = ${$param_aryref}[$i][$j];
+            }
         }
         push @out, "\n";
     }
     return @out;
 }
 
-sub output_dangle3_energies(\@)
+sub output_dangle3_energies(\@ \$ \$)
 {
-    my ($param_aryref) = @_;
+    my ($param_aryref, $max_ref, $min_ref) = @_;
     my ($bp, $b);
     my ($i, $j);
     my $tmp = 0;
@@ -1480,16 +1549,24 @@ sub output_dangle3_energies(\@)
                 .substr($bp, 0, 1)."]["
                 .substr($bp, 1, 1)."]]["
                 .$b."] = ";
-            push @out, sprintf("%*i - offset;\n", $dig, ${$param_aryref}[$i][$j]);      
+            push @out, sprintf("%*i - offset;\n", $dig, ${$param_aryref}[$i][$j]);
+            if (${$param_aryref}[$i][$j] > $$max_ref)
+            {
+                $$max_ref = ${$param_aryref}[$i][$j];
+            }
+            if (${$param_aryref}[$i][$j] < $$min_ref)
+            {
+                $$min_ref = ${$param_aryref}[$i][$j];
+            }
         }
         push @out, "\n";
     }
     return @out;
 }
 
-sub output_hairpins_energies(\@)
+sub output_hairpins_energies(\@ \$ \$)
 {
-    my ($param_aryref) = @_;
+    my ($param_aryref, $max_ref, $min_ref) = @_;
     my $loop_len = 0;
     my $tmp = 0;
     my $dig = 0;
@@ -1532,6 +1609,15 @@ sub output_hairpins_energies(\@)
         else
         {
             push @out, sprintf("%*i - offset", $dig, $_);
+
+            if ($_ > $$max_ref)
+            {
+                $$max_ref = $_;
+            }
+            if ($_ < $$min_ref)
+            {
+                $$min_ref = $_;
+            }
         }
 
         push @out, ";\n";
@@ -1540,9 +1626,9 @@ sub output_hairpins_energies(\@)
     return @out;
 }
 
-sub output_internals_energies(\@)
+sub output_internals_energies(\@ \$ \$)
 {
-    my ($param_aryref) = @_;
+    my ($param_aryref, $max_ref, $min_ref) = @_;
     my $loop_len = 0;
     my $tmp = 0;
     my $dig = 0;
@@ -1585,6 +1671,15 @@ sub output_internals_energies(\@)
         else
         {
             push @out, sprintf("%*i - offset", $dig, $_);
+
+            if ($_ > $$max_ref)
+            {
+                $$max_ref = $_;
+            }
+            if ($_ < $$min_ref)
+            {
+                $$min_ref = $_;
+            }
         }
 
         push @out, ";\n";
@@ -1593,9 +1688,9 @@ sub output_internals_energies(\@)
     return @out;
 }
 
-sub output_bulges_energies(\@)
+sub output_bulges_energies(\@ \$ \$)
 {
-    my ($param_aryref) = @_;
+    my ($param_aryref, $max_ref, $min_ref) = @_;
     my $loop_len = 0;
     my $tmp = 0;
     my $dig = 0;
@@ -1638,6 +1733,15 @@ sub output_bulges_energies(\@)
         else
         {
             push @out, sprintf("%*i - offset", $dig, $_);
+
+            if ($_ > $$max_ref)
+            {
+                $$max_ref = $_;
+            }
+            if ($_ < $$min_ref)
+            {
+                $$min_ref = $_;
+            }
         }
 
         push @out, ";\n";
@@ -1646,9 +1750,9 @@ sub output_bulges_energies(\@)
     return @out;
 }
 
-sub output_tetraloop_energies(\%)
+sub output_tetraloop_energies(\% \$ \$)
 {
-    my ($tl_hashref) = @_;
+    my ($tl_hashref, $max_ref, $min_ref) = @_;
     my @out;
     my ($b1, $b2, $b3, $b4, $b5, $b6);
     my $tmp = 1;
@@ -1737,6 +1841,19 @@ sub output_tetraloop_energies(\%)
                                   $tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6});
 
                             $no++;
+
+                            if ($tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6}
+                                > $$max_ref)
+                            {
+                                $$max_ref =
+                                    $tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6};
+                            }
+                            if ($tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6}
+                                < $$min_ref)
+                            {
+                                $$min_ref =
+                                    $tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6};
+                            }
                         }
                     }
                 }
@@ -1761,6 +1878,8 @@ my $filehandle = *STDOUT;
 my $i;
 my @file;
 my @output;
+my $max_val = 0;
+my $min_val = 0;
 
 # parse commandline
 $ret_val = parseargs(%arg_hash);
@@ -1786,7 +1905,7 @@ if (defined ($arg_hash{sourcefile}))
 if (! defined ($arg_hash{stacking_energies}))
 {
     @output = output_stacking_energies(
-        %{$param_hash{'stacking_energies'}});
+        %{$param_hash{'stacking_energies'}}, $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1801,7 +1920,8 @@ if (! defined ($arg_hash{stacking_energies}))
 }
 if (!defined ($arg_hash{int11_energies}))
 {
-    @output = output_int11_energies(%{$param_hash{'int11_energies'}});
+    @output = output_int11_energies(%{$param_hash{'int11_energies'}},
+                                    $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1815,7 +1935,8 @@ if (!defined ($arg_hash{int11_energies}))
 }
 if (! defined($arg_hash{int21_energies}))
 {
-    @output = output_int21_energies(%{$param_hash{'int21_energies'}});
+    @output = output_int21_energies(%{$param_hash{'int21_energies'}},
+                                    $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1830,7 +1951,8 @@ if (! defined($arg_hash{int21_energies}))
 }
 if (! defined($arg_hash{int22_energies}))
 {
-    @output = output_int22_energies(%{$param_hash{'int22_energies'}});
+    @output = output_int22_energies(%{$param_hash{'int22_energies'}},
+        $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1846,7 +1968,7 @@ if (! defined($arg_hash{int22_energies}))
 if (!defined ($arg_hash{mismatch_interior}))
 {
     @output = output_mismatch_interior_energies(
-        %{$param_hash{'mismatch_interior'}});
+        %{$param_hash{'mismatch_interior'}}, $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1862,7 +1984,7 @@ if (!defined ($arg_hash{mismatch_interior}))
 if (! defined($arg_hash{mismatch_hairpin}))
 {
     @output = output_mismatch_hairpin_energies(
-        %{$param_hash{'mismatch_hairpin'}});
+        %{$param_hash{'mismatch_hairpin'}}, $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1893,7 +2015,8 @@ if (! defined($arg_hash{mismatch_stack}))
 }
 if (! defined($arg_hash{tetraloops}))
 {
-    @output = output_tetraloop_energies(%{$param_hash{'tetraloops'}});
+    @output = output_tetraloop_energies(%{$param_hash{'tetraloops'}},
+        $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1908,7 +2031,8 @@ if (! defined($arg_hash{tetraloops}))
 }
 if (! defined($arg_hash{dangle5}))
 {
-    @output = output_dangle5_energies(@{$param_hash{'dangle5'}});
+    @output = output_dangle5_energies(@{$param_hash{'dangle5'}},
+                                      $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1922,7 +2046,8 @@ if (! defined($arg_hash{dangle5}))
 }
 if (! defined($arg_hash{dangle3}))
 {
-    @output = output_dangle3_energies(@{$param_hash{'dangle3'}});
+    @output = output_dangle3_energies(@{$param_hash{'dangle3'}},
+                                      $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1936,7 +2061,8 @@ if (! defined($arg_hash{dangle3}))
 }
 if (! defined($arg_hash{internals}))
 {
-    @output = output_internals_energies(@{$param_hash{'internals'}});
+    @output = output_internals_energies(@{$param_hash{'internals'}},
+                                        $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1949,7 +2075,8 @@ if (! defined($arg_hash{internals}))
 }
 if (! defined($arg_hash{hairpins}))
 {
-    @output = output_hairpins_energies(@{$param_hash{'hairpins'}});
+    @output = output_hairpins_energies(@{$param_hash{'hairpins'}},
+                                       $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1963,7 +2090,8 @@ if (! defined($arg_hash{hairpins}))
 }
 if (! defined($arg_hash{bulges}))
 {
-    @output = output_bulges_energies(@{$param_hash{'bulges'}});
+    @output = output_bulges_energies(@{$param_hash{'bulges'}},
+                                     $max_val, $min_val);
 
     if (defined ($arg_hash{sourcefile}))
     {
@@ -1982,6 +2110,10 @@ if (defined ($arg_hash{sourcefile}))
     print $filehandle @file;
     close($filehandle);
 }
+
+msg_verbose ("Max. parameter value: $max_val\n");
+msg_verbose ("Min. parameter value: $min_val\n");
+
 # MAIN             - END
 
 
@@ -2000,7 +2132,8 @@ B<read_viennaparams> [options] <param file>
 
 B<read_viennaparams> reads a parameter file of the Vienna RNA package in the
 first place. The parameters are then printed on C<STDOUT> or integrated
-into a C source file. 
+into a C source file. In verbose mode the min. and max. values among all
+parameters to be written are reported.
 
 For applying the parameters to a source file, we use certain tags within the
 code. This gives you the chance to develop your code without paying attention
@@ -2107,7 +2240,7 @@ Path to the C source file to store parameters in.
 
 =item B<-verbose>
 
-Be verbose.
+Be verbose. Also enables reporting min. and max. values.
 
 =item B<-man>
 

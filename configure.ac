@@ -1,4 +1,4 @@
-# Last modified: 2009-01-05.22
+# Last modified: 2009-01-06.20
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -130,6 +130,9 @@ AC_OUTPUT
 
 eval __crb_bindir=`eval "echo $bindir"`
 
+CRB_CFLAGS_CREATE_LIST([__crb_fmtd_cflags],
+                       [                                               ])
+
 AC_MSG_NOTICE(
 [Finished successful
 
@@ -145,15 +148,14 @@ AC_MSG_NOTICE(
                        emacs lisp byte code:   $with_pc_elisp
            
            Build settings:
-              Enable paranoid CFLAGS:          $enable_cflags_warnings
               Enable memory checking:          $enable_memcheck
               Enable assertions:               $enable_assert
               Enable usage of POSIX threads:   $enable_pthreads
-
+              CC:                              $CC
+              CFLAGS:                          $__crb_fmtd_cflags
            Installation directories:
               Executables:   $__crb_bindir]
             )dnl# AC_MSG_NOTICE
-
  
 dnl# Local variables:
 dnl# eval: (add-hook 'write-file-hooks 'time-stamp)

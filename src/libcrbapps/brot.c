@@ -318,7 +318,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       = alphabet_size (scmf_rna_opt_data_get_alphabet(data));
    unsigned long allowed_bp = 0;
    NN_scores* scores =
-      NN_SCORES_NEW_INIT(0, scmf_rna_opt_data_get_alphabet (data));
+      NN_SCORES_NEW_INIT(50.0f, scmf_rna_opt_data_get_alphabet (data));
 
    if (scores == NULL)
    {
@@ -328,6 +328,10 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    /* prepare index of allowed base pairs */
    if (!error)
    {
+      /* "randomise" scoring function */
+      mfprintf (stderr, "Using seed: %ld\n", brot_args->seed_arg);
+      nn_scores_add_thermal_noise (alpha_size, brot_args->seed_arg, scores);
+
       bp_allowed = XMALLOC(alpha_size * sizeof (*bp_allowed));
       if (bp_allowed == NULL)
       {
@@ -379,7 +383,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    }
 
    mfprintf (stderr, "TREATMENT of fixed sites: If both sites of a pair are "
-             "fixed, delete from list?\n");
+             "fixed, delete from list? Verbose info!!!\n");
 
    /* set our special function for calc. cols.: Iterate over sec.struct., not
       sequence matrix! */

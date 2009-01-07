@@ -287,12 +287,12 @@ scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
                this->en_neg2[k][(int)bip1] += (nn_scores_get_G_stack (k, bj,
                                                                  bjm1, bip1,
                                                                  this->scores)
-                                          * prob);
+                                               * prob);
 
                this->en_neg[k] += (nn_scores_get_G_stack (k, bj,
-                                                                 bjm1, bip1,
-                                                                 this->scores)
-                                          * prob);
+                                                          bjm1, bip1,
+                                                          this->scores)
+                                   * prob);
             }
          }
       }
@@ -1062,6 +1062,9 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
          cell3p += (seqmatrix_get_probability(bpp, p5pos, sm)
                     * nn_scores_get_G_non_gc_penalty_for_bp (bpp, row,
                                                              this->scores));
+         /*mfprintf (stderr, "NGCP: %f\n", 
+                   nn_scores_get_G_non_gc_penalty_for_bp(bpp, row,
+                   this->scores));*/
       }
 
       /* usually the non_gc_penalty counts per pair, we
@@ -2261,38 +2264,40 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       n = rna_secstruct_get_noof_stacks (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_stack (r, i, sm, this); */
+         scmf_rna_opt_calc_stack (r, i, sm, this);
       }
 
       /* bulge loops */
       n = rna_secstruct_get_noof_bulges (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_bulge (r, i, sm, this); */
+         scmf_rna_opt_calc_bulge (r, i, sm, this);
       }
 
       /* internal loops */
       n = rna_secstruct_get_noof_internals (this->rna);
       for (i = 0; i < n; i++)
       {
-         /*SB scmf_rna_opt_calc_internals (r, i, sm, this); */
+         scmf_rna_opt_calc_internals (r, i, sm, this);
       }      
 
       /* hairpin loops */
       n = rna_secstruct_get_noof_hairpins (this->rna);
       for (i = 0; i < n; i++)
       {
-         /* SB scmf_rna_opt_calc_hairpin (r, i, sm, this); */
+         scmf_rna_opt_calc_hairpin (r, i, sm, this);
       }
 
       /* multiloops */
       n = rna_secstruct_get_noof_multiloops (this->rna);
       for (i = 0; i < n; i++)
       {
-         /* SB scmf_rna_opt_calc_multi_loop (r, i, sm, this);*/
+         scmf_rna_opt_calc_multi_loop (r, i, sm, this);
       }
 
-      /* negative energy? */
+      /* calc. negative design term */
+      /*  */
+
       /* heterogenity? */
       /*sm->calc_m[j][col] =
         expf ((-1.0f) * (sm->calc_m[j][col]/(sm->gas_constant*t)));*/

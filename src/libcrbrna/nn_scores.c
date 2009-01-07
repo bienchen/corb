@@ -69,35 +69,35 @@
 #define NN_NINIO_MAX 300
 
 struct NN_scores {
-      float** G_stack;                         /* stacking energies */
+      /*c*/float** G_stack;                         /* stacking energies */
       unsigned long G_stack_size;
-      float** G_mm_stack;                   /* stacks with one mismatch */
+      /*c*/float** G_mm_stack;                   /* stacks with one mismatch */
       unsigned long G_mm_stack_size;
-      float* G_hairpin_loop;                   /* hairpin loops */
+      /*c*/float* G_hairpin_loop;                   /* hairpin loops */
       unsigned long G_hairpin_loop_size;
-      float*** G_mismatch_hairpin;        /* hairpin loop closing bp */
+      /*c*/float*** G_mismatch_hairpin;        /* hairpin loop closing bp */
       unsigned long G_mismatch_hairpin_size;
-      float* non_gc_penalty_for_bp;      /* penalty for closing non-GC */
+      /*c*/float* non_gc_penalty_for_bp;      /* penalty for closing non-GC */
       char** tetra_loop;               /* sorted list of possible loops */
-      float* G_tetra_loop;                     /* scores */
+      /*c*/float* G_tetra_loop;                     /* scores */
       unsigned long tetra_loop_size;
-      float* G_bulge_loop;                     /* bulge loops */
+      /*c*/float* G_bulge_loop;                     /* bulge loops */
       unsigned long G_bulge_loop_size;
       /* internal loops */
-      float* G_internal_loop;                  /* generic loops */
+      /*c*/float* G_internal_loop;                  /* generic loops */
       unsigned long G_internal_loop_size;
-      float**** G_int11;                       /* 1x1 loops */
+      /*c*/float**** G_int11;                       /* 1x1 loops */
       unsigned long G_int11_size;
-      float***** G_int21;                      /* 2x1 loops */
+      /*c*/float***** G_int21;                      /* 2x1 loops */
       unsigned long G_int21_size;
-      float****** G_int22;                      /* 2x2 loops */
+      /*c*/float****** G_int22;                      /* 2x2 loops */
       unsigned long G_int22_size;
-      float*** G_mismatch_interior;         /* interior loop closing bp */
+      /*c*/float*** G_mismatch_interior;         /* interior loop closing bp */
       unsigned long G_mismatch_interior_size;
       /* internal loops */
-      float** G_dangle5;                  /* 5' dangling end, bp + base */
+      /*c*/float** G_dangle5;                  /* 5' dangling end, bp + base */
       unsigned long G_dangle5_size;
-      float** G_dangle3;                 /* 3' dangling end, bp + base */
+      /*c*/float** G_dangle3;                 /* 3' dangling end, bp + base */
       unsigned long G_dangle3_size;
       char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
@@ -14420,19 +14420,131 @@ nn_scores_delete (NN_scores* this)
  * To assure reproductibility, the initial seed for the random number generator
  * is a parameter @c seedval to be defined.
  *
+ * @params[in] alpha_size size of the alphabet the scheme belongs to.
  * @params[in] seedval seed for the random number generator.
  * @params[in/ out] this scoring scheme to be changed.
  */
 void
-nn_scores_add_thermal_noise (long int seedval,
-                             NN_scores* this __attribute__((unused)))
+nn_scores_add_thermal_noise (unsigned long alpha_size,
+                             long int seedval,
+                             NN_scores* this)
 {
+   unsigned long i, j, k, l, m, n;
+   float rval;
+
    assert (this);
+   assert (this->non_gc_penalty_for_bp);
+   assert (this->G_dangle5);
+   assert (this->G_stack);
 
    /* init random number generator */
    srand48 (seedval);
 
-   mfprintf (stderr, "Seed: %f\n", (float) drand48());
+   for (i = 0; i < this->bp_allowed_size; i++)
+   {
+      /* non_gc_penalty_for_bp */
+      rval = (float) drand48 ();
+      this->non_gc_penalty_for_bp[i] += (rval - 0.5f) / 100;
+
+      /* G_dangle5, G_dangle3 */
+      for (j = 0; j < alpha_size; j++)
+      {
+         rval = (float) drand48 ();
+         this->G_dangle5[i][j] += (rval - 0.5f) / 100;
+
+         rval = (float) drand48 ();
+         this->G_dangle3[i][j] += (rval - 0.5f) / 100;
+      }
+
+      /* G_stack */
+      for (j = 0; j < this->bp_allowed_size; j++)
+      {
+         rval = (float) drand48 ();
+         this->G_stack[i][j] += (rval - 0.5f) / 100;
+      }
+
+      /* G_mm_stack */
+      for (j = 0; j < this->bp_idx_size; j++)
+      {
+         rval = (float) drand48 ();
+         this->G_mm_stack[i][j] += (rval - 0.5f) / 100;         
+      }
+
+      /* G_int11, G_int21 G_int22 */
+      for (j = 0; j < this->bp_allowed_size; j++)
+      {
+         for (k = 0; k < alpha_size; k++)
+         {
+            for (l = 0; l < alpha_size; l++)
+            {
+               rval = (float) drand48 ();
+               this->G_int11[i][j][k][l] += (rval - 0.5f) / 100;
+
+               for (m = 0; m < alpha_size; m++)
+               {
+                  rval = (float) drand48 ();
+                  this->G_int21[i][j][k][l][m] += (rval - 0.5f) / 100;
+
+                  for (n = 0; n < alpha_size; n++)
+                  {
+                     rval = (float) drand48 ();
+                     this->G_int22[i][j][k][l][m][n] += (rval - 0.5f) / 100;
+                  }
+               }
+            }
+         }
+      }
+
+      /* G_mismatch_interior, G_mismatch_hairpin */
+      for (j = 0; j < alpha_size; j++)
+      {
+         for (k = 0; k < alpha_size; k++)
+         {
+            rval = (float) drand48 ();
+            this->G_mismatch_interior[i][j][k] += (rval - 0.5f) / 100;
+
+            rval = (float) drand48 ();
+            this->G_mismatch_hairpin[i][j][k] += (rval - 0.5f) / 100;
+         }
+      }
+   }
+
+   /* G_tetra_loop */
+   for (i = 0; i < this->tetra_loop_size; i++)
+   {
+      rval = (float) drand48 ();
+      this->G_tetra_loop[i] += (rval - 0.5f) / 100;   
+   }
+
+   /* G_hairpin_loop */
+   for (i = 0; i < this->G_hairpin_loop_size; i++)
+   {
+      if (this->G_hairpin_loop[i] < FLOAT_UNDEF)
+      {
+         rval = (float) drand48 ();
+         this->G_hairpin_loop[i] += (rval - 0.5f) / 100;  
+      } 
+   }
+
+   /* G_bulge_loop */
+   for (i = 0; i < this->G_bulge_loop_size; i++)
+   {
+      if (this->G_bulge_loop[i] < FLOAT_UNDEF)
+      {
+         rval = (float) drand48 ();
+         this->G_bulge_loop[i] += (rval - 0.5f) / 100;
+      }   
+   }
+
+   /* G_internal_loop */
+   for (i = 0; i < this->G_internal_loop_size; i++)
+   {
+      if (this->G_internal_loop[i] < FLOAT_UNDEF)
+      {
+         rval = (float) drand48 ();
+         this->G_internal_loop[i] += (rval - 0.5f) / 100;
+      }
+   }
 }
 
 

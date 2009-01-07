@@ -1,4 +1,4 @@
-# Copyright (C) 2008 Stefan Bienert
+# Copyright (C) 2009 Stefan Bienert
 #
 # This file is part of CoRB.
 #
@@ -57,4 +57,18 @@ option "temp" t "Initial temperature"
        float
        typestr="FLOAT"
        default="100"
+       optional
+
+option "seed" r "Random seed"
+       details="Random seed used for adding thermal noise to the Nearest \
+                 Neighbour model. This is used for producing different answers \
+                 for the same structure. Adding thermal noise means adding \
+                 small random numbers to all parameters. The range of those \
+                 numbers is [0.005, -0.005] and should be beyond the level of \
+                 significance. Since we use a correlated random number \
+                 generator you can reproduce answers by using the same seed. \
+                 Only takes effect when using with `NN' as scoring scheme."
+       long
+       typestr="INT"
+       default="-791122"
        optional

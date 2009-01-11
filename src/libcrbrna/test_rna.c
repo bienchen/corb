@@ -63,6 +63,8 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    /* test with malformed structure */
    THROW_WARN_MSG ("Testing recognition of malformed structure. You should "
                    "see an error message in the following.");
+
+
    error = RNA_INIT_PAIRLIST_VIENNA(test_string, strlen (test_string),
                                     test_obj);
    if (error != ERR_RNA_VIENNA_FORMAT)

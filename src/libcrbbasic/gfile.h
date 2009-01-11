@@ -48,6 +48,7 @@ extern "C" {
 #define GFILE_H
 
 #include <stdio.h>
+#include "str.h"
 
 typedef enum {
    GFILE_VOID = 0,
@@ -77,6 +78,9 @@ typedef struct GFile GFile;
 
 GFileType
 gfile_determine_type (const char*, unsigned long);
+
+Str*
+gfile_get_path (const GFile*);
 
 GFile*
 gfile_open (const char*, const unsigned long, const GFileType, const char*,

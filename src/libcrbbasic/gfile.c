@@ -81,9 +81,28 @@ gfile_delete (GFile* this)
  */
 GFileType
 gfile_determine_type (const char* file __attribute__((unused)),
-                      unsigned long length __attribute__ ((unused)))
+                      unsigned long length)
 {
+   assert (file || ! file);
+   assert (length || ! length);
+
    return GFILE_UNCOMPRESSED;
+}
+
+/** @brief Get the path of a file in a GFile object.
+ *
+ * Returns the path of a file connected to a GFile object. The path includes the
+ * name of the file.
+ *
+ * @param[in] this GFile object.
+ */
+Str*
+gfile_get_path (const GFile* this)
+{
+   assert (this);
+   assert (this->path);
+
+   return this->path;
 }
 
 /** @brief Open a file.
@@ -251,7 +270,7 @@ gfile_rewind (GFile* stream)
  * @param[in] pos  Position to store @c c at in @c buf.
  */
 static __inline__ int
-s_gfile_store_char (const char c,
+s_gfile_store_char (const int c,
                     char** buf,
                     size_t* size,
                     const unsigned long pos)
@@ -271,7 +290,7 @@ s_gfile_store_char (const char c,
    }
    
    /* store symbol */
-   (*buf)[pos] = c;
+   (*buf)[pos] = (char) c;
 
    return 0;
 }
@@ -323,6 +342,7 @@ gfile_getdelim_tr (int* error,
 
    assert (error);
    assert (buf);
+   assert ((*size == 0) || (*buf));
    assert (size);
    assert (stream);
    assert (stream->fileptr.uc);
@@ -389,7 +409,7 @@ gfile_getdelim_tr (int* error,
       return 0;
    }
 
-   return length;
+  return length;
 }
 
 /** @brief Read a line from file.

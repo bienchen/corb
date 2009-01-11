@@ -59,11 +59,13 @@ typedef struct {
 
 
 struct Rna {
-      char*          seq;       /* the nucleotide sequence */
-      /* char* vienna; */       /* vienna string */
-      unsigned long* pairs;     /* base pairs */
-      unsigned long  size;      /* size of the RNA (sequence & 2D structure) */
-       SecStruct*    structure; /* decomposed structure */
+   char*          seq;       /* the nucleotide sequence */
+   unsigned long  size;      /* size of the RNA sequence */
+   /* char* vienna; */       /* vienna string */
+   unsigned long* pairs;     /* base pairs */
+   unsigned long pairs_size; /* size of the pairlist */
+   SecStruct*    structure; /* decomposed structure */
+   Str* info;
 };
 
 
@@ -91,7 +93,9 @@ rna_new (const char* file, const int line)
       this->seq       = NULL;
       /* this->vienna    = NULL; */
       this->pairs     = NULL;
+      this->pairs_size = 0;
       this->structure = NULL;
+      this->info = NULL;
    }
 
    return this;
@@ -110,9 +114,12 @@ rna_delete (Rna* this)
    if (this != NULL)
    {
      XFREE(this->seq);
+     this->size = 0;
      /* XFREE(this->vienna); */
      XFREE(this->pairs);
+     this->pairs_size = 0;
      secstruct_delete (this->structure);
+     str_delete (this->info);
      XFREE(this);
    }
 }
@@ -149,6 +156,45 @@ rna_alloc_sequence (const unsigned long size, Rna* this,
 
    return 0;
 }
+
+/** @brief Reallocate memory for the sequence component of an @c Rna object.
+ *
+ * Reallocate the memory for a sequence stored within an @c Rna data object. If
+ * compiled with enabled memory checking, @c file and @c line should point to
+ * the position where the function was called. Both parameters are 
+ * automatically set by using the macro @c RNA_REALLOC_SEQUENCE.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC on memory problems.
+ *
+ * @param[in] size Size of the sequence/ structure of the RNA.
+ * @param[in] this Rna data object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_realloc_sequence (const unsigned long size, Rna* this,
+                        const char* file, const int line)
+{
+   assert (this);
+
+   this->seq = XOBJ_REALLOC(this->seq, (size + 1) * sizeof (this->seq[0]),
+                            file, line);
+
+   if (this->seq == NULL)
+   {
+      return ERR_RNA_ALLOC;
+   }
+
+   if (size > this->size)
+   {
+      memset ((this->seq + this->size), 0,
+              sizeof (this->seq[0]) * ((size + 1) - this->size));   
+   }
+
+   this->size = size;
+
+   return 0;
+}
+
 
 /** @brief Store a copy of an RNA sequence in an Rna data object.
  *
@@ -222,15 +268,56 @@ rna_allocate_pairlist (const unsigned long size, Rna* this,
 {
    assert (this);
    assert (this->pairs == NULL);
-   assert ((this->size == 0) || (this->size == size));  
+   assert (this->pairs_size == 0);  
    
-   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * size, file, line);
-   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * size);   
+   this->pairs_size = size;
+   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * this->pairs_size,
+                             file, line);
 
    if (this->pairs == NULL)
    {
       return ERR_RNA_ALLOC;
    }
+
+   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * this->pairs_size);   
+
+   return 0;
+}
+
+/** @brief Reallocate memory for the pair list of an @c Rna object.
+ *
+ * Reallocate the memory for the list of base pairs stored within an @c Rna
+ * data object. If compiled with enabled memory checking, @c file and @c line
+ * should point to the position where the function was called. Both parameters
+ * are automatically set by using the macro @c RNA_REALLOC_PAIRLIST.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC on memory problems.
+ *
+ * @param[in] size Size of the structure.
+ * @param[in] this Rna data object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_realloc_pairlist (const unsigned long size, Rna* this,
+                      const char* file, const int line)
+{
+   assert (this);
+
+   this->pairs = XOBJ_REALLOC(this->pairs, size * sizeof (this->pairs[0]),
+                            file, line);
+
+   if (this->pairs == NULL)
+   {
+      return ERR_RNA_ALLOC;
+   }
+
+   if (size > this->pairs_size)
+   {
+      memset ((this->pairs + this->pairs_size), INT_MAX,
+              sizeof (this->pairs[0]) * (size - this->pairs_size));
+   }
+
+   this->pairs_size = size;
 
    return 0;
 }
@@ -274,7 +361,7 @@ rna_init_pairlist_vienna (const char* vienna,
    assert (this);
    /* assert (this->vienna == NULL); */
    assert (this->pairs == NULL);
-   assert ((this->size == 0) || (this->size == length));
+   assert (this->pairs_size == 0);
 
    /* allocate list */
    error = rna_allocate_pairlist (length, this, file, line);
@@ -349,6 +436,7 @@ rna_init_pairlist_vienna (const char* vienna,
    {
       XFREE (this->pairs);
       this->pairs = NULL;
+      this->pairs_size = 0;
    }
 
    return error;
@@ -399,14 +487,15 @@ rna_init_sequence_structure (const char* seq,
  *
  * Read in a file in connect format and store its contents in a Rna object.\n
  * Returns 0 on success, ... else.
+ * GFILE_READ_ERROR on problems reading next line
+ * ERR_RNA_ALLOC info component can't be stored
  * @param[in] this Rna object.
  * @param[in] path Path and file name.
  */
 static unsigned long
-rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
+rna_get_first_line_ct (char** buffer, unsigned long* length,
+                       unsigned long* line_no, GFile* gfile)
 {
-   unsigned long r = 0;         /* already read bytes */
-   unsigned long cr = 0;        /* currently read bytes */
    unsigned long lwp = 0;       /* last whitespace position */
    unsigned long col = 0;
    char* endptr;                /* needed for strtoul */
@@ -415,36 +504,34 @@ rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
    unsigned long no;            /* just the number in a col */
    unsigned long max_no = 0;    /* store max.no. found */
    int error = 0;
+   unsigned long line_length;
+   unsigned long i;
 
    /* Basic idea: Verify that first line is either a comment or the start of
       the base list */
    /* After this function gfile should be at the starting position of the list*/
-   
-   /* throw warnings: first line ct line */
-   /*                 first line does not start with noof bases */
-   /*                 ct lines not ordered  */
-   /* read_comment_sh: translate tabs to ws */
-   /* read_tr_tabs: translate tabs to sh */
 
-   cr = gfile_fread_tab (&error, *buffer + r, 1, sizeof(**buffer), gfile);
-   while ((cr == 1) && (!error))
+   line_length = gfile_getline (&error, buffer, length, gfile);
+   if (error)
    {
-      /* delete tabs */
-      /*if (*(*buffer + r) == '\t')
-      {
-         *(*buffer + r) = ' ';
-         }*/
+      return 0;
+   }
 
-      mfprintf (stderr, "%c", *(*buffer + r));
-      /* store whole buffer, return first col if found */
-
-      if (   ((*(*buffer + r) == ' ') || (*(*buffer + r) == CRB_LF))
-          && (ct_line == true))
+   /* We run up to the '\0' at the end of the line, translate it to ' ' and
+      fetch the last number in a ct line correctly. After the loop we restore
+      the '\0'. */
+   for (i = 0; i < line_length; i++)
+   {
+      /* transform \0 in line into ' ' */
+      if ((*buffer)[i] == '\0')
       {
-         
-         if ((r > 0) && (*(*buffer + r - 1) != ' '))
+         (*buffer)[i] = ' ';
+      }
+
+      if ((ct_line == true) && ((*buffer)[i] == ' '))
+      {
+         if ((i > 0) && ((*buffer)[i - 1] != ' '))
          {
-            mfprintf(stderr, "col: %lu lwp: %lu\n", col, lwp);
             col++;
 
             if (col != 2)
@@ -453,9 +540,16 @@ rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
 
                /* we have read a number, if pointers differ AND the the whole
                   part of the buffer we are looking at was read */
-               if ((*buffer == endptr) || (((*buffer + r) - endptr) != 0))
+               if ((*buffer == endptr) || (((*buffer + i) - endptr) != 0))
                {
                   ct_line = false;
+
+                  if (col == 1)
+                  {
+                     THROW_WARN_MSG ("File \"%s\" in ct format: Header does "
+                                     "not start with no. of bases",
+                                     str_get(gfile_get_path (gfile)));
+                  }
                }
                else if (col == 1)
                {
@@ -473,83 +567,368 @@ rna_get_first_line_ct (char** buffer, unsigned long* length, GFile* gfile)
             {
                /* we do not check the alphabet here */
                /* but the nucleotide col must have width 1 */
-               if (*(*buffer + lwp + 1) != ' ')
+               if ((*buffer)[i - 2] != ' ')
                {
                   ct_line = false;
                }
             }
 
             /* remember position of last whitespace */
-            lwp = r + 1;
+            lwp = i + 1;
          }
       }
-
-      /* finalise on "end of line" */
-      if (*(*buffer + r) == CRB_LF)
-      {
-         if (ct_line == true)
-         {
-            if (max_no > n_bases)
-            {
-               n_bases = max_no;
-            }
-            /*THROW_WARN_MSG ("File \"%s\" in ct format: "
-              "First line is not a standard header", );*/
-         }         
-         return n_bases;
-      }
-
-      /* enlarge buffer and read next byte */
-      r++;
-      if (r >= *length)
-      {
-         *length = *length * 2;
-         (*buffer) = (char*) XREALLOC((*buffer), sizeof((**buffer)) * *length);
-      }
-      cr = gfile_fread_tab (&error, *buffer + r, 1, sizeof(**buffer), gfile);
    }
-
-   /* return 0 in case of error, 1 if only 1 line was found */
-   if (error)
+   if (line_length > 0)
    {
-      return 0;
+      (*buffer)[line_length - 1] = '\0';
    }
 
-   return 1;
+   *line_no = 1;
+
+   if ((ct_line == true) && (col == 6))
+   {
+      if (max_no > n_bases)
+      {
+         n_bases = max_no;
+      }
+
+      THROW_WARN_MSG ("File \"%s\" in ct format: No header found in first line",
+                      str_get(gfile_get_path (gfile)));
+
+      *line_no = 0;
+
+      error = gfile_rewind (gfile);
+
+      if (error)
+      {
+         return 0;
+      }
+   }
+
+   return n_bases;
 }
 
+/* read a ct line from file */
+enum {
+   Seq_pos = 0,                     /* position in sequence */
+   p5_con,                          /* partner in 5' direction */
+   p3_con,                          /* partner in 3' direction */
+   partner,                         /* pairing partner of a base */
+   Pos_seq,                         /* again position in sequence */
+   N_ct_nos
+};
+
+static __inline__ unsigned long
+s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
+                    char* base,
+                    unsigned long* line_no,
+                    int* error,
+                    char** buf,
+                    unsigned long* buf_size,
+                    GFile* gfile)
+{
+   unsigned long i;
+   unsigned long read;
+   unsigned long col = 0;
+   unsigned long st = 0;        /* stored number */
+   unsigned long no;            /* number read */
+   unsigned long lwp = 0;       /* pos of last ws */
+   char* endptr;
+
+   /* try to get a new line */
+   read = gfile_getline (error, buf, buf_size, gfile);
+   (*line_no)++;
+
+   /* we do not check errors here because if(error) then read = 0 */
+   while (read == 1)            /* only '\n' read */
+   {
+      THROW_WARN_MSG ("ct-file \'%s\', line %lu: Empty line.\n",
+                      str_get(gfile_get_path (gfile)),
+                      *line_no);
+      read = gfile_getline (error, buf, buf_size, gfile);
+      (*line_no)++;
+   }
+
+   /* skip all ws at beginning of line */
+   i = 0;
+   while ((i < read) && ((*buf)[i] == ' '))
+   {
+      i++;
+   }
+
+   if (i > 0)
+   {
+      THROW_WARN_MSG ("ct-file \'%s\', line %lu: Leading whitespaces.\n",
+                      str_get(gfile_get_path (gfile)),
+                      *line_no);      
+   }
+
+   /* changing the terminal '\0' to ' ' saves us 1 if-statement in the loop.
+      Since we do not need the buf in the calling function, we do not care
+      restoring '\0'.*/
+   if (read > 0)
+   {
+      (*buf)[read - 1] = ' ';
+   }
+   else
+   {
+      /* In case we have read EOF (read == 0), we have not read a line but
+         counted. Testing here instead of right after reading saves us 1
+         if-statemnt. */
+      (*line_no)--;
+   }
+
+   /* While reading we just store values read. We check for
+      - the right symbols: No. or one letter chars
+      - first and last col (seq.pos.) must contin same values
+      here. */
+   for (; i < read; i++)
+   {
+      if ((*buf)[i] == ' ' /* || (*buf)[i] == '\0' */)
+      {
+         /* ws found, let's check if we are behind a symbol */
+         if ((*buf)[i - 1] != ' ')
+         {
+            /* col 2 is the only non-numerical */
+            if (col != 1)
+            {
+               no = strtoul((*buf + lwp), &endptr, 10);
+
+               /* we have read a number, if pointers differ AND the the whole
+                  part of the buffer we are looking at was read */
+               if ((*buf == endptr) || (((*buf + i) - endptr) != 0))
+               {
+                  (*buf)[i] = '\0';
+                  THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Column %lu does "
+                                   "not contain a number: \"%s\".\n",
+                                   str_get(gfile_get_path (gfile)),
+                                   *line_no,
+                                   (col + 1),
+                                   (*buf + lwp));
+                  *error = ERR_RNA_CT_NAN;
+                  return 0;
+               }
+
+               cols[st] = no;
+               st++;
+            }
+            else /* store the base */
+            {
+               if ((*buf)[i - 2] != ' ')
+               {
+                  (*buf)[i] = '\0';
+                  THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Column %lu is "
+                                   "not a single letter nucleotide: \"%s\".\n",
+                                   str_get(gfile_get_path (gfile)),
+                                   *line_no,
+                                   (col + 1),
+                                   (*buf + lwp));
+                  *error = ERR_RNA_CT_NN;
+                  return 0;
+               }
+
+               *base = (*buf)[i - 1];
+            }
+
+            col++;
+         }
+         lwp = i + 1;
+      }
+   }
+
+   /* do line syntax/ semantic check */
+   if (cols[Seq_pos] != cols[Pos_seq])
+   {
+      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: First and last column, "
+                       "supposed to redundantly describe the sequence "
+                       "position, do not match: %lu != %lu.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no,
+                       cols[Seq_pos],
+                       cols[Pos_seq]);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+   if (cols[Seq_pos] == 0)
+   {
+      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Sequence position is \'0\', "
+                       "bases are counted beginning with \'1\'.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+   if (cols[p5_con] == cols[Seq_pos])
+   {
+      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: 5' connection (\'%lu\') "
+                       "points to the sequence position (\'%lu\') of the "
+                       "current base.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no,
+                       cols[p5_con],
+                       cols[Seq_pos]);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+   if (cols[p3_con] == cols[Seq_pos])
+   {
+      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: 3' connection (\'%lu\') "
+                       "points to the sequence position (\'%lu\') of the "
+                       "current base.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no,
+                       cols[p3_con],
+                       cols[Seq_pos]);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+
+   return col;
+}
+
+/* move to rna_new_from_file_ct later */
+/* reformat all msgs to "ct-file '.ct', line n: ..." */
 int
 rna_read_from_file_ct (Rna* this, const char* path)
 {
    int error = 0;
    GFile* gfile;
-   char* line_buffer;
-   unsigned long lb_size = 80;
+   char* line_buffer = NULL;
+   unsigned long lb_size = 0;
    unsigned long n;
+   unsigned long line_no = 0;       /* current line number */
+   unsigned long ct_cols[N_ct_nos];
+   unsigned long n_bases = 0;
+   char base = 0;
 
    assert(this);
+   assert(this->info == NULL);
    assert(path);
 
    /* open file */
    gfile = GFILE_OPEN(path, strlen (path), GFILE_VOID, "r");
    if (gfile == NULL)
    {
-      return 1;
+      return ERR_RNA_FILE_OPEN;
    }
-
-   /* read */
-   line_buffer = XMALLOC(lb_size * sizeof(*line_buffer));
 
    /* fetch first line */
-   n = rna_get_first_line_ct (&line_buffer, &lb_size, gfile);
+   n = rna_get_first_line_ct (&line_buffer, &lb_size, &line_no, gfile);
    if (!n)
    {
-      error = 1;
+      error = GFILE_READ_ERROR;
    }
-   mfprintf(stderr, "\nNo. of bases accorcing to fst line: %lu\n", n);
+
+   /* store first line as info component */
+   if (!error)
+   {
+      this->info = STR_NEW_CSTR(line_buffer);
+      if (this->info == NULL)
+      {
+         error = ERR_RNA_ALLOC;
+      }
+   }
+
+   /* init. allocation of rna structue */
+   if (!error)
+   {
+      error = rna_allocate_pairlist (n, this, __FILE__, __LINE__);
+   }
+   if (!error)
+   {
+      error = rna_alloc_sequence (n, this, __FILE__, __LINE__);
+   }
+
+   /* read file */
+   /* read a line into an array, store vals from array in Rna */
+   while ((!error) && (s_rna_scan_line_ct (ct_cols,
+                                           &base,
+                                           &line_no,
+                                           &error,
+                                           &line_buffer,
+                                           &lb_size,
+                                           gfile) == (N_ct_nos + 1)))
+   {
+      n_bases++;
+
+      /* check whether we have to reallocate */
+      if ((n < ct_cols[Seq_pos]) || (n < ct_cols[partner]))
+      {
+         /* We are generous and give the Rna storage for 1000 new basese. Of
+            course there could be a n. in that line telling us we need more
+            space but usually we don't... */
+         n = (n + 1000 > ct_cols[partner] ? n + 1000 : ct_cols[partner]);
+         error = rna_realloc_sequence (n, this, __FILE__, __LINE__);
+         if (!error)
+         {
+            error = rna_realloc_pairlist (n, this, __FILE__, __LINE__);
+         }
+      }
+
+      if (!error)
+      {
+         /* store lines as Rna */
+         this->seq[ct_cols[Seq_pos] - 1] = base;
+
+         if (ct_cols[partner])
+         {
+            if (this->pairs[ct_cols[Seq_pos] - 1] == NOT_PAIRED)
+            {
+               this->pairs[ct_cols[Seq_pos] - 1] = ct_cols[partner] - 1;
+               
+               /* assure that partner is either unpaired or paired to us */
+               if ((this->pairs[ct_cols[partner] - 1] != NOT_PAIRED)
+                  &&(this->pairs[ct_cols[partner] - 1] != ct_cols[Seq_pos] - 1))
+               {
+                  THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Base %lu pairs "
+                                   "with base %lu which is already paired "
+                                   "with base %lu.",
+                                   str_get(gfile_get_path(gfile)),
+                                   line_no,
+                                   ct_cols[Seq_pos] - 1,
+                                   ct_cols[partner] - 1,
+                                   this->pairs[ct_cols[partner] - 1]);
+                  error = ERR_RNA_CT_SM;
+               }
+            }
+            else
+            {
+               THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Base %lu should "
+                                "pair with base %lu but is already paired to "
+                                "base %lu.\n",
+                                str_get(gfile_get_path (gfile)),
+                                line_no,
+                                ct_cols[Seq_pos] - 1,
+                                ct_cols[partner] - 1,
+                                this->pairs[ct_cols[Seq_pos] - 1]);
+               error = ERR_RNA_CT_SM;
+            }
+         }
+      }
+   }
+
+   /* reallocate to true size */
+   if (n > n_bases)
+   {
+      if (!error)
+      {
+         error = rna_realloc_sequence (n_bases, this, __FILE__, __LINE__);
+      }
+      if (!error)
+      {
+         error = rna_realloc_pairlist (n_bases, this, __FILE__, __LINE__);
+      }     
+   }
 
    /* close file */
-   error = gfile_close(gfile);
+   if (!error)
+   {
+      error = gfile_close(gfile);
+   }
+   else
+   {
+      gfile_close(gfile);
+   }
    XFREE(line_buffer);
    
    return error;
@@ -629,6 +1008,30 @@ rna_set_sequence_base (const char base, const unsigned long pos, Rna* this)
 
    this->seq[pos] = base;
 
+}
+
+/** @brief Set a pairing partner for a base.
+ *
+ * Set a certain sequence position to be the pairing partner of another base.
+ * Ony one base is modified here. To set a complete base pair you need to call
+ * this function twice. We only check the existence of the base to be modified. 
+ * We do not check whether the base to be modified is already paired to
+ * somebody else.\n
+ * Position counting starts at 0.\n
+ *
+ * @param[in] to The base type be modified.
+ * @param[in] from Pairing position.
+ * @param[in] this Rna data object.
+ */
+void
+rna_set_pairing_base (const unsigned long to, const unsigned long from,
+                      Rna* this)
+{
+   assert (this);
+   assert (this->pairs);
+   assert (this->size > to);
+
+   this->pairs[to] = from;
 }
 
 /** @brief Copy a given sequence into an Rna object.
@@ -759,7 +1162,7 @@ rna_get_size (const Rna* this)
  *
  * @params[in] this Rna data object.
  */
-unsigned long*
+const unsigned long*
 rna_get_pairlist (const Rna* this)
 {
    assert (this);
@@ -774,12 +1177,27 @@ rna_get_pairlist (const Rna* this)
  *
  * @params[in] this Rna data object.
  */
-char*
+const char*
 rna_get_sequence (const Rna* this)
 {
    assert (this);
 
    return this->seq;
+}
+
+/** @brief Get the info component of an Rna object.
+ *
+ * Returns the info component of an Rna object as a cstring. If no sequence
+ * was set before, returns @c NULL.
+ *
+ * @params[in] this Rna data object.
+ */
+const Str*
+rna_get_info (const Rna* this)
+{
+   assert (this);
+
+   return this->info;
 }
 
 /** @brief Get a base from a certain position in an Rna sequence.

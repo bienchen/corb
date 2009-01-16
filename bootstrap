@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2008-10-18.21
+scriptversion=2009-01-16.21
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 

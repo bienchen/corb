@@ -31,7 +31,7 @@ const char *brot_args_info_usage = "Usage: brot [OPTIONS]... STRUCTURE";
 const char *brot_args_info_description = "Basic RNAsequence Optimisation Tool";
 
 const char *brot_args_info_detailed_help[] = {
-  "  -h, --help                    Print help and exit",
+  "      --help                    Print help and exit",
   "      --detailed-help           Print help, including all details and hidden \n                                  options, and exit",
   "  -V, --version                 Print version and exit",
   "  -c, --scoring=NAME            Choose a different scoring scheme  (possible \n                                  values=\"NN\", \"nussinov\", \"simpleNN\" \n                                  default=`NN')",
@@ -43,7 +43,11 @@ const char *brot_args_info_detailed_help[] = {
   "  -t, --temp=FLOAT              Initial temperature  (default=`100')",
   "  Initial temperature of the system.",
   "  -r, --seed=INT                Random seed  (default=`-791122')",
-  "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n  for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.",
+  "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n   for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.                  \n  Only takes effect when using with `NN' as scoring scheme.",
+  "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  \n                                  (default=`1.000000')",
+  "  Scaling factor for the negative design term.",
+  "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`1.000000')",
+  "  Scaling factor for the sequence heterogenity term.",
     0
 };
 
@@ -58,11 +62,13 @@ init_help_array(void)
   brot_args_info_help[5] = brot_args_info_detailed_help[7];
   brot_args_info_help[6] = brot_args_info_detailed_help[9];
   brot_args_info_help[7] = brot_args_info_detailed_help[11];
-  brot_args_info_help[8] = 0; 
+  brot_args_info_help[8] = brot_args_info_detailed_help[13];
+  brot_args_info_help[9] = brot_args_info_detailed_help[15];
+  brot_args_info_help[10] = 0; 
   
 }
 
-const char *brot_args_info_help[9];
+const char *brot_args_info_help[11];
 
 typedef enum {ARG_NO
   , ARG_STRING
@@ -77,7 +83,7 @@ static
 void clear_args (struct brot_args_info *args_info);
 
 static int
-brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args_info,
+brot_cmdline_parser_internal (int argc, char** argv, struct brot_args_info *args_info,
                         struct brot_cmdline_parser_params *params, const char *additional_error);
 
 static int
@@ -123,6 +129,8 @@ void clear_given (struct brot_args_info *args_info)
   args_info->steps_given = 0 ;
   args_info->temp_given = 0 ;
   args_info->seed_given = 0 ;
+  args_info->negative_design_scaling_given = 0 ;
+  args_info->heterogenity_term_scaling_given = 0 ;
 }
 
 static
@@ -139,6 +147,10 @@ void clear_args (struct brot_args_info *args_info)
   args_info->temp_orig = NULL;
   args_info->seed_arg = -791122;
   args_info->seed_orig = NULL;
+  args_info->negative_design_scaling_arg = 1.000000;
+  args_info->negative_design_scaling_orig = NULL;
+  args_info->heterogenity_term_scaling_arg = 1.000000;
+  args_info->heterogenity_term_scaling_orig = NULL;
   
 }
 
@@ -157,6 +169,8 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->steps_help = brot_args_info_detailed_help[7] ;
   args_info->temp_help = brot_args_info_detailed_help[9] ;
   args_info->seed_help = brot_args_info_detailed_help[11] ;
+  args_info->negative_design_scaling_help = brot_args_info_detailed_help[13] ;
+  args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[15] ;
   
 }
 
@@ -298,6 +312,8 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   free_string_field (&(args_info->steps_orig));
   free_string_field (&(args_info->temp_orig));
   free_string_field (&(args_info->seed_orig));
+  free_string_field (&(args_info->negative_design_scaling_orig));
+  free_string_field (&(args_info->heterogenity_term_scaling_orig));
   
   
   for (i = 0; i < args_info->inputs_num; ++i)
@@ -397,6 +413,10 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "temp", args_info->temp_orig, 0);
   if (args_info->seed_given)
     write_into_file(outfile, "seed", args_info->seed_orig, 0);
+  if (args_info->negative_design_scaling_given)
+    write_into_file(outfile, "negative-design-scaling", args_info->negative_design_scaling_orig, 0);
+  if (args_info->heterogenity_term_scaling_given)
+    write_into_file(outfile, "heterogenity-term-scaling", args_info->heterogenity_term_scaling_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -579,13 +599,13 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
   return error;
 }
 int
-brot_cmdline_parser (int argc, char **argv, struct brot_args_info *args_info)
+brot_cmdline_parser (int argc, char** argv, struct brot_args_info *args_info)
 {
   return brot_cmdline_parser2 (argc, argv, args_info, 0, 1, 1);
 }
 
 int
-brot_cmdline_parser_ext (int argc, char **argv, struct brot_args_info *args_info,
+brot_cmdline_parser_ext (int argc, char** argv, struct brot_args_info *args_info,
                    struct brot_cmdline_parser_params *params)
 {
   int result;
@@ -595,7 +615,7 @@ brot_cmdline_parser_ext (int argc, char **argv, struct brot_args_info *args_info
 }
 
 int
-brot_cmdline_parser2 (int argc, char **argv, struct brot_args_info *args_info, int override, int initialize, int check_required)
+brot_cmdline_parser2 (int argc, char** argv, struct brot_args_info *args_info, int override, int initialize, int check_required)
 {
   int result;
   struct brot_cmdline_parser_params params;
@@ -878,7 +898,7 @@ static void custom_getopt_initialize(struct custom_getopt_data *d)
 #define NONOPTION_P (argv[d->custom_optind][0] != '-' || argv[d->custom_optind][1] == '\0')
 
 /* return: zero: continue, nonzero: return given value to user */
-static int shuffle_argv(int argc, char **argv,const struct option *longopts,
+static int shuffle_argv(int argc, char** argv,const struct option *longopts,
 	struct custom_getopt_data *d)
 {
 	/*
@@ -959,7 +979,7 @@ static int shuffle_argv(int argc, char **argv,const struct option *longopts,
  * This distinction seems to be the most useful approach.
  *
  */
-static int check_long_opt(int argc, char **argv, const char *optstring,
+static int check_long_opt(int argc, char** argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		int print_errors, struct custom_getopt_data *d)
 {
@@ -1077,7 +1097,7 @@ static int check_long_opt(int argc, char **argv, const char *optstring,
 	return '?';
 }
 
-static int check_short_opt(int argc, char **argv, const char *optstring,
+static int check_short_opt(int argc, char** argv, const char *optstring,
 		int print_errors, struct custom_getopt_data *d)
 {
 	char c = *d->nextchar++;
@@ -1206,7 +1226,7 @@ static int check_short_opt(int argc, char **argv, const char *optstring,
  * '\0'.  This behavior is specific to the GNU `getopt'.
  */
 
-static int getopt_internal_r(int argc, char **argv, const char *optstring,
+static int getopt_internal_r(int argc, char** argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		struct custom_getopt_data *d)
 {
@@ -1238,7 +1258,7 @@ static int getopt_internal_r(int argc, char **argv, const char *optstring,
 	return check_short_opt(argc, argv, optstring, print_errors, d);
 }
 
-static int custom_getopt_internal(int argc, char **argv, const char *optstring,
+static int custom_getopt_internal(int argc, char** argv, const char *optstring,
 	const struct option *longopts, int *longind)
 {
 	int result;
@@ -1255,7 +1275,7 @@ static int custom_getopt_internal(int argc, char **argv, const char *optstring,
 	return result;
 }
 
-static int custom_getopt_long (int argc, char **argv, const char *options,
+static int custom_getopt_long (int argc, char** argv, const char *options,
 	const struct option *long_options, int *opt_index)
 {
 	return custom_getopt_internal(argc, argv, options, long_options,
@@ -1545,7 +1565,7 @@ void update_multiple_arg(void *field, char ***orig_field,
 
 int
 brot_cmdline_parser_internal (
-  int argc, char **argv, struct brot_args_info *args_info,
+  int argc, char** argv, struct brot_args_info *args_info,
                         struct brot_cmdline_parser_params *params, const char *additional_error)
 {
   int c;	/* Character of the parsed option.  */
@@ -1581,7 +1601,7 @@ brot_cmdline_parser_internal (
       int option_index = 0;
 
       static struct option long_options[] = {
-        { "help",	0, NULL, 'h' },
+        { "help",	0, NULL, 0 },
         { "detailed-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "scoring",	1, NULL, 'c' },
@@ -1589,6 +1609,8 @@ brot_cmdline_parser_internal (
         { "steps",	1, NULL, 's' },
         { "temp",	1, NULL, 't' },
         { "seed",	1, NULL, 'r' },
+        { "negative-design-scaling",	1, NULL, 'd' },
+        { "heterogenity-term-scaling",	1, NULL, 'h' },
         { 0,  0, 0, 0 }
       };
 
@@ -1597,7 +1619,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVc:n:s:t:r:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1608,11 +1630,6 @@ brot_cmdline_parser_internal (
 
       switch (c)
         {
-        case 'h':	/* Print help and exit.  */
-          brot_cmdline_parser_print_help ();
-          brot_cmdline_parser_free (&local_args_info);
-          exit (EXIT_SUCCESS);
-
         case 'V':	/* Print version and exit.  */
           brot_cmdline_parser_print_version ();
           brot_cmdline_parser_free (&local_args_info);
@@ -1675,8 +1692,38 @@ brot_cmdline_parser_internal (
             goto failure;
         
           break;
+        case 'd':	/* Scale negative design term.  */
+        
+        
+          if (update_arg( (void *)&(args_info->negative_design_scaling_arg), 
+               &(args_info->negative_design_scaling_orig), &(args_info->negative_design_scaling_given),
+              &(local_args_info.negative_design_scaling_given), optarg, 0, "1.000000", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "negative-design-scaling", 'd',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'h':	/* Scale heterogenity term.  */
+        
+        
+          if (update_arg( (void *)&(args_info->heterogenity_term_scaling_arg), 
+               &(args_info->heterogenity_term_scaling_orig), &(args_info->heterogenity_term_scaling_given),
+              &(local_args_info.heterogenity_term_scaling_given), optarg, 0, "1.000000", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "heterogenity-term-scaling", 'h',
+              additional_error))
+            goto failure;
+        
+          break;
 
         case 0:	/* Long option with no short option */
+          if (strcmp (long_options[option_index].name, "help") == 0) {
+            brot_cmdline_parser_print_help ();
+            brot_cmdline_parser_free (&local_args_info);
+            exit (EXIT_SUCCESS);
+          }
+
           if (strcmp (long_options[option_index].name, "detailed-help") == 0) {
             brot_cmdline_parser_print_detailed_help ();
             brot_cmdline_parser_free (&local_args_info);

@@ -1,4 +1,4 @@
-# Last modified: 2009-01-06.20
+# Last modified: 2009-01-12.10
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -52,7 +52,8 @@ CRB_ARG_ENABLE_ASSERT
 
 # development tools
 CRB_ARG_WITH_CUM([development],
-                 [pc_elisp reformat read_viennaparams ex_cmp_er2de_rnaeval])
+                 [pc_elisp reformat read_viennaparams ex_cmp_er2de_rnaeval
+                  opt_brot_design_terms])
 
 CRB_ARG_WITH_PC_ELISP
 CRB_ARG_WITH_PERL_PROG([reformat], [build reformat tool for source code])
@@ -60,6 +61,9 @@ CRB_ARG_WITH_PERL_PROG([read_viennaparams],
                        [build conversion tool for Vienna energy tables])
 CRB_ARG_WITH_PERL_PROG([ex_cmp_er2de_rnaeval],
                  [compare Nearest Neighbour model parameters to Vienna package])
+CRB_ARG_WITH_PERL_PROG([opt_brot_design_terms],
+                       [Optimiser for constants in brot])
+
 
 # Checks for header files
 CRB_CHECK_HEADERS([assert.h float.h limits.h stddef.h])

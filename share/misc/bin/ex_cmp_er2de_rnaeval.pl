@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-12-22.12
+# Last modified: 2009-01-12.14
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -1601,7 +1601,7 @@ sub call_er2de ($ $)
     my ($seq, $struct) = @_;
 
     #print "$seq $struct\n";
-    local $SIG{PIPE} = sub { die "spooler pipe broke" };
+
     unless(open(FH, "../../../src/corb \"er2de $seq $struct\" |"))
     {
         msg_error_and_die ("Could not start er2de\n");
@@ -1958,8 +1958,6 @@ my $pod_verbose = 1;
 my %param_hash;
 my $ret_val;
 my %test_nos;
-
-my %pb;
 
 # parse commandline
 $ret_val = parseargs(%arg_hash);

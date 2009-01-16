@@ -810,11 +810,6 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          SeqMatrix* sm,
                          void* sco)
 {
-/*nussinov: */
-/*CGGAUCAAACCUGAACACAUACAGGACAGCGAUACAAACGCUGAACAAGUCCGAACACAACGGACUGAUCCGAAAC*/
-/*nn: */
-/*CGUGCACUAGGACCAGAUAAAGUCCAGGGGCAAAUAGAGCCCCAAAUAGGGGCAAAUAGAGCCCCGUGCACGAAAG*/
-
    unsigned long t;             /* time */
    int error= 0;
    unsigned long i, j;          /* iterator */
@@ -841,9 +836,6 @@ seqmatrix_simulate_scmf (const unsigned long steps,
       {
          error = sm->calc_eeff_col (sm, T, sco);
       }
-
-      /*mprintf ("After calc_eeff_col\n");
-        seqmatrix_print_2_stdout (6, sm);  */   
 
       /* update matrix */
       /* for all columns */ 
@@ -878,6 +870,9 @@ seqmatrix_simulate_scmf (const unsigned long steps,
             }
          }
 
+         /*mprintf ("After calc_eeff_col\n");
+           seqmatrix_print_2_stdout (6, sm); */
+
          /* shouldn't s be calculated on the no. of unfixed cols? */
          s = (s / sm->cols) * (-1.0f);
 
@@ -911,7 +906,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    unsigned long i, j;
    int rprec = 0;               /* precision for row number */
    int cprec = 0;               /* precision for cells */
-   float tmp;
+   float tmp = 0.0f;
    char* string;
    char* string_start;
 

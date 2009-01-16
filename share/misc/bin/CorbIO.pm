@@ -1,4 +1,4 @@
-# Last modified: 2008-12-17.17
+# Last modified: 2009-01-12.11
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -98,18 +98,18 @@ BEGIN {
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION     = 0.01;
+    $VERSION     = 0.02;
     
     @ISA         = qw(Exporter);
     @EXPORT      = ();
-    %EXPORT_TAGS = (verbose => [qw(enable_verbose
-                                   disable_verbose
-                                   is_verbose
-                                   msg_verbose)],
-                    msg     => [qw(msg_warning
-                                   msg_error_and_die
-                                   disable_msg_caller)],
-                    file    => [qw(open_or_die)]
+    %EXPORT_TAGS = (verbose => [qw(&enable_verbose
+                                   &disable_verbose
+                                   &is_verbose
+                                   &msg_verbose)],
+                    msg     => [qw(&msg_warning
+                                   &msg_error_and_die
+                                   &disable_msg_caller)],
+                    file    => [qw(&open_or_die)]
                    );
 
     # add all the other tags to the ":all" tag,

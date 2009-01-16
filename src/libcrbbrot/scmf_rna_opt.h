@@ -94,6 +94,9 @@ scmf_rna_opt_data_transform_row_2_base (const unsigned long,
                                         void*);
 
 void
+scmf_rna_opt_data_set_scales (float, float, Scmf_Rna_Opt_data*);
+
+void
 scmf_rna_opt_data_set_scores (void*, Scmf_Rna_Opt_data*);
 
 void

@@ -27,9 +27,9 @@ share/misc/bin/reformat
 share/misc/bin/read_viennaparams
 share/misc/bin/ex_cmp_er2de_rnaeval
 share/misc/emacs/elc-stamp
-# src/libcrbbasic/test_*
 autom4te.cache
 *.bkp
+configure.scan
 
 #ignore test binaries
 src/libcrbbasic/test_argvprsr

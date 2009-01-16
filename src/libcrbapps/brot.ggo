@@ -72,3 +72,17 @@ option "seed" r "Random seed"
        typestr="INT"
        default="-791122"
        optional
+
+option "negative-design-scaling" d "Scale negative design term"
+       details="Scaling factor for the negative design term."
+       float
+       typestr="FLOAT"
+       default="1.01"
+       optional
+
+option "heterogenity-term-scaling" h "Scale heterogenity term"
+       details="Scaling factor for the sequence heterogenity term."
+       float
+       typestr="FLOAT"
+       default="1.000000"
+       optional

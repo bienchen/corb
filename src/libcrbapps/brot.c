@@ -329,7 +329,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    if (!error)
    {
       /* "randomise" scoring function */
-      mfprintf (stderr, "Using seed: %ld\n", brot_args->seed_arg);
+      mfprintf (stdout, "Using seed: %ld\n", brot_args->seed_arg);
       nn_scores_add_thermal_noise (alpha_size, brot_args->seed_arg, scores);
 
       bp_allowed = XMALLOC(alpha_size * sizeof (*bp_allowed));
@@ -382,7 +382,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       error = scmf_rna_opt_data_secstruct_init (data);
    }
 
-   mfprintf (stderr, "TREATMENT of fixed sites: If both sites of a pair are "
+   mfprintf (stdout, "TREATMENT of fixed sites: If both sites of a pair are "
              "fixed, delete from list? Verbose info!!!\n");
 
    /* set our special function for calc. cols.: Iterate over sec.struct., not
@@ -391,6 +391,9 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    {
       scmf_rna_opt_data_set_scores (scores, data);
       scmf_rna_opt_data_set_bp_allowed (bp_allowed, data);
+      scmf_rna_opt_data_set_scales (brot_args->negative_design_scaling_arg,
+                                    brot_args->heterogenity_term_scaling_arg,
+                                    data);
 
       seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
       seqmatrix_set_gas_constant (8.314472, sm);
@@ -418,7 +421,17 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    {
       seqmatrix_print_2_stdout (2, sm);
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
-      error = seqmatrix_collate_mv (sm, data);
+
+      error = seqmatrix_collate_is (0.99,
+                                    brot_args->steps_arg / 2,
+                                    brot_args->temp_arg,
+                                    c_rate,
+                                    0,
+                                    0.6,
+                                    0.05,
+                                    sm,
+                                    data);
+      /*error = seqmatrix_collate_mv (sm, data);*/
    }
 
    /* first: iterate scmf on secstruct, not sm! */
@@ -601,7 +614,7 @@ brot_main(const char *cmdline)
          }
       }
    }
-  
+
    if (retval == 0)
    {
       seqmatrix_print_2_stdout (2, sm);

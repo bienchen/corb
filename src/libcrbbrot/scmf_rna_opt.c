@@ -39,6 +39,12 @@
  *  Revision History:
  *         - 2008Aug08 bienert: created
  *
+ *  ToDo:
+ *      - change term cols into n_sites -> log. unlinked from matrix geometry
+ *      - change rows to n_states
+ *      - change bp_allowed to char?
+ *      - heterogenity: use scalar products of whole sites -> sort of
+ *        heterogenity on multi sites, not single (gundolf)
  */
 
 #include <config.h>
@@ -54,6 +60,8 @@ struct Scmf_Rna_Opt_data {
       Rna* rna;           /* sequence and pairlist */
       char** bp_allowed;  /* mapping of base to allowed pairing partners */
       float het_rate;     /* rate of decrease for the heterogenity term */
+      float het_scale;    /* scaling factor for het term */
+      float neg_scale;    /* scaling factor for negative design */
       float* en_neg;      /* negative energies for incremental updates */
       float** en_neg2;    /* negative energies for incremental updates */
       float** en_neg_35;  /* neg.en. for 5' 3' direction */
@@ -78,7 +86,9 @@ scmf_rna_opt_data_new (const char* file, const int line)
       cedat->het_rate   = 0.0f;
       cedat->en_neg     = NULL;
       cedat->en_neg2    = NULL;
-      cedat->en_neg_35   = NULL;
+      cedat->en_neg_35  = NULL;
+      cedat->het_scale  = 1.0f;
+      cedat->neg_scale  = 1.0f;
    }
 
    return cedat;
@@ -118,6 +128,8 @@ scmf_rna_opt_data_new_init (const char* structure,
    if (this != NULL)
    {
       this->het_rate = het_rate;
+
+      /* mfprintf (stderr, "Het-Rate: %f %f\n", het_rate, (logf (0.01) / logf (expf(1)))/het_rate); */
 
       /* init alphabet */
       this->sigma = ALPHABET_NEW_SINGLE (alpha_string, alpha_size);
@@ -256,13 +268,6 @@ scmf_rna_opt_data_init_negative_design_energies_alt (void* data,
    memset(this->en_neg_35[0], 0, (alpha * alpha) * sizeof(**(this->en_neg_35)));
    memset(this->en_neg, 0, alpha * sizeof (*(this->en_neg)));
 
-   /*for (k = 0; k < alpha; k++)
-   {
-      for (i = 0; i < alpha; i++)
-         mfprintf (stderr, "%lu: %f ", k, this->en_neg2[k][i]);
-      mfprintf (stderr, "\n");
-      }*/
-
    /* idea: calculate all neg. contributions for the first column without
             incorporating the probabilities from this column into the
             calculation. The probabilities are then used during cell
@@ -339,7 +344,7 @@ scmf_rna_opt_iterate_neg_design_term (unsigned long row,
 
    if ((col + 1) < seqmatrix_get_width(sm))
    {
-      /* update negative energy for nex col */
+      /* update negative energy for next col */
       /* subtract col, col+1 contribution (5' -> 3') */
       for (j = 0; this->bp_allowed[row][j] != 0; j++)
       {
@@ -415,6 +420,15 @@ scmf_rna_opt_data_set_scores (void* scores,
    assert (cedat);
 
    cedat->scores = scores;
+}
+
+void
+scmf_rna_opt_data_set_scales (float neg, float het, Scmf_Rna_Opt_data* cedat)
+{
+   assert (cedat);
+
+   cedat->neg_scale = neg;
+   cedat->het_scale = het;
 }
 
 void
@@ -897,7 +911,7 @@ scmf_rna_opt_calc_simplenn (const unsigned long row,
 
 /* RNA design using the full NN model.
 */
-void
+static void
 scmf_rna_opt_calc_hairpin (const unsigned long row,
                            const unsigned long hairpin,
                            SeqMatrix* sm,
@@ -926,7 +940,7 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
    /* iterate all possible base pairs with the current base! */
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
       
       /* for all possible unpaired bases */
       for (l = 0; l < alpha_size; l++)
@@ -1027,7 +1041,7 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
    }
 }
 
-void
+static void
 scmf_rna_opt_calc_ext_loop (const unsigned long row,
                             SeqMatrix* sm,
                             Scmf_Rna_Opt_data* this)
@@ -1053,7 +1067,7 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
       /* for all possible closing bp */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
-         bpp = this->bp_allowed[row][l] - 1;
+         bpp = (char) (this->bp_allowed[row][l] - 1);
 
          cell5p += (seqmatrix_get_probability(bpp, p3pos, sm)
                      * nn_scores_get_G_non_gc_penalty_for_bp (row, bpp,
@@ -1088,7 +1102,7 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
-         bpp = this->bp_allowed[row][l] - 1;
+         bpp = (char) (this->bp_allowed[row][l] - 1);
 
          p5p = seqmatrix_get_probability(bpp, p3pos, sm);
          p3p = seqmatrix_get_probability(bpp, p5pos, sm);
@@ -1135,7 +1149,7 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
-         bpp = this->bp_allowed[row][l] - 1;
+         bpp = (char) (this->bp_allowed[row][l] - 1);
 
          p5p = seqmatrix_get_probability(bpp, p3pos, sm);
          p3p = seqmatrix_get_probability(bpp, p5pos, sm);
@@ -1170,7 +1184,7 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
    }
 }
 
-void
+static void
 scmf_rna_opt_calc_multi_loop (const unsigned long row,
                               const unsigned long loop,
                               SeqMatrix* sm,
@@ -1198,7 +1212,7 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
       /* for all possible closing bp */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
-         bpp = this->bp_allowed[row][l] - 1;
+         bpp = (char) (this->bp_allowed[row][l] - 1);
 
          cell5p += (seqmatrix_get_probability(bpp, p3pos, sm)
                      * nn_scores_get_G_non_gc_penalty_for_bp (row, bpp,
@@ -1229,7 +1243,7 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
-         bpp = this->bp_allowed[row][l] - 1;
+         bpp = (char) (this->bp_allowed[row][l] - 1);
 
          p5p = seqmatrix_get_probability(bpp, p3pos, sm);
          p3p = seqmatrix_get_probability(bpp, p5pos, sm);
@@ -1275,7 +1289,7 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
-         bpp = this->bp_allowed[row][l] - 1;
+         bpp = (char) (this->bp_allowed[row][l] - 1);
 
          p5p = seqmatrix_get_probability(bpp, p3pos, sm);
          p3p = seqmatrix_get_probability(bpp, p5pos, sm);
@@ -1318,7 +1332,7 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
    }
 }
 
-void
+static void
 scmf_rna_opt_calc_bulge (const unsigned long row,
                          const unsigned long loop,
                          SeqMatrix* sm,
@@ -1347,7 +1361,7 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
    cell_j2 = 0.0f;
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
 
       /* combine with all possible bp */
       for (l = 0; l < allowed_bp; l++)
@@ -1391,7 +1405,7 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
    seqmatrix_add_2_eeff (cell_j2, row, j2pos, sm);
 }
 
-void
+static void
 scmf_rna_opt_calc_stack (const unsigned long row,
                          const unsigned long stack,
                          SeqMatrix* sm,
@@ -1414,7 +1428,7 @@ scmf_rna_opt_calc_stack (const unsigned long row,
    cell_jm1 = 0.0f;
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
 
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
@@ -1477,7 +1491,7 @@ scmf_rna_opt_calc_internal (const unsigned long row,
    /* for all allowed pairs */
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
 
       /* for all bases */
       for (l = 0; l < alpha_size; l++)
@@ -1636,7 +1650,7 @@ scmf_rna_opt_calc_int22 (const unsigned long row,
    /* for all allowed pairs */
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
 
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
@@ -1850,7 +1864,7 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
    cell_j2 = 0.0f;
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
 
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
@@ -2049,7 +2063,7 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
    /* for all allowed pairs */
    for (k = 0; this->bp_allowed[row][k] != 0; k++)
    {
-      bpp = this->bp_allowed[row][k] - 1;
+      bpp = (char) (this->bp_allowed[row][k] - 1);
       
       /* for all possible pairs */
       for (l = 0; l < allowed_bp; l++)
@@ -2165,7 +2179,7 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
    seqmatrix_add_2_eeff (cell_j1, row, pj1 - 1, sm);
 }
 
-void
+static void
 scmf_rna_opt_calc_internals (const unsigned long row,
                              const unsigned long loop,
                              SeqMatrix* sm,
@@ -2217,6 +2231,316 @@ scmf_rna_opt_calc_internals (const unsigned long row,
    }
 }
 
+static float
+scmf_rna_opt_get_interaction_energy (char state,
+                                     const unsigned long site,
+                                     const unsigned long partner,
+                                     unsigned long allowed_bp,
+                                     const Scmf_Rna_Opt_data* this,
+                                     SeqMatrix* sm)
+{
+   float pe = 0.0f;
+   unsigned long abp, bp;
+   char bip, bjm, bj;
+   char* p5;
+   char* p3;
+   unsigned long pos_j, pos_i;
+
+   if (site < partner)
+   {
+      p5 = &state;
+      p3 = &bj;
+      pos_i = site;
+      pos_j = partner;
+   }
+   else
+   {
+      p3 = &state;
+      p5 = &bj;
+      pos_j = site;
+      pos_i = partner;
+   }
+
+   /* for all possible pairing partners */
+   for (abp = 0; this->bp_allowed[(int)state][abp] != 0; abp++)
+   {
+      bj = (char) (this->bp_allowed[(int)state][abp] - 1);
+      
+      /* for all stacking bp */
+      for (bp = 0; bp < allowed_bp; bp++)
+      {
+         nn_scores_get_allowed_basepair (bp, &bjm, &bip, this->scores);
+
+         pe += (nn_scores_get_G_stack (*p5, *p3, bjm, bip, this->scores)
+                * seqmatrix_get_probability (bj, partner/* pos_j */, sm)
+                * seqmatrix_get_probability (bjm, pos_j - 1, sm)
+                * seqmatrix_get_probability (bip, pos_i + 1, sm));
+      }
+   }
+   
+   return pe;
+}
+
+static void
+scmf_rna_opt_calc_upstream_cont (const unsigned long state,
+                                 const unsigned long j,
+                                 const unsigned long allowed_bp,
+                                 const Scmf_Rna_Opt_data* this,
+                                 const SeqMatrix* sm)
+{
+   unsigned long abp, bp;
+   char bip, bjm, bj;
+
+   for (abp = 0; this->bp_allowed[state][abp] != 0; abp++)
+   {
+      bj = (char) (this->bp_allowed[state][abp] - 1);
+
+      for (bp = 0; bp < allowed_bp; bp++)
+      {
+         nn_scores_get_allowed_basepair (bp, &bjm, &bip, this->scores);
+         
+         this->en_neg[(int)bip] -= (nn_scores_get_G_stack (state, bj, bjm, bip,
+                                                           this->scores)
+                                    * seqmatrix_get_probability (bjm, (j-1),sm)
+                                    * seqmatrix_get_probability (bj, j, sm));
+      }
+   }
+}
+
+static void
+scmf_rna_opt_calc_downstream_cont (const unsigned long state,
+                                   const unsigned long i,
+                                   const unsigned long allowed_bp,
+                                   const Scmf_Rna_Opt_data* this,
+                                   const SeqMatrix* sm)
+{
+   unsigned long abp, bp;
+   char bi, bip, bjm;
+
+   for (abp = 0; this->bp_allowed[state][abp] != 0; abp++)
+   {
+      bi = (char)(this->bp_allowed[state][abp] - 1);
+
+      for (bp = 0; bp < allowed_bp; bp++)
+      {
+         nn_scores_get_allowed_basepair (bp, &bip, &bjm, this->scores);
+
+      this->en_neg_35[0][(int)bjm] += (nn_scores_get_G_stack (bi,state,bjm,bip,
+                                                              this->scores)
+                                       * seqmatrix_get_probability (bi, i, sm)
+                                 * seqmatrix_get_probability (bip, i + 1, sm));
+      }
+   }
+}
+
+static void
+scmf_rna_opt_calc_neg_loop (const unsigned long state,
+                            const unsigned long n_sites,
+                            const unsigned long allowed_bp,
+                            const unsigned long alpha_size,
+                            const Scmf_Rna_Opt_data* this,
+                            SeqMatrix* sm)
+{
+   /* called for each state seperately */
+   unsigned long j, abp, bp, paired_2;
+   char bj, bip, bjm;
+   float prob;
+
+   /* init upstream direction */
+   /* Idea: For the first state, add up all negative interactions. But only
+            count energies multiplied with probabilities INDEPENDENT of the
+            first position (that is j, j-1 since cur.state is i, i+1 is not
+            independent). This gives us a quasi force-field which can be
+            iterated to produce neg.design terms for all other sites. This
+            turns the naive quadratic approach into linear time. */
+
+   memset(this->en_neg, 0, alpha_size * sizeof (*(this->en_neg)));
+   memset(this->en_neg_35[0], 0, alpha_size * sizeof(**(this->en_neg_35)));
+
+   /* walk over all pairing partners of given state */
+   for (abp = 0; this->bp_allowed[state][abp] != 0; abp++)
+   {
+      bj = (char) (this->bp_allowed[state][abp] - 1);
+      
+      /* stack with all pairs allowed in our alphabet */
+      for (bp = 0; bp < allowed_bp; bp++)
+      {
+         nn_scores_get_allowed_basepair (bp, &bjm, &bip, this->scores);
+         
+         /* iterate all but the first site to be the j-side in a pair */
+         prob = 0.0f;
+         for (j = 1; j < n_sites; j++)
+         {
+            prob += (seqmatrix_get_probability (bjm, (j - 1), sm)
+                   * seqmatrix_get_probability (bj,   j,      sm));
+         }
+
+         this->en_neg[(int)bip] += (nn_scores_get_G_stack (state, bj, bjm, bip,
+                                                          this->scores) * prob);
+      }
+   }
+
+   /* iterate over all sites */
+   /* treat site 0 as special case */
+   if (!seqmatrix_is_col_fixed (0, sm))
+   {
+      prob = 0.0f;
+      for (abp = 0; abp < alpha_size; abp++)
+      {
+         prob += (this->en_neg[abp] * seqmatrix_get_probability (abp, 1, sm));
+      }
+      
+      if ((paired_2 = rna_base_pairs_with (0, this->rna)) != NOT_PAIRED)
+      {
+         prob -= scmf_rna_opt_get_interaction_energy ((char) state, 0, paired_2,
+                                                      allowed_bp,
+                                                      this, sm);
+      }
+   
+      /*mfprintf (stdout, "%lu,%lu: %f\n", state, 0L, prob);*/
+      seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale,state, 0,
+                            sm);
+   }
+
+   scmf_rna_opt_calc_upstream_cont (state, 1, allowed_bp, this, sm);
+   scmf_rna_opt_calc_downstream_cont (state, 0, allowed_bp, this, sm);
+
+   for (j = 1; j < (n_sites - 1); j++)
+   {
+      if (!seqmatrix_is_col_fixed (j, sm))
+      {
+         /* create current neg. design term */
+         prob = 0.0f;
+         
+         /* add all contributions of possible stacking pairing parnters */
+         for (abp = 0; abp < alpha_size; abp++)
+         {
+            prob += (this->en_neg[abp] 
+                     * seqmatrix_get_probability (abp, j + 1, sm));
+            prob += (this->en_neg_35[0][abp]
+                     * seqmatrix_get_probability (abp, (j - 1), sm));
+         }
+         
+         /*   remove possible interaction */      
+         if ((paired_2 = rna_base_pairs_with (j, this->rna)) != NOT_PAIRED)
+         {
+            prob -= scmf_rna_opt_get_interaction_energy ((char) state, j,
+                                                         paired_2,
+                                                         allowed_bp,
+                                                         this, sm);
+         }
+         
+         
+         /* if we pair, we have stacks (i, i+1, site-1, site) and
+            (site, site+1, j-1, j) counted without need */
+         
+         /*   store */
+         /*mfprintf (stdout, "%lu,%lu: %f\n", state, j, prob);*/
+         seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale, state,
+                               j,
+                               sm);
+      }
+
+      /*   update downstream */
+      scmf_rna_opt_calc_downstream_cont (state, j, allowed_bp, this, sm);
+
+      /*   update upstream */
+      scmf_rna_opt_calc_upstream_cont (state, j + 1, allowed_bp, this, sm);
+
+      /* exclude one sonderfall (0 and last) */
+   }
+
+   if (!seqmatrix_is_col_fixed (j, sm))
+   {
+      /* treat last site as special case */
+      prob = 0.0f;
+      for (abp = 0; abp < alpha_size; abp++)
+      {
+         prob += (this->en_neg_35[0][abp]
+                  * seqmatrix_get_probability (abp, (j - 1), sm));
+      }
+      
+      if ((paired_2 = rna_base_pairs_with (j, this->rna)) != NOT_PAIRED)
+      {
+         prob -= scmf_rna_opt_get_interaction_energy ((char) state, j,
+                                                      paired_2, allowed_bp,
+                                                      this, sm);
+      }
+      
+      /*mfprintf (stdout, "%lu,%lu: %f\n", state, j, prob);*/
+      seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale,state, j,
+                            sm);
+   }
+}
+
+static void
+scmf_rna_opt_calc_het_term (const unsigned long state,
+                            const unsigned long n_sites,
+                            const Scmf_Rna_Opt_data* this,
+                            SeqMatrix* sm)
+{
+   unsigned long s_c/* , s_h */;
+   float het;
+   /* float het_count = 0.0f; */
+
+   /* do it like gundolf - START */
+   /***************************************/
+   /* first try: additive, whole sequence */
+   /***************************************/
+   het = 0.0f;
+   /* calc first pos */
+   for (s_c = 0; s_c < n_sites; s_c++)
+   {
+      het += seqmatrix_get_probability (state, s_c, sm);
+   }
+
+   /* propagate on whole sequence */
+   for (s_c = 0; s_c < n_sites; s_c++)
+   {
+      seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
+                             / n_sites) * this->het_scale, state, s_c, sm);
+   }
+
+
+   /***************************************/
+   /*      2nd try: additive, window      */
+   /***************************************/
+
+   /* do it like gundolf - END */
+
+/*    /\* for each site *\/ */
+/*    for (s_c = 0; s_c < n_sites; s_c++) */
+/*    { */
+/*       het = 0.0f; */
+
+/*       /\* pay attention to all sites before the current *\/ */
+/*       for (s_h = 0; s_h < s_c; s_h++) */
+/*       { */
+/*          if (rna_base_pairs_with (s_c, this->rna) != s_h) */
+/*          { */
+/*             het += (seqmatrix_get_probability (state, s_h, sm) */
+/*                     * expf(this->het_rate * (s_c - (s_h + 1)))); */
+/*             het_count += expf ( (this->het_rate* (s_c - (s_h + 1)))); */
+/*          } */
+/*       } */
+
+/*       /\* pay attention to all remaining sites *\/ */
+/*       for (s_h = s_c + 1; s_h < n_sites; s_h++) */
+/*       { */
+/*          if (rna_base_pairs_with (s_c, this->rna) != s_h) */
+/*          { */
+/*             het += (seqmatrix_get_probability (state, s_h, sm) */
+/*                         * expf(this->het_rate * (s_h - (s_c + 1)))); */
+/*             het_count += (expf (this->het_rate * (s_h - (s_c + 1)))); */
+/*          } */
+/*       } */
+
+/*       /\* store contribution *\/ */
+/*       /\*mfprintf (stdout, "%lu: %f\n", s_c, this->het_scale);*\/ */
+/*       seqmatrix_add_2_eeff ((het/\* / het_count *\/) * this->het_scale, state, s_c, sm); */
+/*    } */
+}
+
 /** @brief SCMF simulation function.
  *
  * This is the substitute for the column iteration function of a SCMF
@@ -2237,23 +2561,31 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
    Scmf_Rna_Opt_data* this;
    unsigned long n;
    unsigned long i;
-   unsigned long rows;
-   unsigned long cols;
+   unsigned long n_states;
+   unsigned long n_sites;
    unsigned long r, c;
+   /* unsigned long pi, c_neg, abp; */
+   /* char b_i, b_ip, b_jm, b_j; */
    float cell;
+   /* float prob; */
+   unsigned long allowed_bp;
+   unsigned long alpha_size;
 
    assert (sm);
    assert (sco);
 
    this = (Scmf_Rna_Opt_data*) sco;
 
+   allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
+   alpha_size = alphabet_size (this->sigma);
+
    seqmatrix_set_eeff_matrix_zero (sm);
 
-   /* iterate all bases (rows) */
-   rows = seqmatrix_get_rows (sm);
-   cols = seqmatrix_get_width (sm);
+   /* iterate all bases (n_states) */
+   n_states = seqmatrix_get_rows (sm);
+   n_sites = seqmatrix_get_width (sm);
    r = 0;
-   while ((r < rows) && (!error))
+   while ((r < n_states) && (!error))
    {
       /*seqmatrix_print_2_stdout (2, sm);*/
       /* process structure components */
@@ -2295,18 +2627,18 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
          scmf_rna_opt_calc_multi_loop (r, i, sm, this);
       }
 
-      /* calc. negative design term */
-      /*  */
+      /* calc. neg. design term, iteratevily */
+      scmf_rna_opt_calc_neg_loop (r, n_sites, allowed_bp, alpha_size, this, sm);
 
-      /* heterogenity? */
-      /*sm->calc_m[j][col] =
-        expf ((-1.0f) * (sm->calc_m[j][col]/(sm->gas_constant*t)));*/
-      for (c = 0; c < cols; c++)
+      /* heterogenity term */
+      scmf_rna_opt_calc_het_term (r, n_sites, this, sm);
+
+      for (c = 0; c < n_sites; c++)
       {
          if (!seqmatrix_is_col_fixed (c, sm))
          {
-            /*mprintf ("CM(%lu,%lu) = %.2f", r, c,
-              seqmatrix_get_eeff (r, c, sm));*/
+/*             mprintf ("CM(%lu,%lu) = %.2f\n", r, c, */
+/*               seqmatrix_get_eeff (r, c, sm)); */
             cell = expf((-1.0f) * seqmatrix_get_eeff (r, c, sm)
                         / (t * seqmatrix_get_gas_constant(sm)));
             seqmatrix_set_eeff (cell, r, c, sm);
@@ -2316,6 +2648,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
 
       r++;
    }
+   /* mfprintf (stderr, "\n"); */
 
 
    return error;

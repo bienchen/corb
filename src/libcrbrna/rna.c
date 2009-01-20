@@ -68,6 +68,7 @@ struct Rna {
    Str* info;
 };
 
+#define CT_FILE_ERR "ct-file \'%s\', line %lu: "
 
 /**********************   Constructors and destructors   **********************/
 
@@ -642,10 +643,11 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
    /* we do not check errors here because if(error) then read = 0 */
    while (read == 1)            /* only '\n' read */
    {
-      THROW_WARN_MSG ("ct-file \'%s\', line %lu: Empty line.\n",
+      THROW_WARN_MSG (CT_FILE_ERR "Empty line.",
                       str_get(gfile_get_path (gfile)),
                       *line_no);
       read = gfile_getline (error, buf, buf_size, gfile);
+
       (*line_no)++;
    }
 
@@ -658,7 +660,7 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
 
    if (i > 0)
    {
-      THROW_WARN_MSG ("ct-file \'%s\', line %lu: Leading whitespaces.\n",
+      THROW_WARN_MSG (CT_FILE_ERR "Leading whitespaces.",
                       str_get(gfile_get_path (gfile)),
                       *line_no);      
    }
@@ -699,8 +701,8 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
                if ((*buf == endptr) || (((*buf + i) - endptr) != 0))
                {
                   (*buf)[i] = '\0';
-                  THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Column %lu does "
-                                   "not contain a number: \"%s\".\n",
+                  THROW_ERROR_MSG (CT_FILE_ERR "Column %lu does not contain "
+                                   "a number: \"%s\".",
                                    str_get(gfile_get_path (gfile)),
                                    *line_no,
                                    (col + 1),
@@ -717,8 +719,8 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
                if ((*buf)[i - 2] != ' ')
                {
                   (*buf)[i] = '\0';
-                  THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Column %lu is "
-                                   "not a single letter nucleotide: \"%s\".\n",
+                  THROW_ERROR_MSG (CT_FILE_ERR "Column %lu is not a single "
+                                   "letter nucleotide: \"%s\".",
                                    str_get(gfile_get_path (gfile)),
                                    *line_no,
                                    (col + 1),
@@ -739,9 +741,9 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
    /* do line syntax/ semantic check */
    if (cols[Seq_pos] != cols[Pos_seq])
    {
-      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: First and last column, "
-                       "supposed to redundantly describe the sequence "
-                       "position, do not match: %lu != %lu.\n",
+      THROW_ERROR_MSG (CT_FILE_ERR "First and last column, supposed to "
+                       "redundantly describe the sequence position, do not "
+                       "match: %lu != %lu.\n",
                        str_get(gfile_get_path (gfile)),
                        *line_no,
                        cols[Seq_pos],
@@ -751,8 +753,8 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
    }
    if (cols[Seq_pos] == 0)
    {
-      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Sequence position is \'0\', "
-                       "bases are counted beginning with \'1\'.\n",
+      THROW_ERROR_MSG (CT_FILE_ERR "Sequence position is \'0\', bases are "
+                       "counted beginning with \'1\'.\n",
                        str_get(gfile_get_path (gfile)),
                        *line_no);
       *error = ERR_RNA_CT_SM;
@@ -760,9 +762,8 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
    }
    if (cols[p5_con] == cols[Seq_pos])
    {
-      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: 5' connection (\'%lu\') "
-                       "points to the sequence position (\'%lu\') of the "
-                       "current base.\n",
+      THROW_ERROR_MSG (CT_FILE_ERR "5' connection (\'%lu\') points to the "
+                       "sequence position (\'%lu\') of the current base.\n",
                        str_get(gfile_get_path (gfile)),
                        *line_no,
                        cols[p5_con],
@@ -772,9 +773,8 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
    }
    if (cols[p3_con] == cols[Seq_pos])
    {
-      THROW_ERROR_MSG ("ct-file \'%s\', line %lu: 3' connection (\'%lu\') "
-                       "points to the sequence position (\'%lu\') of the "
-                       "current base.\n",
+      THROW_ERROR_MSG (CT_FILE_ERR "3' connection (\'%lu\') points to the "
+                       "sequence position (\'%lu\') of the current base.\n",
                        str_get(gfile_get_path (gfile)),
                        *line_no,
                        cols[p3_con],
@@ -875,14 +875,13 @@ rna_read_from_file_ct (Rna* this, const char* path)
             if (this->pairs[ct_cols[Seq_pos] - 1] == NOT_PAIRED)
             {
                this->pairs[ct_cols[Seq_pos] - 1] = ct_cols[partner] - 1;
-               
+
                /* assure that partner is either unpaired or paired to us */
                if ((this->pairs[ct_cols[partner] - 1] != NOT_PAIRED)
                   &&(this->pairs[ct_cols[partner] - 1] != ct_cols[Seq_pos] - 1))
                {
-                  THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Base %lu pairs "
-                                   "with base %lu which is already paired "
-                                   "with base %lu.",
+                  THROW_ERROR_MSG (CT_FILE_ERR "Base %lu pairs with base %lu "
+                                   "which is already paired with base %lu.",
                                    str_get(gfile_get_path(gfile)),
                                    line_no,
                                    ct_cols[Seq_pos] - 1,
@@ -893,9 +892,8 @@ rna_read_from_file_ct (Rna* this, const char* path)
             }
             else
             {
-               THROW_ERROR_MSG ("ct-file \'%s\', line %lu: Base %lu should "
-                                "pair with base %lu but is already paired to "
-                                "base %lu.\n",
+               THROW_ERROR_MSG (CT_FILE_ERR "Base %lu should pair with base "
+                                "%lu but is already paired to base %lu.\n",
                                 str_get(gfile_get_path (gfile)),
                                 line_no,
                                 ct_cols[Seq_pos] - 1,

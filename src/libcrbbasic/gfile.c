@@ -367,6 +367,12 @@ gfile_getdelim_tr (int* error,
          {
             if ((*buf)[length] == delim[i])
             {
+               /* read until newline */
+               while (((char) c != CRB_LF) && (c != EOF))
+               {
+                  c = fgetc (stream->fileptr.uc);
+               }
+
                (*buf)[length] = '\0';
                return length + 1;
             }

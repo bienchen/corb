@@ -1175,7 +1175,7 @@ rna_get_pairlist (const Rna* this)
  *
  * @params[in] this Rna data object.
  */
-const char*
+char*
 rna_get_sequence (const Rna* this)
 {
    assert (this);

@@ -30,6 +30,7 @@ share/misc/emacs/elc-stamp
 autom4te.cache
 *.bkp
 configure.scan
+TAGS
 
 #ignore test binaries
 src/libcrbbasic/test_argvprsr

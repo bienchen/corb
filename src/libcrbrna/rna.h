@@ -166,7 +166,7 @@ rna_get_size (const Rna*);
 const unsigned long*
 rna_get_pairlist (const Rna*);
 
-const char*
+char*
 rna_get_sequence (const Rna*);
 
 const Str*

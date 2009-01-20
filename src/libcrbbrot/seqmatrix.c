@@ -55,17 +55,16 @@
 #include "seqmatrix.h"
 
 /* matrix orders */
-enum seqmatrix_matrix_no{
-   F_Mtrx = 0,      /* first matrix */
-   S_Mtrx,          /* second matrix */
-   No_Of_Mtrx       /* overall number of matrices */
-};
+/* enum seqmatrix_matrix_no{ */
+/*    F_Mtrx = 0,      /\* first matrix *\/ */
+/*    S_Mtrx,          /\* second matrix *\/ */
+/*    No_Of_Mtrx       /\* overall number of matrices *\/ */
+/* }; */
 
 struct SeqMatrix {
       char* fixed_sites;          /* list of fixed sites in the matrix */
-      float** matrix[No_Of_Mtrx]; /* current and future matrices */
-      short int curr_matrix;      /* index of current matrix */
-/*       unsigned long* pairlist; */    /* interacting sites */
+      float** prob_m;             /* probability matrix */
+      float** calc_m;             /* matrix for calculation of new prob. */
       size_t rows;
       size_t cols;
       float gas_constant;
@@ -100,7 +99,7 @@ struct SeqMatrix {
 SeqMatrix*
 seqmatrix_new (const char* file, const int line)
 {
-   unsigned long i;
+   /* unsigned long i; */
 
    /* allocate 1 object */
    SeqMatrix* sm = XOBJ_MALLOC(sizeof (*sm), file, line);
@@ -114,14 +113,16 @@ seqmatrix_new (const char* file, const int line)
       sm->transform_row     = NULL;
       sm->pre_col_iter_hook = NULL;
       sm->fixed_site_hook   = NULL;
+      sm->prob_m            = NULL;
+      sm->calc_m            = NULL;
 
       sm->gas_constant  = 1;
 
-      for (i = 0; i < No_Of_Mtrx; i++)
-      {
-         sm->matrix[i]  = NULL;
-      }
-      sm->curr_matrix = F_Mtrx;
+/*       for (i = 0; i < No_Of_Mtrx; i++) */
+/*       { */
+/*          sm->matrix[i]  = NULL; */
+/*       } */
+/*       sm->curr_matrix = F_Mtrx; */
    }
 
    return sm;
@@ -136,16 +137,18 @@ seqmatrix_new (const char* file, const int line)
 void
 seqmatrix_delete (SeqMatrix* sm)
 {
-   unsigned long i;
+   /* unsigned long i; */
 
    if (sm != NULL)
    {
       XFREE    (sm->fixed_sites);
+      XFREE_2D ((void**)sm->prob_m);
+      XFREE_2D ((void**)sm->calc_m);
 
-      for (i = 0; i < No_Of_Mtrx; i++)
-      {
-         XFREE_2D ((void**)sm->matrix[i]);
-      }
+/*       for (i = 0; i < No_Of_Mtrx; i++) */
+/*       { */
+/*          XFREE_2D ((void**)sm->matrix[i]); */
+/*       } */
 
       XFREE    (sm);
    }
@@ -167,7 +170,6 @@ __inline__ bool
 seqmatrix_is_col_fixed (const unsigned long col, const SeqMatrix* sm)
 {
    assert (sm);
-   assert (sm->matrix[sm->curr_matrix]);
    assert (sm->fixed_sites);
 
    if (sm->fixed_sites[(col / CHAR_BIT)] & (1 << (col % CHAR_BIT)))
@@ -219,13 +221,73 @@ seqmatrix_get_probability (const unsigned long row, const unsigned long col,
                            const SeqMatrix* sm)
 {
    assert (sm);
+   assert (sm->prob_m);
    assert (row < sm->rows);
    assert (col < sm->cols);
 
-   return sm->matrix[sm->curr_matrix][row][col]; 
+/*    return sm->matrix[sm->curr_matrix][row][col];  */
+   return sm->prob_m[row][col];
+}
+
+/** @brief Get the effective energye stored in a certain site and state.
+ *
+ * Retruns the value of a cell of the effective energy matrix.
+ *
+ * @params[in] row Row.
+ * @params[in] col Column.
+ * @params[in] sm Sequence matrix.
+ */
+float
+seqmatrix_get_eeff (const unsigned long row, const unsigned long col,
+                    const SeqMatrix* sm)
+{
+   assert (sm);
+   assert (sm->calc_m);
+   assert (row < sm->rows);
+   assert (col < sm->cols);
+
+   return sm->calc_m[row][col];
+}
+
+/** @brief Get the gas constant.
+ *
+ * @params[in] sm Sequence matrix
+ */
+float
+seqmatrix_get_gas_constant (const SeqMatrix* sm)
+{
+   assert (sm);
+
+   return sm->gas_constant;
 }
 
 /********************************   Altering   ********************************/
+
+/** @brief Sets the cells of the effective energy matrix to 0.
+ *
+ * This function can be used to set all cells of the effective energy matrix
+ * to 0. Should usually onlly be used when writing coloumn/ row iteration of
+ * the scmf simulation by yourself.
+ *
+ * @param[in] sm sequence matrix.
+ */
+void
+seqmatrix_set_eeff_matrix_zero (SeqMatrix* sm)
+{
+   sm->calc_m = 
+      (float**) matrix2d_set_zero ((void**)sm->calc_m,
+                                   sm->rows, sm->cols,
+                                   sizeof (**(sm->calc_m)));
+}
+
+/** @brief Switch the currently enabled matrix.
+ *
+ * For use when writing large parts of the simulation on your own. Switches the matrix whose values are accessible/ editable
+ */
+/*void
+seqmatrix_switch_current_matrix (SeqMatrix* sm)
+{
+}*/
 
 /** @brief Fix a certain column in a sequence matrix.
  *
@@ -242,6 +304,8 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
    unsigned long i;
 
    assert (sm);
+   assert (sm->prob_m);
+   assert (sm->calc_m);
    assert (sm->fixed_sites);
    assert (col < sm->cols);
    assert (row < sm->rows);
@@ -252,13 +316,13 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
    /* set everything to 0 */
    for (i = 0; i < sm->rows; i++)
    {
-      sm->matrix[F_Mtrx][i][col] = 0.0f;
-      sm->matrix[S_Mtrx][i][col] = 0.0f;
+      sm->prob_m[i][col] = 0.0f;
+      sm->calc_m[i][col] = 0.0f;
    }
 
    /* set demand to 1 */
-   sm->matrix[F_Mtrx][row][col] = 1.0f;
-   sm->matrix[S_Mtrx][row][col] = 1.0f;
+   sm->prob_m[row][col] = 1.0f;
+   sm->calc_m[row][col] = 1.0f;
 }
 
 static __inline__ int
@@ -315,14 +379,14 @@ seqmatrix_calc_eeff_col_scmf (SeqMatrix* sm,
       i++;
    }
 
-   if (sm->curr_matrix == F_Mtrx)
-   {
-      sm->curr_matrix = S_Mtrx;
-   }
-   else
-   {
-      sm->curr_matrix = F_Mtrx;
-   }
+/*    if (sm->curr_matrix == F_Mtrx) */
+/*    { */
+/*       sm->curr_matrix = S_Mtrx; */
+/*    } */
+/*    else */
+/*    { */
+/*       sm->curr_matrix = F_Mtrx; */
+/*    } */
 
    return error;
 }
@@ -340,24 +404,20 @@ seqmatrix_calc_eeff_row_scmf (const unsigned long col,
                               const float t,
                               void* sco)
 {
-   short int new_matrix = F_Mtrx;
+/*    short int new_matrix = F_Mtrx; */
    unsigned long j;
 
    assert (sm);
    assert (sm->calc_cell_energy);
 
-   if (sm->curr_matrix == F_Mtrx)
-   {
-      new_matrix = S_Mtrx;
-   }
-
    for (j = 0; j < sm->rows; j++)
    {
-      sm->matrix[new_matrix][j][col] = sm->calc_cell_energy (j, col,
-                                                             sco,
-                                                             sm);
-      sm->matrix[new_matrix][j][col] =
-         expf ((-1.0f) * (sm->matrix[new_matrix][j][col]/(sm->gas_constant*t)));
+      sm->calc_m[j][col] = sm->calc_cell_energy (j, col,
+                                                 sco,
+                                                 sm);
+
+      sm->calc_m[j][col] =
+         expf ((-1.0f) * (sm->calc_m[j][col]/(sm->gas_constant*t)));
    }
 
    return 0;
@@ -384,9 +444,8 @@ seqmatrix_init (const unsigned long rows,
 
    assert (sm);
    assert (sm->fixed_sites == NULL);
-/*    assert (sm->pairlist    == NULL); */
-   assert (sm->matrix[F_Mtrx]   == NULL);
-   assert (sm->matrix[S_Mtrx]   == NULL);
+   assert (sm->prob_m      == NULL);
+   assert (sm->calc_m      == NULL);
 
    /* set standard functions */
    sm->calc_eeff_col     = seqmatrix_calc_eeff_col_scmf;
@@ -398,19 +457,18 @@ seqmatrix_init (const unsigned long rows,
    sm->rows = rows;
    sm->cols = width;
 
-   sm->matrix[F_Mtrx] = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
-                                                  sizeof (**sm->matrix),
-                                                  file, line);
-   if (sm->matrix[F_Mtrx] == NULL)
+   sm->prob_m = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
+                                          sizeof (**sm->prob_m),
+                                          file, line);
+   if (sm->prob_m == NULL)
    {
       return ERR_SM_ALLOC;
    }
-   sm->curr_matrix = F_Mtrx;
 
-   sm->matrix[S_Mtrx] = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
-                                                  sizeof (**sm->matrix),
-                                                  file, line);
-   if (sm->matrix[S_Mtrx] == NULL)
+   sm->calc_m = (float**) XOBJ_MALLOC_2D (sm->rows,sm->cols,
+                                          sizeof (**sm->calc_m),
+                                          file, line);
+   if (sm->calc_m == NULL)
    {
       return ERR_SM_ALLOC;
    }
@@ -418,22 +476,22 @@ seqmatrix_init (const unsigned long rows,
    /* init sm */
    if (width > 0)
    {
-      sm->matrix[F_Mtrx][0][0] = 1.0f / sm->rows; /* even distributed init */
-      sm->matrix[S_Mtrx][0][0] = 0.0f;
+      sm->prob_m[0][0] = 1.0f / sm->rows; /* even distributed init */
+      sm->calc_m[0][0] = 0.0f;
       for (i = 1; i < width; i++)
       {
-         sm->matrix[F_Mtrx][0][i] = sm->matrix[F_Mtrx][0][0]; /* even distri */
-         sm->matrix[S_Mtrx][0][i] = sm->matrix[S_Mtrx][0][0];
+         sm->prob_m[0][i] = sm->prob_m[0][0]; /* even distri */
+         sm->calc_m[0][i] = sm->calc_m[0][0];
       }
 
       for (i = 1; i < sm->rows; i++)
       {
-         memcpy (sm->matrix[F_Mtrx][i],
-                 sm->matrix[F_Mtrx][i - 1],
-                 sizeof (**sm->matrix) * width);/* even distri */
-         memcpy (sm->matrix[S_Mtrx][i],
-                 sm->matrix[S_Mtrx][i - 1],
-                 sizeof (**sm->matrix) * width);
+         memcpy (sm->prob_m[i],
+                 sm->prob_m[i - 1],
+                 sizeof (**sm->prob_m) * width);/* even distri */
+         memcpy (sm->calc_m[i],
+                 sm->calc_m[i - 1],
+                 sizeof (**sm->calc_m) * width);
       }
 
       /*srand(997654329);
@@ -453,17 +511,6 @@ seqmatrix_init (const unsigned long rows,
 
    }
 
-   /* copy pairlist */
-/*    sm->pairlist = XOBJ_CALLOC (width, sizeof (*(sm->pairlist)), file, line); */
-
-/*    if (pairs != NULL) */
-/*    { */
-/*       for (i = 0; i < width; i++) */
-/*       { */
-/*          sm->pairlist[i] = pairs[i]; /\* xxx use memcpy instead? *\/ */
-/*       } */
-/*    } */
-
    /* run over list of presettings and set sites */
    /* allocate memory & init fixed sites */
    sm->fixed_sites = XCALLOC ((width / (sizeof(*(sm->fixed_sites))*CHAR_BIT))+1,
@@ -477,7 +524,7 @@ seqmatrix_init (const unsigned long rows,
    return 0;
 }
 
-/** @brief Set a value for a certain cell of a matrix.
+/** @brief Set a certain cell of the effective energy matrix.
  *
  * @param[in] value Value to be set.
  * @param[in] row Row index.
@@ -485,15 +532,38 @@ seqmatrix_init (const unsigned long rows,
  * @param[in] sm Sequence matrix.
  */
 void
-seqmatrix_set_cell (const float value,
-                    const unsigned long row, const unsigned long col,
+seqmatrix_set_eeff (const float value,
+                    const unsigned long row,
+                    const unsigned long col,
                     SeqMatrix* sm)
 {
    assert (sm);
    assert (row < sm->rows);
    assert (col < sm->cols);
 
-   sm->matrix[sm->curr_matrix][row][col] = value;
+   sm->calc_m[row][col] = value;
+}
+
+/** @brief Add a number to a certain cell of the effective energy matrix.
+ *
+ * @param[in] value Value to be set.
+ * @param[in] row Row index.
+ * @param[in] cell Cell index.
+ * @param[in] sm Sequence matrix.
+ */
+void
+seqmatrix_add_2_eeff (const float value,
+                      const unsigned long row,
+                      const unsigned long col,
+                      SeqMatrix* sm)
+{
+   assert (sm);
+   assert (row < sm->rows);
+   assert (col < sm->cols);
+   /*assert (sm->calc_m[row][col] == 0); just for checking that cell was
+     correctly set to 0*/
+
+   sm->calc_m[row][col] += value;
 }
 
 /** @brief Set gas constant.
@@ -623,7 +693,7 @@ seqmatrix_collate_is (const float fthresh,
             /* for all rows */
             for (i = 0; i < sm->rows; i++)
             {
-               if (sm->matrix[sm->curr_matrix][i][j] >= fthresh)
+               if (sm->prob_m[i][j] >= fthresh)
                {
                   /* unambigouos site found, fixate it */
                   seqmatrix_fix_col (i, j, sm);
@@ -642,9 +712,9 @@ seqmatrix_collate_is (const float fthresh,
          {
             for (i = 0; i < sm->rows; i++)
             {
-               if (sm->matrix[sm->curr_matrix][i][j] > largest_amb)
+               if (sm->prob_m[i][j] > largest_amb)
                {
-                  largest_amb = sm->matrix[sm->curr_matrix][i][j];
+                  largest_amb = sm->prob_m[i][j];
                   largest_amb_col = j;
                   largest_amb_row = i;
                }
@@ -697,6 +767,7 @@ seqmatrix_collate_mv (SeqMatrix* sm, void* data)
    /* Alphabet* sigma = (Alphabet*) data; */
 
    assert (sm);
+   assert (sm->transform_row);
 
    /* for all columns */
    for (j = 0; j < sm->cols; j++)
@@ -705,10 +776,10 @@ seqmatrix_collate_mv (SeqMatrix* sm, void* data)
       for (i = 0; i < sm->rows; i++)
       {
          /* find highest number */
-         if (curr_max_prob < sm->matrix[sm->curr_matrix][i][j])
+         if (curr_max_prob < sm->prob_m[i][j])
          {
             /* write position to seq */
-            curr_max_prob = sm->matrix[sm->curr_matrix][i][j];
+            curr_max_prob = sm->prob_m[i][j];
             max_row = i;
          }
       }
@@ -739,27 +810,16 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          SeqMatrix* sm,
                          void* sco)
 {
-/*nussinov: */
-/*CGGAUCAAACCUGAACACAUACAGGACAGCGAUACAAACGCUGAACAAGUCCGAACACAACGGACUGAUCCGAAAC*/
-/*nn: */
-/*CGUGCACUAGGACCAGAUAAAGUCCAGGGGCAAAUAGAGCCCCAAAUAGGGGCAAAUAGAGCCCCGUGCACGAAAG*/
-
    unsigned long t;             /* time */
    int error= 0;
    unsigned long i, j;          /* iterator */
    float col_sum;
    float T = t_init;            /* current temperature */
-   short int m = 0;             /* matrix to use */
    float s;                     /* matrix entropy */
 
    assert (sm);
    assert (sm->calc_eeff_col);
    assert (sco);
-
-   if (sm->curr_matrix == F_Mtrx)
-   {
-     m = S_Mtrx;
-   }
 
    /* perform for a certain number of steps */
    t = 0;
@@ -790,29 +850,32 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                col_sum = 0.0f;
                for (i = 0; i < sm->rows; i++)
                {
-                  col_sum += sm->matrix[sm->curr_matrix][i][j];
+                  col_sum += sm->calc_m[i][j];
                }
-               
+
                /* for each row */
                for (i = 0; i < sm->rows; i++)
                {
-                  sm->matrix[sm->curr_matrix][i][j] = 
-                     sm->matrix[sm->curr_matrix][i][j] / col_sum;
+                  sm->calc_m[i][j] = 
+                     sm->calc_m[i][j] / col_sum;  
+
                   /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
-                  sm->matrix[sm->curr_matrix][i][j] = 
-                     (lambda * sm->matrix[sm->curr_matrix][i][j])
-                     + ((1 - lambda) * sm->matrix[m][i][j]);
-                  
+                  sm->prob_m[i][j] = 
+                     (lambda * sm->calc_m[i][j])
+                     + ((1 - lambda) * sm->prob_m[i][j]);
+              
                   /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
-                  s += (sm->matrix[sm->curr_matrix][i][j]
-                        * logf (sm->matrix[sm->curr_matrix][i][j]));
+                  s += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
                }
             }
          }
 
+         /*mprintf ("After calc_eeff_col\n");
+           seqmatrix_print_2_stdout (6, sm); */
+
          /* shouldn't s be calculated on the no. of unfixed cols? */
          s = (s / sm->cols) * (-1.0f);
-         
+
          if (s < s_thresh) 
          {
             mfprintf (stdout, "Entropy dropout: %f\n", s);
@@ -821,9 +884,6 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          
          T = (T * c_rate) + c_port;
          t++;
-         
-/*       if (t%10 == 0) */
-/*          mfprintf (stderr, "step: %5lu T=%.3f S=%.3f\n", t, T, s); */
       }
    }
 
@@ -846,7 +906,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    unsigned long i, j;
    int rprec = 0;               /* precision for row number */
    int cprec = 0;               /* precision for cells */
-   float tmp;
+   float tmp = 0.0f;
    char* string;
    char* string_start;
 
@@ -861,14 +921,14 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    {
       for (j = 0; j < sm->cols; j++)
       {
-         if (sm->matrix[sm->curr_matrix][i][j] < 0.0f)
+         if (sm->prob_m[i][j] < 0.0f)
          {
-            tmp = (-1) * sm->matrix[sm->curr_matrix][i][j];
+            tmp = (-1) * sm->prob_m[i][j];
             rprec = 1;
          }
          else
          {
-            tmp = sm->matrix[sm->curr_matrix][i][j];
+            tmp = sm->prob_m[i][j];
             rprec = 0;
          }
 
@@ -919,7 +979,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
          msprintf (string, " %*.*f |",
                    cprec,
                    p,
-                   sm->matrix[sm->curr_matrix][i][j]);
+                   sm->prob_m[i][j]);
          string += 3 + cprec;
       }
 

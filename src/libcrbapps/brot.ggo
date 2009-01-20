@@ -1,4 +1,4 @@
-# Copyright (C) 2008 Stefan Bienert
+# Copyright (C) 2009 Stefan Bienert
 #
 # This file is part of CoRB.
 #
@@ -23,10 +23,13 @@ args "--string-parser --func-name=brot_cmdline_parser --file-name=brot_cmdline -
 
 option "scoring" c "Choose a different scoring scheme"
        details="Use a certain energy model to score the RNA sequence. \
-                Possible NAMEs are `NN' and `nussinov'. `nussinov' uses \
-                a Nussinov model, only counting Hbonds. `NN' invokes the \
-                Nearest Neighbour model."
-       values="NN","nussinov"
+                 Possible NAMEs are `NN', `nussinov' and `simpleNN'. \
+                 `nussinov' uses a Nussinov model, only counting Hbonds. `NN' \
+                 invokes the Nearest Neighbour model. `simpleNN' uses a very \
+                 coarse grained approximation of the Nearest Neighbour model, \
+                 scoring every base pair as a stack, averaging mismatches in \
+                 stacked pairs and without any loop parameters."
+       values="NN","nussinov", "simpleNN"
        enum
        typestr="NAME"
        default="NN"
@@ -43,7 +46,7 @@ option "fixed-nuc" n "Preset a nucleotide in a position"
        multiple
 
 option "steps" s "Number of iterations"
-       details="Iteration steps for the update of site probabilites."
+       details="Iteration steps for the update of site probabilities."
        long
        typestr="INT"
        default="1000"
@@ -54,4 +57,32 @@ option "temp" t "Initial temperature"
        float
        typestr="FLOAT"
        default="100"
+       optional
+
+option "seed" r "Random seed"
+       details="Random seed used for adding thermal noise to the Nearest \
+                 Neighbour model. This is used for producing different answers \
+                 for the same structure. Adding thermal noise means adding \
+                 small random numbers to all parameters. The range of those \
+                 numbers is [0.005, -0.005] and should be beyond the level of \
+                 significance. Since we use a correlated random number \
+                 generator you can reproduce answers by using the same seed. \
+                 Only takes effect when using with `NN' as scoring scheme."
+       long
+       typestr="INT"
+       default="-791122"
+       optional
+
+option "negative-design-scaling" d "Scale negative design term"
+       details="Scaling factor for the negative design term."
+       float
+       typestr="FLOAT"
+       default="1.01"
+       optional
+
+option "heterogenity-term-scaling" h "Scale heterogenity term"
+       details="Scaling factor for the sequence heterogenity term."
+       float
+       typestr="FLOAT"
+       default="1.000000"
        optional

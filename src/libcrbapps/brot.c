@@ -39,6 +39,9 @@
  *  Revision History:
  *         - 2008Feb28 bienert: created
  *
+ *  ToDo:
+ *         - tryout a little equilibration phase for each temperature step
+ *           (suggested by Thomas Huber)
  */
 
 
@@ -54,6 +57,9 @@
 #include "brot_cmdline.h"
 #include "brot.h"
 
+static const char NN_2_SMALL_WARNING[] = "Nearest Neighbour model can only be used with "
+                             "structures of size greater than 1, size of "
+   "given structure (\"%s\"): %lu";
 
 static int
 brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
@@ -167,8 +173,8 @@ adopt_site_presettings (const struct brot_args_info* args_info,
 }
 
 static int
-simulate_using_nn_scoring (struct brot_args_info* brot_args,
-                           SeqMatrix* sm, Scmf_Rna_Opt_data* data)
+simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
+                                 SeqMatrix* sm, Scmf_Rna_Opt_data* data)
 {
    int error = 0;
    float c_rate = 0;
@@ -179,7 +185,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       = alphabet_size (scmf_rna_opt_data_get_alphabet(data));
    unsigned long allowed_bp = 0;
    NN_scores* scores =
-      NN_SCORES_NEW_INIT(scmf_rna_opt_data_get_alphabet (data));
+      NN_SCORES_NEW_INIT(0, scmf_rna_opt_data_get_alphabet (data));
 
    if (scores == NULL)
    {
@@ -248,8 +254,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
          c_rate /= (brot_args->steps_arg - 1);
          c_rate = expf ((-1) * c_rate);
       }
-
-      seqmatrix_set_func_calc_cell_energy (scmf_rna_opt_calc_nn, sm);
+      seqmatrix_set_func_calc_cell_energy (scmf_rna_opt_calc_simplenn, sm);
       /*scmf_rna_opt_data_init_negative_design_energies (data, sm);*/
       seqmatrix_set_pre_col_iter_hook (
         scmf_rna_opt_data_init_negative_design_energies_alt, sm);
@@ -289,6 +294,147 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
                                     data);
       /*error = seqmatrix_collate_mv (sm, data);*/
    }
+
+   nn_scores_delete (scores);
+   scmf_rna_opt_data_set_scores (NULL, data);
+   scmf_rna_opt_data_set_bp_allowed (NULL, data);
+
+   XFREE (bp_allowed[0]);
+   XFREE (bp_allowed);
+
+   return error;
+}
+
+static int
+simulate_using_nn_scoring (struct brot_args_info* brot_args,
+                           SeqMatrix* sm, Scmf_Rna_Opt_data* data)
+{
+   float c_rate = 0;            /* exponential cooling rate */
+   int error = 0;
+   char** bp_allowed = NULL;
+   char bi, bj;
+   unsigned long i, j, k;
+   unsigned long alpha_size
+      = alphabet_size (scmf_rna_opt_data_get_alphabet(data));
+   unsigned long allowed_bp = 0;
+   NN_scores* scores =
+      NN_SCORES_NEW_INIT(50.0f, scmf_rna_opt_data_get_alphabet (data));
+
+   if (scores == NULL)
+   {
+      error = 1;
+   }
+
+   /* prepare index of allowed base pairs */
+   if (!error)
+   {
+      /* "randomise" scoring function */
+      mfprintf (stdout, "Using seed: %ld\n", brot_args->seed_arg);
+      nn_scores_add_thermal_noise (alpha_size, brot_args->seed_arg, scores);
+
+      bp_allowed = XMALLOC(alpha_size * sizeof (*bp_allowed));
+      if (bp_allowed == NULL)
+      {
+         error = 1;
+      }
+   }
+
+   if (!error)
+   {
+      allowed_bp = nn_scores_no_allowed_basepairs (scores);
+
+      /* we need 1 byte for each possible pair + 1byte for the NULL byte for
+         each letter in the alphabet */
+      bp_allowed[0] = XCALLOC (allowed_bp + alpha_size,
+                               sizeof (**(bp_allowed)));
+      if (bp_allowed[0] == NULL)
+      {
+         error = 1;
+      }
+   }
+
+   if (!error)
+   {
+      i = 0;
+      k = 0;
+      while (i < alpha_size)
+      {
+         bp_allowed[i] = bp_allowed[0] + (k * sizeof (**(bp_allowed)));
+         
+         for (j = 0; j < allowed_bp; j++)
+         {
+            nn_scores_get_allowed_basepair (j, &bi, &bj, scores);
+            if (i == (unsigned) bi)
+            {
+               bp_allowed[0][k] = bj + 1;
+               k++;
+            }
+         }
+         
+         k++;
+         i++;
+      }
+   }
+
+   /* decompose secondary structure */
+   if (!error)
+   {
+      error = scmf_rna_opt_data_secstruct_init (data);
+   }
+
+   mfprintf (stdout, "TREATMENT of fixed sites: If both sites of a pair are "
+             "fixed, delete from list? Verbose info!!!\n");
+
+   /* set our special function for calc. cols.: Iterate over sec.struct., not
+      sequence matrix! */
+   if (!error)
+   {
+      scmf_rna_opt_data_set_scores (scores, data);
+      scmf_rna_opt_data_set_bp_allowed (bp_allowed, data);
+      scmf_rna_opt_data_set_scales (brot_args->negative_design_scaling_arg,
+                                    brot_args->heterogenity_term_scaling_arg,
+                                    data);
+
+      seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
+      seqmatrix_set_gas_constant (8.314472, sm);
+
+      /* set cooling rate */
+      if (brot_args->steps_arg > 0)
+      {
+         c_rate = logf (brot_args->temp_arg / 1.0f);
+         c_rate /= (brot_args->steps_arg - 1);
+         c_rate = expf ((-1) * c_rate);
+      }
+
+      error = seqmatrix_simulate_scmf (brot_args->steps_arg,
+                                       brot_args->temp_arg,
+                                       c_rate,
+                                       0,
+                                       0.6,
+                                       0.05,
+                                       sm,
+                                       data);
+   }
+
+   /* collate */
+   if (!error)
+   {
+      seqmatrix_print_2_stdout (2, sm);
+      seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
+
+      error = seqmatrix_collate_is (0.99,
+                                    brot_args->steps_arg / 2,
+                                    brot_args->temp_arg,
+                                    c_rate,
+                                    0,
+                                    0.6,
+                                    0.05,
+                                    sm,
+                                    data);
+      /*error = seqmatrix_collate_mv (sm, data);*/
+   }
+
+   /* first: iterate scmf on secstruct, not sm! */
 
    nn_scores_delete (scores);
    scmf_rna_opt_data_set_scores (NULL, data);
@@ -415,7 +561,7 @@ brot_main(const char *cmdline)
             alphabet_size (scmf_rna_opt_data_get_alphabet (sim_data)),
                                   strlen (brot_args.inputs[1]),
                                   sm);
-         /*seqmatrix_print_2_stdout (2, sm);*/
+         /*seqmatrix_print_2_stdout (6, sm);*/
       }
       else
       {
@@ -433,18 +579,16 @@ brot_main(const char *cmdline)
 
    if (retval == 0)
    {
-      if (brot_args.scoring_arg == scoring_arg_NN)
+      if (brot_args.scoring_arg == scoring_arg_simpleNN)
       {
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
-            retval = simulate_using_nn_scoring (&brot_args, sm, sim_data);
+            retval = simulate_using_simplenn_scoring (&brot_args, sm, sim_data);
          }
          else
          {
-            THROW_ERROR_MSG ("Nearest Neighbour model can only be used with "
-                             "structures of size greater than 1, size of "
-                             "given structure (\"%s\"): %lu",
+            THROW_ERROR_MSG (NN_2_SMALL_WARNING,
                              brot_args.inputs[1], 
                              (unsigned long) strlen (brot_args.inputs[1]));
             retval = 1;
@@ -454,10 +598,26 @@ brot_main(const char *cmdline)
       {
          retval = simulate_using_nussinov_scoring (&brot_args, sm, sim_data);
       }
+      else if (brot_args.scoring_arg == scoring_arg_NN)
+      {
+         /* special to NN usage: structure has to be of size >= 2 */
+         if (strlen (brot_args.inputs[1]) > 1)
+         {
+            retval = simulate_using_nn_scoring (&brot_args, sm, sim_data);
+         }
+         else
+         {
+            THROW_ERROR_MSG (NN_2_SMALL_WARNING,
+                             brot_args.inputs[1], 
+                             (unsigned long) strlen (brot_args.inputs[1]));
+            retval = 1;
+         }
+      }
    }
-  
+
    if (retval == 0)
    {
+      seqmatrix_print_2_stdout (2, sm);
       mprintf ("%s\n", scmf_rna_opt_data_get_seq(sim_data));
    }   
 

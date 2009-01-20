@@ -1,4 +1,4 @@
-# Last modified: 2008-10-30.14
+# Last modified: 2009-01-06.18
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -86,7 +86,7 @@ AC_DEFUN([_CRB_ARG_CHECKED_LOOP_SET],
                      ]
                     )dnl# AS_IF
               ]dnl# expression
-             )dnl# m4_foreach_w                
+             )dnl# m4_foreach_w
 ]dnl# macro-body
         )
 
@@ -279,7 +279,7 @@ AC_DEFUN([CRB_ARG_ENABLE_CFLAGS_WARNINGS_OPT],
 AC_DEFUN([CRB_ARG_ENABLE_CFLAGS_WARNINGS_EVAL],
 [dnl# macro-body
  AS_IF([test "x$enable_cflags_warnings" = xyes],
-       [CRB_SET_CFLAGS_WARNINGS]dnl# run-if-true
+       [CRB_CFLAGS_SET_WARNINGS]dnl# run-if-true
       )dnl# AS_IF
 
 ]dnl# macro-body

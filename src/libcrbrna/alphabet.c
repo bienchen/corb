@@ -261,8 +261,6 @@ alphabet_is_standard_rna (Alphabet* sigma)
    return true;
 }
 
-
-
 char
 alphabet_base_2_no (const char base,
                     const Alphabet* sigma)

@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-01-06.20
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -17,11 +17,15 @@ dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
-# _CRB_SET_CFLAGS_WARNINGS_GCC(compiler, variable)
+################################################################################
+#######     Internal macros: Macros only to be used within this file     #######
+################################################################################
+
+# _CRB_CFLAGS_SET_WARNINGS_GCC(compiler, variable)
 # ---------------------
 # Set warning-flags for gcc. compiler is the gcc with or without its path.
 # parameter 2 stores the version of gcc.
-AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_GCC],
+AC_DEFUN([_CRB_CFLAGS_SET_WARNINGS_GCC],
 [dnl# macro-body
  CRB_GET_VERSION([$1], [$2])
  dnl# set default flags, assumed to work with everything lower than gcc-4.1.2,
@@ -45,11 +49,11 @@ AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_GCC],
         )
 
 
-# _CRB_SET_CFLAGS_WARNINGS_ICC(compiler, variable)
+# _CRB_CFLAGS_SET_WARNINGS_ICC(compiler, variable)
 # ---------------------
 # Set warning-flags for icc. compiler is the icc with or without its path.
 # parameter 2 stores the version of icc.
-AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_ICC],
+AC_DEFUN([_CRB_CFLAGS_SET_WARNINGS_ICC],
 [dnl# macro-body
  CRB_GET_VERSION([$1], [$2])
  CFLAGS="${CFLAGS} -std=c99 -Wall -Wcheck -diag-enable port-win -fstack-security-check -Wdeprecated -Wextra-tokens -Wformat -Winline -Wmissing-declarations -Wmissing-prototypes -Wreturn-type -Wshadow -Wstrict-prototypes -Wuninitialized -Wunknown-pragmas -Wunused-function -Wwrite-strings -Werror -no-gcc -wd981"
@@ -57,38 +61,81 @@ AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_ICC],
 ]dnl# macro-body
         )
 
-# _CRB_SET_CFLAGS_WARNINGS_SUNCC(compiler, variable)
+# _CRB_CFLAGS_SET_WARNINGS_SUNCC(compiler, variable)
 # ---------------------
 # Set warning-flags for gcc. compiler is the gcc with or without its path.
 # parameter 2 stores the version of gcc.
-AC_DEFUN([_CRB_SET_CFLAGS_WARNINGS_SUNCC],
+AC_DEFUN([_CRB_CFLAGS_SET_WARNINGS_SUNCC],
 [dnl# macro-body
  CRB_GET_VERSION([$1], [$2])
  CFLAGS="${CFLAGS} -xO2 -Xc -errfmt=error -errwarn"
 ]dnl# macro-body
         )
 
-# CRB_SET_CFLAGS_WARNINGS
+# _CRB_CFLAGS_INVOKE_POSIX
+# ---------------------------
+# Set the the macro _XOPEN_SOURCE to a value of 600. This invokes all POSIX
+# compliant functions (ISO C) plus the X/Open System Interfaces extensions
+# (XSI). The macro has to be defined at the compiler level since it is
+# required to be set before any header is included. See
+# http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+# for further informations.
+AC_DEFUN([_CRB_CFLAGS_INVOKE_POSIX],
+[dnl# macro-body
+ CFLAGS="${CFLAGS} -D_XOPEN_SOURCE=600"
+]dnl# macro-body
+        )
+
+################################################################################
+#########        Public macros: Macros to set certain CFLAGS           #########
+################################################################################
+
+# CRB_CFLAGS_SET_WARNINGS
 # -------------------
 # Set warning-flags for the compiler. The options to request or suppress
 # warnings go immedeately into the CFLAGS variable. At the moment, gcc, icc and
 # sun cc are supported. For unknown compilers nothing will be set. Should be
 # called only after all AC_REPLACE.. macros or other checks which include
 # compiling. Most of such tests will not work with these compiler settings.
-AC_DEFUN([CRB_SET_CFLAGS_WARNINGS],
+AC_DEFUN([CRB_CFLAGS_SET_WARNINGS],
 [dnl# macro-body
  _crb_cc_basename=["`expr "//${CC#distcc}" : '.*/[[:space:]]*\([^/]*\)'`"]
  AC_MSG_CHECKING([version of $CC])
  AS_CASE([$_crb_cc_basename],
-         [gcc], [_CRB_SET_CFLAGS_WARNINGS_GCC([$CC], [_crb_ver])],
-         [icc], [_CRB_SET_CFLAGS_WARNINGS_ICC([$CC], [_crb_ver])],
-         [cc],  [_CRB_SET_CFLAGS_WARNINGS_SUNCC([$CC], [_crb_ver])],
+         [gcc], [_CRB_CFLAGS_SET_WARNINGS_GCC([$CC], [_crb_ver])],
+         [icc], [_CRB_CFLAGS_SET_WARNINGS_ICC([$CC], [_crb_ver])],
+         [cc],  [_CRB_CFLAGS_SET_WARNINGS_SUNCC([$CC], [_crb_ver])],
          [_crb_ver="${CC} unknown, no automatic development flag setting"]
         )dnl# AS_CASE
+ dnl# _XOPEN_SOURCE is not a compiler option but a macro to be defined for all
+ dnl# compilers
+ _CRB_CFLAGS_INVOKE_POSIX
  AC_MSG_RESULT([$_crb_ver])
 ]dnl# macro-body
         )
- 
+
+# CRB_CFLAGS_CREATE_LIST (variable, offset)
+# ---------------
+# Convert the CFLAGS into a list ready for output. Takes an offset as argument
+# to create aligned output. This offset has to be a string. The list is stored
+# in variable. If CFLAGS is empty,
+# variable is set to "none"
+AC_DEFUN([CRB_CFLAGS_CREATE_LIST],
+[dnl# macro-body
+ for _crb_cflag in $CFLAGS
+   do
+AS_TR_SH($1)="$_crb_cflag
+$2$[]AS_TR_SH($1)"
+   done
+ AS_IF([test -z "$AS_TR_SH($1)"],
+       [dnl# run-if-true
+        AS_TR_SH($1)=none
+       ]dnl# run-if-true
+      )dnl# AS_IF
+ # then handle empty list
+]dnl# macro-body
+        )
+
 dnl# Local variables:
 dnl# eval: (add-hook 'write-file-hooks 'time-stamp)
 dnl# time-stamp-start: "Last modified: "

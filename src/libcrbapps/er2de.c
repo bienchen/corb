@@ -114,7 +114,7 @@ er2de_main(const char *cmdline)
 
    if (retval == 0)
    {
-      scores = NN_SCORES_NEW_INIT(sigma);
+      scores = NN_SCORES_NEW_INIT(0, sigma);
       if (scores == NULL)
       {
          retval = 1;

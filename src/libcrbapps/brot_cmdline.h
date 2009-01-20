@@ -29,7 +29,7 @@ extern "C" {
 #define BROT_CMDLINE_PARSER_VERSION "0.1"
 #endif
 
-enum enum_scoring { scoring_arg_NN = 0 , scoring_arg_nussinov };
+enum enum_scoring { scoring_arg_NN = 0 , scoring_arg_nussinov, scoring_arg_simpleNN };
 
 /** @brief Where the command line options are stored */
 struct brot_args_info
@@ -51,6 +51,15 @@ struct brot_args_info
   float temp_arg;	/**< @brief Initial temperature (default='100').  */
   char * temp_orig;	/**< @brief Initial temperature original value given at command line.  */
   const char *temp_help; /**< @brief Initial temperature help description.  */
+  long seed_arg;	/**< @brief Random seed (default='-791122').  */
+  char * seed_orig;	/**< @brief Random seed original value given at command line.  */
+  const char *seed_help; /**< @brief Random seed help description.  */
+  float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='1.000000').  */
+  char * negative_design_scaling_orig;	/**< @brief Scale negative design term original value given at command line.  */
+  const char *negative_design_scaling_help; /**< @brief Scale negative design term help description.  */
+  float heterogenity_term_scaling_arg;	/**< @brief Scale heterogenity term (default='1.000000').  */
+  char * heterogenity_term_scaling_orig;	/**< @brief Scale heterogenity term original value given at command line.  */
+  const char *heterogenity_term_scaling_help; /**< @brief Scale heterogenity term help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
@@ -59,6 +68,9 @@ struct brot_args_info
   unsigned int fixed_nuc_given ;	/**< @brief Whether fixed-nuc was given.  */
   unsigned int steps_given ;	/**< @brief Whether steps was given.  */
   unsigned int temp_given ;	/**< @brief Whether temp was given.  */
+  unsigned int seed_given ;	/**< @brief Whether seed was given.  */
+  unsigned int negative_design_scaling_given ;	/**< @brief Whether negative-design-scaling was given.  */
+  unsigned int heterogenity_term_scaling_given ;	/**< @brief Whether heterogenity-term-scaling was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */
@@ -90,7 +102,7 @@ extern const char *brot_args_info_detailed_help[];
  * @param args_info the structure where option information will be stored
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser (int argc, char **argv,
+int brot_cmdline_parser (int argc, char** argv,
   struct brot_args_info *args_info);
 
 /**
@@ -104,7 +116,7 @@ int brot_cmdline_parser (int argc, char **argv,
  * @return 0 if everything went fine, NON 0 if an error took place
  * @deprecated use brot_cmdline_parser_ext() instead
  */
-int brot_cmdline_parser2 (int argc, char **argv,
+int brot_cmdline_parser2 (int argc, char** argv,
   struct brot_args_info *args_info,
   int override, int initialize, int check_required);
 
@@ -116,7 +128,7 @@ int brot_cmdline_parser2 (int argc, char **argv,
  * @param params additional parameters for the parser
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser_ext (int argc, char **argv,
+int brot_cmdline_parser_ext (int argc, char** argv,
   struct brot_args_info *args_info,
   struct brot_cmdline_parser_params *params);
 

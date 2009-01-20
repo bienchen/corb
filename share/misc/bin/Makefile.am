@@ -1,4 +1,4 @@
-# Last modified: 2008-10-30.14
+# Last modified: 2009-01-12.10
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl
@@ -33,18 +33,21 @@ endif
 if CRB_EX_CMP_ER2DE_RNAEVAL
   bin_SCRIPTS += ex_cmp_er2de_rnaeval
 endif
+if CRB_OPT_BROT_DESIGN_TERMS
+  bin_SCRIPTS += opt_brot_design_terms
+endif
 
 # misc scripts, build on --with|enable-development
 
 CLEANFILES = $(bin_SCRIPTS)
-EXTRA_DIST = reformat.pl read_viennaparams.pl
+EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl CorbIO.pm PBar.pm
 
 do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
   -e 's,[@]configure_input[@],Generated from $@.pl; do not edit by hand.,g'
 
-.pl:
+.pl:PBar.pm
 	rm -f $@ .$@.tpm
 	$(do_subst) $@.pl >.$@.tmp
 	chmod +x .$@.tmp

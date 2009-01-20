@@ -56,5 +56,6 @@
 #include "str.h"      /* string class */
 #include "undef.h"    /* undefined flags for basic datatypes */
 #include "genarray.h" /* generic array macros */
+#include "gfile.h"    /* generic file handling */
 
 #endif /* CRBBASIC_H */

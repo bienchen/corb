@@ -76,20 +76,48 @@ nn_scores_new (const char*, const int);
 #define NN_SCORES_NEW nn_scores_new (__FILE__, __LINE__)
 
 NN_scores*
-nn_scores_new_init (Alphabet*, const char*, const int);
+nn_scores_new_init (float, Alphabet*, const char*, const int);
 
-#define NN_SCORES_NEW_INIT(A) nn_scores_new_init (A, __FILE__, __LINE__)
+#define NN_SCORES_NEW_INIT(A, B) nn_scores_new_init (A, B, __FILE__, __LINE__)
 
 void
 nn_scores_delete (NN_scores*);
 
 
+/********************************   Altering   ********************************/
+
+void
+nn_scores_add_thermal_noise (unsigned long, long int seedval, NN_scores*);
+
+
 /*********************************   Access   *********************************/
+
+unsigned long
+nn_scores_get_size_tetra_loop (const NN_scores*);
+
+unsigned long
+nn_scores_get_size_tetra_loop_full (const NN_scores*);
+
+unsigned long
+nn_scores_get_no_of_tetra_loops (const NN_scores*);
+
+const char*
+nn_scores_get_tetra_loop (const unsigned long, const NN_scores*);
 
 void
 nn_scores_get_allowed_basepair (unsigned, char*, char*, const NN_scores*);
 
-int
+float
+nn_scores_get_G_non_gc_penalty_for_bp (const int, const int,
+                                       const NN_scores*);
+
+float
+nn_scores_get_G_dangle5 (const int, const int, const int, const NN_scores*);
+
+float
+nn_scores_get_G_dangle3 (const int, const int, const int, const NN_scores*);
+
+float
 nn_scores_get_G_extloop_multiloop (const char*,
                                    const unsigned long,
                                    const unsigned long,
@@ -101,32 +129,78 @@ nn_scores_get_G_extloop_multiloop (const char*,
                                    const bool,
                                    const NN_scores*);
 
-int
+float
 nn_scores_get_G_tetra_loop (const char*,
                             const unsigned long,
                             const NN_scores*);
+float
+nn_scores_get_G_hairpin_mismatch (const int,
+                                  const int,
+                                  const int,
+                                  const int,
+                                  const unsigned long,
+                                  const NN_scores*);
 
-int
+float
 nn_scores_get_G_hairpin_loop (const char*,
                               const unsigned long,
                               const unsigned long,
                               const unsigned long,
                               const NN_scores*);
 
-int
-nn_scores_get_G_bulge_loop (const char*,
-                            const unsigned long,
-                            const unsigned long,
-                            const unsigned long,
-                            const unsigned long,
+float
+nn_scores_get_G_bulge_stack (const int, const int, const int, const int,
+                             const unsigned long,
+                             const NN_scores*);
+
+float
+nn_scores_get_G_bulge_loop (const int, const int,
+                            const int, const int,
                             const unsigned long,
                             const NN_scores*);
 
-long
-nn_scores_get_G_stack (const char, const char, const char, const char,
+float
+nn_scores_get_G_stack (const int, const int, const int, const int,
                        const NN_scores*);
 
-int
+float
+nn_scores_get_G_internal_2x2_loop (const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const NN_scores*);
+
+float
+nn_scores_get_G_internal_1x2_loop (const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const NN_scores*);
+
+float
+nn_scores_get_G_internal_1x1_loop (const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const NN_scores*);
+
+float
+nn_scores_get_G_mismatch_interior (const int,
+                                   const int,
+                                   const int,
+                                   const int,
+                                   const NN_scores*);
+
+float
 nn_scores_get_G_internal_loop (const char*,
                                const unsigned long,
                                const unsigned long,
@@ -136,7 +210,7 @@ nn_scores_get_G_internal_loop (const char*,
                                const unsigned long,
                                const NN_scores*);
 
-long
+float
 nn_scores_get_G_mm_stack (const char, const char, const char, const char,
                           const NN_scores*);
 

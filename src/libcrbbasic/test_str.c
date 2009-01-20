@@ -44,12 +44,14 @@
 
 #include <config.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "inc_strg.h"
 #include "memmgr.h"
 #include "errormsg.h"
 #include "mprintf.h"
 #include "str.h"
-#include <assert.h>
+
+
 int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
    Str* test_str;

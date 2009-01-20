@@ -728,6 +728,31 @@ xmalloc_2d (const size_t n_rows,
    return matrix;
 }
 
+/** @brief Set all fields of a 2D matrix to zero.
+ *
+ * This function fills all cells of a 2D matrix with 0's. This means that each
+ * bit is set to 0. Should be used for setting matrices to 0.\n
+ * Returns a pointer to the matrix.
+ *
+ * @param[in] m The matrix.
+ * @param[in] n_rows No. of rows of the matrix.
+ * @param[in] n_cols No. of columns of the matrix.
+ * @param[in] size Byte size of each cell.
+ */
+void**
+matrix2d_set_zero (void** m,
+                   const size_t n_rows,
+                   const size_t n_cols,
+                   const size_t size)
+{
+   assert (m);
+   assert (m[0]);
+
+   m[0] = memset (m[0], 0, size * n_rows * n_cols);
+
+   return m;
+}
+
 /** @brief Allcoate memory for a n-dimensional array at runtime.
  *
  * Do not call this directly. Use the macro

@@ -1,4 +1,4 @@
-# Last modified: 2008-10-06.14
+# Last modified: 2008-11-01.22
 
 #dnl Copyright (C) 2008 Stefan Bienert
 #dnl 
@@ -40,6 +40,7 @@ libcrbbasic_a_SOURCES =                    \
         mprintf.c                          \
         errormsg.c 	                   \
         argvprsr.c	                   \
+        gfile.c  	                   \
 	str.c
 
 # libcrbbasic_a
@@ -56,6 +57,7 @@ noinst_HEADERS =                           \
 	str.h                              \
         undef.h                            \
         crbbasic.h                         \
+        gfile.h  	                   \
         genarray.h
 
 
@@ -70,7 +72,8 @@ check_PROGRAMS =                           \
 	test_memmgr                        \
 	test_argvprsr                      \
 	test_str                           \
-        test_genarray
+        test_genarray                      \
+        test_gfile
 
 test_memmgr_SOURCES   = test_memmgr.c
 
@@ -83,6 +86,8 @@ test_argvprsr_SOURCES = test_argvprsr.c
 test_str_SOURCES      = test_str.c
 
 test_genarray_SOURCES = test_genarray.c
+
+test_gfile_SOURCES    = test_gfile.c
 
 # add test for correct failing of functions?
 

@@ -43,6 +43,7 @@
 
 
 #include <config.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stddef.h>
 #include <libcrbbasic/crbbasic.h>
@@ -58,43 +59,18 @@ typedef struct {
 
 
 struct Rna {
-      char*          seq;       /* the nucleotide sequence */
-      /* char* vienna; */       /* vienna string */
-      unsigned long* pairs;     /* base pairs */
-      unsigned long  size;      /* size of the RNA (sequence & 2D structure) */
-       SecStruct*    structure; /* decomposed structure */
+   char*          seq;       /* the nucleotide sequence */
+   unsigned long  size;      /* size of the RNA sequence */
+   /* char* vienna; */       /* vienna string */
+   unsigned long* pairs;     /* base pairs */
+   unsigned long pairs_size; /* size of the pairlist */
+   SecStruct*    structure; /* decomposed structure */
+   Str* info;
 };
 
+#define CT_FILE_ERR "ct-file \'%s\', line %lu: "
 
 /**********************   Constructors and destructors   **********************/
-
-/** @brief Init a struct_comp structure.
- *
- * @param[in] file Fill with name of calling file.
- * @param[in] line Fill with calling line.
- */
-/* static __inline__ struct_comp */
-/* struct_comp_new (void/\* const char* file, const int line *\/) */
-/* { */
-/*    struct_comp this; */
-
-/*    ARRAY_ULONG_INIT(this.tetra_loop, 0); */
-
-/*    return this; */
-/* } */
-
-/** @brief Delete the components of a struct_comp structure.
- *
- * @param[in] this Object to be freed.
- */
-/* static __inline__ void */
-/* struct_comp_delete (struct_comp* this) */
-/* { */
-/*    if (this != NULL) */
-/*    { */
-/*      ARRAY_DELETE(this->tetra_loop); */
-/*    } */
-/* } */
 
 /** @brief Create a new rna object.
  *
@@ -118,7 +94,9 @@ rna_new (const char* file, const int line)
       this->seq       = NULL;
       /* this->vienna    = NULL; */
       this->pairs     = NULL;
+      this->pairs_size = 0;
       this->structure = NULL;
+      this->info = NULL;
    }
 
    return this;
@@ -137,9 +115,12 @@ rna_delete (Rna* this)
    if (this != NULL)
    {
      XFREE(this->seq);
+     this->size = 0;
      /* XFREE(this->vienna); */
      XFREE(this->pairs);
+     this->pairs_size = 0;
      secstruct_delete (this->structure);
+     str_delete (this->info);
      XFREE(this);
    }
 }
@@ -176,6 +157,45 @@ rna_alloc_sequence (const unsigned long size, Rna* this,
 
    return 0;
 }
+
+/** @brief Reallocate memory for the sequence component of an @c Rna object.
+ *
+ * Reallocate the memory for a sequence stored within an @c Rna data object. If
+ * compiled with enabled memory checking, @c file and @c line should point to
+ * the position where the function was called. Both parameters are 
+ * automatically set by using the macro @c RNA_REALLOC_SEQUENCE.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC on memory problems.
+ *
+ * @param[in] size Size of the sequence/ structure of the RNA.
+ * @param[in] this Rna data object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_realloc_sequence (const unsigned long size, Rna* this,
+                        const char* file, const int line)
+{
+   assert (this);
+
+   this->seq = XOBJ_REALLOC(this->seq, (size + 1) * sizeof (this->seq[0]),
+                            file, line);
+
+   if (this->seq == NULL)
+   {
+      return ERR_RNA_ALLOC;
+   }
+
+   if (size > this->size)
+   {
+      memset ((this->seq + this->size), 0,
+              sizeof (this->seq[0]) * ((size + 1) - this->size));   
+   }
+
+   this->size = size;
+
+   return 0;
+}
+
 
 /** @brief Store a copy of an RNA sequence in an Rna data object.
  *
@@ -249,15 +269,56 @@ rna_allocate_pairlist (const unsigned long size, Rna* this,
 {
    assert (this);
    assert (this->pairs == NULL);
-   assert ((this->size == 0) || (this->size == size));  
+   assert (this->pairs_size == 0);  
    
-   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * size, file, line);
-   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * size);   
+   this->pairs_size = size;
+   this->pairs = XOBJ_MALLOC(sizeof (this->pairs[0]) * this->pairs_size,
+                             file, line);
 
    if (this->pairs == NULL)
    {
       return ERR_RNA_ALLOC;
    }
+
+   memset (this->pairs, INT_MAX, sizeof (this->pairs[0]) * this->pairs_size);   
+
+   return 0;
+}
+
+/** @brief Reallocate memory for the pair list of an @c Rna object.
+ *
+ * Reallocate the memory for the list of base pairs stored within an @c Rna
+ * data object. If compiled with enabled memory checking, @c file and @c line
+ * should point to the position where the function was called. Both parameters
+ * are automatically set by using the macro @c RNA_REALLOC_PAIRLIST.\n
+ * Returns 0 on success, @c ERR_RNA_ALLOC on memory problems.
+ *
+ * @param[in] size Size of the structure.
+ * @param[in] this Rna data object.
+ * @param[in] file Fill with name of calling file.
+ * @param[in] line Fill with calling line.
+ */
+int
+rna_realloc_pairlist (const unsigned long size, Rna* this,
+                      const char* file, const int line)
+{
+   assert (this);
+
+   this->pairs = XOBJ_REALLOC(this->pairs, size * sizeof (this->pairs[0]),
+                            file, line);
+
+   if (this->pairs == NULL)
+   {
+      return ERR_RNA_ALLOC;
+   }
+
+   if (size > this->pairs_size)
+   {
+      memset ((this->pairs + this->pairs_size), INT_MAX,
+              sizeof (this->pairs[0]) * (size - this->pairs_size));
+   }
+
+   this->pairs_size = size;
 
    return 0;
 }
@@ -301,7 +362,7 @@ rna_init_pairlist_vienna (const char* vienna,
    assert (this);
    /* assert (this->vienna == NULL); */
    assert (this->pairs == NULL);
-   assert ((this->size == 0) || (this->size == length));
+   assert (this->pairs_size == 0);
 
    /* allocate list */
    error = rna_allocate_pairlist (length, this, file, line);
@@ -376,6 +437,7 @@ rna_init_pairlist_vienna (const char* vienna,
    {
       XFREE (this->pairs);
       this->pairs = NULL;
+      this->pairs_size = 0;
    }
 
    return error;
@@ -419,6 +481,454 @@ rna_init_sequence_structure (const char* seq,
       error = rna_init_pairlist_vienna (vienna, length, this, file, line);
    }
 
+   return error;
+}
+
+/** @brief Read a RNA structure and sequence from file
+ *
+ * Read in a file in connect format and store its contents in a Rna object.\n
+ * Returns 0 on success, ... else.
+ * GFILE_READ_ERROR on problems reading next line
+ * ERR_RNA_ALLOC info component can't be stored
+ * @param[in] this Rna object.
+ * @param[in] path Path and file name.
+ */
+static unsigned long
+rna_get_first_line_ct (char** buffer, unsigned long* length,
+                       unsigned long* line_no, GFile* gfile)
+{
+   unsigned long lwp = 0;       /* last whitespace position */
+   unsigned long col = 0;
+   char* endptr;                /* needed for strtoul */
+   bool ct_line = true;         /* is the first line already in ct format? */
+   unsigned long n_bases = 1;   /* no. of bases */
+   unsigned long no;            /* just the number in a col */
+   unsigned long max_no = 0;    /* store max.no. found */
+   int error = 0;
+   unsigned long line_length;
+   unsigned long i;
+
+   /* Basic idea: Verify that first line is either a comment or the start of
+      the base list */
+   /* After this function gfile should be at the starting position of the list*/
+
+   line_length = gfile_getline (&error, buffer, length, gfile);
+   if (error)
+   {
+      return 0;
+   }
+
+   /* We run up to the '\0' at the end of the line, translate it to ' ' and
+      fetch the last number in a ct line correctly. After the loop we restore
+      the '\0'. */
+   for (i = 0; i < line_length; i++)
+   {
+      /* transform \0 in line into ' ' */
+      if ((*buffer)[i] == '\0')
+      {
+         (*buffer)[i] = ' ';
+      }
+
+      if ((ct_line == true) && ((*buffer)[i] == ' '))
+      {
+         if ((i > 0) && ((*buffer)[i - 1] != ' '))
+         {
+            col++;
+
+            if (col != 2)
+            {
+               no = strtoul((*buffer + lwp), &endptr, 10);
+
+               /* we have read a number, if pointers differ AND the the whole
+                  part of the buffer we are looking at was read */
+               if ((*buffer == endptr) || (((*buffer + i) - endptr) != 0))
+               {
+                  ct_line = false;
+
+                  if (col == 1)
+                  {
+                     THROW_WARN_MSG ("File \"%s\" in ct format: Header does "
+                                     "not start with no. of bases",
+                                     str_get(gfile_get_path (gfile)));
+                  }
+               }
+               else if (col == 1)
+               {
+                  n_bases = no;
+               }
+               else
+               {
+                  if (no > max_no)
+                  {
+                     max_no = no;
+                  }
+               }
+            }
+            else                /* col 2: Only non-numerical col */
+            {
+               /* we do not check the alphabet here */
+               /* but the nucleotide col must have width 1 */
+               if ((*buffer)[i - 2] != ' ')
+               {
+                  ct_line = false;
+               }
+            }
+
+            /* remember position of last whitespace */
+            lwp = i + 1;
+         }
+      }
+   }
+   if (line_length > 0)
+   {
+      (*buffer)[line_length - 1] = '\0';
+   }
+
+   *line_no = 1;
+
+   if ((ct_line == true) && (col == 6))
+   {
+      if (max_no > n_bases)
+      {
+         n_bases = max_no;
+      }
+
+      THROW_WARN_MSG ("File \"%s\" in ct format: No header found in first line",
+                      str_get(gfile_get_path (gfile)));
+
+      *line_no = 0;
+
+      error = gfile_rewind (gfile);
+
+      if (error)
+      {
+         return 0;
+      }
+   }
+
+   return n_bases;
+}
+
+/* read a ct line from file */
+enum {
+   Seq_pos = 0,                     /* position in sequence */
+   p5_con,                          /* partner in 5' direction */
+   p3_con,                          /* partner in 3' direction */
+   partner,                         /* pairing partner of a base */
+   Pos_seq,                         /* again position in sequence */
+   N_ct_nos
+};
+
+static __inline__ unsigned long
+s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
+                    char* base,
+                    unsigned long* line_no,
+                    int* error,
+                    char** buf,
+                    unsigned long* buf_size,
+                    GFile* gfile)
+{
+   unsigned long i;
+   unsigned long read;
+   unsigned long col = 0;
+   unsigned long st = 0;        /* stored number */
+   unsigned long no;            /* number read */
+   unsigned long lwp = 0;       /* pos of last ws */
+   char* endptr;
+
+   /* try to get a new line */
+   read = gfile_getline (error, buf, buf_size, gfile);
+   (*line_no)++;
+
+   /* we do not check errors here because if(error) then read = 0 */
+   while (read == 1)            /* only '\n' read */
+   {
+      THROW_WARN_MSG (CT_FILE_ERR "Empty line.",
+                      str_get(gfile_get_path (gfile)),
+                      *line_no);
+      read = gfile_getline (error, buf, buf_size, gfile);
+
+      (*line_no)++;
+   }
+
+   /* skip all ws at beginning of line */
+   i = 0;
+   while ((i < read) && ((*buf)[i] == ' '))
+   {
+      i++;
+   }
+
+   if (i > 0)
+   {
+      THROW_WARN_MSG (CT_FILE_ERR "Leading whitespaces.",
+                      str_get(gfile_get_path (gfile)),
+                      *line_no);      
+   }
+
+   /* changing the terminal '\0' to ' ' saves us 1 if-statement in the loop.
+      Since we do not need the buf in the calling function, we do not care
+      restoring '\0'.*/
+   if (read > 0)
+   {
+      (*buf)[read - 1] = ' ';
+   }
+   else
+   {
+      /* In case we have read EOF (read == 0), we have not read a line but
+         counted. Testing here instead of right after reading saves us 1
+         if-statemnt. */
+      (*line_no)--;
+   }
+
+   /* While reading we just store values read. We check for
+      - the right symbols: No. or one letter chars
+      - first and last col (seq.pos.) must contin same values
+      here. */
+   for (; i < read; i++)
+   {
+      if ((*buf)[i] == ' ' /* || (*buf)[i] == '\0' */)
+      {
+         /* ws found, let's check if we are behind a symbol */
+         if ((*buf)[i - 1] != ' ')
+         {
+            /* col 2 is the only non-numerical */
+            if (col != 1)
+            {
+               no = strtoul((*buf + lwp), &endptr, 10);
+
+               /* we have read a number, if pointers differ AND the the whole
+                  part of the buffer we are looking at was read */
+               if ((*buf == endptr) || (((*buf + i) - endptr) != 0))
+               {
+                  (*buf)[i] = '\0';
+                  THROW_ERROR_MSG (CT_FILE_ERR "Column %lu does not contain "
+                                   "a number: \"%s\".",
+                                   str_get(gfile_get_path (gfile)),
+                                   *line_no,
+                                   (col + 1),
+                                   (*buf + lwp));
+                  *error = ERR_RNA_CT_NAN;
+                  return 0;
+               }
+
+               cols[st] = no;
+               st++;
+            }
+            else /* store the base */
+            {
+               if ((*buf)[i - 2] != ' ')
+               {
+                  (*buf)[i] = '\0';
+                  THROW_ERROR_MSG (CT_FILE_ERR "Column %lu is not a single "
+                                   "letter nucleotide: \"%s\".",
+                                   str_get(gfile_get_path (gfile)),
+                                   *line_no,
+                                   (col + 1),
+                                   (*buf + lwp));
+                  *error = ERR_RNA_CT_NN;
+                  return 0;
+               }
+
+               *base = (*buf)[i - 1];
+            }
+
+            col++;
+         }
+         lwp = i + 1;
+      }
+   }
+
+   /* do line syntax/ semantic check */
+   if (cols[Seq_pos] != cols[Pos_seq])
+   {
+      THROW_ERROR_MSG (CT_FILE_ERR "First and last column, supposed to "
+                       "redundantly describe the sequence position, do not "
+                       "match: %lu != %lu.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no,
+                       cols[Seq_pos],
+                       cols[Pos_seq]);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+   if (cols[Seq_pos] == 0)
+   {
+      THROW_ERROR_MSG (CT_FILE_ERR "Sequence position is \'0\', bases are "
+                       "counted beginning with \'1\'.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+   if (cols[p5_con] == cols[Seq_pos])
+   {
+      THROW_ERROR_MSG (CT_FILE_ERR "5' connection (\'%lu\') points to the "
+                       "sequence position (\'%lu\') of the current base.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no,
+                       cols[p5_con],
+                       cols[Seq_pos]);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+   if (cols[p3_con] == cols[Seq_pos])
+   {
+      THROW_ERROR_MSG (CT_FILE_ERR "3' connection (\'%lu\') points to the "
+                       "sequence position (\'%lu\') of the current base.\n",
+                       str_get(gfile_get_path (gfile)),
+                       *line_no,
+                       cols[p3_con],
+                       cols[Seq_pos]);
+      *error = ERR_RNA_CT_SM;
+      col = 0;
+   }
+
+   return col;
+}
+
+/* move to rna_new_from_file_ct later */
+/* reformat all msgs to "ct-file '.ct', line n: ..." */
+int
+rna_read_from_file_ct (Rna* this, const char* path)
+{
+   int error = 0;
+   GFile* gfile;
+   char* line_buffer = NULL;
+   unsigned long lb_size = 0;
+   unsigned long n;
+   unsigned long line_no = 0;       /* current line number */
+   unsigned long ct_cols[N_ct_nos];
+   unsigned long n_bases = 0;
+   char base = 0;
+
+   assert(this);
+   assert(this->info == NULL);
+   assert(path);
+
+   /* open file */
+   gfile = GFILE_OPEN(path, strlen (path), GFILE_VOID, "r");
+   if (gfile == NULL)
+   {
+      return ERR_RNA_FILE_OPEN;
+   }
+
+   /* fetch first line */
+   n = rna_get_first_line_ct (&line_buffer, &lb_size, &line_no, gfile);
+   if (!n)
+   {
+      error = GFILE_READ_ERROR;
+   }
+
+   /* store first line as info component */
+   if (!error)
+   {
+      this->info = STR_NEW_CSTR(line_buffer);
+      if (this->info == NULL)
+      {
+         error = ERR_RNA_ALLOC;
+      }
+   }
+
+   /* init. allocation of rna structue */
+   if (!error)
+   {
+      error = rna_allocate_pairlist (n, this, __FILE__, __LINE__);
+   }
+   if (!error)
+   {
+      error = rna_alloc_sequence (n, this, __FILE__, __LINE__);
+   }
+
+   /* read file */
+   /* read a line into an array, store vals from array in Rna */
+   while ((!error) && (s_rna_scan_line_ct (ct_cols,
+                                           &base,
+                                           &line_no,
+                                           &error,
+                                           &line_buffer,
+                                           &lb_size,
+                                           gfile) == (N_ct_nos + 1)))
+   {
+      n_bases++;
+
+      /* check whether we have to reallocate */
+      if ((n < ct_cols[Seq_pos]) || (n < ct_cols[partner]))
+      {
+         /* We are generous and give the Rna storage for 1000 new basese. Of
+            course there could be a n. in that line telling us we need more
+            space but usually we don't... */
+         n = (n + 1000 > ct_cols[partner] ? n + 1000 : ct_cols[partner]);
+         error = rna_realloc_sequence (n, this, __FILE__, __LINE__);
+         if (!error)
+         {
+            error = rna_realloc_pairlist (n, this, __FILE__, __LINE__);
+         }
+      }
+
+      if (!error)
+      {
+         /* store lines as Rna */
+         this->seq[ct_cols[Seq_pos] - 1] = base;
+
+         if (ct_cols[partner])
+         {
+            if (this->pairs[ct_cols[Seq_pos] - 1] == NOT_PAIRED)
+            {
+               this->pairs[ct_cols[Seq_pos] - 1] = ct_cols[partner] - 1;
+
+               /* assure that partner is either unpaired or paired to us */
+               if ((this->pairs[ct_cols[partner] - 1] != NOT_PAIRED)
+                  &&(this->pairs[ct_cols[partner] - 1] != ct_cols[Seq_pos] - 1))
+               {
+                  THROW_ERROR_MSG (CT_FILE_ERR "Base %lu pairs with base %lu "
+                                   "which is already paired with base %lu.",
+                                   str_get(gfile_get_path(gfile)),
+                                   line_no,
+                                   ct_cols[Seq_pos] - 1,
+                                   ct_cols[partner] - 1,
+                                   this->pairs[ct_cols[partner] - 1]);
+                  error = ERR_RNA_CT_SM;
+               }
+            }
+            else
+            {
+               THROW_ERROR_MSG (CT_FILE_ERR "Base %lu should pair with base "
+                                "%lu but is already paired to base %lu.\n",
+                                str_get(gfile_get_path (gfile)),
+                                line_no,
+                                ct_cols[Seq_pos] - 1,
+                                ct_cols[partner] - 1,
+                                this->pairs[ct_cols[Seq_pos] - 1]);
+               error = ERR_RNA_CT_SM;
+            }
+         }
+      }
+   }
+
+   /* reallocate to true size */
+   if (n > n_bases)
+   {
+      if (!error)
+      {
+         error = rna_realloc_sequence (n_bases, this, __FILE__, __LINE__);
+      }
+      if (!error)
+      {
+         error = rna_realloc_pairlist (n_bases, this, __FILE__, __LINE__);
+      }     
+   }
+
+   /* close file */
+   if (!error)
+   {
+      error = gfile_close(gfile);
+   }
+   else
+   {
+      gfile_close(gfile);
+   }
+   XFREE(line_buffer);
+   
    return error;
 }
 
@@ -496,6 +1006,30 @@ rna_set_sequence_base (const char base, const unsigned long pos, Rna* this)
 
    this->seq[pos] = base;
 
+}
+
+/** @brief Set a pairing partner for a base.
+ *
+ * Set a certain sequence position to be the pairing partner of another base.
+ * Ony one base is modified here. To set a complete base pair you need to call
+ * this function twice. We only check the existence of the base to be modified. 
+ * We do not check whether the base to be modified is already paired to
+ * somebody else.\n
+ * Position counting starts at 0.\n
+ *
+ * @param[in] to The base type be modified.
+ * @param[in] from Pairing position.
+ * @param[in] this Rna data object.
+ */
+void
+rna_set_pairing_base (const unsigned long to, const unsigned long from,
+                      Rna* this)
+{
+   assert (this);
+   assert (this->pairs);
+   assert (this->size > to);
+
+   this->pairs[to] = from;
 }
 
 /** @brief Copy a given sequence into an Rna object.
@@ -626,7 +1160,7 @@ rna_get_size (const Rna* this)
  *
  * @params[in] this Rna data object.
  */
-unsigned long*
+const unsigned long*
 rna_get_pairlist (const Rna* this)
 {
    assert (this);
@@ -647,6 +1181,21 @@ rna_get_sequence (const Rna* this)
    assert (this);
 
    return this->seq;
+}
+
+/** @brief Get the info component of an Rna object.
+ *
+ * Returns the info component of an Rna object as a cstring. If no sequence
+ * was set before, returns @c NULL.
+ *
+ * @params[in] this Rna data object.
+ */
+const Str*
+rna_get_info (const Rna* this)
+{
+   assert (this);
+
+   return this->info;
 }
 
 /** @brief Get a base from a certain position in an Rna sequence.
@@ -735,4 +1284,394 @@ rna_secstruct_calculate_DG (const NN_scores* scores, const Rna* this)
    assert (this);
 
    return secstruct_calculate_DG (this->seq, scores, this->structure);
+}
+
+unsigned long
+rna_secstruct_get_noof_stacks (const Rna* this)
+{
+   return secstruct_get_noof_stacks (this->structure);
+}
+
+/** @brief Get the 5' and 3' base of a stem base pair 
+ *
+ * @param[in] i     5' base container.
+ * @param[in] j     3' base container.
+ * @param[in] stack no. of stack.
+ * @param[in] this  Rna object.
+ */
+void
+rna_secstruct_get_i_geometry_stack (unsigned long* i, unsigned long* j,
+                                const unsigned long stack,
+                                const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_geometry_stack (i, j, stack, this->structure);
+}
+
+unsigned long
+rna_secstruct_get_noof_hairpins (const Rna* this)
+{
+   return secstruct_get_noof_hairpins (this->structure);
+}
+
+void
+rna_secstruct_get_geometry_hairpin (unsigned long* start,
+                                unsigned long* end,
+                                unsigned long* size,
+                                const unsigned long i,
+                                const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_geometry_hairpin(start, end, size, i, this->structure);
+}
+
+/** @brief get the start base of the ith hairpin loop of a 2D structure
+ *
+ * @param[in] i Index of loop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_start_hairpin (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_start_hairpin (i, this->structure);
+}
+
+/** @brief get the last base of the ith hairpin loop of a 2D structure
+ *
+ * @param[in] i Index of loop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_end_hairpin (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_end_hairpin (i, this->structure);
+}
+
+/** @brief get the no. of unpaired bases of the ith hairpin loop
+ *
+ * @param[in] i Index of loop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_size_hairpin (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_size_hairpin (i, this->structure);
+}
+
+/** @brief Get no. of stems in an external loop.
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_stems_extloop (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_stems_extloop (this->structure);
+}
+
+/** @brief Get the 5' base of the ith stem of the external loop of a structure.
+ *
+ * @param[in] i Index of stem.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_5p_stem_extloop (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_5p_stem_extloop (i, this->structure);
+}
+
+/** @brief Get the 3' base of the ith stem of the external loop of a structure.
+ *
+ * @param[in] i Index of stem.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_3p_stem_extloop (const unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_3p_stem_extloop (i, this->structure);
+}
+
+/** @brief Get the 5' and 3' base position of the ith stem in an external loop.
+ *
+ * @param[out] p5 5' psoition.
+ * @param[out] p3 3' position.
+ * @param[in]  i    Stem.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_stem_extloop (unsigned long* p5,
+                                  unsigned long* p3,
+                                  const unsigned long i,
+                                  const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_stem_extloop (p5, p3, i, this->structure);
+}
+
+/** @brief Get the number of 5' dangles in an external loop.
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_5pdangles_extloop (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_5pdangles_extloop (this->structure);
+}
+
+/** @brief Get the number of 3' dangles in an external loop.
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_3pdangles_extloop (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_3pdangles_extloop (this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 5' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 5' dangling end.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_5pdangle_extloop (unsigned long* p5,
+                                      unsigned long* p3,
+                                      unsigned long* fb,
+                                      const unsigned long i,
+                                      const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_5pdangle_extloop (p5,  p3, fb, i, this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 3' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 3' dangling end.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_3pdangle_extloop (unsigned long* p5,
+                                      unsigned long* p3,
+                                      unsigned long* fb,
+                                      const unsigned long i,
+                                      const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_3pdangle_extloop (p5,  p3, fb, i, this->structure);
+}
+
+/** @brief Get no. of multiloops in a secondary structure 
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_multiloops (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_multiloops (this->structure);
+}
+
+/** @brief Get no. of stems of a certain multiloop 
+ *
+ * @param[in] i index of multiloop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_noof_stems_multiloop (unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_noof_stems_multiloop (i, this->structure);
+}
+
+/** @brief Get the 5' and 3' base position of a stem in an multiloop.
+ *
+ * @param[out] p5 5' psoition.
+ * @param[out] p3 3' position.
+ * @param[in]  i    Stem.
+ * @param[in]  j    Multiloop.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_stem_multiloop (unsigned long* p5, unsigned long* p3,
+                                    const unsigned long i,
+                                    const unsigned long j,
+                                    const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_stem_multiloop (p5, p3, i, j, this->structure);
+}
+
+/** @brief Get the no. of 5' dangling ends involved in a certain multiloop. 
+ *
+ * @param[in] i Index of multiloop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_noof_5pdangles_multiloop (unsigned long i, const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_i_noof_5pdangles_multiloop (i, this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 5' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 5' dangling end.
+ * @param[in]  j  jth multiloop.
+ * @param[in]  this Rna object.
+ */
+void
+rna_secstruct_get_i_5pdangle_multiloop (unsigned long* p5,
+                                        unsigned long* p3,
+                                        unsigned long* fb,
+                                        const unsigned long i,
+                                        const unsigned long j,
+                                        const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_5pdangle_multiloop (p5, p3, fb, i, j, this->structure);
+}
+
+/** @brief Get the no. of 3' dangling ends involved in a certain multiloop. 
+ *
+ * @param[in] i Index of multiloop.
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_i_noof_3pdangles_multiloop (unsigned long i,
+                                              const Rna* this)
+{
+   assert (this);
+   
+   return secstruct_get_i_noof_3pdangles_multiloop (i, this->structure);
+}
+
+/** @brief Get the ith 5', 3' and free base of a 3' dangling end.
+ *
+ * @param[out] p5 Container for the 5' base position.
+ * @param[out] p3 Container for the 3' base position.
+ * @param[out] fb Container for the free base.
+ * @param[in]  i  ith 3' dangling end.
+ * @param[in]  j  jth multiloop.
+ * @param[in]  this Secondary structure.
+ */
+void
+rna_secstruct_get_i_3pdangle_multiloop (unsigned long* p5,
+                                        unsigned long* p3,
+                                        unsigned long* fb,
+                                        const unsigned long i,
+                                        const unsigned long j,
+                                        const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_i_3pdangle_multiloop (p5, p3, fb, i, j, this->structure);
+}
+
+/** @brief get the no. of bulge loops of a 2D structure
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_bulges (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_bulges (this->structure);
+}
+
+/** @brief Retrieve bulge loop geometry in one go.
+ *
+ * @param[in/out] i1   Base i of opening pair.
+ * @param[in/out] j1   Base j of opening pair.
+ * @param[in/out] i2   Base i of closing pair.
+ * @param[in/out] j2   Base j of closing pair
+ * @param[in/out] size Size of the loop.
+ * @param[in]     i    No. of bulge.
+ * @param[in]     this Rna object.
+ */
+void
+rna_secstruct_get_geometry_bulge (unsigned long* i1,
+                                  unsigned long* j1,
+                                  unsigned long* i2,
+                                  unsigned long* j2,
+                                  unsigned long* size,
+                                  const unsigned long i,
+                                  const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_geometry_bulge (i1, j1, i2, j2, size, i, this->structure);
+}
+
+/** @brief get the no. of internal loops of a 2D structure
+ *
+ * @param[in] this Rna object.
+ */
+unsigned long
+rna_secstruct_get_noof_internals (const Rna* this)
+{
+   assert (this);
+
+   return secstruct_get_noof_internals (this->structure);
+}
+
+/** @brief get the geometry of a certain internal loop.
+ *
+ * @param[out] i1    Base i of opening pair.
+ * @param[out] j1    Base j of opening pair.
+ * @param[out] i2    Base i of closing pair.
+ * @param[out] j2    Base j of closing pair.
+ * @param[out] size1 Size of first loop.
+ * @param[out] size2 Size of 2nd loop.
+ * @param[in] i      Index of loop.
+ * @param[in] this   Rna object.
+ */
+void
+rna_secstruct_get_geometry_internal (unsigned long* i1,
+                                     unsigned long* j1,
+                                     unsigned long* i2,
+                                     unsigned long* j2,
+                                     unsigned long* size1,
+                                     unsigned long* size2,
+                                     const unsigned long i,
+                                     const Rna* this)
+{
+   assert (this);
+
+   secstruct_get_geometry_internal (i1, j1, i2, j2, size1, size2, i,
+                                    this->structure);
 }

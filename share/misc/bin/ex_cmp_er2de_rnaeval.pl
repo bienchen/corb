@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-11-10.18
+# Last modified: 2009-01-12.14
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -27,7 +27,7 @@ BEGIN
 {
   # try to get bash compatible shell
   $ENV{'SHELL'} = '@SHELL@' if exists $ENV{'DJGPP'};
-  $|=1; # disable line buffer for print statements
+  $|++;
 }
 # SETTINGS         - END
 
@@ -42,6 +42,7 @@ use Pod::Usage;
 
 # PRIVATE packages - BEGIN
 use PBar;
+use CorbIO qw(:all);
 # PRIVATE packages - END
 
 # CONSTANTS        - BEGIN
@@ -995,38 +996,10 @@ my @TESTSEQS = (
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
-my $Verbose          = 0;
 # GLOBALS          - END
 
 
 # FUNCTIONS        - BEGIN
-# write message if in verbose mode
-#   verbose_msg(message)
-sub verbose_msg($)
-{
-    my ($message) = @_;
-
-    print $message if $Verbose;
-}
-
-# write warning
-#   warning_msg(message)
-sub warning_msg($)
-{
-    my ($message) = @_;
-
-    print STDERR "WARNING:".$message;
-}
-
-# write error
-#   error_msg(message)
-sub error_msg_and_die($)
-{
-    my ($message) = @_;
-
-    die("$0:ERROR:".$message);
-}
-
 # parse the arguments of the script and store them in a hash
 #   parseargs(argument_hashref, error_msgref)
 sub parseargs(\%)
@@ -1035,11 +1008,12 @@ sub parseargs(\%)
     my  $optcatchresult = 0;
     my  $help;
     my  $man;
+    my  $verbose;
 
     # wrap the signal handler for warnings to copy them to our message space
     local $SIG{__WARN__} = sub
                            {
-                               error_msg_and_die("@_");
+                               msg_error_and_die("@_");
                            };
 
     # set defaults
@@ -1053,7 +1027,7 @@ sub parseargs(\%)
         'hairpinsonly'          => \$argument_hashref->{haironly},
         'multionly'             => \$argument_hashref->{multionly},
         'testsonly'             => \$argument_hashref->{testsonly},
-        'verbose!'           => \$Verbose,
+        'verbose!'           => \$verbose,
         'help'               => \$help,
         'man'                => \$man
                                 );
@@ -1064,6 +1038,11 @@ sub parseargs(\%)
 
     if (defined($man)) { return 3 }
 
+    if ($verbose)
+    {
+        PBar::enable();
+        enable_verbose;
+    }
     # postprocess
     if (   $argument_hashref->{intonly}
         || $argument_hashref->{haironly}
@@ -1077,116 +1056,6 @@ sub parseargs(\%)
     }
 
     return 1;
-}
-
-# progressbar_start
-sub progressbar_start($ \%)
-{
-    my ($count, $pbar_hashref) = @_;
-
-    if ($Verbose)
-    {
-        $pbar_hashref->{count} = $count;
-        $pbar_hashref->{bar} = "";
-        $pbar_hashref->{port} = 0;
-        $pbar_hashref->{lw} = 47;
-
-        # set up bar
-        $pbar_hashref->{barrierbar} = ($count / ($pbar_hashref->{lw} - 1));
-        $pbar_hashref->{nextbar} = $pbar_hashref->{barrierbar};
-        $pbar_hashref->{stepbar} = (1 / $pbar_hashref->{barrierbar});
-
-        # set up percentage counter
-        $pbar_hashref->{barrierport} = ($count / 99);
-        $pbar_hashref->{nextport} = $pbar_hashref->{barrierport};
-        $pbar_hashref->{stepport} = (1 / $pbar_hashref->{barrierport});
-
-        # set up time
-        $pbar_hashref->{time} = time;
-        $pbar_hashref->{tdiff} = 0;
-
-        #print "\nCount: $pbar_hashref->{count}\n";
-        #print "T(bar): $pbar_hashref->{barrierbar}\n";
-        #print "T(port): $pbar_hashref->{barrierport}\n";
-        #print "S(port): $pbar_hashref->{stepport}\n";
-
-        printf("\n %3.0f%% [%s%*s ETA --:--:-- YY-MM-DD", $pbar_hashref->{port},
-               $pbar_hashref->{bar},
-               ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1), "]");
-    }
-}
-
-# update_progressbar
-sub progressbar_update($ \%)
-{
-    if ($Verbose)
-    {
-        my ($current, $pbar_hashref) = @_;
-        my $need_rewrite = 0;
-
-        if ($current > $pbar_hashref->{nextport})
-        {
-            $need_rewrite = 1;
-
-            $pbar_hashref->{nextport} += $pbar_hashref->{barrierport};  
-            $pbar_hashref->{port} = ($current * $pbar_hashref->{stepport});
-        }
-        if ($current > $pbar_hashref->{nextbar})
-        {
-            $need_rewrite = 1;
-
-            $pbar_hashref->{bar} = sprintf("% *s",
-                                           ($current * $pbar_hashref->{stepbar})
-                                           , "");
-            $pbar_hashref->{bar} =~ s/\s/=/g;
-            $pbar_hashref->{nextbar} += $pbar_hashref->{barrierbar};
-        }
-
-        if ($need_rewrite)
-        {
-            $pbar_hashref->{tdiff} += (time - $pbar_hashref->{time});
-            my $eta = (  (99 - $pbar_hashref->{port})
-                       * $pbar_hashref->{tdiff})     /$pbar_hashref->{port};
-            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)
-                = localtime(time + $eta);
-
-            #print "$current $pbar_hashref->{nextbar}\n";
-            printf("\r %3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
-                   $pbar_hashref->{port},
-                   $pbar_hashref->{bar},
-                   ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1),
-                   "]", $hour, $min, $sec, $year % 100,$mon + 1, $mday);
-
-            $pbar_hashref->{time} = time;
-        }
-    }    
-}
-
-sub progressbar_finish(\%)
-{
-    if ($Verbose)
-    {
-        my ($pbar_hashref) = @_;
-
-        $pbar_hashref->{tdiff} += (time - $pbar_hashref->{time});
-
-        my $sec = $pbar_hashref->{tdiff} % 60;
-        my $min = int(($pbar_hashref->{tdiff} % 3600) / 60);
-        my $hou = int($pbar_hashref->{tdiff} / 3600);
-
-        if ($hou > 100)
-        {
-            $hou = 99;
-            $sec = 99;
-            $min = 99;
-        }
-
-        $pbar_hashref->{bar} = sprintf("% *s", $pbar_hashref->{lw}, "");
-        $pbar_hashref->{bar} =~ s/\s/=/g;
-        printf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
-               $pbar_hashref->{bar},
-               $hou, $min, $sec);
-    }    
 }
 
 # calc. no. of tests with stacking bp
@@ -1311,9 +1180,9 @@ sub test_intloops(\%)
     my ($lseq, $rseq);
     my %pbar;
 
-    verbose_msg("  Testing internal loops...");
+    msg_verbose("  Testing internal loops...");
 
-    progressbar_start($tests_hashref->{intlooptests}, %pbar);
+    PBar::start(%pbar, $tests_hashref->{intlooptests});
 
     # 1x1 loops
     foreach (@BASEPAIRS)
@@ -1334,7 +1203,7 @@ sub test_intloops(\%)
 
                     $tests++;
                     $bases += length($seq);
-                    progressbar_update($tests, %pbar);
+                    PBar::update(%pbar, $tests);
                 }
             }            
         }
@@ -1369,7 +1238,7 @@ sub test_intloops(\%)
                         
                         $tests++;
                         $bases += length($seq);
-                        progressbar_update($tests, %pbar);
+                        PBar::update(%pbar, $tests);
                    }
                 }
             }            
@@ -1402,7 +1271,7 @@ sub test_intloops(\%)
                             
                             $tests++;
                             $bases += length($seq);
-                            progressbar_update($tests, %pbar);
+                            PBar::update(%pbar, $tests);
                         }
                     }
                 }
@@ -1431,7 +1300,7 @@ sub test_intloops(\%)
 
             $tests++;
             $bases += length($seq);
-            progressbar_update($tests, %pbar);
+            PBar::update(%pbar, $tests);
         }
     }
 
@@ -1460,21 +1329,21 @@ sub test_intloops(\%)
                             
                             $tests++;
                             $bases += length($seq);
-                            progressbar_update($tests, %pbar);
+                            PBar::update(%pbar, $tests);
                         }
                     }
                 }
             }            
         }
     }    
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                        tests finished: $tests\n");
-    verbose_msg ("                        bases tested:   $bases\n");
+    msg_verbose("                        tests finished: $tests\n");
+    msg_verbose("                        bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 # test hairpin loops
@@ -1490,9 +1359,9 @@ sub test_hairpins(\%)
     my ($bi, $bj);
     my %pbar;
 
-    verbose_msg("  Testing hairpin loops...");
+    msg_verbose("  Testing hairpin loops...");
 
-    progressbar_start($tests_hashref->{hairpintests}, %pbar);
+    PBar::start(%pbar, $tests_hashref->{hairpintests});
 
     # generic loops
     $loop = "..";
@@ -1506,7 +1375,7 @@ sub test_hairpins(\%)
 
         $tests++;
         $bases += length("g${seq}c");
-        progressbar_update($tests, %pbar);
+        PBar::update(%pbar, $tests);
     }
 
     # mimsatch penalty for loops of size 3 (bp)
@@ -1520,7 +1389,7 @@ sub test_hairpins(\%)
 
         $tests++;
         $bases += length($seq);
-        progressbar_update($tests, %pbar);
+        PBar::update(%pbar, $tests);
     }
 
     # generic mismatch penalty (bp * b * b)
@@ -1542,7 +1411,7 @@ sub test_hairpins(\%)
 
                 $tests++;
                 $bases += length($seq);
-                progressbar_update($tests, %pbar);  
+                PBar::update(%pbar, $tests);  
             }
         }
     }
@@ -1570,20 +1439,20 @@ sub test_hairpins(\%)
 
                     $tests++;
                     $bases += length($seq);
-                    progressbar_update($tests, %pbar);
+                    PBar::update(%pbar, $tests);
                 }
             }
         }
     }
 
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                        tests finished: $tests\n");
-    verbose_msg ("                        bases tested:   $bases\n");
+    msg_verbose("                        tests finished: $tests\n");
+    msg_verbose("                        bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 # calc. no. of tests for hairpin loops
@@ -1732,9 +1601,10 @@ sub call_er2de ($ $)
     my ($seq, $struct) = @_;
 
     #print "$seq $struct\n";
+
     unless(open(FH, "../../../src/corb \"er2de $seq $struct\" |"))
     {
-        error_msg_and_die ("Could not start er2de\n");
+        msg_error_and_die ("Could not start er2de\n");
     }
 
     foreach (<FH>)
@@ -1756,9 +1626,9 @@ sub call_rnaeval ($ $)
     my ($seq, $struct) = @_;
 
     #print "$seq $struct\n";
-    unless(open(FH, "echo \"$seq\n$struct\" | ./RNAeval -d2 |"))
+    unless(open(FH, "echo \"$seq\n$struct\" | ./RNAeval -d2  2>&1 |"))
     {
-        error_msg_and_die ("Could not start RNAeval\n");
+        msg_error_and_die ("Could not start RNAeval\n");
     }
 
     foreach (<FH>)
@@ -1783,13 +1653,13 @@ sub cmp_G($ $)
 
     if ($G_er2de != $G_rnaeval)
     {
-        error_msg_and_die ("Test of \"$seq\", "
+        msg_error_and_die ("Test of \"$seq\", "
                           ."\"$struct\" failed: G(er2de) = $G_er2de, "
-                          ."G(RNAeval) = $G_rnaeval\n");
+                          ."G(RNAeval) = $G_rnaeval");
     }
     #else
     #{
-    #    verbose_msg ("${struct} ${seq} ($G_er2de)  PASS\n");
+    #    msg_verbose ("${struct} ${seq} ($G_er2de)  PASS\n");
     #}
 }
 
@@ -1810,9 +1680,9 @@ sub test_multiloops(\%)
     my $close_struct;
     my %pbar;
 
-    verbose_msg("  Testing multiloops...");
+    msg_verbose("  Testing multiloops...");
 
-    progressbar_start($tests_hashref->{multilooptests}, %pbar);
+    PBar::start(%pbar, $tests_hashref->{multilooptests});
 
     # test for penalty for non gc basepair initiating a stem
     foreach (@BASEPAIRS)
@@ -1824,7 +1694,7 @@ sub test_multiloops(\%)
         cmp_G ($seq, $structure);
         $tests++;
         $bases += length($seq);
-        progressbar_update($tests, %pbar);        
+        PBar::update(%pbar, $tests);        
     }
 
     # 5' + 3' dangle
@@ -1846,7 +1716,7 @@ sub test_multiloops(\%)
 
             $tests += 2;
             $bases += (2 * (length($seq)));
-            progressbar_update($tests, %pbar); 
+            PBar::update(%pbar, $tests); 
         }
     }
 
@@ -1872,19 +1742,19 @@ sub test_multiloops(\%)
 
             $tests++;
             $bases += length($seq.$stretch.$close_seq);
-            progressbar_update($tests, %pbar);
+            PBar::update(%pbar, $tests);
         }
     }
 
 
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                        tests finished: $tests\n");
-    verbose_msg ("                        bases tested:   $bases\n");
+    msg_verbose("                        tests finished: $tests\n");
+    msg_verbose("                        bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 # test stacking params
@@ -1897,9 +1767,9 @@ sub test_stacks(\%)
     my $bases = 0;
     my %pbar;
 
-    verbose_msg("  Testing stacks...");
+    msg_verbose("  Testing stacks...");
 
-    progressbar_start($tests_hashref->{stacktests}, %pbar);
+    PBar::start(%pbar, $tests_hashref->{stacktests});
     foreach (@BASEPAIRS)
     {
         ($o_bl, $o_br) = split(//,$_);
@@ -1910,17 +1780,17 @@ sub test_stacks(\%)
             cmp_G ("${o_bl}${i_bl}aaa${i_br}${o_br}", $structure);
             $tests++;
             $bases += length("${o_bl}${i_bl}aaa${i_br}${o_br}");
-            progressbar_update($tests, %pbar);
+            PBar::update(%pbar, $tests);
         }
     }
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                   tests finished: $tests\n");
-    verbose_msg ("                   bases tested:   $bases\n");
+    msg_verbose("                   tests finished: $tests\n");
+    msg_verbose("                   bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 sub test_testset(\%)
@@ -1932,8 +1802,8 @@ sub test_testset(\%)
     my $bases = 0;
     my %pbar;
 
-    verbose_msg("  Testing test set samples...");
-    progressbar_start($tests_hashref->{testsettests}, %pbar);
+    msg_verbose("  Testing test set samples...");
+    PBar::start(%pbar, $tests_hashref->{testsettests});
 
     # test stems
     foreach (@TESTSEQS)
@@ -1947,16 +1817,16 @@ sub test_testset(\%)
         $tests++;
         $bases += length($seq);
 
-        progressbar_update($tests, %pbar);
+        PBar::update(%pbar, $tests);
     }
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                          tests finished: $tests\n");
-    verbose_msg ("                          bases tested:   $bases\n");
+    msg_verbose("                          tests finished: $tests\n");
+    msg_verbose("                          bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 sub test_extloops(\%)
@@ -1969,8 +1839,8 @@ sub test_extloops(\%)
     my $bases = 0;
     my %pbar;
 
-    verbose_msg("  Testing exterior loops...");
-    progressbar_start($tests_hashref->{extlooptests}, %pbar);
+    msg_verbose("  Testing exterior loops...");
+    PBar::start(%pbar, $tests_hashref->{extlooptests});
 
     # test stems
     foreach (@BASEPAIRS)
@@ -1989,17 +1859,17 @@ sub test_extloops(\%)
             $tests += 2;
             $bases += 2 * (length("au${bd}${bl}caaag${br}"));
 
-            progressbar_update($tests, %pbar);
+            PBar::update(%pbar, $tests);
         }
     }
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                           tests finished: $tests\n");
-    verbose_msg ("                           bases tested:   $bases\n");
+    msg_verbose("                           tests finished: $tests\n");
+    msg_verbose("                           bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 sub test_bulgeloops(\%)
@@ -2015,8 +1885,8 @@ sub test_bulgeloops(\%)
     my ($o_bl, $o_br, $i_bl, $i_br);
     my %pbar;
 
-    verbose_msg("  Testing bulge loops...");
-    progressbar_start($tests_hashref->{bulgetests}, %pbar);
+    msg_verbose("  Testing bulge loops...");
+    PBar::start(%pbar, $tests_hashref->{bulgetests});
 
     # test diff. loop sizes
     for ($i = 1; $i <= 40; $i++)
@@ -2031,7 +1901,7 @@ sub test_bulgeloops(\%)
 
         $tests++;
         $bases += length($seq);
-        progressbar_update($tests, %pbar);
+        PBar::update(%pbar, $tests);
     }
     
     # test size 1 loops
@@ -2048,7 +1918,7 @@ sub test_bulgeloops(\%)
             
             $tests++;
             $bases += length($seq);
-            progressbar_update($tests, %pbar);
+            PBar::update(%pbar, $tests);
         }
     }
 
@@ -2066,17 +1936,17 @@ sub test_bulgeloops(\%)
             
             $tests++;
             $bases += length($seq);
-            progressbar_update($tests, %pbar);
+            PBar::update(%pbar, $tests);
         }
     }
-    progressbar_finish(%pbar);
+    PBar::finish(%pbar);
 
-    verbose_msg ("                        tests finished: $tests\n");
-    verbose_msg ("                        bases tested:   $bases\n");
+    msg_verbose("                        tests finished: $tests\n");
+    msg_verbose("                        bases tested:   $bases\n");
     $tests_hashref->{tests} -= $tests;
     $tests_hashref->{bases} -= $bases;
 
-    verbose_msg("  done.\n");
+    msg_verbose("  done.\n");
 }
 
 # FUNCTIONS        - END
@@ -2089,11 +1959,6 @@ my %param_hash;
 my $ret_val;
 my %test_nos;
 
-pbar_enable();
-my %pb;
-
-PBar::start(%pb, 4);
-
 # parse commandline
 $ret_val = parseargs(%arg_hash);
 if ($ret_val > 1)
@@ -2105,64 +1970,64 @@ if ($ret_val > 1)
 # calculate overall no. of tests
 %test_nos = calculate_no_of_tests(%arg_hash);
 
-verbose_msg ("Overall no. of tests:         $test_nos{tests}\n");
-verbose_msg ("Overall no. of bases to test: $test_nos{bases}\n");
+msg_verbose("Overall no. of tests:         $test_nos{tests}\n");
+msg_verbose("Overall no. of bases to test: $test_nos{bases}\n");
 
 # run tests
 if (! defined($arg_hash{onlyopt}) || ($arg_hash{stacksonly}))
 {
     test_stacks(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 
 if (! defined($arg_hash{onlyopt}) || ($arg_hash{extonly}))
 {
     test_extloops(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 
 if (! defined($arg_hash{onlyopt}) || ($arg_hash{bulgeonly}))
 {
     test_bulgeloops(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 
 if ((! defined($arg_hash{onlyopt})) || ($arg_hash{intonly}))
 {
     test_intloops(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 
 if ((! defined($arg_hash{onlyopt})) || ($arg_hash{haironly}))
 {
     test_hairpins(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 
 if ((! defined($arg_hash{onlyopt})) || ($arg_hash{multionly}))
 {
     test_multiloops(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 
 if ((! defined($arg_hash{onlyopt})) || ($arg_hash{testsonly}))
 {
     test_testset(%test_nos);
 
-    verbose_msg ("Tests left: $test_nos{tests}\n");
-    verbose_msg ("Bases left: $test_nos{bases}\n");
+    msg_verbose("Tests left: $test_nos{tests}\n");
+    msg_verbose("Bases left: $test_nos{bases}\n");
 }
 # MAIN             - END
 

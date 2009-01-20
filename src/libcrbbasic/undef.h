@@ -43,6 +43,7 @@
 
 
 #include <limits.h>
+#include <float.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +56,7 @@ extern "C" {
 #define CHAR_UNDEF  CHAR_MAX
 #define UCHAR_UNDEF UCHAR_MAX
 #define INT_UNDEF   INT_MAX
+#define FLOAT_UNDEF FLT_MAX
 
 #endif /* UNDEF_H */
 

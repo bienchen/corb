@@ -42,6 +42,7 @@ language please notify the author of the manual.
 * Indentation::                 
 * Line size::                   
 * Punctuation::                 
+* Function naming::             
 * Spell checking::              
 @end menu
 
@@ -56,7 +57,7 @@ The aim is consistency and predictability.
 @node Licensing, Documenting, Philosophy, General rules
 @subsection Licensing
 @cindex Licensing
-All your contributions have to be put covered by the GPL. Documentation 
+All your contributions have to be covered by the GPL. Documentation 
 goes with the FDL. See... for details. If you do not want to put your code
 under the GPL/ FDL, you can not use @corb{} for your project and we can not
 keep it in @corb{}.
@@ -96,7 +97,7 @@ columns. This may mean shortening your line or breaking it in a place you think
 makes it more readable for others.
 
 
-@node Punctuation, Spell checking, Line size, General rules
+@node Punctuation, Function naming, Line size, General rules
 @subsection Punctuation
 @cindex Punctuation
 There should usually be a space after punctuation, for exactly the same reasons
@@ -116,8 +117,40 @@ Do
 If the line is going to go beyond 79 spaces, delicately delete spaces while
 trying to keep readability.
 
+@node Function naming, Spell checking, Punctuation, General rules
+@subsection Function naming
+@cindex Function naming
+@cindex Names
 
-@node Spell checking,  , Punctuation, General rules
+- basic principle: start with object/ class
+- go on with the most general stuff, e.g. ``set something''
+- go over to special stuff
+- e.g.: rna_set_base, rna_set_pairing...
+- set will most of the time come first
+- read that Perl man about naming
+- is_...
+- function names like commands/ questions: put a '.' or '?' makes it a sentence
+  - is_paired ?
+  - set_base .
+- general to special
+
+
+=head2 Function naming
+
+Some days, I call my functions C<print_thing()> and
+C<print_foo()>. On others, I use C<foo_print()> and
+C<thing_print()>.  Neither is better than the other. Here is
+the rule...
+
+Functions should be named C<thing_print()>.
+
+Note, I am aware of the disadvantage that you cannot see all
+the things you can print or copy or whatever.
+
+=cut
+
+
+@node Spell checking,  , Function naming, General rules
 @subsection Spell checking
 - spell check documentation/ comments in code
 
@@ -152,6 +185,11 @@ This section declares rules for the programming languages used in @corb{}.
 * Testing::                     
 * Visibility::                  
 * External Libraries::          
+* Ordering::                    
+* Functions::                   
+* Conventions and internal routines::  
+* Memory allocation philosophy and responsibility::  
+* File handling::               
 @end menu
 
 
@@ -486,9 +524,13 @@ regarded as impossible to read code without slipping something. Therefore we
 switch between different implementations of the same function. Thereby no
 preprocessor directive occurs in code but on the level of declaration. 
 
-Explicitly this means, that we duplicate a function to be optimised, leave the general version unchanged and optimise the copy. Both versions are then wrapped into preprocessor conditionals. On major code changes this probably means that we have to do changes twice/ recreate the optimised copy by cut n' paste but we gain very much better readability.
+Explicitly this means, that we duplicate a function to be optimised, leave the
+general version unchanged and optimise the copy. Both versions are then wrapped
+into preprocessor conditionals. On major code changes this probably means that
+we have to do changes twice/ recreate the optimised copy by cut n' paste but we
+gain very much better readability.
 
-Again, do not:
+Again, do not
 @example
   void function_foobar (void)
   @{
@@ -517,7 +559,7 @@ Again, do not:
   @}
 @end example
 @noindent
-Do:
+Do
 @example
   #ifdef FEATURE_FOO  /* we have FOO */
   void function_foobar (void)
@@ -549,17 +591,17 @@ Do:
   #endif
 @end example
 
-As everywhere in live, there is one exception for the function spliting. When
+As everywhere in live, there is one exception for the function splitting. When
 using @posix{} threads, you probably need mutexes. If the only change to a
 function while using threads is switching on and off or waiting for a mutex,
 you might do this within the generalised code. In @libcrbbasic{} this is
 already used at some points without obfuscating the code.
 
-The macro signaling whether @posix{} threads are enabled or not is called
+The macro signalling whether @posix{} threads are enabled or not is called
 @code{HAVE_PTHREAD}.
 
 Last but not least a little hint: Conditional compilation is in fact used
-everywhere in the @corb{} code -- in the @code{__cplusplus} check in each
+everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
 header. But lets just say this is OK.
 
 
@@ -567,22 +609,226 @@ header. But lets just say this is OK.
 @subsubsection Testing
 @cindex Test your code
 @cindex Unit tests
+You should test your code while writing.
 
-- if possible: calc no. from other consts
+Each module should be tested by a separate program. To make each test working
+by calling a test program without arguments, functions should be tested with
+hard coded data. 
+
+A test program should just exit with an appropriate message on problems.
+
+For more details on testing please refer to...
+
 
 @node Visibility, External Libraries, Testing, C
 @subsubsection Visibility
-macros, enums, structs, ...
+@cindex Macros
+@cindex @code{enum}
+We try to keep other people's namespaces as unpolluted as possible.
 
-@node External Libraries,  , Visibility, C
+This means, that macros, enumerations and other constants should only be
+declared in header files, if they are needed external. E.g. error codes have to
+be visible with their returning function. Everything else should go with its
+utilising source.
+
+
+@node External Libraries, Ordering, Visibility, C
 @subsubsection External Libraries
+The Prime Directive of @corb{} is that @emph{it has to work everywhere}.
 
-libraries
-Given an appropriate license, you can use external libraries in corb
-- not extensive use
-- only license:
-- try to make sure library is available on all systems
-- only additional, corb must compile without library
+This allows external libraries as long as @corb{} still compiles and works
+properly if the library is not available. Therefore the use of libraries is
+restricted to additional functionality. As an exemplary scenario consider file
+handling: ANSI C provides everything needed for usual ASCII files. But with
+additional libraries, compressed text files can also be treated like ASCII
+files. Hence the strategy should be to always provide standard C file handling
+and if suitable libraries are found, also handling of different compression
+formats. Another way to treat library issues is to consider them as optimisation
+features as described in @ref{Conditional compilation}.
+
+It should be needless to say that you should avoid using libraries which are
+only available on single architectures.
+
+Another thing to consider when you are planning to use an external library is
+its license. @corb{} utilises the GPL, therefore you only may use libraries
+which go along with it. This is not an issue of ``open source vs. proprietary
+software''-annoyance but a serious law issue. To put it simple: If you use a
+library with an incompatible license, this could cost you a large heap of
+@emph{your} money.
+
+@node Ordering, Functions, External Libraries, C
+@subsubsection Ordering
+The order in which you declare variables should make no difference. On the
+Compaq, at least within structures, the compiler makes noise unless you order
+objects from largest to smallest. This avoids padding to get best alignment.
+
+@node Functions, Conventions and internal routines, Ordering, C
+@subsubsection Functions
+@cindex Functions
+@itemize @bullet
+@item Function headings
+
+Begin every function as described in ...(Documentation). Do not use your own
+style, even if you think yours is better.
+
+@item Interfaces
+@cindex Interfaces
+
+
+Keep the definition of the interface minimal. If you have a C file call
+@file{foo.c}, then put the public interface in @file{foo.h}.
+
+
+@item Function declarations & prototypes
+@cindex Declarations
+@cindex Prototypes
+
+
+The function type goes on its own line. If the parameter list exceeds one line,
+all but the first go on their own line. The opening brace is on its own line:
+@example
+int
+function_foo (int arg1,
+              @dots{},
+              int arg1098)
+@{
+  @dots{}
+@end example
+
+@item @code{static} Functions
+@cindex @code{static}
+
+
+If a function can possibly be made static, it should be. Symbols should be no
+more visible than is necessary. There are also optimisation advantages (the
+compiler can assume a function is local and generate only an inlined version).
+
+If you have a static function you must Not declare it, then define it and use
+it. Instead, you should define it once, before it is used.
+
+In other words, do
+@example
+static int function (int arg) @{ @dots{} @}
+@dots{}
+b = function (a);
+@end example
+@noindent
+Rather than
+@example
+static int function (int arg);
+@dots{}
+static int function (int arg) @{ @dots{} @}
+@dots{}
+b = function (a);
+@end example
+Obviously this rule has to be broken if there is mutual recursion.
+
+This rule exists for consistency (it is used in every file) and to follow the
+principle that we should write things the minimum number of times and lastly,
+to ensure that whenever possible, a compiler is given all the information about
+a static function by the time it is used.
+
+@item Return values and errors
+@cindex Errors
+@cindex Error values
+@cindex Error messages
+@cindex @code{return}
+
+
+Generally, the C functions do not print out too much information in case of
+error. They must, however, return an error code. The C functions should use
+@code{THROW_ERROR_MSG()} to pass on the result of @code{strerror()}/
+@code{perror()}. Typically, this means the lower level C code will write
+something like @samp{no such file or directory}, but it is up to the calling
+function to decide whether or not to go on.
+
+A function should return 0 if it is happy and a special value on problems. All
+error codes of a module should be defined in an @code{enum}eration in its header
+file.
+
+Error codes should look like @enddots{}.
+@end itemize
+
+@node Conventions and internal routines, Memory allocation philosophy and responsibility, Functions, C
+@subsubsection Functions Conventions and internal routines
+@cindex @code{printf}
+@cindex @code{fprintf}
+@cindex @code{malloc}
+@corb{} code may not call any of the following directly:
+@itemize @bullet
+@item @code{printf()}
+
+@item @code{fprintf()} (At least not to @file{stderr}.)
+
+@item @code{malloc()}
+
+@end itemize
+
+There are some general areas to think about.
+@itemize @bullet
+
+@item Printing
+
+Functions should not print to @file{stdout} or @file{stderr} directly.
+Everything should go via @code{THROW_ERROR_MSG()} or @code{mprintf()} or
+@code{mfprintf()}.
+
+If you have to print, please refer to @dots{} documentation of @libcrbbasic{}.
+
+@item Memory allocation and @code{malloc}
+@cindex @code{malloc}
+
+
+Do not call @code{malloc()}. Instead, call the macro @code{XMALLOC()} or any
+other from @corb{}'s own memory manager in @libcrbbasic{}. This takes exactly
+the same arguments as @code{malloc()}, but expands to print out the file and
+line number if @code{malloc()} fails.
+
+For more information on memory handling please refer to @dots{} doc of
+@libcrbbasic{}
+
+@end itemize
+
+
+@node Memory allocation philosophy and responsibility, File handling, Conventions and internal routines, C
+@subsubsection Memory allocation philosophy and responsibility
+
+Most of the time, memory is @code{malloc()}'d and @code{free()}'d at the same
+level of code. There is a major exception to this. The object-driven approach
+in @corb{} requires constructors wrapped around object allocation. You also must
+declare an appropriate routine like @code{foo_delete()}. This routine must clean
+up any occupied memory.
+
+For more information on memory handling please refer to @dots{} doc of
+@libcrbbasic{}
+
+@node File handling,  , Memory allocation philosophy and responsibility, C
+@subsubsection File handling
+
+File handling in C is always an issue. Mostly it is seen as hard and tedious
+work. Additionally opening and reading files is a source for manier errors.
+Therefore we provide an interface for file handling in @corb{}. With module
+gfile from library libcrbbasic, there should be no more need to invoke
+low-level functions.
+
+gfile has wrappers for opening, reading and writing files. All functions are
+able to handle both, compressed and uncompressed files via one interface.
+Additionally we catch all sorts of errors in the gfile module. With this, you
+only have to catch an error value and we care for retrieving and reporting
+error messages.
+
+Instead of using wrappers for low-level functions, you should use higher level
+functions which do the whole job you are intending to do. E.g. linewise reading
+is already in gfile with the ability to skip comments in text.
+
+For more information see ...doc of gfile
+Before putting work into reading a certain file format, also check doc of...,
+because @corb{} already supports several formats.
+
+-------------------------
 
 - function names: static for modules: precede by 's': s_gfile
 - create macro for C macros
+
+- if possible: calc no. from other consts
+- one reason for memmegr: valgrind/ efence not available on all systems

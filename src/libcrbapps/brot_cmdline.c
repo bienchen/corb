@@ -560,7 +560,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
               /* specific occurrences */
               if (option_given != (unsigned int) min)
                 {
-                  fprintf (stderr, "%s: %s option occurrences must be %d\n",
+                  fprintf (stderr, "%s: %s option occurrences must be %ud\n",
                     prog_name, option_desc, min);
                   error = 1;
                 }
@@ -569,7 +569,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
                 || option_given > (unsigned int) max)
             {
               /* range occurrences */
-              fprintf (stderr, "%s: %s option occurrences must be between %d and %d\n",
+              fprintf (stderr, "%s: %s option occurrences must be between %ud and %ud\n",
                 prog_name, option_desc, min, max);
               error = 1;
             }
@@ -579,7 +579,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at least check */
           if (option_given < min)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at least %d\n",
+              fprintf (stderr, "%s: %s option occurrences must be at least %ud\n",
                 prog_name, option_desc, min);
               error = 1;
             }
@@ -589,7 +589,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at most check */
           if (option_given > max)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at most %d\n",
+              fprintf (stderr, "%s: %s option occurrences must be at most %ud\n",
                 prog_name, option_desc, max);
               error = 1;
             }

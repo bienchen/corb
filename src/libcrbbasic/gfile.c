@@ -45,6 +45,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <assert.h>
+#include "inc_strg.h"
 #include "errormsg.h"
 #include "memmgr.h"
 #include "str.h"
@@ -60,11 +61,12 @@ struct GFile {
    Str* path;
 };
 
-/*static const char cmp_type_str[3][4] = {
+static const char cmp_type_str[3][4] = {
    {'b', 'z', '\0'},
-   {'b', 'z', '2', '\0'},
-   {'g', 'z', '\0'}
-   };*/ 
+   {'g', 'z', '\0'},
+   {'b', 'z', '2', '\0'}
+};
+#define N_TYPE_STRS 3
 
 static void
 gfile_delete (GFile* this)
@@ -86,15 +88,36 @@ gfile_delete (GFile* this)
  * @param[in] length Length of file name.
  */
 GFileType
-gfile_get_type (const char* file __attribute__((unused)),
-                      unsigned long length)
+gfile_get_type (const char* file, unsigned long length)
 {
    assert (file || ! file);
    assert (length || ! length);
 
-   
-
    return GFILE_UNCOMPRESSED;
+}
+
+const char*
+gfile_get_type_str (const char* file, unsigned long length)
+{
+   unsigned long i, j;
+
+   /* try to find a '.' in filename */
+   i = length;
+   while ((i > 0) && (file[i - 1] != '.'))
+   {
+      i--;
+   }
+
+   /* now check for an matching extension */
+   for (j = 0; j < N_TYPE_STRS; j++)
+   {
+      if (strncmp (cmp_type_str[j], file + i, length - i) == 0)
+      {
+         return file + i;
+      }
+   }
+
+   return NULL;
 }
 
 /** @brief Get the path of a file in a GFile object.

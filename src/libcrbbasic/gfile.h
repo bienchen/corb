@@ -79,6 +79,9 @@ typedef struct GFile GFile;
 GFileType
 gfile_get_type (const char*, unsigned long);
 
+const char*
+gfile_get_type_str (const char*, unsigned long);
+
 Str*
 gfile_get_path (const GFile*);
 

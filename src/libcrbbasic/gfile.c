@@ -60,6 +60,12 @@ struct GFile {
    Str* path;
 };
 
+/*static const char cmp_type_str[3][4] = {
+   {'b', 'z', '\0'},
+   {'b', 'z', '2', '\0'},
+   {'g', 'z', '\0'}
+   };*/ 
+
 static void
 gfile_delete (GFile* this)
 {
@@ -80,11 +86,13 @@ gfile_delete (GFile* this)
  * @param[in] length Length of file name.
  */
 GFileType
-gfile_determine_type (const char* file __attribute__((unused)),
+gfile_get_type (const char* file __attribute__((unused)),
                       unsigned long length)
 {
    assert (file || ! file);
    assert (length || ! length);
+
+   
 
    return GFILE_UNCOMPRESSED;
 }
@@ -150,7 +158,7 @@ gfile_open (const char* filepath,
       /* check for file type */
       if (gfile->type == GFILE_VOID)
       {
-         gfile->type = gfile_determine_type (filepath, length);
+         gfile->type = gfile_get_type (filepath, length);
       }
       
       /* open file */

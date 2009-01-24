@@ -99,21 +99,18 @@ gfile_get_type (const char* file, unsigned long length)
 const char*
 gfile_get_type_str (const char* file, unsigned long length)
 {
-   unsigned long i, j;
+   unsigned long i;
+   unsigned long ext_len;
 
-   /* try to find a '.' in filename */
-   i = length;
-   while ((i > 0) && (file[i - 1] != '.'))
+   for (i = 0; i < N_TYPE_STRS; i++)
    {
-      i--;
-   }
-
-   /* now check for an matching extension */
-   for (j = 0; j < N_TYPE_STRS; j++)
-   {
-      if (strncmp (cmp_type_str[j], file + i, length - i) == 0)
+      ext_len = strlen (cmp_type_str[i]);
+      if (length > ext_len)
       {
-         return file + i;
+         if (strncmp (cmp_type_str[i], file + length - ext_len, ext_len) == 0)
+         {
+            return cmp_type_str[i];
+         }
       }
    }
 

@@ -61,11 +61,8 @@ struct GFile {
    Str* path;
 };
 
-static const char cmp_type_str[3][4] = {
-   {'b', 'z', '\0'},
-   {'g', 'z', '\0'},
-   {'b', 'z', '2', '\0'}
-};
+static const char* cmp_type_str[] = {"bz", "gz", "bz2"};
+
 #define N_TYPE_STRS 3
 
 static void
@@ -96,25 +93,71 @@ gfile_get_type (const char* file, unsigned long length)
    return GFILE_UNCOMPRESSED;
 }
 
-const char*
-gfile_get_type_str (const char* file, unsigned long length)
+static unsigned long
+s_gfile_ext_from_list (const char* path,
+                       const unsigned long length,
+                       const char** list,
+                       const unsigned long n_entries)
 {
    unsigned long i;
    unsigned long ext_len;
+   
+   assert ((length && path) || !length);
+   assert ((n_entries && list) || !n_entries);
 
-   for (i = 0; i < N_TYPE_STRS; i++)
+   for (i = 0; i < n_entries; i++)
    {
-      ext_len = strlen (cmp_type_str[i]);
-      if (length > ext_len)
+      ext_len = strlen (list[i]);
+
+      /* path len has to be > ext. len to carry file name and extension*/
+      if ((length > ext_len) && (path[length - 1 - ext_len] == '.'))
       {
-         if (strncmp (cmp_type_str[i], file + length - ext_len, ext_len) == 0)
+         if (strncmp (list[i], path + length - ext_len, ext_len) == 0)
          {
-            return cmp_type_str[i];
-         }
+            return i;
+         }         
       }
    }
 
+   return n_entries;
+}
+
+const char*
+gfile_get_type_str (const char* path, unsigned long length)
+{
+   unsigned long entry;
+
+   entry = s_gfile_ext_from_list (path, length, cmp_type_str, N_TYPE_STRS);
+
+   if (entry < N_TYPE_STRS)
+   {
+      return cmp_type_str[entry];
+   }
+
    return NULL;
+}
+
+unsigned long
+gfile_ext_from_list (const char* path,
+                     const unsigned long length,
+                     const char** list,
+                     const unsigned long n_entries)
+{
+   unsigned long ext_len = 0;
+   unsigned long entry;
+
+   /* try to find compression type, if any */
+   entry = s_gfile_ext_from_list (path, length, cmp_type_str, N_TYPE_STRS);
+   if (entry < N_TYPE_STRS)
+   {
+      ext_len = strlen (cmp_type_str[entry]);
+      ext_len++;                /* count the '.' */
+   }
+
+   /* now find the index of the 'true' extension */
+   entry = s_gfile_ext_from_list (path, length - ext_len, list, n_entries);
+
+   return entry;
 }
 
 /** @brief Get the path of a file in a GFile object.

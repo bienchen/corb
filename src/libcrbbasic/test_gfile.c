@@ -118,7 +118,6 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 
    /* try to open again */
 
-
    XFREE (test);
    FREE_MEMORY_MANAGER;
 

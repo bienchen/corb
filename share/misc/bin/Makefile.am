@@ -41,7 +41,7 @@ endif
 
 CLEANFILES = $(bin_SCRIPTS)
 
-EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl PBar.pm CorbIO.pm
+EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl PBar.pm CorbIO.pm RNA.pm
 
 do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \

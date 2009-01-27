@@ -1,4 +1,4 @@
-# Last modified: 2009-01-27.13
+# Last modified: 2009-01-27.22
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -31,7 +31,8 @@ corb_developer_handbook_TEXINFOS = corb.txi        \
                                    onomastics.txi  \
                                    coding.txi      \
                                    indeces.txi     \
-                                   fdl_wrapper.txi
+                                   fdl_wrapper.txi \
+                                   fdl-1.3.txi
 
 corb_user_manual_TEXINFOS = corb.txi
 

@@ -38,6 +38,11 @@ POSIX
 @crbtool{GCC}
 @end macro
 
+@c git name
+@macro git{}
+@crbtool{GIT}
+@end macro
+
 @c title of the CoRB development handbook
 @macro crbtitledvl{}
 @corb{} --- A Developers Handbook

@@ -22,11 +22,11 @@ chapter a set of language specific rules is listed.
 
 @menu
 * General rules::               
-* Language rules::              
+* C::                           
 @end menu
 
 
-@node General rules, Language rules, Coding, Coding
+@node General rules, C, Coding, Coding
 @section General rules
 @cindex General rules
 This is a set of rules applying to all programming languages used in @corb{}.
@@ -73,8 +73,7 @@ See... for details on how to document.
 @node Tabs, Indentation, Documenting, General rules
 @subsection Tabs
 @cindex Tabs
-There are @emph{no} tab characters. Use spaces. Use two spaces to indent in
-functions and loops.
+There are @emph{no} tab characters. Use spaces.
 
 The only exception are @file{Makefiles}. If you have to write your own targets
 (e.g. to extend an Automake target) you still need tabs to precede rules.
@@ -92,7 +91,7 @@ In Emacs this can be achieved by setting @code{c-default-style} @code{ellemtel}.
 
 @node Line size, Punctuation, Indentation, General rules
 @subsection Line size
-Try to make code readable in a window of 80 columns or printed page of 80
+Try to make code readable in a window of 78 columns or printed page of 78
 columns. This may mean shortening your line or breaking it in a place you think
 makes it more readable for others.
 
@@ -114,7 +113,7 @@ Do
    for (a = 0; a < lim; a++)
 @end example
 @noindent
-If the line is going to go beyond 79 spaces, delicately delete spaces while
+If the line is going to go beyond 78 spaces, delicately delete spaces while
 trying to keep readability.
 
 @node Function naming, Spell checking, Punctuation, General rules
@@ -153,22 +152,11 @@ the things you can print or copy or whatever.
 @node Spell checking,  , Function naming, General rules
 @subsection Spell checking
 - spell check documentation/ comments in code
+- we use a british dictionary
 
 
-@node Language rules,  , General rules, Coding
-@section Language rules
-@cindex Language rules
-
-This section declares rules for the programming languages used in @corb{}.
-
-
-@menu
-* C::                           
-@end menu
-
-
-@node C,  , Language rules, Language rules
-@subsection C
+@node C,  , General rules, Coding
+@section C
 @cindex C rules
 @cindex Coding rules for C
 
@@ -194,7 +182,7 @@ This section declares rules for the programming languages used in @corb{}.
 
 
 @node CFLAGS, typedef, C, C
-@subsubsection @env{CFLAGS}
+@subsection @env{CFLAGS}
 @cindex @env{CFLAGS}
 While writing code for @corb{} you have to compile with special @env{CFLAGS}
 enabled. For our build system these are set by running @command{configure} with
@@ -211,14 +199,14 @@ details see...
 
 
 @node typedef, Include files, CFLAGS, C
-@subsubsection @code{typedef}
+@subsection @code{typedef}
 @cindex @code{typedef} rules
 With its information-hiding approach, @code{typedef}s are allowed in @corb{}.
 Structures which are hidden from public should be @code{typedef}ed by default.
 
 
 @node Include files, Boolean, typedef, C
-@subsubsection Include files
+@subsection Include files
 @cindex Include rules
 @cindex Header
 @cindex @code{#ifdef}
@@ -275,7 +263,7 @@ prevent multiple inclusion:
 
 
 @node Boolean, Assertions, Include files, C
-@subsubsection Boolean
+@subsection Boolean
 Do not add your own type with a name like ``boolean'' for true/ false. This is
 already handled by @corb{} in library @libcrbbasic{}. Thus, a type
 @code{bool} with values @code{true}/ @code{false} is available by including
@@ -283,7 +271,7 @@ already handled by @corb{} in library @libcrbbasic{}. Thus, a type
 
 
 @node Assertions, Macros, Boolean, C
-@subsubsection Assertions
+@subsection Assertions
 @cindex @code{assert}
 @cindex Input checking
 @cindex Check parameters
@@ -319,7 +307,7 @@ invokes @option{--enable-assert} automatically.
 
 
 @node Macros, Multidimensional arrays, Assertions, C
-@subsubsection Macros
+@subsection Macros
 @cindex Macros
 @cindex @code{#define}
 @cindex @code{__FILE__}
@@ -384,7 +372,7 @@ Macro names are written in all upper case letters and use underscores as spaces.
 
 
 @node Multidimensional arrays, Conditional compilation, Macros, C
-@subsubsection Multidimensional arrays
+@subsection Multidimensional arrays
 @cindex Enumerations
 @cindex @code{enum}
 @cindex Multidimensional arrays
@@ -451,7 +439,7 @@ naming scheme
 
 
 @node Conditional compilation, Testing, Multidimensional arrays, C
-@subsubsection Conditional compilation
+@subsection Conditional compilation
 @cindex Conditional compilation
 @cindex @code{#ifdef}
 @cindex @code{#ifndef}
@@ -606,7 +594,7 @@ header. But lets just say this is OK.
 
 
 @node Testing, Visibility, Conditional compilation, C
-@subsubsection Testing
+@subsection Testing
 @cindex Test your code
 @cindex Unit tests
 You should test your code while writing.
@@ -621,7 +609,7 @@ For more details on testing please refer to...
 
 
 @node Visibility, External Libraries, Testing, C
-@subsubsection Visibility
+@subsection Visibility
 @cindex Macros
 @cindex @code{enum}
 We try to keep other people's namespaces as unpolluted as possible.
@@ -633,7 +621,7 @@ utilising source.
 
 
 @node External Libraries, Ordering, Visibility, C
-@subsubsection External Libraries
+@subsection External Libraries
 The Prime Directive of @corb{} is that @emph{it has to work everywhere}.
 
 This allows external libraries as long as @corb{} still compiles and works
@@ -657,13 +645,13 @@ library with an incompatible license, this could cost you a large heap of
 @emph{your} money.
 
 @node Ordering, Functions, External Libraries, C
-@subsubsection Ordering
+@subsection Ordering
 The order in which you declare variables should make no difference. On the
 Compaq, at least within structures, the compiler makes noise unless you order
 objects from largest to smallest. This avoids padding to get best alignment.
 
 @node Functions, Conventions and internal routines, Ordering, C
-@subsubsection Functions
+@subsection Functions
 @cindex Functions
 @itemize @bullet
 @item Function headings
@@ -750,7 +738,7 @@ Error codes should look like @enddots{}.
 @end itemize
 
 @node Conventions and internal routines, Memory allocation philosophy and responsibility, Functions, C
-@subsubsection Functions Conventions and internal routines
+@subsection Functions Conventions and internal routines
 @cindex @code{printf}
 @cindex @code{fprintf}
 @cindex @code{malloc}
@@ -791,7 +779,7 @@ For more information on memory handling please refer to @dots{} doc of
 
 
 @node Memory allocation philosophy and responsibility, File handling, Conventions and internal routines, C
-@subsubsection Memory allocation philosophy and responsibility
+@subsection Memory allocation philosophy and responsibility
 
 Most of the time, memory is @code{malloc()}'d and @code{free()}'d at the same
 level of code. There is a major exception to this. The object-driven approach
@@ -803,7 +791,7 @@ For more information on memory handling please refer to @dots{} doc of
 @libcrbbasic{}
 
 @node File handling,  , Memory allocation philosophy and responsibility, C
-@subsubsection File handling
+@subsection File handling
 
 File handling in C is always an issue. Mostly it is seen as hard and tedious
 work. Additionally opening and reading files is a source for manier errors.

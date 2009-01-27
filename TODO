@@ -2,7 +2,7 @@ Copyright (C) 2008 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-11-10.23
+Last modified: 2009-01-25.21
 
 Build system
 ------------
@@ -54,7 +54,9 @@ Build system
 #       - only on configure.ac if new macros from macro dir included? no
 - why isn't --enable-development expanded by tab?
 - configure option --enable-devel-tools (put to --enable-dev)
-
+- creation of develdocs should depend on --enable-/ --with-development?
+    - would shorten compilation time/ no need to run scripts to fetch doc info
+      from source
 
 Emacs
 -----

@@ -5,6 +5,10 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
+- explain at example ``corb''
+- ``brot''
+
+
 @cindex Naming scheme
 @cindex Onomastics
 @cindex How to find a name

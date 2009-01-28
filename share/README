@@ -2,17 +2,16 @@ Copyright (C) 2007 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-10-03.16
+Last modified: 2009-01-28.16
 
 
-This directory contains miscellaneous stuff for the bla (place name here).
+This directory contains miscellaneous stuff of CoRB.
 
 
 
 Directory list:
 ---------------
 doc/  - documentation.
-man/  - Manpages for the project.
 misc/ - Contains Emacs-lisp files and configuration files and executables for
         the build system.
 

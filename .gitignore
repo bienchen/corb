@@ -26,6 +26,7 @@ Makefile.in
 share/misc/bin/reformat
 share/misc/bin/read_viennaparams
 share/misc/bin/ex_cmp_er2de_rnaeval
+share/misc/bin/opt_brot_design_terms
 share/misc/emacs/elc-stamp
 autom4te.cache
 *.bkp

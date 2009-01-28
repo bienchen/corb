@@ -1,4 +1,4 @@
-# Last modified: 2009-01-27.13
+# Last modified: 2009-01-28.10
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -16,7 +16,6 @@
 ##
 ## You should have received a copy of the GNU General Public License
 ## along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
-
 
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
@@ -37,20 +36,22 @@ if CRB_OPT_BROT_DESIGN_TERMS
   bin_SCRIPTS += opt_brot_design_terms
 endif
 
+pl_mods = PBar.pm CorbIO.pm RNA.pm
+
 # misc scripts, build on --with|enable-development
 
 CLEANFILES = $(bin_SCRIPTS)
 
-EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl PBar.pm CorbIO.pm RNA.pm
+EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl $(pl_mods)
 
 do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
   -e 's,[@]configure_input[@],Generated from $@.pl; do not edit by hand.,g'
 
-.pl:PBar.pm
-	rm -f $@ .$@.tpm
-	$(do_subst) $@.pl >.$@.tmp
+.pl:$(pl_mods)
+	rm -f $@ .$@.tmp
+	$(do_subst) $(srcdir)/$@.pl >.$@.tmp
 	chmod +x .$@.tmp
 	chmod a-w .$@.tmp
 	mv -f .$@.tmp $@
@@ -62,12 +63,3 @@ do_subst = sed \
 ## time-stamp-format: "%:y-%02m-%02d.%02H"
 ## time-stamp-end: "$"
 ## End:
-
-
-
-
-
-
-
-
-

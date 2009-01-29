@@ -2,7 +2,7 @@ Copyright (C) 2007 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2008-10-03.15
+Last modified: 2009-01-28.16
 
 
 
@@ -55,11 +55,6 @@ behind it, read the section "Directory Structure".
            the build system are located. Mostly important are the configure and
            the bootstrap script. Most of the remaining files are not there to
            confuse the user but to make the build system work correctly.
-bin/     - Executable files, the "product". This is mostly for developers, to
-           keep a clean source directory. For usual users, these are the
-           binaries which will be installed by "make install". All maintenance
-           tools are kept under the "share/" sub tree.
-lib/     - Project own libraries. Again only as support for developers.
 share/   - The "everything else" directory. Everything that does not fit into
            other directories, is kept here. That is all documentation
            (handbooks, man pages, ...), Emacs-lisp files and many other things.
@@ -113,9 +108,7 @@ Additionally some of the recommendations of the GNU coding standards are
 adopted to the directory structure. For example, we do not provide a special
 "etc/" directory for architecture dependent stuff but a few sub directories
 contain makefiles. A special directory is "share/misc/config/". Against the
-FHS, here the executables for the build system are stored. Usually all
-executables should go into "bin/" but this directory is reserved for project
-tools only.
+FHS, here the executables for the build system are stored.
 
 
 # Local variables:

@@ -1,4 +1,4 @@
-# Last modified: 2009-01-27.13
+# Last modified: 2009-01-29.17
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -24,6 +24,7 @@
 # applications provided by CoRb. Therefore the library contains the
 # main-function pendants of all the tools. See README for more information.
 
+@SET_MAKE@
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
 

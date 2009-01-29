@@ -494,7 +494,7 @@ rna_init_sequence_structure (const char* seq,
  * @param[in] path Path and file name.
  */
 static unsigned long
-rna_get_first_line_ct (char** buffer, unsigned long* length,
+rna_get_first_line_ct (char** buffer, size_t* length,
                        unsigned long* line_no, GFile* gfile)
 {
    unsigned long lwp = 0;       /* last whitespace position */
@@ -625,7 +625,7 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
                     unsigned long* line_no,
                     int* error,
                     char** buf,
-                    unsigned long* buf_size,
+                    size_t* buf_size,
                     GFile* gfile)
 {
    unsigned long i;
@@ -794,7 +794,7 @@ rna_read_from_file_ct (Rna* this, const char* path)
    int error = 0;
    GFile* gfile;
    char* line_buffer = NULL;
-   unsigned long lb_size = 0;
+   size_t lb_size = 0;
    unsigned long n;
    unsigned long line_no = 0;       /* current line number */
    unsigned long ct_cols[N_ct_nos];

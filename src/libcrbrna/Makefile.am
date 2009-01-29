@@ -1,4 +1,4 @@
-# Last modified: 2009-01-27.13
+# Last modified: 2009-01-29.17
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -22,6 +22,8 @@
 # library holds standard functions, e.g. for file handling, memory management
 # and error handling. Further, it defines some standard data types like arrays,
 # stacks and hash tables.
+
+@SET_MAKE@
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
 

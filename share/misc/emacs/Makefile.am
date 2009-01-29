@@ -1,4 +1,4 @@
-# Last modified: 2009-01-27.13
+# Last modified: 2009-01-29.17
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -17,7 +17,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
-
+@SET_MAKE@
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
 

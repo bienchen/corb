@@ -1,4 +1,4 @@
-# Last modified: 2009-01-27.13
+# Last modified: 2009-01-29.17
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -27,6 +27,7 @@
 # available, we need a dummy object for the library, so the build system runs
 # properly.
 
+@SET_MAKE@
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
 

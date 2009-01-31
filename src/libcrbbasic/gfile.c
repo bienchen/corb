@@ -45,6 +45,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <assert.h>
+#include <ctype.h>
 #include "inc_strg.h"
 #include "errormsg.h"
 #include "memmgr.h"
@@ -99,20 +100,28 @@ s_gfile_ext_from_list (const char* path,
                        const char** list,
                        const unsigned long n_entries)
 {
-   unsigned long i;
+   unsigned long i, j;
    unsigned long ext_len;
    
-   assert ((length && path) || !length);
-   assert ((n_entries && list) || !n_entries);
+   assert ((length && path) || (!length && !path));
+   assert ((n_entries && list) || (!n_entries && !list));
 
    for (i = 0; i < n_entries; i++)
    {
       ext_len = strlen (list[i]);
+      j = ext_len;
 
       /* path len has to be > ext. len to carry file name and extension*/
       if ((length > ext_len) && (path[length - 1 - ext_len] == '.'))
       {
-         if (strncmp (list[i], path + length - ext_len, ext_len) == 0)
+         while ((j > 0)
+                && (   tolower (list[i][j - 1])
+                    == tolower (path[length - ext_len + (j - 1)])))
+         {
+            j--;
+         }
+
+         if (j == 0)
          {
             return i;
          }         
@@ -405,7 +414,7 @@ gfile_getdelim_tr (int* error,
                    const unsigned long tr_size,
                    const char* delim,
                    const unsigned long delim_size,
-                   GFile* stream)
+                   const GFile* stream)
 {
    int c;                       /* current character */
    unsigned long length = 0;    /* length of current line */
@@ -556,7 +565,7 @@ gfile_getline_tab (int* error, char** buf, size_t* size, GFile* stream)
  * @param[in] stream   File to be read.
  */
 unsigned long
-gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
+gfile_getline (int* error, char** buf, size_t* size, const GFile* stream)
 {
    char delim[] = {CRB_LF, CRB_COM};
    char tr[][GFILE_TR_N]  = {{CRB_TAB,' '}};

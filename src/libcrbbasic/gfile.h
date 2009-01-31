@@ -109,7 +109,7 @@ unsigned long
 gfile_getline_tab (int*, char**, size_t*, GFile*);
 
 unsigned long
-gfile_getline (int*, char**, size_t*, GFile*);
+gfile_getline (int*, char**, size_t*, const GFile*);
 
 int
 gfile_printf (GFile*, const char*, ...)

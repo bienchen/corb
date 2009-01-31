@@ -233,16 +233,17 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
       return EXIT_FAILURE;
    }
 
-/*    THROW_WARN_MSG ("Testing file writing/ reading."); */
-/*    /\* try to write a structure and sequence to file *\/ */
-/*    /\* try read the sequence and the structure from file *\/ */
-/*    rna_delete (test_obj); */
-/*    test_obj = RNA_NEW; */
-/*    if (rna_read_from_file_ct (test_obj, "example_small.ct")) */
-/*    { */
-/*       THROW_ERROR_MSG ("Reading test file in ct format failed."); */
-/*       return EXIT_FAILURE;      */
-/*    } */
+   THROW_WARN_MSG ("Testing file writing/ reading.");
+   /* try to write a structure and sequence to file */
+   /* try read the sequence and the structure from file */
+   rna_delete (test_obj);
+   test_obj = RNA_NEW;
+   if (rna_read_from_file (test_obj, "example_small.ct",
+                           strlen ("example_small.ct"), NULL, 0, GFILE_VOID))
+   {
+      THROW_ERROR_MSG ("Reading test file in ct format failed.");
+      return EXIT_FAILURE;
+   }
 
    rna_delete (test_obj);
    alphabet_delete (sigma);

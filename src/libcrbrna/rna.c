@@ -789,10 +789,9 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
 /* move to rna_new_from_file_ct later */
 /* reformat all msgs to "ct-file '.ct', line n: ..." */
 int
-rna_read_from_file_ct (Rna* this, const char* path)
+rna_read_from_file_ct (Rna* this, GFile* gfile)
 {
    int error = 0;
-   GFile* gfile;
    char* line_buffer = NULL;
    size_t lb_size = 0;
    unsigned long n;
@@ -803,14 +802,7 @@ rna_read_from_file_ct (Rna* this, const char* path)
 
    assert(this);
    assert(this->info == NULL);
-   assert(path);
-
-   /* open file */
-   gfile = GFILE_OPEN(path, strlen (path), GFILE_VOID, "r");
-   if (gfile == NULL)
-   {
-      return ERR_RNA_FILE_OPEN;
-   }
+   assert(gfile);
 
    /* fetch first line */
    n = rna_get_first_line_ct (&line_buffer, &lb_size, &line_no, gfile);
@@ -917,6 +909,70 @@ rna_read_from_file_ct (Rna* this, const char* path)
          error = rna_realloc_pairlist (n_bases, this, __FILE__, __LINE__);
       }     
    }
+   XFREE(line_buffer);
+
+   return error;
+}
+
+int
+rna_read_from_file (Rna* this, const char* path, const unsigned long length,
+                    const char* fext, const unsigned long fext_len,
+                    const GFileType ctype)
+{
+   int error = 0;
+   const char* exts[] = { "ct" };
+   unsigned long n_exts = sizeof (exts) / sizeof (&exts);
+   unsigned long entry;
+   GFile* gfile;
+   unsigned long i;
+   int __attribute__((unused)) (*read_funcs[1])(Rna*, GFile*) = {
+      &rna_read_from_file_ct
+   };
+
+   assert (this);
+   assert ((fext && fext_len) || (!fext && !fext_len));
+
+   /* determine format */
+   if (fext_len == 0)
+   {
+      entry = gfile_ext_from_list (path, length, exts, n_exts);
+
+      if (entry == n_exts)
+      {
+         THROW_ERROR_MSG ("Extension of file \"%s\" not recognised.", path);
+         return ERR_RNA_EXT_NR;
+      }
+   }
+   else
+   {
+      for (i = 0; i < n_exts; i++)
+      {
+         if (strncmp (fext, exts[i], fext_len) == 0)
+         {
+            entry = i;
+            i = n_exts;
+         }
+      }
+
+      if (i == n_exts)
+      {
+         THROW_ERROR_MSG ("Extension \"%s\" not recognised.", fext);
+         return ERR_RNA_EXT_NR;
+      }   
+   }
+
+   mfprintf (stderr, "%lu: %s %lu\n", entry, exts[0],
+             sizeof(exts)/sizeof(&exts));
+
+   /* open file */
+   gfile = GFILE_OPEN(path, length, ctype, "r");
+   if (gfile == NULL)
+   {
+      return ERR_RNA_FILE_OPEN;
+   }
+
+   /* read file */
+   error = read_funcs[entry] (this, gfile);
 
    /* close file */
    if (!error)
@@ -927,8 +983,7 @@ rna_read_from_file_ct (Rna* this, const char* path)
    {
       gfile_close(gfile);
    }
-   XFREE(line_buffer);
-   
+
    return error;
 }
 

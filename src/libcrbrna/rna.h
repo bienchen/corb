@@ -70,6 +70,7 @@ enum rna_retvals{
    ERR_RNA_CT_NAN,         /* Ct column does not contain a number */
    ERR_RNA_CT_NN,          /* Ct column does not contain a single letter base */
    ERR_RNA_CT_SM,          /* Ct line semantic problem */
+   ERR_RNA_EXT_NR,         /* File extension not recognised*/
 };
 
 typedef struct Rna Rna;
@@ -133,7 +134,11 @@ rna_init_sequence_structure (const char*, const char*, const unsigned long,
    rna_realloc_sequence (A, B, __FILE__, __LINE__)
 
 int
-rna_read_from_file_ct (Rna*, const char*);
+rna_read_from_file_ct (Rna*, GFile*);
+
+int
+rna_read_from_file (Rna*, const char*, const unsigned long, 
+                    const char*, const unsigned long, const GFileType);
 
 int
 rna_secstruct_init (Rna*, const char*, const int);

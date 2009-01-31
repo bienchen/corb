@@ -961,9 +961,6 @@ rna_read_from_file (Rna* this, const char* path, const unsigned long length,
       }   
    }
 
-   mfprintf (stderr, "%lu: %s %lu\n", entry, exts[0],
-             sizeof(exts)/sizeof(&exts));
-
    /* open file */
    gfile = GFILE_OPEN(path, length, ctype, "r");
    if (gfile == NULL)

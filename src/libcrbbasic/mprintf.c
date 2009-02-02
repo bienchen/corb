@@ -41,10 +41,15 @@
  *
  */
 
+/* note: we do not check for errors here, but we should! So why dont'? Writing
+   error messages on attempts to write would be very uninformative: If we try
+   to write to file, we would recive an error msg like "Failed to write. ". But
+   we want: "Failed to write to file xy"*/
+
 #include <config.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <errno.h>
+/* #include <errno.h> */
 #include <libcrbfallback/snprintf.h>
 #include "inc_strg.h"
 #include "mprintf_dummy.h"
@@ -67,7 +72,7 @@ __attribute__ ((format (printf, 2, 0)))
 mvfprintf (FILE *stream, const char *format, va_list ap)
 {
    int retval;
-   
+
    retval = vfprintf (stream, format, ap);
 
    return retval;

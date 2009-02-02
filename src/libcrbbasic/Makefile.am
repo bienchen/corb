@@ -1,4 +1,4 @@
-# Last modified: 2009-01-29.17
+# Last modified: 2009-02-02.23
 
 ## Copyright (C) 2008 Stefan Bienert
 ## 
@@ -93,6 +93,10 @@ test_gfile_SOURCES    = test_gfile.c
 # add test for correct failing of functions?
 
 TESTS = $(check_PROGRAMS)
+
+clean-local:
+	-rm -f test.test
+
 
 ## Local variables:
 ## eval: (add-hook 'write-file-hooks 'time-stamp)

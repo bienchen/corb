@@ -41,6 +41,8 @@
  *
  */
 
+/* do we have to check for write errors, here? */
+
 #include <config.h>
 #include <stdlib.h>
 #include <stdint.h>

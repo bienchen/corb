@@ -111,6 +111,13 @@ gfile_getline_tab (int*, char**, size_t*, GFile*);
 unsigned long
 gfile_getline (int*, char**, size_t*, GFile*);
 
+int
+gfile_printf (GFile*, const char*, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)))
+#endif /* __GNUC__ */
+;
+
 #endif /* GFILE_H */
 
 #ifdef __cplusplus

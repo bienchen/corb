@@ -117,6 +117,34 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    /* delete files */
 
    /* try to open again */
+   THROW_WARN_MSG ("Trying to OPEN   file \"%s\" for writing.", "test.test");
+   file = GFILE_OPEN("test.test", strlen ("test.test"), GFILE_VOID, "w");
+   if (file == NULL)
+   {
+      THROW_ERROR_MSG ("Could not open \"%s\".", "test.test");
+      return EXIT_FAILURE;
+   }
+
+   if (gfile_printf (file, "Hallo") < 0)
+   {
+      return EXIT_FAILURE;
+   }
+   if (gfile_printf (file, " Welt") < 0)
+   {
+      return EXIT_FAILURE;
+   }
+   if (gfile_printf (file, "!\n") < 0)
+   {
+      return EXIT_FAILURE;
+   }
+
+
+   THROW_WARN_MSG ("Trying to CLOSE file \"%s\".", "test.test");
+   ret_val = gfile_close (file);
+   if (ret_val == EOF)
+   {
+      THROW_ERROR_MSG ("Could not close \"%s\".", "test.test");      
+   }
 
    XFREE (test);
    FREE_MEMORY_MANAGER;

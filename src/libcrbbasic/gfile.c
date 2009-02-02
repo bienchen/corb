@@ -292,7 +292,7 @@ gfile_close (GFile* gfile)
 
 /** @brief Reset the current file position to the beginning.
  *
- * Sets the file position of a file stream to the beginning. Can be usd for
+ * Sets the file position of a file stream to the beginning. Can be used for
  * rereading a file.\n
  * Returns
  *        @c GFILE_UNKNOWN_TYPE if the type of file is unsupported,
@@ -397,7 +397,7 @@ s_gfile_store_char (const int c,
  * @param[in] delim_size No. of delimiters.
  * @param[in] stream     File to be read.
  */
-static __inline__ unsigned long
+static unsigned long
 gfile_getdelim_tr (int* error,
                    char** buf,
                    size_t* size,
@@ -467,6 +467,7 @@ gfile_getdelim_tr (int* error,
          THROW_ERROR_MSG ("Reading from file \"%s\" failed:",
                           str_get (stream->path));
          *error = GFILE_READ_ERROR;
+         clearerr (stream->fileptr.uc);
          return 0;
       }
 
@@ -564,4 +565,63 @@ gfile_getline (int* error, char** buf, size_t* size, GFile* stream)
                              tr, sizeof (tr) / sizeof (*tr),
                              delim, sizeof (delim) / sizeof (*delim),
                              stream);   
+}
+
+/* returns a value < 0 on error. No specific error val, can't be handled
+   anyway */
+int
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)))
+#endif /* __GNUC__ */
+gfile_printf (GFile* gfile, const char *format, ...)
+{
+   int ret_val = -1;
+   va_list ap;
+
+   assert (gfile);
+   assert (gfile->fileptr.uc);
+   assert (gfile->path);
+
+   errno = 0;
+
+   switch (gfile->type)
+   {
+      case GFILE_UNCOMPRESSED:
+         /* fetch errors */
+         va_start (ap, format);
+         ret_val = mvfprintf (gfile->fileptr.uc, format, ap);
+         va_end (ap);
+
+         if (ret_val < 0)
+         {
+            /* check for EAGAIN, EINTR -> try once again */
+            /* exit with error */
+            if (ferror (gfile->fileptr.uc))
+            {
+               THROW_WARN_MSG ("Problem while writing file \"%s\":",
+                               str_get (gfile->path));
+               clearerr (gfile->fileptr.uc);
+
+               if ((errno == EAGAIN) || (errno == EINTR))
+               {
+                  va_start (ap, format);
+                  ret_val = mvfprintf (gfile->fileptr.uc, format, ap);
+                  va_end (ap);
+               }
+            }
+
+            if (ret_val < 0)
+            {
+               THROW_ERROR_MSG ("Writing file \"%s\" failed:",
+                                str_get (gfile->path));
+            }
+         }
+         break;            
+      default:
+         THROW_ERROR_MSG ("Writing file \"%s\" failed: Unknown file type",
+                          str_get (gfile->path));
+         return -1;
+   }
+
+   return ret_val;
 }

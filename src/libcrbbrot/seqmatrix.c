@@ -865,7 +865,10 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                      + ((1 - lambda) * sm->prob_m[i][j]);
               
                   /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
-                  s += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
+                  if (sm->prob_m[i][j] > FLT_EPSILON)
+                  {
+                     s += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
+                  }
                }
             }
          }

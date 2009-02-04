@@ -1,8 +1,4 @@
-<<<<<<< HEAD:configure.ac
-# Last modified: 2008-11-12.20
-=======
-# Last modified: 2009-01-12.10
->>>>>>> 7a7166d3a4dcae9599149dcd07c04a15e3ed1ca8:configure.ac
+# Last modified: 2009-02-04.11
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 

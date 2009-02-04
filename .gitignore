@@ -82,5 +82,5 @@ share/doc/stamp-vti
 semantic.cache
 
 # ignore build directories
-/devel
 /productive
+/devel

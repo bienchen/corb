@@ -740,7 +740,7 @@ seqmatrix_collate_is (const float fthresh,
       }
    }
 
-   if (! retval)
+   if (!retval)
    {
       retval = seqmatrix_collate_mv (sm, data);
    }
@@ -815,11 +815,17 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    unsigned long i, j;          /* iterator */
    float col_sum;
    float T = t_init;            /* current temperature */
-   float s;                     /* matrix entropy */
+   float s_cur, s_last;         /* matrix entropy */
+   unsigned long s_count;       /* count times s did not change */
+   unsigned long s_dropout;     /* convergence criterion */
 
    assert (sm);
    assert (sm->calc_eeff_col);
    assert (sco);
+
+   s_last = FLT_MAX * (-1.0f);
+   s_count = 0;
+   s_dropout = steps * 0.005;
 
    /* perform for a certain number of steps */
    t = 0;
@@ -829,7 +835,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 
       error = sm->pre_col_iter_hook (sco, sm);
 
-      s = 0.0f;
+      s_cur = 0.0f;
 
       /* calculate Eeff */
       if (!error)
@@ -867,7 +873,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                   /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
                   if (sm->prob_m[i][j] > FLT_EPSILON)
                   {
-                     s += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
+                     s_cur += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
                   }
                }
             }
@@ -877,11 +883,34 @@ seqmatrix_simulate_scmf (const unsigned long steps,
            seqmatrix_print_2_stdout (6, sm); */
 
          /* shouldn't s be calculated on the no. of unfixed cols? */
-         s = (s / sm->cols) * (-1.0f);
+         s_cur = (s_cur / sm->cols) * (-1.0f);
 
-         if (s < s_thresh) 
+         if (fabsf (s_cur - s_last) <= FLT_EPSILON)
          {
-            mfprintf (stdout, "Entropy dropout: %f\n", s);
+            s_count++;
+/*CCCAUCCAAGUACGAAAAAAAGUACAGCAUCGAGAGAAGAUGCAGAGAGCCCCCAGAGAGGGGGCGGAUGGGAGAG*/
+       /* ca. 7min */
+       /* 5m47 0.1 */
+       /* 4m20 0.01 */
+            /* check counter */
+            if (s_count == s_dropout)
+            {
+               mfprintf (stderr, "%lu: Dropout@%f after %lu equal steps\n",
+                         t, s_cur, s_count);
+               return error;
+            }
+         }
+         else
+         {
+            /* mfprintf (stderr, "%lu: %f : %f\n", t, s_cur, s_last); */
+            s_count = 0;
+         }
+
+         s_last = s_cur;
+
+         if (s_cur < s_thresh )
+         {
+            mfprintf (stdout, "Entropy dropout: %f\n", s_cur);
             return error;
          }
          

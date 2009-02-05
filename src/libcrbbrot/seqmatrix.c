@@ -648,6 +648,34 @@ seqmatrix_set_fixed_site_hook (int (*fixed_site_hook) (void*, unsigned long,
    sm->fixed_site_hook = fixed_site_hook;
 }
 
+static __inline__ void
+s_seqmatrix_find_lamb_site (SeqMatrix* sm,
+                            unsigned long* row,
+                            unsigned long* col)
+{
+   unsigned long i, j;
+   float max = 0.0f;
+
+   *col = sm->cols + 1;
+
+   for (j = 0; j < sm->cols; j++)
+   {
+      /* check if site is fixed */
+      if (!seqmatrix_is_col_fixed (j, sm))
+      {
+         for (i = 0; i < sm->rows; i++)
+         {
+            if (sm->prob_m[i][j] > max)
+            {
+               max = sm->prob_m[i][j];
+               *col = j;
+               *row = i;
+            }
+         }
+      }   
+   }
+}
+
 /** @brief Transform a sequence matrix into an unambigouos sequence.
  *
  * Creates a sequence out of a sequence matrix in an iterative simulation
@@ -670,7 +698,6 @@ seqmatrix_collate_is (const float fthresh,
                       void* data)
 {
    unsigned long i, j, largest_amb_col = 0, largest_amb_row = 0;
-   float largest_amb;
    int retval = 0;
 
    assert (sm);
@@ -682,9 +709,6 @@ seqmatrix_collate_is (const float fthresh,
 
    while ((largest_amb_col != sm->cols + 1) && (! retval))
    {
-      largest_amb_col = sm->cols + 1;
-      largest_amb = 0.0f;
-
       /* for all columns */
       for (j = 0; j < sm->cols; j++)
       {
@@ -705,24 +729,8 @@ seqmatrix_collate_is (const float fthresh,
       }
       
       /* find largest ambigouos site */
-      for (j = 0; j < sm->cols; j++)
-      {
-         /* check if site is fixed */
-         if (!seqmatrix_is_col_fixed (j, sm))
-         {
-            for (i = 0; i < sm->rows; i++)
-            {
-               if (sm->prob_m[i][j] > largest_amb)
-               {
-                  largest_amb = sm->prob_m[i][j];
-                  largest_amb_col = j;
-                  largest_amb_row = i;
-               }
-            }
-         }
+      s_seqmatrix_find_lamb_site (sm, &largest_amb_row, &largest_amb_col);
 
-      }
-      
       /* set site to 1/0 and fixate it */
       if (largest_amb_col < sm->cols + 1)
       {

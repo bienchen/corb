@@ -160,7 +160,7 @@ seqmatrix_fix_col (const unsigned long,
                    SeqMatrix*);
 
 int
-seqmatrix_simulate_scmf (const unsigned long,
+seqmatrix_simulate_scmf (unsigned long,
                          const float,
                          const float,
                          const float,

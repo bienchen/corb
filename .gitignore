@@ -80,3 +80,7 @@ share/doc/stamp-vti
 
 # ignore cache files from emacs' semantic package
 semantic.cache
+
+# ignore build directories
+/devel
+/productive

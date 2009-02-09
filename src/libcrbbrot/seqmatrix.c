@@ -811,7 +811,7 @@ seqmatrix_collate_mv (SeqMatrix* sm, void* data)
 int
 seqmatrix_simulate_scmf (const unsigned long steps,
                          const float t_init,
-                         const float c_rate,
+                         float c_rate,
                          const float c_port,
                          const float lambda,
                          const float s_thresh, 
@@ -823,21 +823,29 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    unsigned long i, j;          /* iterator */
    float col_sum;
    float T = t_init;            /* current temperature */
-   float s_cur, s_last;         /* matrix entropy */
-   unsigned long s_count;       /* count times s did not change */
-   unsigned long s_dropout;     /* convergence criterion */
+   float s_cur/* , s_last */;         /* matrix entropy */
+   /* unsigned long s_count; */       /* count times s did not change */
+   /* unsigned long s_dropout;  */    /* convergence criterion */
+   /* unsigned long largest_amb_row = 0, largest_amb_col; */
+   float s_long = 1.0f;
+   float s_short = 1.0f;
 
    assert (sm);
    assert (sm->calc_eeff_col);
    assert (sco);
+   /* only one term allowed: c_rate OR c_port */
+   assert (   ((fabs(c_port) > (0.0f + FLT_EPSILON))
+            && (fabs(c_rate) <= (0.0f + FLT_EPSILON)))
+           || ((fabs(c_port) <= (0.0f + FLT_EPSILON))
+            && (fabs(c_rate) > (0.0f + FLT_EPSILON))));
 
-   s_last = FLT_MAX * (-1.0f);
-   s_count = 0;
-   s_dropout = steps * 0.005;
+/*    s_last = FLT_MAX * (-1.0f); */
+/*    s_count = 0; */
+/*    s_dropout = 100/\* steps * 0.005 *\/; */
 
    /* perform for a certain number of steps */
    t = 0;
-   while ((!error) && (t < steps))
+   while ((!error) && (t < steps) && (T > 1.0f))
    {
       /*mfprintf (stderr,"     STEP: %lu\n", t);*/
 
@@ -890,31 +898,92 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          /*mprintf ("After calc_eeff_col\n");
            seqmatrix_print_2_stdout (6, sm); */
 
-         /* shouldn't s be calculated on the no. of unfixed cols? */
+         /* shouldn't s be calculated on the no. of unfixed cols? No, fixed
+            cols contribute as 0 */
          s_cur = (s_cur / sm->cols) * (-1.0f);
 
-         if (fabsf (s_cur - s_last) <= FLT_EPSILON)
+         /* cooling: We follow the entropy with a long- and short term avg. If
+            s_long and s_short diverge to much, we slow down or speed up
+            cooling. */
+         if (t != 0)
          {
-            s_count++;
-/*CCCAUCCAAGUACGAAAAAAAGUACAGCAUCGAGAGAAGAUGCAGAGAGCCCCCAGAGAGGGGGCGGAUGGGAGAG*/
-       /* ca. 7min */
-       /* 5m47 0.1 */
-       /* 4m20 0.01 */
-            /* check counter */
-            if (s_count == s_dropout)
-            {
-               mfprintf (stderr, "%lu: Dropout@%f after %lu equal steps\n",
-                         t, s_cur, s_count);
-               return error;
-            }
+            s_long = (0.9 * s_long) + (0.1 * s_cur);
+            s_short = (0.5 * s_short) + (0.5 * s_cur);
          }
          else
          {
-            /* mfprintf (stderr, "%lu: %f : %f\n", t, s_cur, s_last); */
-            s_count = 0;
+            s_long = s_short = s_cur;
          }
 
-         s_last = s_cur;
+         if ((s_short / s_long) < 0.99f)
+         {
+            /* entropy changes to fast, slow down */
+            c_rate = sqrtf (c_rate);
+         }
+         else
+         {
+            /* small changes, speed up */
+            /*if (c_rate >= (1.0f - FLT_EPSILON))
+            {
+               c_rate -= 0.000001;
+               }*/
+
+            /* mfprintf (stderr, "speed up\n"); */
+            if (c_rate > 0.85f)
+               c_rate = c_rate * (c_rate * 0.99);
+         }
+
+         /* entropy strategies: when converged/ only small changes,
+          a) fix a site
+          b) drop temperature */
+/*          if (fabsf (s_cur - s_last) <= FLT_EPSILON) */
+/*          { */
+/*             s_count++; */
+
+/*             /\* check counter *\/ */
+/*             if (s_count >= s_dropout) */
+/*             { */
+/*                /\* instead of stopping the simulation, we just fix a site in the */
+/*                   matrix. This should disturb entropy so the counter is */
+/*                   reseted. If not, this rule is applied again and again... *\/ */
+/*                /\*s_seqmatrix_find_lamb_site (sm,  */
+/*                                            &largest_amb_row, */
+/*                                            &largest_amb_col); */
+
+/*                if (largest_amb_col < sm->cols + 1) */
+/*                { */
+/*                   seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm); */
+/*                   mfprintf (stderr, "Site fixed: %lu, %lu %lu %f %f)\n", */
+/*                             largest_amb_col, t, s_dropout, s_cur, s_last);      */
+/*                } */
+/*                else */
+/*                { */
+/*                   mfprintf (stderr, "Everything is fixed (%lu, %f)\n", */
+/*                             t, s_cur); */
+/*                   return error; */
+/*                   }*\/ */
+
+/*                /\* cool faster *\/ */
+/*                mfprintf (stderr, "%lu Drop temp: %f -> ", t, T); */
+/*                if (fabs (c_rate) > (0.0f + FLT_EPSILON)) */
+/*                { */
+/*                   T = (T * powf(c_rate, 10));   */
+/*                } */
+/*                else */
+/*                { */
+/*                   T = (T * (c_port * 10));                     */
+/*                } */
+/*                steps -= 10; */
+/*                mfprintf (stderr, "%f %lu\n", T, steps); */
+/*             } */
+/*          } */
+/*          else */
+/*          { */
+/*             /\* mfprintf (stderr, "%lu: %f : %f\n", t, s_cur, s_last); *\/ */
+/*             s_count = 0; */
+/*          } */
+
+/*          s_last = s_cur; */
 
          if (s_cur < s_thresh )
          {
@@ -924,6 +993,11 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          
          T = (T * c_rate) + c_port;
          t++;
+
+         /*mfprintf (stderr, "%2lu: T= %5.2f k= %f s= %.2f s_l= %.2f, s_s= %.2f "
+                   "s_s/s_l= %.2f\n", t, T, c_rate, s_cur, s_long, s_short,
+                   s_short / s_long);*/
+         mfprintf (stderr, "%lu %f %f %f\n", t, s_cur, s_long, T);
       }
    }
 

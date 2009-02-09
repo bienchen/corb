@@ -421,7 +421,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    {
       seqmatrix_print_2_stdout (2, sm);
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
-
+      mfprintf (stderr, "SNIP\n");
       error = seqmatrix_collate_is (0.99,
                                     brot_args->steps_arg / 2,
                                     brot_args->temp_arg,

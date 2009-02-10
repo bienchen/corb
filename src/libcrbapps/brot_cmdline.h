@@ -36,6 +36,7 @@ struct brot_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *detailed_help_help; /**< @brief Print help, including all details and hidden options, and exit help description.  */
+  const char *full_help_help; /**< @brief Print help, including hidden options, and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
   enum enum_scoring scoring_arg;	/**< @brief Choose a different scoring scheme (default='NN').  */
   char * scoring_orig;	/**< @brief Choose a different scoring scheme original value given at command line.  */
@@ -48,21 +49,43 @@ struct brot_args_info
   long steps_arg;	/**< @brief Number of iterations (default='1000').  */
   char * steps_orig;	/**< @brief Number of iterations original value given at command line.  */
   const char *steps_help; /**< @brief Number of iterations help description.  */
-  float temp_arg;	/**< @brief Initial temperature (default='100').  */
+  float temp_arg;	/**< @brief Initial temperature (default='10').  */
   char * temp_orig;	/**< @brief Initial temperature original value given at command line.  */
   const char *temp_help; /**< @brief Initial temperature help description.  */
   long seed_arg;	/**< @brief Random seed (default='-791122').  */
   char * seed_orig;	/**< @brief Random seed original value given at command line.  */
   const char *seed_help; /**< @brief Random seed help description.  */
-  float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='1.000000').  */
+  float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='1.01').  */
   char * negative_design_scaling_orig;	/**< @brief Scale negative design term original value given at command line.  */
   const char *negative_design_scaling_help; /**< @brief Scale negative design term help description.  */
   float heterogenity_term_scaling_arg;	/**< @brief Scale heterogenity term (default='1.000000').  */
   char * heterogenity_term_scaling_orig;	/**< @brief Scale heterogenity term original value given at command line.  */
   const char *heterogenity_term_scaling_help; /**< @brief Scale heterogenity term help description.  */
+  float sm_entropy_arg;	/**< @brief Sequence matrix entropy threshold (default='0.05').  */
+  char * sm_entropy_orig;	/**< @brief Sequence matrix entropy threshold original value given at command line.  */
+  const char *sm_entropy_help; /**< @brief Sequence matrix entropy threshold help description.  */
+  float lambda_arg;	/**< @brief Portion of a new step to be accepted (default='0.6').  */
+  char * lambda_orig;	/**< @brief Portion of a new step to be accepted original value given at command line.  */
+  const char *lambda_help; /**< @brief Portion of a new step to be accepted help description.  */
+  float beta_long_arg;	/**< @brief Define the long term entropy contribution (default='0.95').  */
+  char * beta_long_orig;	/**< @brief Define the long term entropy contribution original value given at command line.  */
+  const char *beta_long_help; /**< @brief Define the long term entropy contribution help description.  */
+  float beta_short_arg;	/**< @brief Define the short term entropy contribution (default='0.5').  */
+  char * beta_short_orig;	/**< @brief Define the short term entropy contribution original value given at command line.  */
+  const char *beta_short_help; /**< @brief Define the short term entropy contribution help description.  */
+  float speedup_threshold_arg;	/**< @brief Speedup/ slow down cooling threshold (default='0.99').  */
+  char * speedup_threshold_orig;	/**< @brief Speedup/ slow down cooling threshold original value given at command line.  */
+  const char *speedup_threshold_help; /**< @brief Speedup/ slow down cooling threshold help description.  */
+  float min_cool_arg;	/**< @brief Minimal cooling factor (default='0.85').  */
+  char * min_cool_orig;	/**< @brief Minimal cooling factor original value given at command line.  */
+  const char *min_cool_help; /**< @brief Minimal cooling factor help description.  */
+  float scale_cool_arg;	/**< @brief Scale cooling factor (default='0.99').  */
+  char * scale_cool_orig;	/**< @brief Scale cooling factor original value given at command line.  */
+  const char *scale_cool_help; /**< @brief Scale cooling factor help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
+  unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int scoring_given ;	/**< @brief Whether scoring was given.  */
   unsigned int fixed_nuc_given ;	/**< @brief Whether fixed-nuc was given.  */
@@ -71,6 +94,13 @@ struct brot_args_info
   unsigned int seed_given ;	/**< @brief Whether seed was given.  */
   unsigned int negative_design_scaling_given ;	/**< @brief Whether negative-design-scaling was given.  */
   unsigned int heterogenity_term_scaling_given ;	/**< @brief Whether heterogenity-term-scaling was given.  */
+  unsigned int sm_entropy_given ;	/**< @brief Whether sm-entropy was given.  */
+  unsigned int lambda_given ;	/**< @brief Whether lambda was given.  */
+  unsigned int beta_long_given ;	/**< @brief Whether beta-long was given.  */
+  unsigned int beta_short_given ;	/**< @brief Whether beta-short was given.  */
+  unsigned int speedup_threshold_given ;	/**< @brief Whether speedup-threshold was given.  */
+  unsigned int min_cool_given ;	/**< @brief Whether min-cool was given.  */
+  unsigned int scale_cool_given ;	/**< @brief Whether scale-cool was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */
@@ -92,6 +122,8 @@ extern const char *brot_args_info_purpose;
 extern const char *brot_args_info_usage;
 /** @brief all the lines making the help output */
 extern const char *brot_args_info_help[];
+/** @brief all the lines making the full help output (including hidden options) */
+extern const char *brot_args_info_full_help[];
 /** @brief all the lines making the detailed help output (including hidden options and details) */
 extern const char *brot_args_info_detailed_help[];
 
@@ -155,6 +187,10 @@ int brot_cmdline_parser_file_save(const char *filename,
  * Print the help
  */
 void brot_cmdline_parser_print_help(void);
+/**
+ * Print the full help (including hidden options)
+ */
+void brot_cmdline_parser_print_full_help(void);
 /**
  * Print the detailed help (including hidden options and details)
  */

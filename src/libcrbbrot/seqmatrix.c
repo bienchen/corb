@@ -99,8 +99,6 @@ struct SeqMatrix {
 SeqMatrix*
 seqmatrix_new (const char* file, const int line)
 {
-   /* unsigned long i; */
-
    /* allocate 1 object */
    SeqMatrix* sm = XOBJ_MALLOC(sizeof (*sm), file, line);
 
@@ -115,14 +113,7 @@ seqmatrix_new (const char* file, const int line)
       sm->fixed_site_hook   = NULL;
       sm->prob_m            = NULL;
       sm->calc_m            = NULL;
-
       sm->gas_constant  = 1;
-
-/*       for (i = 0; i < No_Of_Mtrx; i++) */
-/*       { */
-/*          sm->matrix[i]  = NULL; */
-/*       } */
-/*       sm->curr_matrix = F_Mtrx; */
    }
 
    return sm;
@@ -690,8 +681,11 @@ int
 seqmatrix_collate_is (const float fthresh,
                       const unsigned long steps,
                       const float temp,
-                      const float c_rate,
-                      const float c_port,
+                      const float b_long,
+                      const float b_short,
+                      const float sc_thresh,
+                      const float c_min,
+                      const float c_scale,
                       const float lambda,
                       const float s_thresh,
                       SeqMatrix* sm,
@@ -739,8 +733,11 @@ seqmatrix_collate_is (const float fthresh,
          /* simulate */
          retval = seqmatrix_simulate_scmf (steps,
                                            temp,
-                                           c_rate,
-                                           c_port,
+                                           b_long,
+                                           b_short,
+                                           sc_thresh,
+                                           c_min,
+                                           c_scale,
                                            lambda,
                                            s_thresh,
                                            sm,
@@ -797,6 +794,29 @@ seqmatrix_collate_mv (SeqMatrix* sm, void* data)
    return 0;
 }
 
+static __inline__ float
+s_seqmatrix_calc_init_entropy (const SeqMatrix* sm)
+{
+   unsigned long i, j;
+   float s = 0.0f;
+
+   for (j = 0; j < sm->cols; j++)
+   {
+      if (!seqmatrix_is_col_fixed (j, sm))
+      {
+         for (i = 0; i < sm->rows; i++)
+         {
+            if (sm->prob_m[i][j] > FLT_EPSILON)
+            {
+               s += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
+            }
+         }
+      }
+   }
+
+   return (s / sm->cols) * (-1.0f);
+}
+
 /** @brief Perform a SCMF simulation on a sequence matrix using the NN.
  *
  * Calculate the mean force field for a sequence matrix and update cells. This
@@ -811,8 +831,11 @@ seqmatrix_collate_mv (SeqMatrix* sm, void* data)
 int
 seqmatrix_simulate_scmf (const unsigned long steps,
                          const float t_init,
-                         float c_rate,
-                         const float c_port,
+                         const float b_long,
+                         const float b_short,
+                         const float sc_thresh,
+                         const float c_min,
+                         const float c_scale,
                          const float lambda,
                          const float s_thresh, 
                          SeqMatrix* sm,
@@ -823,21 +846,27 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    unsigned long i, j;          /* iterator */
    float col_sum;
    float T = t_init;            /* current temperature */
+   float c_rate = 1.0f;         /* cooling rate */
    float s_cur/* , s_last */;         /* matrix entropy */
    /* unsigned long s_count; */       /* count times s did not change */
    /* unsigned long s_dropout;  */    /* convergence criterion */
    /* unsigned long largest_amb_row = 0, largest_amb_col; */
-   float s_long = 1.0f;
-   float s_short = 1.0f;
+   float s_long, s_short;
 
    assert (sm);
    assert (sm->calc_eeff_col);
    assert (sco);
-   /* only one term allowed: c_rate OR c_port */
-   assert (   ((fabs(c_port) > (0.0f + FLT_EPSILON))
-            && (fabs(c_rate) <= (0.0f + FLT_EPSILON)))
-           || ((fabs(c_port) <= (0.0f + FLT_EPSILON))
-            && (fabs(c_rate) > (0.0f + FLT_EPSILON))));
+
+   /* init. long and short term avg. entropies */
+   s_long = s_short = s_seqmatrix_calc_init_entropy (sm);
+
+   /* calculate initial cooling rate */
+   if (steps > 0)
+   {
+      c_rate = logf (t_init / 1.0f);
+      c_rate /= (steps - 1);
+      c_rate = expf ((-1) * c_rate);
+   }
 
 /*    s_last = FLT_MAX * (-1.0f); */
 /*    s_count = 0; */
@@ -847,8 +876,6 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    t = 0;
    while ((!error) && (t < steps) && (T > 1.0f))
    {
-      /*mfprintf (stderr,"     STEP: %lu\n", t);*/
-
       error = sm->pre_col_iter_hook (sco, sm);
 
       s_cur = 0.0f;
@@ -878,8 +905,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                /* for each row */
                for (i = 0; i < sm->rows; i++)
                {
-                  sm->calc_m[i][j] = 
-                     sm->calc_m[i][j] / col_sum;  
+                  sm->calc_m[i][j] = sm->calc_m[i][j] / col_sum;  
 
                   /* avoid oscilation by Pnew = uPcomp + (1 - u)Pold) */
                   sm->prob_m[i][j] = 
@@ -895,27 +921,15 @@ seqmatrix_simulate_scmf (const unsigned long steps,
             }
          }
 
-         /*mprintf ("After calc_eeff_col\n");
-           seqmatrix_print_2_stdout (6, sm); */
-
-         /* shouldn't s be calculated on the no. of unfixed cols? No, fixed
-            cols contribute as 0 */
          s_cur = (s_cur / sm->cols) * (-1.0f);
 
          /* cooling: We follow the entropy with a long- and short term avg. If
             s_long and s_short diverge to much, we slow down or speed up
             cooling. */
-         if (t != 0)
-         {
-            s_long = (0.9 * s_long) + (0.1 * s_cur);
-            s_short = (0.5 * s_short) + (0.5 * s_cur);
-         }
-         else
-         {
-            s_long = s_short = s_cur;
-         }
+         s_long  = (b_long * s_long) + ((1 - b_long) * s_cur);
+         s_short = (b_short * s_short) + ((1 - b_short) * s_cur);
 
-         if ((s_short / s_long) < 0.99f)
+         if ((s_short / s_long) < sc_thresh)
          {
             /* entropy changes to fast, slow down */
             c_rate = sqrtf (c_rate);
@@ -923,14 +937,10 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          else
          {
             /* small changes, speed up */
-            /*if (c_rate >= (1.0f - FLT_EPSILON))
+            if (c_rate > c_min)
             {
-               c_rate -= 0.000001;
-               }*/
-
-            /* mfprintf (stderr, "speed up\n"); */
-            if (c_rate > 0.85f)
-               c_rate = c_rate * (c_rate * 0.99);
+               c_rate = c_rate * (c_rate * c_scale);
+            }
          }
 
          /* entropy strategies: when converged/ only small changes,
@@ -991,7 +1001,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
             return error;
          }
          
-         T = (T * c_rate) + c_port;
+         T = T * c_rate;
          t++;
 
          /*mfprintf (stderr, "%2lu: T= %5.2f k= %f s= %.2f s_l= %.2f, s_s= %.2f "

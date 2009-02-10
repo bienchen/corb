@@ -177,7 +177,6 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
                                  SeqMatrix* sm, Scmf_Rna_Opt_data* data)
 {
    int error = 0;
-   float c_rate = 0;
    char** bp_allowed = NULL;
    char bi, bj;
    unsigned long i, j, k;
@@ -248,22 +247,19 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
 
       seqmatrix_set_gas_constant (8.314472, sm);
 
-      if (brot_args->steps_arg > 0)
-      {
-         c_rate = logf (brot_args->temp_arg / 1.0f);
-         c_rate /= (brot_args->steps_arg - 1);
-         c_rate = expf ((-1) * c_rate);
-      }
       seqmatrix_set_func_calc_cell_energy (scmf_rna_opt_calc_simplenn, sm);
       /*scmf_rna_opt_data_init_negative_design_energies (data, sm);*/
       seqmatrix_set_pre_col_iter_hook (
         scmf_rna_opt_data_init_negative_design_energies_alt, sm);
       error = seqmatrix_simulate_scmf (brot_args->steps_arg,
                                        brot_args->temp_arg,
-                                       c_rate,
-                                       0,
-                                       0.6,
-                                       0.05,
+                                       brot_args->beta_long_arg,
+                                       brot_args->beta_short_arg,
+                                       brot_args->speedup_threshold_arg,
+                                       brot_args->min_cool_arg,
+                                       brot_args->scale_cool_arg,
+                                       brot_args->lambda_arg,
+                                       brot_args->sm_entropy_arg,
                                        sm,
                                        data);
    }
@@ -275,21 +271,16 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
       seqmatrix_set_fixed_site_hook (scmf_rna_opt_data_update_neg_design_energy,
                                      sm);
 
-      /*seqmatrix_print_2_stdout (2, sm);*/
-      if (brot_args->steps_arg > 0)
-      {
-         c_rate = logf (brot_args->temp_arg / 1.0f);
-         c_rate /= ((brot_args->steps_arg - 1) / 2);
-         c_rate = expf ((-1) * c_rate);
-      }
-
       error = seqmatrix_collate_is (0.99,
                                     brot_args->steps_arg / 2,
-                                    brot_args->temp_arg,
-                                    c_rate,
-                                    0,
-                                    0.6,
-                                    0.05,
+                                    brot_args->temp_arg, 
+                                    brot_args->beta_long_arg,
+                                    brot_args->beta_short_arg,
+                                    brot_args->speedup_threshold_arg,
+                                    brot_args->min_cool_arg,
+                                    brot_args->scale_cool_arg,
+                                    brot_args->lambda_arg,
+                                    brot_args->sm_entropy_arg,
                                     sm,
                                     data);
       /*error = seqmatrix_collate_mv (sm, data);*/
@@ -309,7 +300,6 @@ static int
 simulate_using_nn_scoring (struct brot_args_info* brot_args,
                            SeqMatrix* sm, Scmf_Rna_Opt_data* data)
 {
-   float c_rate = 0;            /* exponential cooling rate */
    int error = 0;
    char** bp_allowed = NULL;
    char bi, bj;
@@ -398,20 +388,15 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
       seqmatrix_set_gas_constant (8.314472, sm);
 
-      /* set cooling rate */
-      if (brot_args->steps_arg > 0)
-      {
-         c_rate = logf (brot_args->temp_arg / 1.0f);
-         c_rate /= (brot_args->steps_arg - 1);
-         c_rate = expf ((-1) * c_rate);
-      }
-
       error = seqmatrix_simulate_scmf (brot_args->steps_arg,
                                        brot_args->temp_arg,
-                                       c_rate,
-                                       0,
-                                       0.6,
-                                       0.05,
+                                       brot_args->beta_long_arg,
+                                       brot_args->beta_short_arg,
+                                       brot_args->speedup_threshold_arg,
+                                       brot_args->min_cool_arg,
+                                       brot_args->scale_cool_arg,
+                                       brot_args->lambda_arg,
+                                       brot_args->sm_entropy_arg,
                                        sm,
                                        data);
    }
@@ -422,13 +407,17 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       seqmatrix_print_2_stdout (2, sm);
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
       mfprintf (stderr, "SNIP\n");
+
       error = seqmatrix_collate_is (0.99,
                                     brot_args->steps_arg / 2,
                                     brot_args->temp_arg,
-                                    c_rate,
-                                    0,
-                                    0.6,
-                                    0.05,
+                                    brot_args->beta_long_arg,
+                                    brot_args->beta_short_arg,
+                                    brot_args->speedup_threshold_arg,
+                                    brot_args->min_cool_arg,
+                                    brot_args->scale_cool_arg,
+                                    brot_args->lambda_arg,
+                                    brot_args->sm_entropy_arg,
                                     sm,
                                     data);
       /*error = seqmatrix_collate_mv (sm, data);*/
@@ -451,7 +440,6 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
                                  SeqMatrix* sm, Scmf_Rna_Opt_data* data)
 {
    int error = 0;
-   float c_rate = 0;
    float** scores
       = create_scoring_matrix (scmf_rna_opt_data_get_alphabet (data)); 
 
@@ -465,21 +453,17 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
    {
       scmf_rna_opt_data_set_scores (scores, data);
 
-      if (brot_args->steps_arg > 0)
-      {
-         c_rate = logf (brot_args->temp_arg / 0.1f);
-         c_rate /= (brot_args->steps_arg - 1);
-         c_rate = expf ((-1) * c_rate);
-      }
-
       /* seqmatrix_set_func_calc_eeff_row (seqmatrix_calc_eeff_row_scmf, sm);*/
       seqmatrix_set_func_calc_cell_energy (scmf_rna_opt_calc_nussinov, sm);
       error = seqmatrix_simulate_scmf (brot_args->steps_arg,
                                        brot_args->temp_arg,
-                                       c_rate,
-                                       0,
-                                       0.2,
-                                       0.05,
+                                       brot_args->beta_long_arg,
+                                       brot_args->beta_short_arg,
+                                       brot_args->speedup_threshold_arg,
+                                       brot_args->min_cool_arg,
+                                       brot_args->scale_cool_arg,
+                                       brot_args->lambda_arg,
+                                       brot_args->sm_entropy_arg,
                                        sm,
                                        data);
    }
@@ -488,20 +472,16 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
    {
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
 
-      if (brot_args->steps_arg > 0)
-      {
-         c_rate = logf (brot_args->temp_arg / 0.1f);
-         c_rate /= ((brot_args->steps_arg - 1) / 2);
-         c_rate = expf ((-1) * c_rate);
-      }
-
       error = seqmatrix_collate_is (0.99,
                                     brot_args->steps_arg / 2,
                                     brot_args->temp_arg,
-                                    c_rate,
-                                    0,
-                                    0.2,
-                                    0.05,
+                                    brot_args->beta_long_arg,
+                                    brot_args->beta_short_arg,
+                                    brot_args->speedup_threshold_arg,
+                                    brot_args->min_cool_arg,
+                                    brot_args->scale_cool_arg,
+                                    brot_args->lambda_arg,
+                                    brot_args->sm_entropy_arg,
                                     sm,
                                     data);
       /* error = seqmatrix_collate_mv (sm, sigma); */

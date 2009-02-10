@@ -56,7 +56,7 @@ option "temp" t "Initial temperature"
        details="Initial temperature of the system."
        float
        typestr="FLOAT"
-       default="100"
+       default="10"
        optional
 
 option "seed" r "Random seed"
@@ -86,3 +86,68 @@ option "heterogenity-term-scaling" h "Scale heterogenity term"
        typestr="FLOAT"
        default="1.000000"
        optional
+
+option "sm-entropy" e "Sequence matrix entropy threshold"
+       details="If the entropy of the sequence matrix drops below this value, \
+                 the simulation will stop."
+       float
+       typestr="FLOAT"
+       default="0.05"
+       optional
+       hidden
+
+option "lambda" l "Portion of a new step to be accepted"
+       details="Describes the portion of an old probability to be mixed with \
+                 the new one. The old probability gets l a share of l, the new \
+                 (1 - l). Used to avoid oscillation in the system."
+       float
+       typestr="FLOAT"
+       default="0.6"
+       optional
+       hidden
+
+option "beta-long" o "Define the long term entropy contribution"
+       details="Share of the current long term avg. entropy to be used for the \
+                 next step. New value calculates from \
+                 o * S_long + (1-o) * S_current."
+       float
+       typestr="FLOAT"
+       default="0.95"
+       optional
+       hidden
+
+option "beta-short" i "Define the short term entropy contribution"
+       details="Share of the current short term avg. entropy to be used for \
+                 the next step. New value calculates from \
+                 o * S_short + (1-o) * S_current."
+       float
+       typestr="FLOAT"
+       default="0.5"
+       optional
+       hidden
+
+option "speedup-threshold" u "Speedup/ slow down cooling threshold"
+       details="If the ratio of current short- and long term entropy drops \
+                 below this value, we slow down cooling, above we speed up."
+       float
+       typestr="FLOAT"
+       default="0.99"
+       optional
+       hidden
+
+option "min-cool" j "Minimal cooling factor"
+       details="If the cooling factor drops below this value we do no further \
+                 speedups."
+       float
+       typestr="FLOAT"
+       default="0.85"
+       optional
+       hidden
+
+option "scale-cool" q "Scale cooling factor"
+       details="Speeding up cooling is done via (c * (c * q))."
+       float
+       typestr="FLOAT"
+       default="0.99"
+       optional
+       hidden

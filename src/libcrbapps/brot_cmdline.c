@@ -33,6 +33,7 @@ const char *brot_args_info_description = "Basic RNAsequence Optimisation Tool";
 const char *brot_args_info_detailed_help[] = {
   "      --help                    Print help and exit",
   "      --detailed-help           Print help, including all details and hidden \n                                  options, and exit",
+  "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
   "  -c, --scoring=NAME            Choose a different scoring scheme  (possible \n                                  values=\"NN\", \"nussinov\", \"simpleNN\" \n                                  default=`NN')",
   "  Use a certain energy model to score the RNA sequence.                  \n  Possible NAMEs are `NN', `nussinov' and `simpleNN'.                  \n  `nussinov' uses a Nussinov model, only counting Hbonds. `NN'                  \n  invokes the Nearest Neighbour model. `simpleNN' uses a very                  \n  coarse grained approximation of the Nearest Neighbour model,                  \n  scoring every base pair as a stack, averaging mismatches in                  \n  stacked pairs and without any loop parameters.",
@@ -40,16 +41,56 @@ const char *brot_args_info_detailed_help[] = {
   "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE the whole 15 letter RNA                  \n  alphabet is allowed. The position INT has to be in the range                  \n  of the structure.",
   "  -s, --steps=INT               Number of iterations  (default=`1000')",
   "  Iteration steps for the update of site probabilities.",
-  "  -t, --temp=FLOAT              Initial temperature  (default=`100')",
+  "  -t, --temp=FLOAT              Initial temperature  (default=`10')",
   "  Initial temperature of the system.",
   "  -r, --seed=INT                Random seed  (default=`-791122')",
   "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n   for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.                  \n  Only takes effect when using with `NN' as scoring scheme.",
-  "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  \n                                  (default=`1.000000')",
+  "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  (default=`1.01')",
   "  Scaling factor for the negative design term.",
   "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`1.000000')",
   "  Scaling factor for the sequence heterogenity term.",
+  "  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  \n                                  (default=`0.05')",
+  "  If the entropy of the sequence matrix drops below this value,                 \n   the simulation will stop.",
+  "  -l, --lambda=FLOAT            Portion of a new step to be accepted  \n                                  (default=`0.6')",
+  "  Describes the portion of an old probability to be mixed with                  \n  the new one. The old probability gets l a share of l, the new                 \n   (1 - l). Used to avoid oscillation in the system.",
+  "  -o, --beta-long=FLOAT         Define the long term entropy contribution  \n                                  (default=`0.95')",
+  "  Share of the current long term avg. entropy to be used for the                \n    next step. New value calculates from                  o * S_long + (1-o) * \n  S_current.",
+  "  -i, --beta-short=FLOAT        Define the short term entropy contribution  \n                                  (default=`0.5')",
+  "  Share of the current short term avg. entropy to be used for                  \n  the next step. New value calculates from                  o * S_short + (1-o) \n  * S_current.",
+  "  -u, --speedup-threshold=FLOAT Speedup/ slow down cooling threshold  \n                                  (default=`0.99')",
+  "  If the ratio of current short- and long term entropy drops                  \n  below this value, we slow down cooling, above we speed up.",
+  "  -j, --min-cool=FLOAT          Minimal cooling factor  (default=`0.85')",
+  "  If the cooling factor drops below this value we do no further                 \n   speedups.",
+  "  -q, --scale-cool=FLOAT        Scale cooling factor  (default=`0.99')",
+  "  Speeding up cooling is done via (c * (c * q)).",
     0
 };
+static void
+init_full_help_array(void)
+{
+  brot_args_info_full_help[0] = brot_args_info_detailed_help[0];
+  brot_args_info_full_help[1] = brot_args_info_detailed_help[1];
+  brot_args_info_full_help[2] = brot_args_info_detailed_help[2];
+  brot_args_info_full_help[3] = brot_args_info_detailed_help[3];
+  brot_args_info_full_help[4] = brot_args_info_detailed_help[4];
+  brot_args_info_full_help[5] = brot_args_info_detailed_help[6];
+  brot_args_info_full_help[6] = brot_args_info_detailed_help[8];
+  brot_args_info_full_help[7] = brot_args_info_detailed_help[10];
+  brot_args_info_full_help[8] = brot_args_info_detailed_help[12];
+  brot_args_info_full_help[9] = brot_args_info_detailed_help[14];
+  brot_args_info_full_help[10] = brot_args_info_detailed_help[16];
+  brot_args_info_full_help[11] = brot_args_info_detailed_help[18];
+  brot_args_info_full_help[12] = brot_args_info_detailed_help[20];
+  brot_args_info_full_help[13] = brot_args_info_detailed_help[22];
+  brot_args_info_full_help[14] = brot_args_info_detailed_help[24];
+  brot_args_info_full_help[15] = brot_args_info_detailed_help[26];
+  brot_args_info_full_help[16] = brot_args_info_detailed_help[28];
+  brot_args_info_full_help[17] = brot_args_info_detailed_help[30];
+  brot_args_info_full_help[18] = 0; 
+  
+}
+
+const char *brot_args_info_full_help[19];
 
 static void
 init_help_array(void)
@@ -58,17 +99,18 @@ init_help_array(void)
   brot_args_info_help[1] = brot_args_info_detailed_help[1];
   brot_args_info_help[2] = brot_args_info_detailed_help[2];
   brot_args_info_help[3] = brot_args_info_detailed_help[3];
-  brot_args_info_help[4] = brot_args_info_detailed_help[5];
-  brot_args_info_help[5] = brot_args_info_detailed_help[7];
-  brot_args_info_help[6] = brot_args_info_detailed_help[9];
-  brot_args_info_help[7] = brot_args_info_detailed_help[11];
-  brot_args_info_help[8] = brot_args_info_detailed_help[13];
-  brot_args_info_help[9] = brot_args_info_detailed_help[15];
-  brot_args_info_help[10] = 0; 
+  brot_args_info_help[4] = brot_args_info_detailed_help[4];
+  brot_args_info_help[5] = brot_args_info_detailed_help[6];
+  brot_args_info_help[6] = brot_args_info_detailed_help[8];
+  brot_args_info_help[7] = brot_args_info_detailed_help[10];
+  brot_args_info_help[8] = brot_args_info_detailed_help[12];
+  brot_args_info_help[9] = brot_args_info_detailed_help[14];
+  brot_args_info_help[10] = brot_args_info_detailed_help[16];
+  brot_args_info_help[11] = 0; 
   
 }
 
-const char *brot_args_info_help[11];
+const char *brot_args_info_help[12];
 
 typedef enum {ARG_NO
   , ARG_STRING
@@ -123,6 +165,7 @@ void clear_given (struct brot_args_info *args_info)
 {
   args_info->help_given = 0 ;
   args_info->detailed_help_given = 0 ;
+  args_info->full_help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->scoring_given = 0 ;
   args_info->fixed_nuc_given = 0 ;
@@ -131,6 +174,13 @@ void clear_given (struct brot_args_info *args_info)
   args_info->seed_given = 0 ;
   args_info->negative_design_scaling_given = 0 ;
   args_info->heterogenity_term_scaling_given = 0 ;
+  args_info->sm_entropy_given = 0 ;
+  args_info->lambda_given = 0 ;
+  args_info->beta_long_given = 0 ;
+  args_info->beta_short_given = 0 ;
+  args_info->speedup_threshold_given = 0 ;
+  args_info->min_cool_given = 0 ;
+  args_info->scale_cool_given = 0 ;
 }
 
 static
@@ -143,34 +193,56 @@ void clear_args (struct brot_args_info *args_info)
   args_info->fixed_nuc_orig = NULL;
   args_info->steps_arg = 1000;
   args_info->steps_orig = NULL;
-  args_info->temp_arg = 100;
+  args_info->temp_arg = 10;
   args_info->temp_orig = NULL;
   args_info->seed_arg = -791122;
   args_info->seed_orig = NULL;
-  args_info->negative_design_scaling_arg = 1.000000;
+  args_info->negative_design_scaling_arg = 1.01;
   args_info->negative_design_scaling_orig = NULL;
   args_info->heterogenity_term_scaling_arg = 1.000000;
   args_info->heterogenity_term_scaling_orig = NULL;
+  args_info->sm_entropy_arg = 0.05;
+  args_info->sm_entropy_orig = NULL;
+  args_info->lambda_arg = 0.6;
+  args_info->lambda_orig = NULL;
+  args_info->beta_long_arg = 0.95;
+  args_info->beta_long_orig = NULL;
+  args_info->beta_short_arg = 0.5;
+  args_info->beta_short_orig = NULL;
+  args_info->speedup_threshold_arg = 0.99;
+  args_info->speedup_threshold_orig = NULL;
+  args_info->min_cool_arg = 0.85;
+  args_info->min_cool_orig = NULL;
+  args_info->scale_cool_arg = 0.99;
+  args_info->scale_cool_orig = NULL;
   
 }
 
 static
 void init_args_info(struct brot_args_info *args_info)
 {
-
+  init_full_help_array(); 
   init_help_array(); 
   args_info->help_help = brot_args_info_detailed_help[0] ;
   args_info->detailed_help_help = brot_args_info_detailed_help[1] ;
-  args_info->version_help = brot_args_info_detailed_help[2] ;
-  args_info->scoring_help = brot_args_info_detailed_help[3] ;
-  args_info->fixed_nuc_help = brot_args_info_detailed_help[5] ;
+  args_info->full_help_help = brot_args_info_detailed_help[2] ;
+  args_info->version_help = brot_args_info_detailed_help[3] ;
+  args_info->scoring_help = brot_args_info_detailed_help[4] ;
+  args_info->fixed_nuc_help = brot_args_info_detailed_help[6] ;
   args_info->fixed_nuc_min = 0;
   args_info->fixed_nuc_max = 0;
-  args_info->steps_help = brot_args_info_detailed_help[7] ;
-  args_info->temp_help = brot_args_info_detailed_help[9] ;
-  args_info->seed_help = brot_args_info_detailed_help[11] ;
-  args_info->negative_design_scaling_help = brot_args_info_detailed_help[13] ;
-  args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[15] ;
+  args_info->steps_help = brot_args_info_detailed_help[8] ;
+  args_info->temp_help = brot_args_info_detailed_help[10] ;
+  args_info->seed_help = brot_args_info_detailed_help[12] ;
+  args_info->negative_design_scaling_help = brot_args_info_detailed_help[14] ;
+  args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[16] ;
+  args_info->sm_entropy_help = brot_args_info_detailed_help[18] ;
+  args_info->lambda_help = brot_args_info_detailed_help[20] ;
+  args_info->beta_long_help = brot_args_info_detailed_help[22] ;
+  args_info->beta_short_help = brot_args_info_detailed_help[24] ;
+  args_info->speedup_threshold_help = brot_args_info_detailed_help[26] ;
+  args_info->min_cool_help = brot_args_info_detailed_help[28] ;
+  args_info->scale_cool_help = brot_args_info_detailed_help[30] ;
   
 }
 
@@ -202,6 +274,15 @@ brot_cmdline_parser_print_help (void)
   print_help_common();
   while (brot_args_info_help[i])
     printf("%s\n", brot_args_info_help[i++]);
+}
+
+void
+brot_cmdline_parser_print_full_help (void)
+{
+  int i = 0;
+  print_help_common();
+  while (brot_args_info_full_help[i])
+    printf("%s\n", brot_args_info_full_help[i++]);
 }
 
 void
@@ -314,6 +395,13 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   free_string_field (&(args_info->seed_orig));
   free_string_field (&(args_info->negative_design_scaling_orig));
   free_string_field (&(args_info->heterogenity_term_scaling_orig));
+  free_string_field (&(args_info->sm_entropy_orig));
+  free_string_field (&(args_info->lambda_orig));
+  free_string_field (&(args_info->beta_long_orig));
+  free_string_field (&(args_info->beta_short_orig));
+  free_string_field (&(args_info->speedup_threshold_orig));
+  free_string_field (&(args_info->min_cool_orig));
+  free_string_field (&(args_info->scale_cool_orig));
   
   
   for (i = 0; i < args_info->inputs_num; ++i)
@@ -402,6 +490,8 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "help", 0, 0 );
   if (args_info->detailed_help_given)
     write_into_file(outfile, "detailed-help", 0, 0 );
+  if (args_info->full_help_given)
+    write_into_file(outfile, "full-help", 0, 0 );
   if (args_info->version_given)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->scoring_given)
@@ -417,6 +507,20 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "negative-design-scaling", args_info->negative_design_scaling_orig, 0);
   if (args_info->heterogenity_term_scaling_given)
     write_into_file(outfile, "heterogenity-term-scaling", args_info->heterogenity_term_scaling_orig, 0);
+  if (args_info->sm_entropy_given)
+    write_into_file(outfile, "sm-entropy", args_info->sm_entropy_orig, 0);
+  if (args_info->lambda_given)
+    write_into_file(outfile, "lambda", args_info->lambda_orig, 0);
+  if (args_info->beta_long_given)
+    write_into_file(outfile, "beta-long", args_info->beta_long_orig, 0);
+  if (args_info->beta_short_given)
+    write_into_file(outfile, "beta-short", args_info->beta_short_orig, 0);
+  if (args_info->speedup_threshold_given)
+    write_into_file(outfile, "speedup-threshold", args_info->speedup_threshold_orig, 0);
+  if (args_info->min_cool_given)
+    write_into_file(outfile, "min-cool", args_info->min_cool_orig, 0);
+  if (args_info->scale_cool_given)
+    write_into_file(outfile, "scale-cool", args_info->scale_cool_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -560,7 +664,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
               /* specific occurrences */
               if (option_given != (unsigned int) min)
                 {
-                  fprintf (stderr, "%s: %s option occurrences must be %ud\n",
+                  fprintf (stderr, "%s: %s option occurrences must be %d\n",
                     prog_name, option_desc, min);
                   error = 1;
                 }
@@ -569,7 +673,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
                 || option_given > (unsigned int) max)
             {
               /* range occurrences */
-              fprintf (stderr, "%s: %s option occurrences must be between %ud and %ud\n",
+              fprintf (stderr, "%s: %s option occurrences must be between %d and %d\n",
                 prog_name, option_desc, min, max);
               error = 1;
             }
@@ -579,7 +683,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at least check */
           if (option_given < min)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at least %ud\n",
+              fprintf (stderr, "%s: %s option occurrences must be at least %d\n",
                 prog_name, option_desc, min);
               error = 1;
             }
@@ -589,7 +693,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at most check */
           if (option_given > max)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at most %ud\n",
+              fprintf (stderr, "%s: %s option occurrences must be at most %d\n",
                 prog_name, option_desc, max);
               error = 1;
             }
@@ -1603,6 +1707,7 @@ brot_cmdline_parser_internal (
       static struct option long_options[] = {
         { "help",	0, NULL, 0 },
         { "detailed-help",	0, NULL, 0 },
+        { "full-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "scoring",	1, NULL, 'c' },
         { "fixed-nuc",	1, NULL, 'n' },
@@ -1611,6 +1716,13 @@ brot_cmdline_parser_internal (
         { "seed",	1, NULL, 'r' },
         { "negative-design-scaling",	1, NULL, 'd' },
         { "heterogenity-term-scaling",	1, NULL, 'h' },
+        { "sm-entropy",	1, NULL, 'e' },
+        { "lambda",	1, NULL, 'l' },
+        { "beta-long",	1, NULL, 'o' },
+        { "beta-short",	1, NULL, 'i' },
+        { "speedup-threshold",	1, NULL, 'u' },
+        { "min-cool",	1, NULL, 'j' },
+        { "scale-cool",	1, NULL, 'q' },
         { 0,  0, 0, 0 }
       };
 
@@ -1619,7 +1731,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:e:l:o:i:u:j:q:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1673,7 +1785,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->temp_arg), 
                &(args_info->temp_orig), &(args_info->temp_given),
-              &(local_args_info.temp_given), optarg, 0, "100", ARG_FLOAT,
+              &(local_args_info.temp_given), optarg, 0, "10", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "temp", 't',
               additional_error))
@@ -1697,7 +1809,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->negative_design_scaling_arg), 
                &(args_info->negative_design_scaling_orig), &(args_info->negative_design_scaling_given),
-              &(local_args_info.negative_design_scaling_given), optarg, 0, "1.000000", ARG_FLOAT,
+              &(local_args_info.negative_design_scaling_given), optarg, 0, "1.01", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "negative-design-scaling", 'd',
               additional_error))
@@ -1716,6 +1828,90 @@ brot_cmdline_parser_internal (
             goto failure;
         
           break;
+        case 'e':	/* Sequence matrix entropy threshold.  */
+        
+        
+          if (update_arg( (void *)&(args_info->sm_entropy_arg), 
+               &(args_info->sm_entropy_orig), &(args_info->sm_entropy_given),
+              &(local_args_info.sm_entropy_given), optarg, 0, "0.05", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "sm-entropy", 'e',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'l':	/* Portion of a new step to be accepted.  */
+        
+        
+          if (update_arg( (void *)&(args_info->lambda_arg), 
+               &(args_info->lambda_orig), &(args_info->lambda_given),
+              &(local_args_info.lambda_given), optarg, 0, "0.6", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "lambda", 'l',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'o':	/* Define the long term entropy contribution.  */
+        
+        
+          if (update_arg( (void *)&(args_info->beta_long_arg), 
+               &(args_info->beta_long_orig), &(args_info->beta_long_given),
+              &(local_args_info.beta_long_given), optarg, 0, "0.95", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "beta-long", 'o',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'i':	/* Define the short term entropy contribution.  */
+        
+        
+          if (update_arg( (void *)&(args_info->beta_short_arg), 
+               &(args_info->beta_short_orig), &(args_info->beta_short_given),
+              &(local_args_info.beta_short_given), optarg, 0, "0.5", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "beta-short", 'i',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'u':	/* Speedup/ slow down cooling threshold.  */
+        
+        
+          if (update_arg( (void *)&(args_info->speedup_threshold_arg), 
+               &(args_info->speedup_threshold_orig), &(args_info->speedup_threshold_given),
+              &(local_args_info.speedup_threshold_given), optarg, 0, "0.99", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "speedup-threshold", 'u',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'j':	/* Minimal cooling factor.  */
+        
+        
+          if (update_arg( (void *)&(args_info->min_cool_arg), 
+               &(args_info->min_cool_orig), &(args_info->min_cool_given),
+              &(local_args_info.min_cool_given), optarg, 0, "0.85", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "min-cool", 'j',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'q':	/* Scale cooling factor.  */
+        
+        
+          if (update_arg( (void *)&(args_info->scale_cool_arg), 
+               &(args_info->scale_cool_orig), &(args_info->scale_cool_given),
+              &(local_args_info.scale_cool_given), optarg, 0, "0.99", ARG_FLOAT,
+              check_ambiguity, override, 0, 0,
+              "scale-cool", 'q',
+              additional_error))
+            goto failure;
+        
+          break;
 
         case 0:	/* Long option with no short option */
           if (strcmp (long_options[option_index].name, "help") == 0) {
@@ -1726,6 +1922,12 @@ brot_cmdline_parser_internal (
 
           if (strcmp (long_options[option_index].name, "detailed-help") == 0) {
             brot_cmdline_parser_print_detailed_help ();
+            brot_cmdline_parser_free (&local_args_info);
+            exit (EXIT_SUCCESS);
+          }
+
+          if (strcmp (long_options[option_index].name, "full-help") == 0) {
+            brot_cmdline_parser_print_full_help ();
             brot_cmdline_parser_free (&local_args_info);
             exit (EXIT_SUCCESS);
           }

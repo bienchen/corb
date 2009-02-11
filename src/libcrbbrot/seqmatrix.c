@@ -946,7 +946,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 /*    s_dropout = 100/\* steps * 0.005 *\/; */
 
    /* perform for a certain number of steps */
-   while ((!error) && (t < steps) && (T > 1.0f))
+   while ((!error) && (t < steps) && (T > 1.0f) && (s_cur >= s_thresh))
    {
       error = sm->pre_col_iter_hook (sco, sm);
 
@@ -1064,18 +1064,9 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 /*             /\* mfprintf (stderr, "%lu: %f : %f\n", t, s_cur, s_last); *\/ */
 /*             s_count = 0; */
 /*          } */
-
-/*          s_last = s_cur; */
-
-         if (s_cur < s_thresh )
-         {
-            mfprintf (stdout, "Entropy dropout: %f\n", s_cur);
-            return error;
-         }
          
          T = T * c_rate;
          t++;
-
 
          error = output_entropy (entropy_file, t, T, s_cur, s_short, s_long,
                                  c_rate);

@@ -169,6 +169,7 @@ seqmatrix_simulate_scmf (unsigned long,
                          const float,
                          const float,
                          const float,
+                         GFile*,
                          SeqMatrix*,
                          void*);
 

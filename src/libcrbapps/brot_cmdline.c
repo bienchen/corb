@@ -49,6 +49,8 @@ const char *brot_args_info_detailed_help[] = {
   "  Scaling factor for the negative design term.",
   "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`1.000000')",
   "  Scaling factor for the sequence heterogenity term.",
+  "  -p, --entropy-output=FILENAME Write down entropy and temperature changes",
+  "  Write the changes of the seuqence matrix entropy, short and                  \n  long term avg.'s and temperature to given file. Only values                  \n  from the simulation of interest are written.",
   "  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  \n                                  (default=`0.05')",
   "  If the entropy of the sequence matrix drops below this value,                 \n   the simulation will stop.",
   "  -l, --lambda=FLOAT            Portion of a new step to be accepted  \n                                  (default=`0.6')",
@@ -86,11 +88,12 @@ init_full_help_array(void)
   brot_args_info_full_help[15] = brot_args_info_detailed_help[26];
   brot_args_info_full_help[16] = brot_args_info_detailed_help[28];
   brot_args_info_full_help[17] = brot_args_info_detailed_help[30];
-  brot_args_info_full_help[18] = 0; 
+  brot_args_info_full_help[18] = brot_args_info_detailed_help[32];
+  brot_args_info_full_help[19] = 0; 
   
 }
 
-const char *brot_args_info_full_help[19];
+const char *brot_args_info_full_help[20];
 
 static void
 init_help_array(void)
@@ -106,11 +109,12 @@ init_help_array(void)
   brot_args_info_help[8] = brot_args_info_detailed_help[12];
   brot_args_info_help[9] = brot_args_info_detailed_help[14];
   brot_args_info_help[10] = brot_args_info_detailed_help[16];
-  brot_args_info_help[11] = 0; 
+  brot_args_info_help[11] = brot_args_info_detailed_help[18];
+  brot_args_info_help[12] = 0; 
   
 }
 
-const char *brot_args_info_help[12];
+const char *brot_args_info_help[13];
 
 typedef enum {ARG_NO
   , ARG_STRING
@@ -174,6 +178,7 @@ void clear_given (struct brot_args_info *args_info)
   args_info->seed_given = 0 ;
   args_info->negative_design_scaling_given = 0 ;
   args_info->heterogenity_term_scaling_given = 0 ;
+  args_info->entropy_output_given = 0 ;
   args_info->sm_entropy_given = 0 ;
   args_info->lambda_given = 0 ;
   args_info->beta_long_given = 0 ;
@@ -201,6 +206,8 @@ void clear_args (struct brot_args_info *args_info)
   args_info->negative_design_scaling_orig = NULL;
   args_info->heterogenity_term_scaling_arg = 1.000000;
   args_info->heterogenity_term_scaling_orig = NULL;
+  args_info->entropy_output_arg = NULL;
+  args_info->entropy_output_orig = NULL;
   args_info->sm_entropy_arg = 0.05;
   args_info->sm_entropy_orig = NULL;
   args_info->lambda_arg = 0.6;
@@ -236,13 +243,14 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->seed_help = brot_args_info_detailed_help[12] ;
   args_info->negative_design_scaling_help = brot_args_info_detailed_help[14] ;
   args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[16] ;
-  args_info->sm_entropy_help = brot_args_info_detailed_help[18] ;
-  args_info->lambda_help = brot_args_info_detailed_help[20] ;
-  args_info->beta_long_help = brot_args_info_detailed_help[22] ;
-  args_info->beta_short_help = brot_args_info_detailed_help[24] ;
-  args_info->speedup_threshold_help = brot_args_info_detailed_help[26] ;
-  args_info->min_cool_help = brot_args_info_detailed_help[28] ;
-  args_info->scale_cool_help = brot_args_info_detailed_help[30] ;
+  args_info->entropy_output_help = brot_args_info_detailed_help[18] ;
+  args_info->sm_entropy_help = brot_args_info_detailed_help[20] ;
+  args_info->lambda_help = brot_args_info_detailed_help[22] ;
+  args_info->beta_long_help = brot_args_info_detailed_help[24] ;
+  args_info->beta_short_help = brot_args_info_detailed_help[26] ;
+  args_info->speedup_threshold_help = brot_args_info_detailed_help[28] ;
+  args_info->min_cool_help = brot_args_info_detailed_help[30] ;
+  args_info->scale_cool_help = brot_args_info_detailed_help[32] ;
   
 }
 
@@ -395,6 +403,8 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   free_string_field (&(args_info->seed_orig));
   free_string_field (&(args_info->negative_design_scaling_orig));
   free_string_field (&(args_info->heterogenity_term_scaling_orig));
+  free_string_field (&(args_info->entropy_output_arg));
+  free_string_field (&(args_info->entropy_output_orig));
   free_string_field (&(args_info->sm_entropy_orig));
   free_string_field (&(args_info->lambda_orig));
   free_string_field (&(args_info->beta_long_orig));
@@ -507,6 +517,8 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "negative-design-scaling", args_info->negative_design_scaling_orig, 0);
   if (args_info->heterogenity_term_scaling_given)
     write_into_file(outfile, "heterogenity-term-scaling", args_info->heterogenity_term_scaling_orig, 0);
+  if (args_info->entropy_output_given)
+    write_into_file(outfile, "entropy-output", args_info->entropy_output_orig, 0);
   if (args_info->sm_entropy_given)
     write_into_file(outfile, "sm-entropy", args_info->sm_entropy_orig, 0);
   if (args_info->lambda_given)
@@ -664,7 +676,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
               /* specific occurrences */
               if (option_given != (unsigned int) min)
                 {
-                  fprintf (stderr, "%s: %s option occurrences must be %d\n",
+                  fprintf (stderr, "%s: %s option occurrences must be %ud\n",
                     prog_name, option_desc, min);
                   error = 1;
                 }
@@ -673,7 +685,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
                 || option_given > (unsigned int) max)
             {
               /* range occurrences */
-              fprintf (stderr, "%s: %s option occurrences must be between %d and %d\n",
+              fprintf (stderr, "%s: %s option occurrences must be between %ud and %ud\n",
                 prog_name, option_desc, min, max);
               error = 1;
             }
@@ -683,7 +695,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at least check */
           if (option_given < min)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at least %d\n",
+              fprintf (stderr, "%s: %s option occurrences must be at least %ud\n",
                 prog_name, option_desc, min);
               error = 1;
             }
@@ -693,7 +705,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at most check */
           if (option_given > max)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at most %d\n",
+              fprintf (stderr, "%s: %s option occurrences must be at most %ud\n",
                 prog_name, option_desc, max);
               error = 1;
             }
@@ -1716,6 +1728,7 @@ brot_cmdline_parser_internal (
         { "seed",	1, NULL, 'r' },
         { "negative-design-scaling",	1, NULL, 'd' },
         { "heterogenity-term-scaling",	1, NULL, 'h' },
+        { "entropy-output",	1, NULL, 'p' },
         { "sm-entropy",	1, NULL, 'e' },
         { "lambda",	1, NULL, 'l' },
         { "beta-long",	1, NULL, 'o' },
@@ -1731,7 +1744,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:e:l:o:i:u:j:q:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:p:e:l:o:i:u:j:q:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1824,6 +1837,18 @@ brot_cmdline_parser_internal (
               &(local_args_info.heterogenity_term_scaling_given), optarg, 0, "1.000000", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "heterogenity-term-scaling", 'h',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'p':	/* Write down entropy and temperature changes.  */
+        
+        
+          if (update_arg( (void *)&(args_info->entropy_output_arg), 
+               &(args_info->entropy_output_orig), &(args_info->entropy_output_given),
+              &(local_args_info.entropy_output_given), optarg, 0, 0, ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "entropy-output", 'p',
               additional_error))
             goto failure;
         

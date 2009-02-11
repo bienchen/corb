@@ -740,6 +740,7 @@ seqmatrix_collate_is (const float fthresh,
                                            c_scale,
                                            lambda,
                                            s_thresh,
+                                           NULL,
                                            sm,
                                            data);
       }
@@ -817,6 +818,47 @@ s_seqmatrix_calc_init_entropy (const SeqMatrix* sm)
    return (s / sm->cols) * (-1.0f);
 }
 
+static __inline__
+int write_entropy (GFile* file, unsigned long step,
+                   float t,
+                   float s,
+                   float s_short,
+                   float s_long,
+                   float k)
+{
+   if (gfile_printf (file, "%lu %f %f %f %f %f %f\n", step,
+                     t,
+                     s,
+                     s_short,
+                     s_long,
+                     (s_short / s_long),
+                     k) < 0)
+   {
+      return 1;
+   }
+
+   return 0;
+}
+
+static __inline__
+int dummy_write_entropy (GFile* file, unsigned long step,
+                   float t,
+                   float s,
+                   float s_short,
+                   float s_long,
+                   float k)
+{
+   assert ((file) || (!file));
+   assert ((step) || (!step));
+   assert ((t >= 0.0f) || (t < 0.0f));
+   assert ((s >= 0.0f) || (s < 0.0f));
+   assert ((s_short >= 0.0f) || (s_short < 0.0f));
+   assert ((s_long >= 0.0f) || (s_long < 0.0f));
+   assert ((k >= 0.0f) || (k < 0.0f));
+
+   return 0;
+}
+
 /** @brief Perform a SCMF simulation on a sequence matrix using the NN.
  *
  * Calculate the mean force field for a sequence matrix and update cells. This
@@ -837,11 +879,12 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          const float c_min,
                          const float c_scale,
                          const float lambda,
-                         const float s_thresh, 
+                         const float s_thresh,
+                         GFile* entropy_file,
                          SeqMatrix* sm,
                          void* sco)
 {
-   unsigned long t;             /* time */
+   unsigned long t = 0;          /* time */
    int error= 0;
    unsigned long i, j;          /* iterator */
    float col_sum;
@@ -852,13 +895,20 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    /* unsigned long s_dropout;  */    /* convergence criterion */
    /* unsigned long largest_amb_row = 0, largest_amb_col; */
    float s_long, s_short;
+   int (*output_entropy) (GFile*,
+                          unsigned long,
+                          float,
+                          float,
+                          float,
+                          float,
+                          float) = dummy_write_entropy;
 
    assert (sm);
    assert (sm->calc_eeff_col);
    assert (sco);
 
    /* init. long and short term avg. entropies */
-   s_long = s_short = s_seqmatrix_calc_init_entropy (sm);
+   s_cur = s_long = s_short = s_seqmatrix_calc_init_entropy (sm);
 
    /* calculate initial cooling rate */
    if (steps > 0)
@@ -868,12 +918,34 @@ seqmatrix_simulate_scmf (const unsigned long steps,
       c_rate = expf ((-1) * c_rate);
    }
 
+   /* if we have an output file, we set a function to write stats */
+   if (entropy_file != NULL)
+   {
+      output_entropy = write_entropy;
+
+      /* write info on simulation */
+      if (gfile_printf (entropy_file, "# step | T | S | S_short | S_long | "
+                        "(S_short / S_long) | k\n") < 0)
+      {
+         error = 1;
+      }
+      else if (output_entropy (entropy_file,
+                               t,
+                               T,
+                               s_cur,
+                               s_short,
+                               s_long,
+                               c_rate) < 0)
+      {
+         error = 1;
+      }
+   }
+
 /*    s_last = FLT_MAX * (-1.0f); */
 /*    s_count = 0; */
 /*    s_dropout = 100/\* steps * 0.005 *\/; */
 
    /* perform for a certain number of steps */
-   t = 0;
    while ((!error) && (t < steps) && (T > 1.0f))
    {
       error = sm->pre_col_iter_hook (sco, sm);
@@ -1004,10 +1076,9 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          T = T * c_rate;
          t++;
 
-         /*mfprintf (stderr, "%2lu: T= %5.2f k= %f s= %.2f s_l= %.2f, s_s= %.2f "
-                   "s_s/s_l= %.2f\n", t, T, c_rate, s_cur, s_long, s_short,
-                   s_short / s_long);*/
-         mfprintf (stderr, "%lu %f %f %f\n", t, s_cur, s_long, T);
+
+         error = output_entropy (entropy_file, t, T, s_cur, s_short, s_long,
+                                 c_rate);
       }
    }
 
@@ -1058,7 +1129,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
 
          if (tmp > 1.0f)
          {
-            rprec += floor (log10 (tmp) + 1.0f);
+            rprec += floorf (log10f (tmp) + 1.0f);
          }
          else
          {
@@ -1075,7 +1146,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
 
    if (sm->rows > 1.0f)
    {
-      rprec = floor (log10 (sm->rows) + 1.0f);
+      rprec = floorf (log10f ((float) sm->rows) + 1.0f);
    }
    else
    {

@@ -87,6 +87,14 @@ option "heterogenity-term-scaling" h "Scale heterogenity term"
        default="1.000000"
        optional
 
+option "entropy-output" p "Write down entropy and temperature changes"
+       details="Write the changes of the seuqence matrix entropy, short and \
+                 long term avg.'s and temperature to given file. Only values \
+                 from the simulation of interest are written."
+       string
+       typestr="FILENAME"
+       optional
+
 option "sm-entropy" e "Sequence matrix entropy threshold"
        details="If the entropy of the sequence matrix drops below this value, \
                  the simulation will stop."

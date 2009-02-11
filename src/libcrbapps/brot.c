@@ -174,7 +174,9 @@ adopt_site_presettings (const struct brot_args_info* args_info,
 
 static int
 simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
-                                 SeqMatrix* sm, Scmf_Rna_Opt_data* data)
+                                 SeqMatrix* sm,
+                                 Scmf_Rna_Opt_data* data,
+                                 GFile* entropy_file)
 {
    int error = 0;
    char** bp_allowed = NULL;
@@ -260,6 +262,7 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
                                        brot_args->scale_cool_arg,
                                        brot_args->lambda_arg,
                                        brot_args->sm_entropy_arg,
+                                       entropy_file,
                                        sm,
                                        data);
    }
@@ -298,7 +301,9 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
 
 static int
 simulate_using_nn_scoring (struct brot_args_info* brot_args,
-                           SeqMatrix* sm, Scmf_Rna_Opt_data* data)
+                           SeqMatrix* sm,
+                           Scmf_Rna_Opt_data* data,
+                           GFile* entropy_file)
 {
    int error = 0;
    char** bp_allowed = NULL;
@@ -397,6 +402,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
                                        brot_args->scale_cool_arg,
                                        brot_args->lambda_arg,
                                        brot_args->sm_entropy_arg,
+                                       entropy_file,
                                        sm,
                                        data);
    }
@@ -406,7 +412,6 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    {
       seqmatrix_print_2_stdout (2, sm);
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
-      mfprintf (stderr, "SNIP\n");
 
       error = seqmatrix_collate_is (0.99,
                                     brot_args->steps_arg / 2,
@@ -437,7 +442,8 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
 
 static int
 simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
-                                 SeqMatrix* sm, Scmf_Rna_Opt_data* data)
+                                 SeqMatrix* sm, Scmf_Rna_Opt_data* data,
+                                 GFile* entropy_file)
 {
    int error = 0;
    float** scores
@@ -464,6 +470,7 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
                                        brot_args->scale_cool_arg,
                                        brot_args->lambda_arg,
                                        brot_args->sm_entropy_arg,
+                                       entropy_file,
                                        sm,
                                        data);
    }
@@ -500,6 +507,7 @@ brot_main(const char *cmdline)
    SeqMatrix* sm               = NULL;
    int retval                  = 0;
    Scmf_Rna_Opt_data* sim_data = NULL;
+   GFile* entropy_file = NULL;
 
    /* command line parsing */
    brot_cmdline_parser_init (&brot_args);
@@ -557,6 +565,70 @@ brot_main(const char *cmdline)
                                        sm);
    }
 
+   /* open entropy file if name given */
+   if (brot_args.entropy_output_given)
+   {
+      entropy_file = GFILE_OPEN (brot_args.entropy_output_arg,
+                                 strlen (brot_args.entropy_output_arg),
+                                 GFILE_VOID, "a");
+      if (entropy_file == NULL)
+      {
+         retval = 1;
+      }
+      else
+      {
+         if (gfile_printf (entropy_file, "# bROT settings:\n") < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# steps: %lu\n",
+                                brot_args.steps_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# temp:              %f\n",
+                                brot_args.temp_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# beta-short:        %f\n",
+                                brot_args.beta_short_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# beta-long:         %f\n",
+                                brot_args.beta_long_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# speedup-threshold: %f\n",
+                                brot_args.speedup_threshold_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# min-cool:          %f\n",
+                                brot_args.min_cool_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# scale-cool:        %f\n",
+                                brot_args.scale_cool_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# lambda:            %f\n",
+                                brot_args.lambda_arg) < 0)
+         {
+            retval = 1;
+         }
+         else if (gfile_printf (entropy_file, "# sm-entropy:        %f\n",
+                                brot_args.sm_entropy_arg) < 0)
+         {
+            retval = 1;
+         }
+      }
+   }
+
    if (retval == 0)
    {
       if (brot_args.scoring_arg == scoring_arg_simpleNN)
@@ -564,7 +636,10 @@ brot_main(const char *cmdline)
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
-            retval = simulate_using_simplenn_scoring (&brot_args, sm, sim_data);
+            retval = simulate_using_simplenn_scoring (&brot_args,
+                                                      sm,
+                                                      sim_data,
+                                                      entropy_file);
          }
          else
          {
@@ -576,14 +651,20 @@ brot_main(const char *cmdline)
       }
       else if (brot_args.scoring_arg == scoring_arg_nussinov)
       {
-         retval = simulate_using_nussinov_scoring (&brot_args, sm, sim_data);
+         retval = simulate_using_nussinov_scoring (&brot_args,
+                                                   sm,
+                                                   sim_data,
+                                                   entropy_file);
       }
       else if (brot_args.scoring_arg == scoring_arg_NN)
       {
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
-            retval = simulate_using_nn_scoring (&brot_args, sm, sim_data);
+            retval = simulate_using_nn_scoring (&brot_args,
+                                                sm,
+                                                sim_data,
+                                                entropy_file);
          }
          else
          {
@@ -593,6 +674,16 @@ brot_main(const char *cmdline)
             retval = 1;
          }
       }
+   }
+
+   /* close entropy file */
+   if (retval == 0)
+   {
+      retval = gfile_close (entropy_file);
+   }
+   else
+   {
+      gfile_close (entropy_file);
    }
 
    if (retval == 0)

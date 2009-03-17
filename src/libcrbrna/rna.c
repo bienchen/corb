@@ -53,9 +53,9 @@
 #include "rna.h"
 
 
-typedef struct {
+/*typedef struct {
       ArrayUlong tetra_loop;
-} struct_comp;
+      } struct_comp;*/
 
 
 struct Rna {
@@ -907,7 +907,7 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
       if (!error)
       {
          error = rna_realloc_pairlist (n_bases, this, __FILE__, __LINE__);
-      }     
+      }
    }
    XFREE(line_buffer);
 

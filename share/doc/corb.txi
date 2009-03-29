@@ -38,6 +38,11 @@ POSIX
 @crbtool{GCC}
 @end macro
 
+@c Emacs nameplate
+@macro emacs{}
+@crbtool{Emacs}
+@end macro
+
 @c git name
 @macro git{}
 @crbtool{GIT}

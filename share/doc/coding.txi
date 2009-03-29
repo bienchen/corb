@@ -13,8 +13,8 @@
 @cindex Style of code
 Since @corb{} is a cooperative software project, a common layout is regarded
 indispensable. This starts at code layout --- blocks, use of whitespaces,
-indentation, @dots{} ---, function names, documentation and goes on with how to
-write manuals.
+indentation, @dots{} ---, comes across function names, documentation and goes
+on with how to write manuals.
 
 Here we describe general notes and rules, first. In the second part of this
 chapter a set of language specific rules is listed.
@@ -38,12 +38,13 @@ language please notify the author of the manual.
 * Philosophy::                  
 * Licensing::                   
 * Documenting::                 
+* Spell checking::              
 * Tabs::                        
 * Indentation::                 
 * Line size::                   
 * Punctuation::                 
 * Function naming::             
-* Spell checking::              
+* Variable naming::             
 @end menu
 
 
@@ -57,26 +58,36 @@ The aim is consistency and predictability.
 @node Licensing, Documenting, Philosophy, General rules
 @subsection Licensing
 @cindex Licensing
-All your contributions have to be covered by the GPL. Documentation 
-goes with the FDL. See... for details. If you do not want to put your code
-under the GPL/ FDL, you can not use @corb{} for your project and we can not
-keep it in @corb{}.
+All your contributions have to be covered by the GPL. Documentation goes with
+the FDL. @xref{Using Licenses}, for details. If you do not want to put your code
+under the GPL/ FDL, you can not use @corb{} for your project and we can not keep
+it in @corb{}.
 
 
-@node Documenting, Tabs, Licensing, General rules
+@node Documenting, Spell checking, Licensing, General rules
 @subsection Documenting
 @cindex Documentation
 Document all your stuff. That is files and functions as well as programs.
-See... for details on how to document.
+@xref{Writing Documentation}, for details.
 
 
-@node Tabs, Indentation, Documenting, General rules
+@node Spell checking, Tabs, Documenting, General rules
+@subsection Spell checking
+@cindex Spelling
+@cindex Dictionary
+Run a spell checker on your text contributions to @corb{}. That is
+documentation, comments in source and especially output messages to the user.
+
+Use a British English dictionary for spell checking.
+
+
+@node Tabs, Indentation, Spell checking, General rules
 @subsection Tabs
 @cindex Tabs
 There are @emph{no} tab characters. Use spaces.
 
 The only exception are @file{Makefiles}. If you have to write your own targets
-(e.g. to extend an Automake target) you still need tabs to precede rules.
+(e.g.@: to extend an Automake target) you still need tabs to precede rules.
 
 
 @node  Indentation, Line size, Tabs, General rules
@@ -86,7 +97,8 @@ The only exception are @file{Makefiles}. If you have to write your own targets
 @cindex Block layout
 Indentation is almost pure Kernighan and Ritchie with three spaces. Block
 parenthesis line up with the introducing statement.
-In Emacs this can be achieved by setting @code{c-default-style} @code{ellemtel}.
+In @emacs{} this can be achieved by setting @code{c-default-style}
+@code{ellemtel}.
 
 
 @node Line size, Punctuation, Indentation, General rules
@@ -116,43 +128,73 @@ Do
 If the line is going to go beyond 78 spaces, delicately delete spaces while
 trying to keep readability.
 
-@node Function naming, Spell checking, Punctuation, General rules
+
+@node Function naming, Variable naming, Punctuation, General rules
 @subsection Function naming
 @cindex Function naming
 @cindex Names
 
-- basic principle: start with object/ class
-- go on with the most general stuff, e.g. ``set something''
-- go over to special stuff
-- e.g.: rna_set_base, rna_set_pairing...
-- set will most of the time come first
-- read that Perl man about naming
-- is_...
-- function names like commands/ questions: put a '.' or '?' makes it a sentence
-  - is_paired ?
-  - set_base .
-- general to special
+This is a set of general rules for function naming. There might exist some
+extra rules for certain programming languages. These are placed in the
+corresponding sections.
+
+Start your function name with the module or class it belongs to. Very long
+module/ class names may be consistently abbreviated.
+
+Extend your function name, from left to right, with general to more specialised
+phrases. Write
+@example
+   molecule_set_atom
+@end example
+@noindent
+instead of
+@example
+   molecule_atom_set
+@end example
+
+For improved readability space your function name with underscores. Use
+@example
+   rna_set_sequence
+@end example
+@noindent
+above
+@example
+   rnasetsequence
+@end example
+
+Try to align your names along natural language. Functions returning a Boolean
+value should sound like a question. So using @code{_is_} as a prefix is always a
+good idea, here.
+
+There are exceptions to these rules in @corb{}. But these are always special
+cases, e.g.@: replacement functions for the @code{printf} family from a module
+@code{mprintf} are of course not called @code{mprintf_printf}. 
 
 
-=head2 Function naming
+@node Variable naming,  , Function naming, General rules
+@subsection Variable naming
+@cindex Variable naming
+@cindex Names
 
-Some days, I call my functions C<print_thing()> and
-C<print_foo()>. On others, I use C<foo_print()> and
-C<thing_print()>.  Neither is better than the other. Here is
-the rule...
-
-Functions should be named C<thing_print()>.
-
-Note, I am aware of the disadvantage that you cannot see all
-the things you can print or copy or whatever.
-
-=cut
-
-
-@node Spell checking,  , Function naming, General rules
-@subsection Spell checking
-- spell check documentation/ comments in code
-- we use a british dictionary
+Use ``telling'' variable names. That is, do not use arbitrary character
+combinations. Also do not use names which tell you the whole live of a
+variable, significant abbreviations are allowed. Use
+@example
+  curr_atom
+@end example
+@noindent
+above
+@example
+  currently_visited_atom_of_molecule
+@end example
+@noindent
+or
+@example
+  ca
+@end example
+@noindent
+For indices, single characters are allowed.
+ab hier
 
 
 @node C,  , General rules, Coding
@@ -213,10 +255,10 @@ Structures which are hidden from public should be @code{typedef}ed by default.
 @cindex @code{#ifndef}
 @cindex @code{__cplusplus}
 @emph{All} source files must include @file{config.h} as topmost header. This is
-the configurational header of the GNU build system and is created by the
+the configuration header of the GNU build system and is created by the
 @command{configure} script.
 
-Standard headers should follow the configurational header immediately. After
+Standard headers should follow the configuration header immediately. After
 this the @corb{} headers should go.
 
 All headers of a library are exported into a library-header named
@@ -226,7 +268,7 @@ sources instead of invoking module headers.
 Since some systems do not cover the ANSI C standard entirely, some standard
 headers have to be invoked by including @file{crbbasic.h}, the header of
 @libcrbbasic{}. This library provides access to certain headers after an
-evaluation of the configurational header. Headers covered by @libcrbbasic{}
+evaluation of the configuration header. Headers covered by @libcrbbasic{}
 are:
 @itemize @bullet
   @item @file{stdbool.h}
@@ -286,7 +328,7 @@ thus assertions are removed from the binary.
 
 By this we avoid the overhead of checking for the normal user. And since we
 know, that there is no such overhead, we can also use assertions at points
-where it is really expensive, e.g. recursive functions. Usually putting an
+where it is really expensive, e.g.@: recursive functions. Usually putting an
 @code{assert(SOMETHING)} only raises the constant of your running time so your
 code will run longer, not endlessly.
 
@@ -349,7 +391,7 @@ makes code hard to understand/ debug. So the ``correct'' loop macro would be:
 Since this is sort of a functional macro, we do not use this at all.
 
 Nevertheless, macros are allowed for constant values. But try to avoid them
-where possible, e.g. for some magic integer values you should use the
+where possible, e.g.@: for some magic integer values you should use the
 @code{enum} construct. Or use global constants for values which are only seen
 by one module. Especially on character arrays the compiler while benefit on
 this. 
@@ -358,7 +400,7 @@ There is only one case where macros are recommended. In some situations you
 would like to see the file and the line number where a problem occurs in a
 message. For this, C provides the @code{__FILE__} and @code{__LINE__} macros.
 If you have a function, which takes the file and line number as arguments, wrap
-the function by a macro and hide these arguments. E.g. the @corb{} memory
+the function by a macro and hide these arguments. E.g.@: the @corb{} memory
 allocation functions use this:
 @example
    #define XMALLOC(SIZE)                \
@@ -500,7 +542,7 @@ Another issue, where conditional compilation seems to be unavoidable, is
 hardware depending optimisation. The idea of @corb{} is to have everything
 implemented to work everywhere. So as a start you will not code for a certain
 machine type but in generalised C. Once there is a standard solution, you might
-think about some optimisations, e.g. parallelising your code. This is where
+think about some optimisations, e.g.@: parallelising your code. This is where
 conditional compilation may be considered.  It can be used as a switch to
 enable certain features like @posix{} threads in multi core environments.
 
@@ -615,7 +657,7 @@ For more details on testing please refer to...
 We try to keep other people's namespaces as unpolluted as possible.
 
 This means, that macros, enumerations and other constants should only be
-declared in header files, if they are needed external. E.g. error codes have to
+declared in header files, if they are needed external. E.g.@: error codes have to
 be visible with their returning function. Everything else should go with its
 utilising source.
 
@@ -656,8 +698,7 @@ objects from largest to smallest. This avoids padding to get best alignment.
 @itemize @bullet
 @item Function headings
 
-Begin every function as described in ...(Documentation). Do not use your own
-style, even if you think yours is better.
+don;t use _ at the start of a function. _ is very often system...
 
 @item Interfaces
 @cindex Interfaces
@@ -806,8 +847,8 @@ only have to catch an error value and we care for retrieving and reporting
 error messages.
 
 Instead of using wrappers for low-level functions, you should use higher level
-functions which do the whole job you are intending to do. E.g. linewise reading
-is already in gfile with the ability to skip comments in text.
+functions which do the whole job you are intending to do. E.g.@: reading line
+by line is already in gfile with the ability to skip comments in text.
 
 For more information see ...doc of gfile
 Before putting work into reading a certain file format, also check doc of...,

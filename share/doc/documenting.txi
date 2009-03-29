@@ -1,0 +1,10 @@
+@node Writing Documentation, Concept Index, Using Licenses, Top
+@chapter Writing Documentation --- Texinfofy Your Code & Tool
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@cindex Documentation
+@cindex Texinfo
+

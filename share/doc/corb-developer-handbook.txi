@@ -4,6 +4,7 @@
 @c See the file fdl-1.3.txi for copying conditions.
 @c %**start of header
 @setfilename corb-developer-handbook.info
+@documentlanguage en
 @include version-crb-dev.texi
 @include corb.txi
 @settitle @crbtitledvl{} @value{VERSION}
@@ -51,21 +52,26 @@ Copyright @copyright{} 2008 Stefan Bienert.
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top, For the impatient, (dir), (dir)
+@node Top, corb Copying Conditions, (dir), (dir)
 @top @crbtitledvl{}
 @insertcopying
 @end ifnottex
 
 @menu
+* @corb{} Copying Conditions: corb Copying Conditions.  
 * For the impatient::           
 * Preface::                     
 * Onomastics::                  
 * Coding::                      
+* Using Licenses::              
+* Writing Documentation::       
 * Concept Index::               
 * GNU Free Documentation License::  
 @end menu
 
 @c  V: Body
+@include corb-copying.txi
+
 @include impatient.txi
 
 @include preface_dvl.txi
@@ -74,6 +80,9 @@ Copyright @copyright{} 2008 Stefan Bienert.
 
 @include coding.txi
 
+@include licensing.txi
+
+@include documenting.txi
 
 @c VI: End
 @include indeces.txi

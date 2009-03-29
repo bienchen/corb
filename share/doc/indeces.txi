@@ -1,4 +1,4 @@
-@node Concept Index, GNU Free Documentation License, Coding, Top
+@node Concept Index, GNU Free Documentation License, Writing Documentation, Top
 @appendix Concept Index
 
 @c This file is part of `CoRB --- A Developers Handbook`

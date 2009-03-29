@@ -1,5 +1,5 @@
-@node For the impatient, Preface, Top, Top
-@unnumbered Getting Started
+@node For the impatient, Preface, corb Copying Conditions, Top
+@unnumbered Quickstart
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2008 Stefan Bienert
@@ -8,7 +8,7 @@
 This is an introduction for the impatient. For those who can not wait and want
 to check if everything is working immediately. Also this is a list of what is
 to do to setup the development environment if you ``know what you are doing'',
-e.g. if you have dealt with the GNU build system, before. 
+e.g.@: if you have dealt with the GNU build system, before. 
 
 However, this is not the short version of what to consider while developing
 @corb{}. Before you really start programming, you should at least have had a

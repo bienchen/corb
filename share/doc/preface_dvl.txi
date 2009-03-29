@@ -5,9 +5,35 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-Declare intention of this manual here:
-This
-is a description of internals, conventions and how to change the code.
+@corb{}, that is the @emph{Collection of RNAanalysis Binaries} (for more see
+the user manual) and this here document is the manual for @corb{}-developers.
 
-- errors can always occur and everywhere
-- on errors notify/ correct, e.g. speaking of makefiles term of target and rule mixed up
+- Declare intention of this manual here:
+  - This is a description of internals, conventions and how to change the code.
+- manual for development in corb
+- nothing on using corb
+
+- tries to be holistic
+- but: no anspruch to be free of errors
+- on error: if kein bock to solve them, notify the author of this manual
+
+- this manual is intended to be read, not to be ignored in large parts
+- but: you must not read everything
+- simple: if interest/ no knowledge: read
+- if expert, e.g.@: in git, just check that your kowledge aggrees with the guide
+- and: this is not a novel
+- we try to concentrate on what is important for CORB
+- not to enlight all aspects of techniques used/ systems, e.g.@: autoconf
+- there are very good sources for most stuff in the net
+
+- basically gegliedert in two parts:
+  - general stuff
+    - naming scheme
+    - build system
+    - using git
+    - how to write manuals
+  - api docu
+    - c
+    - perl
+    - m4
+

@@ -1,5 +1,5 @@
 \input texinfo   @c -*-texinfo-*-
-@c This file is part of `CoRB -- A Users Manual`.
+@c This file is part of `CoRB --- A Users Manual`.
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 @c %**start of header

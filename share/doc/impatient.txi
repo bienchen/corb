@@ -5,19 +5,19 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-This is an introduction for the impatient. For those who can not wait and want
-to check if everything is working immediately. Also this is a list of what is
-to do to setup the development environment if you ``know what you are doing'',
-e.g.@: if you have dealt with the GNU build system, before. 
+This is an introduction for the impatient --- for those who can not wait and
+want to check if everything works immediately. This is also a list of what
+should be done to setup the development environment if you ``know what you are
+doing'', e.g.@: if you have dealt with the GNU build system, before. 
 
 However, this is not the short version of what to consider while developing
-@corb{}. Before you really start programming, you should at least have had a
-glimpse at @ref{Coding}. If you never used @git{} before, you should
-definitively skim through ref git.
+@corb{}. Before you really start programming, you should at least glance at
+@ref{Coding}. If you never used @git{} before, you should definitively skim
+through ref git.
 
 Now for the steps necessary to getting started. Please note that we start at
-the very beginning here. You probably have already encountered some of these
-steps because you are already reading this manual.
+the very beginning. You probably have already encountered some of these steps
+because you are already reading this manual.
 
 @enumerate
 

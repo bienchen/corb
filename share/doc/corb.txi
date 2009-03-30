@@ -24,7 +24,7 @@ POSIX
 @crblib{libcrbbasic}
 @end macro
 
-@c several CoRB tools predefiend
+@c several CoRB tools predefined
 @c convention: macro names may only contain small letters, no digits, no special
 @c             chars
 
@@ -55,7 +55,7 @@ POSIX
 
 @c copyright line for the development handbook
 @macro crbcpylinedvl{}
-This manual is the @corb{} Developement Handbook (version @value{VERSION},
+This is the @corb{} Development Handbook (version @value{VERSION},
 @value{UPDATED}).
 @end macro
 

@@ -20,7 +20,7 @@
 @copying
 @crbcpylinedvl
 
-Copyright @copyright{} 2008 Stefan Bienert.
+Copyright @copyright{} 2009 Stefan Bienert.
 
 @crbfdlpermission{}
 @end copying

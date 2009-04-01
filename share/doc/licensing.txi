@@ -1,4 +1,4 @@
-@node Using Licenses, Writing Documentation, Coding, Top
+@node Using Licenses, The Buildsystem, Coding, Top
 @chapter Licenses --- GPLify Your Contribution
 
 @c This file is part of `CoRB --- A Developers Handbook`

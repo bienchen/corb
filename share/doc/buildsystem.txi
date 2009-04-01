@@ -1,0 +1,13 @@
+@node The Buildsystem, Writing Documentation, Using Licenses, Top
+@chapter @autoconf{} & Friends --- The Buildsystem
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@menu
+* Special @make{} Targets: Special Targets.    
+@end menu
+
+@node Special Targets,  , The Buildsystem, The Buildsystem
+@section Special @make{} Targets

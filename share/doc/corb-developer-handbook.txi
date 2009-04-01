@@ -58,12 +58,13 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @end ifnottex
 
 @menu
-* @corb{} Copying Conditions: corb Copying Conditions.  
+* @corb{} Copying Conditions: corb Copying Conditions.
 * For the impatient::           
 * Preface::                     
 * Onomastics::                  
 * Coding::                      
 * Using Licenses::              
+* The Buildsystem::
 * Writing Documentation::       
 * Concept Index::               
 * GNU Free Documentation License::  
@@ -81,6 +82,8 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @include coding.txi
 
 @include licensing.txi
+
+@include buildsystem.txi
 
 @include documenting.txi
 

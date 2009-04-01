@@ -1,4 +1,4 @@
-# Last modified: 2009-01-06.20
+# Last modified: 2009-03-30.22
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -43,6 +43,7 @@ AC_DEFUN([_CRB_CFLAGS_SET_WARNINGS_GCC],
                      CFLAGS="${CFLAGS} -Wdeclaration-after-statement"
                      CFLAGS="${CFLAGS} -Wmissing-include-dirs"
 # what about -Wpointer-arith -Wc++-compat -Wredundant-decls?
+# at least in 4.3 we have -Wno-variadic-macros. With this we could use -ansi
                     ]dnl# action-if-true
                    )dnl# AX_COMPARE_VERSION
 ]dnl# macro-body

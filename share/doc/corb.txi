@@ -48,6 +48,21 @@ POSIX
 @crbtool{GIT}
 @end macro
 
+@c Autoconf nameplate
+@macro autoconf{}
+@crbtool{Autoconf}
+@end macro
+
+@c Automake nameplate
+@macro automake{}
+@crbtool{Automake}
+@end macro
+
+@c Make nameplate
+@macro make{}
+@crbtool{make}
+@end macro
+
 @c title of the CoRB development handbook
 @macro crbtitledvl{}
 @corb{} --- A Developers Handbook

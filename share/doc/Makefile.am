@@ -1,4 +1,4 @@
-# Last modified: 2009-03-25.00
+# Last modified: 2009-03-31.00
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -34,6 +34,7 @@ corb_developer_handbook_TEXINFOS = corb.txi         \
                                    coding.txi       \
                                    licensing.txi    \
                                    documenting.txi  \
+                                   buildsystem.txi  \
                                    indeces.txi      \
                                    fdl_wrapper.txi  \
                                    fdl-1.3.txi

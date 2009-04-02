@@ -1,4 +1,4 @@
-# Last modified: 2009-01-06.18
+# Last modified: 2009-03-17.15
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -299,7 +299,7 @@ AC_DEFUN([CRB_ARG_ENABLE_CHECK_PTHREADS],
                 [whether to check for POSIX threads],
                 [check and invoke POSIX threads in C programs]
                )dnl# CRB_ARG_ENABLE
- AS_IF([test "x$enable_pthreads" == xyes],
+ AS_IF([test "x$enable_pthreads" = xyes],
        [dnl# action-if-true
         ACX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
                      CFLAGS="$CFLAGS $PTHREAD_CFLAGS"

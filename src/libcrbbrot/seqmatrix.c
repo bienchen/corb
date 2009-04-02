@@ -875,7 +875,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          const float t_init,
                          const float b_long,
                          const float b_short,
-                         const float sc_thresh,
+                         const float sc_thresh __attribute__((unused)),
                          const float c_min,
                          const float c_scale,
                          const float lambda,
@@ -911,12 +911,12 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    s_cur = s_long = s_short = s_seqmatrix_calc_init_entropy (sm);
 
    /* calculate initial cooling rate */
-   if (steps > 0)
-   {
-      c_rate = logf (t_init / 1.0f);
-      c_rate /= (steps - 1);
-      c_rate = expf ((-1) * c_rate);
-   }
+/*  SB for testing, 2009-03-30  if (steps > 0) */
+/*    { */
+/*       c_rate = logf (t_init / 1.0f); */
+/*       c_rate /= (steps - 1); */
+/*       c_rate = expf ((-1) * c_rate); */
+/*    } */
 
    /* if we have an output file, we set a function to write stats */
    if (entropy_file != NULL)
@@ -1002,6 +1002,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          s_short = (b_short * s_short) + ((1 - b_short) * s_cur);
 
          if ((s_short / s_long) < sc_thresh)
+         /*if ((s_short + 0.1) < s_long)*/
          {
             /* entropy changes to fast, slow down */
             c_rate = sqrtf (c_rate);

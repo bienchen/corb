@@ -1,4 +1,4 @@
-# Last modified: 2009-01-12.13
+# Last modified: 2009-02-12.16
 #
 #
 # Copyright (C) 2009 Stefan Bienert
@@ -71,7 +71,7 @@ use strict;
 use warnings;
 
 BEGIN {
-    use Exporter   ();
+    use Exporter();
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     
     # set the version for version checking
@@ -86,8 +86,7 @@ BEGIN {
                     tests => [qw(%TESTS)]
                    );
 
-    # add all the other tags to the ":all" tag,
-    # deleting duplicates
+    # add all the other tags to the ":all" tag, deleting duplicates
     {
         my %seen;
         
@@ -98,7 +97,7 @@ BEGIN {
     # automatically add all tagged functions to the EXPORT_OK list
     Exporter::export_ok_tags('all');
 }
-our @EXPORT_OK;
+#our @EXPORT_OK; # do we need this while it is already defined above?
 
 
 # EXPORTED GLOBALS     - BEGIN <- automatically exported
@@ -116,10 +115,11 @@ These guys hold the translation of bases into numbers.
 
 =cut
 
-our $A = 0;
-our $C = 1;
-our $G = 2;
-our $U = 3;
+our ($A, $C, $G, $U);
+*A = \0;
+*C = \1;
+*G = \2;
+*U = \3;
 
 =pod
 
@@ -151,7 +151,8 @@ base pairs including whobble C<GU>.
 
 #my $N_BPAIRS;
 
-our $N_BPAIRS = ($#BASEPAIRS + 1);
+our $N_BPAIRS;
+*N_BPAIRS = \($#BASEPAIRS + 1);
 
 =head2 @BASES
 
@@ -167,7 +168,8 @@ Size of list L<C<@BASES>|"@BASES">. That is the number of standard RNA bases.
 
 =cut
 
-our $N_BASES = $#BASES + 1;
+our $N_BASES;
+*N_BASES = \($#BASES + 1);
 
 =head2 %TESTS
 

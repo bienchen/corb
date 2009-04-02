@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-03-17.15
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -30,6 +30,7 @@ AC_DEFUN([CRB_GET_VERSION],
  _crb_version_options="--version -v -V"
  AC_REQUIRE([AC_PROG_GREP])
  AC_REQUIRE([AC_PROG_SED])
+ AC_REQUIRE([CRB_PROG_HEAD])
  _crb_prog=`type -p $1 2>/dev/null | tail -n 1 | awk '{print $NF}'`
  AS_IF([test -n "$_crb_prog"],
        [dnl# run-if-true
@@ -37,11 +38,11 @@ AC_DEFUN([CRB_GET_VERSION],
           do
             _crb_ver=[`"$_crb_prog" $_crb_opt 2>&1                    \
                       | $GREP '\(^\| \)[0-9][0-9]*\.[0-9]'            \
-                      | head -n 1                                     \
+                      | $CRB_HEAD -n 1                                \
                       | tr ' ' '\n'                                   \
                       | $SED 's/\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/g' \
                       | $GREP '\(^\| \)[0-9][0-9]*\.[0-9]'            \
-                      | head -n 1`]
+                      | $CRB_HEAD -n 1`]
             AS_IF([test -n "$_crb_ver"],
                   [dnl# run-if-true
                    AS_TR_SH($2)=$_crb_ver

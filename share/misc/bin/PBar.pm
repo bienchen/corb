@@ -1,4 +1,4 @@
-# Last modified: 2008-12-17.18
+# Last modified: 2009-02-11.15
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -70,7 +70,7 @@ use warnings;
 use CorbIO qw(:all);
 disable_msg_caller ('PBar');
 BEGIN {
-    use Exporter   ();
+    use Exporter();
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, @EXPORT_FAIL, %EXPORT_TAGS);
     
     # set the version for version checking
@@ -86,7 +86,7 @@ BEGIN {
 
     Exporter::export_ok_tags('pbarcontrol');
 }
-our @EXPORT_OK;
+#our @EXPORT_OK; # do we need this while it is already defined above?
 
 
 # EXPORTED GLOBALS     - BEGIN

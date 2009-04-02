@@ -1,4 +1,4 @@
-# Last modified: 2009-01-12.11
+# Last modified: 2009-03-25.12
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -41,12 +41,14 @@ CorbIO - Simple input and output routines.
       msg_warning("Verbose mode is disabled!");
     }
 
-    my $fh = open_or_die("/file/to.read");
+    my $fh = open_or_die("/file/to.read", '<');
 
     foreach (<$fh>)    
     {
       print $_;
     }
+
+    my @lines = file_2_array_or_die("/file/to.read");
 
     msg_warning("This exits the script");
 
@@ -76,7 +78,8 @@ Following tags are defined:
     L<C<disable_msg_caller()>|"disable_msg_caller">)
 
 =item * file - File handling
-    (L<C<open_or_die()>|"open_or_die">)
+    (L<C<open_or_die()>|"open_or_die">,
+    L<C<file_2_array_or_die()>|"file_2_array_or_die">)
 
 =item * all - all functions from the tags above
 
@@ -94,7 +97,7 @@ use strict;
 use warnings;
 
 BEGIN {
-    use Exporter   ();
+    use Exporter();
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     
     # set the version for version checking
@@ -109,11 +112,11 @@ BEGIN {
                     msg     => [qw(&msg_warning
                                    &msg_error_and_die
                                    &disable_msg_caller)],
-                    file    => [qw(&open_or_die)]
+                    file    => [qw(&open_or_die
+                                   &file_2_array_or_die)]
                    );
 
-    # add all the other tags to the ":all" tag,
-    # deleting duplicates
+    # add all the other tags to the ":all" tag, deleting duplicates
     {
         my %seen;
         
@@ -124,7 +127,7 @@ BEGIN {
     # automatically add all tagged functions to the EXPORT_OK list
     Exporter::export_ok_tags('all');
 }
-our @EXPORT_OK;
+#our @EXPORT_OK; # do we need this while it is already defined above?
 
 
 # EXPORTED GLOBALS     - BEGIN <- automatically exported
@@ -173,9 +176,9 @@ none.
 sub enable_verbose
 {
     $Private_func_msg_verbose = sub {
-        my ($msg) = @_;
+        my (@msg) = @_;
 
-        print($msg);
+        print @msg;
     };
 
     $Private_func_is_verbose = sub { return 1; };
@@ -257,9 +260,37 @@ The message to be written if in verbose mode. Has to be provided as scalar.
 
 =item EXAMPLE
 
+     # boring example
      my $formatted_float = sprintf("%3.3f", 1/7);
 
      msg_verbose("1/7 = ${formatted_float}\n");
+
+     # instead of working with is_verbose() for verbose printing, we can 
+     # compute everything we need just in the msg_verbose() statement. This
+     # saves us from checking if we are in verbose state and then using
+     # msg_verbose(), checking again, to print a message to the right stream
+     # and of correct format.
+     my %pets = (
+         'birds'     => [ 'Canary', 'Great tit', 'Stork' ],
+         'goggies'   => [ 'Beagle', 'Dachshund', 'Hot', 'Rottweiler' ],
+         'dinosaurs' => [ 'Tyrannosaurus', 'Grandma', 'Apatosaurus' ]
+         );
+     msg_verbose("Pets in shop:\n", &{ sub
+                                       {
+                                           my @lop;
+
+                                           foreach (keys(%pets))
+                                           {
+                                               push(@lop, "   ${_}:\n");
+
+                                               foreach (@{$pets{$_}})
+                                               {
+                                                   push(@lop, "      ${_}\n");
+                                               }
+                                           }
+
+                                           return @lop;
+                                       }}, "\n");
 
 =back
 
@@ -346,9 +377,9 @@ messages of our scripts.
 
 =over 4
 
-=item message
+=item message list
 
-The message to be written. Has to be provided as scalar.
+The list of strings to be written.
 
 =back
 
@@ -360,12 +391,12 @@ The message to be written. Has to be provided as scalar.
 
 =cut
 
-sub msg_warning($)
+sub msg_warning(@)
 {
-    my ($msg) = @_;
+    my (@msg) = @_;
     my ($file, $line) = s_corbio_get_call_info();
 
-    print STDERR "${file}:${line}:WARNING: ".$msg;
+    print STDERR "${file}:${line}:WARNING: ", @msg;
 }
 
 
@@ -384,7 +415,7 @@ look for all messages of our scripts.
 
 =item message
 
-The message to be written. Has to be provided as scalar.
+The list of strings to be written.
 
 =back
 
@@ -396,13 +427,13 @@ The message to be written. Has to be provided as scalar.
 
 =cut
 
-sub msg_error_and_die($)
+sub msg_error_and_die(@)
 {
-    my ($msg) = @_;
+    my (@msg) = @_;
     my ($file, $line) = s_corbio_get_call_info();
     my $status = $!;
 
-    print STDERR "${file}:${line}:ERROR: ".$msg;
+    print STDERR "${file}:${line}:ERROR: ", @msg;
 
     # simulate die() behaviour
     if ($status == 0)
@@ -420,7 +451,7 @@ sub msg_error_and_die($)
 =head2 open_or_die
 
 Returns a file handle to a file opened in a given mode. If opening fails, the
-script dies. The mode for opening has to be provided with the filename.
+script dies.
 
 =over 4
 
@@ -430,48 +461,58 @@ script dies. The mode for opening has to be provided with the filename.
 
 =item filename
 
-The file to be opened and the mode. Valid modes are:
+The file to be opened.
+
+=item mode
+
+Valid modes are:
 
 =over
 
-=item * ">filename"
+=item * ">"
 
-    Open a file for writing. If it already exists it will be overwritten. If
-    not, it will be created.
+    Open a file for writing. If the file does not exist it will be created. If
+    the file already exists, the script will C<die>. This is not usual B<Perl>
+    behaviour and could be a little bit annoying while developing new scripts.
+    On the other hand you will name your first-born after us, the first time
+    this prevents loss of data from an overnight run...
+    Just believe us, we have learned our lessons...
 
-=item * "<filename"
+    ...several times.
+
+=item * "<"
 
     Open a file for reading.
 
-=item * ">>filename"
+=item * ">>"
 
     Open a file for appending. If file exists, data written to it occurs at
     the end. If file does not exists, it will be created.
 
-=item * "+>filename"
+=item * "+>" "+<"
 
-    Open a file for reading and writing.
+    Open a file for reading and writing. Using "+>" would lead to clobbering
+    of the file first using B<Perl> C<open>. Since we do not overwrite nothing
+    here, trying to do so will exit the script.
 
-=item * "|filename"
+=item * "|-"
 
     The file to be opened is a shell command. The command is executed and a
     pipe towards it is established.
 
-=item * "filename|"
+=item * "-|"
 
     The file to be opened is a shell command. The command is executed and an
     outgoing pipe is established.
 
 =back
 
-If the filename is provided without any mode, it is opened for reading.
-
 =back
 
 =item EXAMPLE
 
-     my $file_2_read = open_or_die("/file/to/be.read");
-     my $file_2_write = open_or_die(">file/to/copy.to");
+     my $file_2_read = open_or_die("/file/to/be.read", "<");
+     my $file_2_write = open_or_die("file/to/copy.to", ">");
 
      foreach (<$file_2_read>)
      {
@@ -482,16 +523,71 @@ If the filename is provided without any mode, it is opened for reading.
 
 =cut
 
-sub open_or_die($)
+sub open_or_die($ $)
 {
-    my ($filename) = @_;
+    my ($filename, $mode) = @_;
     local *FH;
 
-    open(FH, $filename) or
+    if ((! defined($filename)) || (! defined($mode)))
+    {
+        msg_error_and_die ("Filename or mode missing in attempt to open "
+                          ."file.\n");        
+    }
+
+    # check if we are trying to open an existing file in write/ write-read mode
+    if ((($mode eq ">") || ($mode eq "+>"))&& (-e $filename))
+    {
+        msg_error_and_die ("Unable to create file \"$filename\": File "
+                          ."already exists\n");
+    }
+
+    open(FH, $mode, $filename) or
         msg_error_and_die("Unable to open file \"$filename\": $!\n");
 
     return *FH;
 }
+
+
+=head2 file_2_array_or_die
+
+Returns an array filled with the content of a file. If the file can not be
+opened, the script dies.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item filename
+
+The file to be opened.
+
+=back
+
+=item EXAMPLE
+
+     my @lines;
+
+     @lines = file_2_array_or_die("testfile.sth");
+
+=back
+
+=cut
+
+sub file_2_array_or_die($)
+{
+    my ($filename) = @_;
+
+    my $filehandle = open_or_die($filename, '<');
+
+    my @lines = <$filehandle>;
+
+    close($filehandle);
+
+    return @lines;
+}
+
 
 =pod
 

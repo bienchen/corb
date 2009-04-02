@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-01-13.17
+# Last modified: 2009-03-07.10
 
 
 # Copyright (C) 2009 Stefan Bienert
@@ -35,88 +35,131 @@ BEGIN
 # PERL packages    - BEGIN
 use strict;
 use warnings;
-use Getopt::Long;
-use Pod::Usage;
+use sigtrap qw{handler my_sig_handler normal-signals error-signals};
 # PERL packages    - END
 
 
 # PRIVATE packages - BEGIN
+use lib '@CORB_PERL5LIB@';
 use PBar;
 use CorbIO qw(:all);
 use RNA qw(:all);
 # PRIVATE packages - END
 
 # CONSTANTS        - BEGIN
-my %SMALL_TESTS = ('a' => '((....))',
-                   'aa' => '((((((...(((......)))...(((...)))...))))))',
-                   'aaa' => '((((....(((...)))...(((((((((....)))))))))......))))',
-                   'aaaa' => '(((...(((.......((((.....))))))))))',
-                   'aaaaa' => '(((((...(((...)))(((())))...(((...(...))))(((((....)))))..(...).((()))...)))))',
-                   'aaaaaa' => '...(((...)))(((())))...(((...(...))))',
-                   'aaaaaaa' => '(((((....)))))..(...).((()))',
-                   'aaaaaaaa' => '(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))....');
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
+my %sig_handler_params;
 # GLOBALS          - END
 
 
 # FUNCTIONS        - BEGIN
-# parse the arguments of the script and store them in a hash
-#   parseargs(argument_hashref, error_msgref)
-sub parseargs(\%)
+sub my_sig_handler
 {
-    my ($argument_hashref) = @_;
-    my  $optcatchresult = 0;
-    my  $help;
-    my  $man;
-    my  $verbose;
+    my $sig = shift;
+    my $fh;
+    my $file = "brute_force_testset_small";
 
-    # wrap the signal handler for warnings to copy them to our message space
-    local $SIG{__WARN__} = sub
-                           {
-                               msg_error_and_die("@_");
-                           };
+    $sig = defined $sig ? $sig : "????";
 
-    # set defaults
-    $argument_hashref->{max} = 10.0;
-    $argument_hashref->{min} = 0.0;
-    $argument_hashref->{step} = 0.01;
-    $argument_hashref->{n} = 10000;
+    msg_warning ("Signal caught: SIG$sig.\n");
 
-    # parse @ARGV
-    $optcatchresult = GetOptions(
-        'max=f'              => \$argument_hashref->{max},
-        'min=f'              => \$argument_hashref->{min},  
-        'step=f'             => \$argument_hashref->{step}, 
-        'n=i'                => \$argument_hashref->{n}, 
-        'verbose!'           => \$verbose,
-        'help'               => \$help,
-        'man'                => \$man
-                                );
-
-    if ($optcatchresult == 0) { return 0 }
-
-    if (defined($help)) { return 2 }
-
-    if (defined($man)) { return 3 }
-
-    if ($verbose)
+    if (   (defined ($sig_handler_params{'current'}))
+        && (defined ($sig_handler_params{'names'}))
+        && (defined ($sig_handler_params{'winners'}))
+        )
     {
-        PBar::enable();
-        enable_verbose;
+        print "Current state: ";
+        foreach (@{$sig_handler_params{'names'}})
+        {
+            print "$_: $sig_handler_params{'current'}->{$_} ";
+        }
+        print "\n";
+    }
+
+    if (   (defined ($sig_handler_params{'names'}))
+        && (defined ($sig_handler_params{'winners'}))
+        )
+    {
+        report_winners ($sig_handler_params{'winners'},
+                        $sig_handler_params{'names'});
+    }
+
+    die ("Bye!\n");
+}
+
+sub increment_params (\@ \% \% \% \%)
+{
+    my ($names_aryref, $current_hashref, $stop_hashref, $start_hashref,
+        $increment_hashref) = @_;
+    my $n_names = $#{$names_aryref};
+    my $i;
+    my $param;
+
+    for ($i = $n_names; $i >= 0; $i--)
+    {
+        $param = $$names_aryref[$i];
+        #print "$param\n";
+
+        $current_hashref->{$param} += $increment_hashref->{$param};
+
+        if (   $current_hashref->{$param} > $stop_hashref->{$param})
+        {
+            $current_hashref->{$param} = $start_hashref->{$param};
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     return 1;
 }
 
-sub predict_sequence(\$ $ $ $)
+sub push_win_params (\% \% $)
 {
-    my ($struct_ref, $neg, $het, $steps) = @_;
+    my ($target_hashref, $source_hashref, $costs) = @_;
+
+    foreach (keys (%{$source_hashref}))
+    {
+        push (@{$target_hashref->{$_}}, $source_hashref->{$_});
+    }
+    push (@{$target_hashref->{'__min'}}, $costs);
+}
+
+sub report_winners (\% \@)
+{
+    my ($win_hashref, $names_aryref) = @_;
+    my $results = -1;
+    my $i;
+
+    if (defined ($win_hashref->{'__min'}))
+    {
+        $results = $#{$win_hashref->{'__min'}};
+    }
+
+    print "Good param combinations: ".($results + 1)."\n";
+
+    for ($i = 0; $i <= $results; $i++)
+    {
+        print "#".($i + 1), ": ${$win_hashref->{'__min'}}[$i]\n";
+        foreach (@{$names_aryref})
+        {
+            print "$_: ${$win_hashref->{$_}}[$i]\n";
+        }
+    }
+
+}
+
+sub predict_sequence(\$ $ $ $ $ $ $ $ $ $ $ $)
+{
+    my ($struct_ref, $neg, $het, $T, $ed, $lambda, $b_l, $b_s, $spu, $mc, $sc, $steps)
+        = @_;
     my $seq;
     my $struct_len = length($$struct_ref);
 
-    unless(open(FH, "../../../src/corb \"brot -s $steps -d $neg -h $het $$struct_ref\" |"))
+    unless(open(FH, "./corb \"brot -q $sc -j $mc -u $spu -i $b_s -o $b_l -l $lambda -e $ed -t $T -s $steps -d $neg -h $het $$struct_ref\" |"))
     {
         msg_error_and_die ("Could not start brot\n");
     }
@@ -140,16 +183,16 @@ sub predict_mfe_structure (\$)
     my ($seq_ref) = @_;
     my $seq_len = length($$seq_ref);
 
-    unless(open(FH, "echo \"$$seq_ref\" | ./RNAfold -d2  2>&1 |"))
+    unless(open(FH, "echo \"$$seq_ref\" | ./RNAfold -d2 -p0 2>&1 |"))
     {
         msg_error_and_die ("Could not start RNAfold\n");
     }
 
     foreach (<FH>)
     {
-        if ($_ =~ /([\(\.\)]{$seq_len})/)
+        #print $_;
+        if ($_ =~ /([\(\.\)]{$seq_len})\s+\(\s*(\-?\d+\.\d+)\)/)
         {
-            close(FH);
             return $1;
         }
     }
@@ -165,12 +208,12 @@ sub compare_structures (\$ \$)
 
     unless(open(FH, "echo \"$$ref_ref\n$$pred_ref\" | ./RNAdistance  2>&1 |"))
     {
-        msg_error_and_die ("Could not start RNAfold\n");
+        msg_error_and_die ("Could not start RNAdistance\n");
     }
 
     foreach (<FH>)
     {
-        print $_;
+        #print $_;
         if ($_ =~ /f\:\s*(\d+)/)
         {
             close(FH);
@@ -183,181 +226,286 @@ sub compare_structures (\$ \$)
     msg_error_and_die ("Could not compare \"$$ref_ref\" and \"$$pred_ref\"");   
 }
 
-sub evaluate_params($ $ $)
+sub eval_params (\% \@)
 {
-    my ($neg, $het, $steps) = @_;
-    my $result = 0;
-    my $predicted_seq;
-    my $predicted_struct;
-    my $dist = 0;
+    my ($param_hashref, $tests_aryref) = @_;
+    my $pseq;
+    my $pstruct;
+    my $dist;
+    my $i = 0;
+    my $tmp;
+    my $succount = 0;
+    my $neg = $param_hashref->{'neg'};
+    my $het = $param_hashref->{'het'};
+    my $T   = $param_hashref->{'T'};
+    my $ed  = 0.05;
+    my $l   = $param_hashref->{'l'};
+    my $b_l = $param_hashref->{'b_long'};
+    my $b_s = $param_hashref->{'b_short'};
+    my $spu = $param_hashref->{'sp_thresh'};
+    my $mc  = $param_hashref->{'min_cool'};
+    my $sc  = $param_hashref->{'scale_cool'};
+    my $s   = 10000;
 
-    # for all test sequences
-    foreach (keys(%SMALL_TESTS))
+    #print "Testing $neg $het $ed $l $b_l $b_s $spu $mc $sc $s\n";
+
+    foreach (<@{$tests_aryref}>)
     {
-        print "Testing $neg $het on \"$SMALL_TESTS{$_}\"\n";
-        $predicted_seq = predict_sequence($SMALL_TESTS{$_}, $neg, $het, $steps);
-        print "Seq: $predicted_seq\n";
-        $predicted_struct = predict_mfe_structure ($predicted_seq);
-        print "MFE: \"$predicted_struct\"\n";
-        $dist += compare_structures ($SMALL_TESTS{$_}, $predicted_struct);
-        #print "end\n";
+        #print "$i: $_ $#{$tests_aryref}\n";
+        # predict sequence
+        $pseq = predict_sequence($_,
+                                 $neg,
+                                 $het,
+                                 $T,
+                                 $ed,
+                                 $l,
+                                 $b_l,
+                                 $b_s,
+                                 $spu,
+                                 $mc,
+                                 $sc,
+                                 $s);
+        
+        # predict mfe structure
+        $pstruct = predict_mfe_structure ($pseq);
+
+        # compare mfe structure
+        $dist = compare_structures ($_, $pstruct);
+
+        #print $_."\n$pseq\n$pstruct\n$dist\n";
+        if ($dist > 0)
+        {
+            #print $_."\n$pseq\n$pstruct\n$dist\n";
+            #print "$dist\n";
+            # put the failed structure at the beginning of the list
+            #$tmp = $_;
+            if ($i != 0)
+            { 
+                $tmp = splice (@{$tests_aryref}, $i, 1);
+                unshift (@{$tests_aryref}, $tmp);
+            }
+
+            return $succount;
+        }
+        if ($dist == 0)
+        {
+            $succount++;
+            #print $_."\n$pseq\n$pstruct\n$dist\n"; 
+        }
+
+        $i++;
     }
 
-    $result = $dist * 0.5;
-
-    return $result;
+    return $succount;
 }
+
 # FUNCTIONS        - END
 
 
 # MAIN             - BEGIN
-my %arg_hash;
-my $pod_verbose = 1;
-my %param_hash;
-my $ret_val;
-my ($p, $q, $r);
-my $result;
-my $best_result = 100000;
-my $best_neg;
-my $best_het;
-my %pbar;
+my $full_stop = 0;
+my $max = 0.1;
+my $cur = 0;
+my %win_params;
+my @tests;
+my $fh;
+my $timestamp;
 
-# parse commandline
-$ret_val = parseargs(%arg_hash);
-if ($ret_val > 1)
+# params
+my @names = (
+#        'ed',
+        'l',
+        'b_long',
+        'b_short',
+        'sp_thresh',
+        'min_cool',
+        'scale_cool',
+        'T',
+        'neg',
+        'het',
+    );
+my %start = (
+        'neg'        => 0,
+        'het'        => 0,
+        'T'          => 70, #0,
+#        'ed'        => 0,
+        'l'          => 0,
+        'b_long'     => 0,
+        'b_short'    => 0,
+        'sp_thresh'  => 0.9,
+        'min_cool'   => 0.5,
+        'scale_cool' => 0.1,
+    );
+my %stop = (
+        'neg'        => 10,
+        'het'        => 10,
+        'T'          => 75, #100,
+#        'ed'        => 0.1,
+        'l'          => 0.9,
+        'b_long'     => 1,
+        'b_short'    => 1,
+        'sp_thresh'  => 1,
+        'min_cool'   => 1,
+        'scale_cool' => 1,
+    );
+my %increment = (
+        'neg'        => 1,
+        'het'        => 1,
+        'T'          => 5,
+#        'ed'        => 0.02,
+        'l'          => 0.1,
+        'b_long'     => 0.05,
+        'b_short'    => 0.05,
+        'sp_thresh'  => 0.01,
+        'min_cool'   => 0.05,
+        'scale_cool' => 0.05,
+    );
+my %current;
+
+# 'min-cool', 'cool-scale', 'steps'
+
+# init current param values
+if ($#ARGV == 17)
 {
-    if ($ret_val == 3) { $pod_verbose = 2 }
-    pod2usage(-exitval => 0, -verbose => $pod_verbose); 
+    %current = (
+        'neg'        => $ARGV[0],
+        'het'        => $ARGV[1],
+        'T'          => $ARGV[2],
+        'l'          => $ARGV[3],
+        'b_long'     => $ARGV[4],
+        'b_short'    => $ARGV[5],
+        'sp_thresh'  => $ARGV[6],
+        'min_cool'   => $ARGV[7],
+        'scale_cool' => $ARGV[8],
+        );
+
+    %stop = (
+        'neg'        => $ARGV[9],
+        'het'        => $ARGV[10],
+        'T'          => $ARGV[11],
+        'l'          => $ARGV[12],
+        'b_long'     => $ARGV[13],
+        'b_short'    => $ARGV[14],
+        'sp_thresh'  => $ARGV[15],
+        'min_cool'   => $ARGV[16],
+        'scale_cool' => $ARGV[17],
+    );
+}
+else
+{
+    foreach (@names)
+    {
+        $current{$_} = $start{$_};
+    }
 }
 
-msg_verbose("Start of parameter range:  ${arg_hash{min}}\n");
-msg_verbose("End of parameter range:    ${arg_hash{max}}\n");
-msg_verbose("Step size:                 ${arg_hash{step}}\n");
-msg_verbose("No. of steps per run:      ${arg_hash{n}}\n");
+print "Start params for search:\n";
+print "neg:        $current{'neg'}\n";
+print "het:        $current{'het'}\n";
+print "T:          $current{'T'}\n";
+print "l:          $current{'l'}\n";
+print "b_long:     $current{'b_long'}\n";
+print "b_short:    $current{'b_short'}\n";
+print "sp_thresh:  $current{'sp_thresh'}\n";
+print "min_cool:   $current{'min_cool'}\n";
+print "scale_cool: $current{'scale_cool'}\n\n";
+print "Stop params for search:\n";
+print "neg:        $stop{'neg'}\n";
+print "het:        $stop{'het'}\n";
+print "T:          $stop{'T'}\n";
+print "l:          $stop{'l'}\n";
+print "b_long:     $stop{'b_long'}\n";
+print "b_short:    $stop{'b_short'}\n";
+print "sp_thresh:  $stop{'sp_thresh'}\n";
+print "min_cool:   $stop{'min_cool'}\n";
+print "scale_cool: $stop{'scale_cool'}\n";
 
-# single evaluation
+#%current = (
+#        'neg'        => 7,
+#        'het'        => 0,
+#        'T'          => 40,
+##        'ed'        => 0.02,
+#        'l'          => 0,
+#        'b_long'     => 0.8,
+#        'b_short'    => 0.25,
+#        'sp_thresh'  => 0.91,
+#        'min_cool'   => 0.95,
+#        'scale_cool' => 0.95,
+#    );
 
-msg_verbose("\nEvaluating negative design term, only:");
-PBar::start(%pbar, $arg_hash{max});
-for ($p = $arg_hash{min}; $p <= $arg_hash{max}; $p += $arg_hash{step})
+$current{'l'} = 0.8;
+
+$sig_handler_params{'names'} = \@names;
+$sig_handler_params{'current'} = \%current;
+$sig_handler_params{'winners'} = \%win_params;
+
+# read list of test structures
+$fh = open_or_die('artificial_small_tests', "<");
+@tests = <$fh>;
+close ($fh);
+
+# fetch first timestamp
+$timestamp = time;
+
+# while not all params reached their upper boundary
+while (! $full_stop)
 {
-    #print $p."\n";
-    $result = evaluate_params($p, 0, $arg_hash{n});
 
-    if ($result < $best_result)
+    # evaluate
+    $cur = eval_params (%current, @tests);
+
+    if ($cur == $max)
     {
-        $best_result = $result;
-        $best_neg = $p;
+        push_win_params (%win_params, %current, $cur);
+        $max = ($cur + $max)/2;
+    }
+    elsif ($cur > $max)
+    {
+        %win_params = ();
+        push_win_params (%win_params, %current, $cur);
+
+       $max = $cur;
     }
 
-    PBar::update(%pbar, $p);
-}
-PBar::finish(%pbar);
-print "Best parameter for negative design term, single run: $best_neg "
-     ."($best_result)\n";
-
-msg_verbose("\nEvaluating heterogenity term, only:");
-$best_result = 100000;
-PBar::start(%pbar, $arg_hash{max});
-for ($p = $arg_hash{min}; $p <= $arg_hash{max}; $p += $arg_hash{step})
-{
-    $result = evaluate_params(0, $p, $arg_hash{n});
-
-    if ($result < $best_result)
+    # output after certain time
+    if ((time - $timestamp) > 3600)
     {
-        $best_result = $result;
-        $best_het = $p;
-    }
-
-    PBar::update(%pbar, $p);
-}
-PBar::finish(%pbar);
-print "Best parameter for heterogenity term, single run: $best_het "
-     ."($best_result)\n";
-
-msg_verbose("\nEvaluating both terms:");
-PBar::start(%pbar, $arg_hash{max}*$arg_hash{max});
-for ($p = $arg_hash{min}; $p <= $arg_hash{max}; $p += $arg_hash{step})
-{
-    for ($q = $arg_hash{min}; $q <= $arg_hash{max}; $q += $arg_hash{step})
-    {
-        $result = evaluate_params($p, $q, $arg_hash{n});
-        
-        if ($result < $best_result)
+        print "Progress report (". localtime() .")\n";
+        print "------------------------------------------\n";
+        report_winners (%win_params, @names);
+        print "Tested until: ";
+        foreach (@names)
         {
-            $best_result = $result;
-            $best_neg = $p;
-            $best_het = $q;
+            print "$_: $current{$_} ";
         }
-        $r += $arg_hash{step};
-        PBar::update(%pbar, $r);
+        print "\n";
+
+        $timestamp = time;
     }
+        
+    # increment
+    $full_stop = increment_params (@names, %current, %stop, %start, %increment);
 }
-PBar::finish(%pbar);
-print "Best parameters: neg($best_neg), het($best_het) ($best_result)\n";
+
+# report
+report_winners (%win_params, @names);
 
 # MAIN             - END
 
+#    if (($cur < ($min + $delta)) && ($cur > ($min - $delta)))
+#    {
+#        push_win_params (%win_params, %current, $cur);
+#        $min = ($cur + $min)/2;
+#    }
+#    elsif ($cur < $min)
+#    {
+#        %win_params = ();
+#        push_win_params (%win_params, %current, $cur);
+#
+#       $min = $cur;
+#    }
 
 __END__
-
-=head1 NAME
-
-ex_cmp_er2de_rnaeval - Exhaustive comp. of er2de and RNAeval...
-
-=head1 SYNOPSIS
-
-B<ex_cmp_er2de_rnaeval> [options]
-
-=head1 DESCRIPTION
-
-B<ex_cmp_er2de_rnaeval> should be used to test the implementation of the Turner
-energies in  B<corb> against the Vienna Package as gold standard. All possible
-combinations of sequences/ structures are tested as are available in
-Vienna 1.7.2. Additionally a few hundred test sequences are also checked.
-Please note that the "only" options may actually be combined.
-
-=head1 OPTIONS
-
-=over 8
-
-=item B<-stackssonly>
-
-Only test stacking parameters.
-
-=item B<-exteriorsonly>
-
-Only test exterior loops.
-
-=item B<-bulgesonly>
-
-Only test bulge loops.
-
-=item B<-interiorsonly>
-
-Only test interior loops.
-
-=item B<-hairpinsonly>
-
-Only test hairpin loops.
-
-=item B<-multionly>
-
-Only test multiloops.
-
-=item B<-testsonly>  
-
-Only process set of test sequences.
-
-=item B<-man>
-
-Print a man page for the program.
-
-=item B<-help>
-
-Print a help message and exit.
-
-=cut
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)

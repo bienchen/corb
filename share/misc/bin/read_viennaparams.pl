@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-01-06.17
+# Last modified: 2009-02-11.15
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -47,6 +47,7 @@ use Pod::Usage;
 
 
 # PRIVATE packages - BEGIN
+use lib '@CORB_PERL5LIB@';
 use CorbIO qw(:all);
 # PRIVATE packages - END
 

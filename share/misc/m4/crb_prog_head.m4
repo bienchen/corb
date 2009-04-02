@@ -17,33 +17,18 @@ dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
-# CRB_PROG_PERL
+# CRB_PROG_HEAD
 # -------------
-# CRB_PROG_PERL ()
-# Tries to find the path to the Perl executable and stores it with the binary
-# name in a variable PERL.
-AC_DEFUN([CRB_PROG_PERL],
+# CRB_PROG_HEAD ()
+# Tries to find the path to the head executable and stores it with the binary
+# name in a variable head. If head is not found, an error is raised.
+AC_DEFUN([CRB_PROG_HEAD],
 [dnl# macro-body
- AC_ARG_VAR(PERL, [Path and name of the Perl executable. Used for ]
-                  [substitution in Perl scripts.])
- AC_PATH_PROG(PERL, [perl])
+ AC_PATH_PROG(CRB_HEAD, [head], no)
+ AS_IF([test x$CRB_HEAD = xno],
+       [AC_MSG_ERROR([Unable to find the head command])]
+      )dnl# AS_IF
 ]dnl# macro-body
-        )
-
-# CRB_CHECK_MATCHING_PERL
-# -----------------------
-# CRB_CHECK_MATCHING_PERL ()
-# Check that Perl is available in the version needed by CoRB's Perl scripts.
-AC_DEFUN([CRB_CHECK_MATCHINGPERL],
-[dnl# macro-body
-  AS_IF([test -z $PERL],
-        AC_MSG_ERROR([perl not found])dnl# run-if-true
-       )dnl# AS_IF
-  AS_IF([$PERL -e 'require 5.006;'],
-        [],dnl# run-if-true
-        [AC_MSG_ERROR([Perl v5.6 or better is required; Perl v5.8.2 or better is recommended. If you have several perl versions installed, select the one Automake should use using ./configure PERL=/path/to/perl])]dnl# run-if-false
-       )dnl# AS_IF
-]dnl# macro-body 
         )
 
 dnl# Local variables:

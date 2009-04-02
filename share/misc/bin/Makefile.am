@@ -1,4 +1,4 @@
-# Last modified: 2009-01-29.17
+# Last modified: 2009-03-20.11
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -23,32 +23,35 @@ ACLOCAL_AMFLAGS = -I share/misc/m4
 
 SUFFIXES=.pl
 
-bin_SCRIPTS=
+noinst_SCRIPTS=
 if CRB_REFORMAT
-  bin_SCRIPTS += reformat
+  noinst_SCRIPTS += reformat
 endif
 if CRB_READ_VIENNAPARAMS
-  bin_SCRIPTS += read_viennaparams
+  noinst_SCRIPTS += read_viennaparams
 endif
 if CRB_EX_CMP_ER2DE_RNAEVAL
-  bin_SCRIPTS += ex_cmp_er2de_rnaeval
+  noinst_SCRIPTS += ex_cmp_er2de_rnaeval
 endif
 if CRB_OPT_BROT_DESIGN_TERMS
-  bin_SCRIPTS += opt_brot_design_terms
+  noinst_SCRIPTS += opt_brot_design_terms
+  noinst_SCRIPTS += simplex_brot_params
 endif
 
-pl_mods = PBar.pm CorbIO.pm RNA.pm
+pl_mods = PBar.pm CorbIO.pm RNA.pm Simplex.pm
 
 # misc scripts, build on --with|enable-development
 
-CLEANFILES = $(bin_SCRIPTS)
+CLEANFILES = $(noinst_SCRIPTS)
 
-EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl $(pl_mods)
+EXTRA_DIST = reformat.pl read_viennaparams.pl ex_cmp_er2de_rnaeval.pl \
+	     simplex_brot_params.pl opt_brot_design_terms.pl $(pl_mods)
 
 do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
-  -e 's,[@]configure_input[@],Generated from $@.pl; do not edit by hand.,g'
+  -e 's,[@]configure_input[@],Generated from $@.pl; do not edit by hand.,g' \
+  -e 's,[@]CORB_PERL5LIB[@],$(abs_srcdir),g'
 
 .pl:$(pl_mods)
 	rm -f $@ .$@.tmp

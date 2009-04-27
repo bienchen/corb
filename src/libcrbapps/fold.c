@@ -390,80 +390,81 @@ traceback_matrix (const unsigned long i, const unsigned long j,
    }
 }
 
-static void
-traceback_nussinov (const unsigned long i, 
-                    const unsigned long j,
-                    Str* structure,
-                    const char* sequence,
-                    struct_cell** matrix,
-                    float** scores)
-{
-   unsigned long k;
+/* bienert: uncommented 27/04/2009, seems not to be used anymore */
+/* static void */
+/* traceback_nussinov (const unsigned long i,  */
+/*                     const unsigned long j, */
+/*                     Str* structure, */
+/*                     const char* sequence, */
+/*                     struct_cell** matrix, */
+/*                     float** scores) */
+/* { */
+/*    unsigned long k; */
 
-   if (i < j)
-   {
-      /*mprintf ("(%c%lu,%c%lu) %.4f ", transform_number_2_base(sequence[i]),
-        i, transform_number_2_base(sequence[j]), j, matrix[i][j].v);
-        mprintf ("b:%.3f ", matrix[i + 1][j].v);*/
-      if (fabsf(matrix[i][j].v - matrix[i + 1][j].v) < 0.0001)
-      {
-         /*mprintf ("B ");*/
-         traceback_nussinov (i + 1, j, structure, sequence, matrix, scores);
-      }
-      else
-      {
-         /*mprintf ("l:%.3f ", matrix[i][j - 1].v);*/
-         if (fabsf(matrix[i][j].v - matrix[i][j - 1].v) < 0.0001)
-         {
-            /*mprintf ("L ");*/
-            traceback_nussinov (i, j - 1, structure, sequence, matrix, scores);
-         }
-         else
-         {
-/*         mprintf ("B: %f == %f + %f\n", matrix[i][j].v, matrix[i+1][j-1].v, */
-/*                      scores[(int)sequence[i]][(int)sequence[j]]); */
-            /*mprintf ("d:%.4f ", matrix[i + 1][j - 1].v);*/
-            if (fabsf(matrix[i][j].v - (matrix[i + 1][j - 1].v 
-                                  + scores[(int)sequence[i]][(int)sequence[j]]))
-                < 0.0001)
-            {
-               /* mfprintf (stderr, "PAIR: %lu,%lu\n", i, j); */
-               /*mprintf ("D ");*/
-               str_at (structure, i, '(');
-               str_at (structure, j, ')');
-               traceback_nussinov (i + 1, j - 1,
-                                   structure,
-                                   sequence,
-                                   matrix,
-                                   scores);
-            }
-            else
-            {
-               for (k = i + 1; k < j; k++)
-               {
-                  if (fabsf(  matrix[i][j].v 
-                           - (matrix[i][k - 1].v + matrix[k][j].v)) < 0.0001)
-                  {
-                     /*mprintf ("K%lu ", k);*/
-                     traceback_nussinov (i, k - 1,
-                                         structure,
-                                         sequence,
-                                         matrix,
-                                         scores); 
-                     traceback_nussinov (k, j,
-                                         structure,
-                                         sequence,
-                                         matrix,
-                                         scores);
-                     return;
-                  }
-               }
-               /*mprintf("N ");*/
-            }
-         }
-      }
-   }
-}
+/*    if (i < j) */
+/*    { */
+/*       /\*mprintf ("(%c%lu,%c%lu) %.4f ", transform_number_2_base(sequence[i]), */
+/*         i, transform_number_2_base(sequence[j]), j, matrix[i][j].v); */
+/*         mprintf ("b:%.3f ", matrix[i + 1][j].v);*\/ */
+/*       if (fabsf(matrix[i][j].v - matrix[i + 1][j].v) < 0.0001) */
+/*       { */
+/*          /\*mprintf ("B ");*\/ */
+/*          traceback_nussinov (i + 1, j, structure, sequence, matrix, scores); */
+/*       } */
+/*       else */
+/*       { */
+/*          /\*mprintf ("l:%.3f ", matrix[i][j - 1].v);*\/ */
+/*          if (fabsf(matrix[i][j].v - matrix[i][j - 1].v) < 0.0001) */
+/*          { */
+/*             /\*mprintf ("L ");*\/ */
+/*             traceback_nussinov (i, j - 1, structure, sequence, matrix, scores); */
+/*          } */
+/*          else */
+/*          { */
+/* /\*         mprintf ("B: %f == %f + %f\n", matrix[i][j].v, matrix[i+1][j-1].v, *\/ */
+/* /\*                      scores[(int)sequence[i]][(int)sequence[j]]); *\/ */
+/*             /\*mprintf ("d:%.4f ", matrix[i + 1][j - 1].v);*\/ */
+/*             if (fabsf(matrix[i][j].v - (matrix[i + 1][j - 1].v  */
+/*                                   + scores[(int)sequence[i]][(int)sequence[j]])) */
+/*                 < 0.0001) */
+/*             { */
+/*                /\* mfprintf (stderr, "PAIR: %lu,%lu\n", i, j); *\/ */
+/*                /\*mprintf ("D ");*\/ */
+/*                str_at (structure, i, '('); */
+/*                str_at (structure, j, ')'); */
+/*                traceback_nussinov (i + 1, j - 1, */
+/*                                    structure, */
+/*                                    sequence, */
+/*                                    matrix, */
+/*                                    scores); */
+/*             } */
+/*             else */
+/*             { */
+/*                for (k = i + 1; k < j; k++) */
+/*                { */
+/*                   if (fabsf(  matrix[i][j].v  */
+/*                            - (matrix[i][k - 1].v + matrix[k][j].v)) < 0.0001) */
+/*                   { */
+/*                      /\*mprintf ("K%lu ", k);*\/ */
+/*                      traceback_nussinov (i, k - 1, */
+/*                                          structure, */
+/*                                          sequence, */
+/*                                          matrix, */
+/*                                          scores);  */
+/*                      traceback_nussinov (k, j, */
+/*                                          structure, */
+/*                                          sequence, */
+/*                                          matrix, */
+/*                                          scores); */
+/*                      return; */
+/*                   } */
+/*                } */
+/*                /\*mprintf("N ");*\/ */
+/*             } */
+/*          } */
+/*       } */
+/*    } */
+/* } */
 
 static Str*
 pred_2D_structure_nussinov (const unsigned long l,

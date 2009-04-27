@@ -1,4 +1,4 @@
-@node Coding, Using Licenses, Onomastics, Top
+@node Coding
 @chapter Code --- Notes and Coding Rules
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -210,7 +210,6 @@ For indices, single characters are allowed.
 * Assertions::                  
 * Macros::                      
 * Multidimensional arrays::     
-* Conditional compilation::     
 * Testing::                     
 * Visibility::                  
 * External Libraries::          
@@ -219,6 +218,7 @@ For indices, single characters are allowed.
 * Conventions and internal routines::  
 * Memory allocation philosophy and responsibility::  
 * File handling::               
+* Conditional compilation::     
 @end menu
 
 
@@ -244,7 +244,6 @@ check your code with all supported and freely available compilers. @xref{Special
 With its information-hiding approach, @code{typedef}s are allowed in @corb{}.
 Structures which are hidden from public should be @code{typedef}ed by default.
 
-ab hier
 
 @node Include files, Boolean, typedef, C
 @subsection Include files
@@ -258,11 +257,11 @@ the configuration header of the GNU build system and is created by the
 @command{configure} script.
 
 Standard headers should follow the configuration header immediately. After
-this the @corb{} headers should go.
+this the @corb{} headers and your own should go.
 
 All headers of a library are exported into a library-header named
-@file{crb@i{library}.h}. This header is then included by external
-sources instead of invoking module headers.
+@file{crb@i{library}.h}. This header is then included by external sources
+instead of invoking module headers.
 
 Since some systems do not cover the ANSI C standard entirely, some standard
 headers have to be invoked by including @file{crbbasic.h}, the header of
@@ -275,9 +274,9 @@ are:
   @item @file{sting.h}/ @file{strings.h}
 @end itemize
 
-Your own header files must start with the license header (see ...), followed by
-the documentation header (see ...). Everything C in a header has to be enclosed
-in
+Your own header files must start with the license header
+(@pxref{Using Licenses}), followed by the documentation header
+(@pxref{Writing Documentation}). Everything C in a header has to be enclosed in
 @example
    #ifdef __cplusplus
    extern "C" @{
@@ -321,7 +320,7 @@ When writing functions which could be used by other developers, usually
 functions declared @code{extern}, there has to be some checking on the input
 parameters. In @corb{} this is done via assertions (invoked by
 @file{assert.h}), which are turned off by default. The basic idea is to force
-the developer to hand over only secure input to functions. With this there is
+the developer to hand over only secure input to functions. With this, there is
 no more need for function-side checks in the productive version of @corb{} and
 thus assertions are removed from the binary.
 
@@ -412,7 +411,7 @@ allocated but never freed.
 Macro names are written in all upper case letters and use underscores as spaces.
 
 
-@node Multidimensional arrays, Conditional compilation, Macros, C
+@node Multidimensional arrays, Testing, Macros, C
 @subsection Multidimensional arrays
 @cindex Enumerations
 @cindex @code{enum}
@@ -440,7 +439,7 @@ array as storage:
 Now assume you store 5' bases in address @code{loops[i][0]} and 3' bases in
 @code{loops[i][1]}. As you have written this code by yourself, you know where
 everything goes. But how should anybody else figure out what is the 5' or the
-3' position? This would require code inspection or, you just name to the
+3' position? This would require code inspection or you just give names to the
 storage of the pairing partners:
 @example
   enum 
@@ -474,167 +473,9 @@ Now the size can be stored in @code{loops[i][size]}. Since you used
 @code{n_bases} for the allocation you do not have to change anything because
 now it is magically set to 3.
 
-naming scheme
-- everything lc/ uc?
-- name for enums?
+ab hier
 
-
-@node Conditional compilation, Testing, Multidimensional arrays, C
-@subsection Conditional compilation
-@cindex Conditional compilation
-@cindex @code{#ifdef}
-@cindex @code{#ifndef}
-@cindex @code{__GNUC__}
-@cindex @code{ptrhead}
-@cindex @posix{} Threads
-We do not make extensive use of conditional compilation.
-
-Conditional compilation is used to enable/ disable certain features in an
-application in the build phase. Thereby the preprocessor is used to evaluate
-macros which represent the configuration options:
-@example
-  #ifndef HAS_FEATURE
-    @dots{}
-  #else
-    @dots{}
-  #endif
-@end example
-@noindent
-Conditional compilation makes code hard to debug. Therefore it should not be
-used broadly. Anyway, there are only rare cases where it is needed.
-
-Nevertheless, there are three scenarios, where conditional compilations seems
-to be unavoidable:
-@itemize @bullet
-  @item Additional library functions
-  @item Making use of special compiler features
-  @item Optimisation techniques
-@end itemize
-
-For a broad discussion of external libraries and @corb{}, please refer to
-@ref{External Libraries}. In principle, one can not set up rules for the use of
-conditional compilation and libraries. This is due to the many ways you can
-invoke libraries in your code. So the rule is just to be ``careful'' on this
-issue. @strong{An example can be found in the code of the gfile module...}
-
-One scenario where we encourage you to use conditional compilation is for
-enabling @emph{additional} checking/ optimisation techniques of certain
-compilers. This case is best explained by an example.
-
-The GNU Compiler Collection provides a set of certain attributes to
-declarations (see @uref{http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Function-Attributes.html#Function-Attributes, the @gcc{} manual}). To use such function
-attributes, you have to check which compiler is currently in use. The @gcc{}
-defines the @code{__GNUC__} macro to contain the version number if invoked. 
-This can easily be used to determine if it is safe to turn on @gcc{}s
-@code{malloc}
- attribute:
-@example
-  void*
-  xmalloc(const size_t, const char*, const int)
-  #if defined(__GNUC__) && (__GNUC__ > 2)
-       __attribute__((malloc))
-  #endif /* __GNUC__ */
-  ;
-@end example
-
-Another issue, where conditional compilation seems to be unavoidable, is
-hardware depending optimisation. The idea of @corb{} is to have everything
-implemented to work everywhere. So as a start you will not code for a certain
-machine type but in generalised C. Once there is a standard solution, you might
-think about some optimisations, e.g.@: parallelising your code. This is where
-conditional compilation may be considered.  It can be used as a switch to
-enable certain features like @posix{} threads in multi core environments.
-
-In principle, there are two ways to switch between two versions of an
-algorithm: In code and via separate declarations. Mixing two different versions
-of one algorithm in one function, using macros as switches is definitively
-unwanted. This is not only hard to debug, for larger code segments it is
-regarded as impossible to read code without slipping something. Therefore we
-switch between different implementations of the same function. Thereby no
-preprocessor directive occurs in code but on the level of declaration. 
-
-Explicitly this means, that we duplicate a function to be optimised, leave the
-general version unchanged and optimise the copy. Both versions are then wrapped
-into preprocessor conditionals. On major code changes this probably means that
-we have to do changes twice/ recreate the optimised copy by cut n' paste but we
-gain very much better readability.
-
-Again, do not
-@example
-  void function_foobar (void)
-  @{
-     /* bar code */
-     @dots{}
-
-     #ifdef FEATURE_FOO
-        /* foo code */
-        @dots{}
-     #endif
-
-     /* more bar code */
-     @dots{}
-
-     #ifdef FEATURE_FOO
-        /* more foo code */
-        @dots{}
-     #endif          
-
-     #ifndef FEATURE_FOO
-        /* exceptional bar code only to be used if FOO is not available */
-        @dots{}
-     #endif
-
-     @dots{}
-  @}
-@end example
-@noindent
-Do
-@example
-  #ifdef FEATURE_FOO  /* we have FOO */
-  void function_foobar (void)
-  @{
-     /* bar code */
-     @dots{}
-
-     /* foo code */
-     @dots{}
-
-     /* more bar code */
-     @dots{}
-
-     /* more foo code */
-     @dots{}
-  @}
-  #else               /* no FOO available */
-  void function_foobar (void)
-  @{
-     /* bar code */
-     @dots{}
-
-     /* more bar code */
-     @dots{}
-
-     /* exceptional bar code only to be used if FOO is not available */
-     @dots{}
-  @}
-  #endif
-@end example
-
-As everywhere in live, there is one exception for the function splitting. When
-using @posix{} threads, you probably need mutexes. If the only change to a
-function while using threads is switching on and off or waiting for a mutex,
-you might do this within the generalised code. In @libcrbbasic{} this is
-already used at some points without obfuscating the code.
-
-The macro signalling whether @posix{} threads are enabled or not is called
-@code{HAVE_PTHREAD}.
-
-Last but not least a little hint: Conditional compilation is in fact used
-everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
-header. But lets just say this is OK.
-
-
-@node Testing, Visibility, Conditional compilation, C
+@node Testing, Visibility, Multidimensional arrays, C
 @subsection Testing
 @cindex Test your code
 @cindex Unit tests
@@ -830,7 +671,7 @@ up any occupied memory.
 For more information on memory handling please refer to @dots{} doc of
 @libcrbbasic{}
 
-@node File handling,  , Memory allocation philosophy and responsibility, C
+@node File handling, Conditional compilation, Memory allocation philosophy and responsibility, C
 @subsection File handling
 
 File handling in C is always an issue. Mostly it is seen as hard and tedious
@@ -853,6 +694,161 @@ For more information see ...doc of gfile
 Before putting work into reading a certain file format, also check doc of...,
 because @corb{} already supports several formats.
 
+
+@node Conditional compilation,  , File handling, C
+@subsection Conditional compilation
+@cindex Conditional compilation
+@cindex @code{#ifdef}
+@cindex @code{#ifndef}
+@cindex @code{__GNUC__}
+@cindex @code{ptrhead}
+@cindex @posix{} Threads
+We do not make extensive use of conditional compilation.
+
+Conditional compilation is used to enable/ disable certain features in an
+application during the build phase. Thereby the preprocessor is used to evaluate
+macros which represent the configuration options:
+@example
+  #ifndef HAS_FEATURE
+    @dots{}
+  #else
+    @dots{}
+  #endif
+@end example
+@noindent
+Conditional compilation makes code hard to debug. Therefore it should not be
+used broadly. Anyway, there are only rare cases where it is needed.
+
+Here are three scenarios, where conditional compilation seems to be unavoidable:
+@itemize @bullet
+  @item Additional library functions
+  @item Making use of special compiler features
+  @item Optimisation techniques
+@end itemize
+
+For a broad discussion of external libraries and @corb{}, please refer to
+@ref{External Libraries}. In principle, one can not set up rules for the use of
+conditional compilation and libraries. This is due to the many ways you can
+invoke libraries in your code. So the rule is just to be ``careful'' on this
+issue. @strong{An example can be found in the code of the gfile module...}
+
+One scenario where we encourage you to use conditional compilation is for
+enabling @emph{additional} checking/ optimisation techniques of certain
+compilers. This case is best explained by an example.
+
+The GNU Compiler Collection provides a set of certain attributes to
+declarations (see @uref{http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Function-Attributes.html#Function-Attributes, the @gcc{} manual}). To use such function
+attributes, you have to check which compiler is currently in use. The @gcc{}
+defines the @code{__GNUC__} macro to contain the version number if invoked. 
+This can easily be used to determine if it is safe to turn on @gcc{}s
+@code{malloc}
+ attribute:
+@example
+  void*
+  xmalloc(const size_t, const char*, const int)
+  #if defined(__GNUC__) && (__GNUC__ > 2)
+       __attribute__((malloc))
+  #endif /* __GNUC__ */
+  ;
+@end example
+
+Another issue, where conditional compilation seems to be unavoidable, is
+hardware depending optimisation. The idea of @corb{} is to have everything
+implemented to work everywhere. So as a start you will not code for a certain
+machine type but in generalised C. Once there is a standard solution, you might
+think about some optimisations, e.g.@: parallelising your code. This is where
+conditional compilation may be considered.  It can be used as a switch to
+enable certain features like @posix{} threads in multi core environments.
+
+In principle, there are two ways to switch between two versions of an
+algorithm: In code and via separate declarations. Mixing two different versions
+of one algorithm in one function, using macros as switches is definitively
+unwanted. This is not only hard to debug, for larger code segments it is
+regarded as impossible to read code without slipping something. Therefore we
+switch between different implementations of the same function. Thereby no
+preprocessor directive occurs in code but on the level of declaration. 
+
+Explicitly this means, that we duplicate a function to be optimised, leave the
+general version unchanged and optimise the copy. Both versions are then wrapped
+into preprocessor conditionals. On major code changes this probably means that
+we have to do changes twice/ recreate the optimised copy by cut n' paste but we
+gain very much better readability.
+
+Again, do not
+@example
+  void function_foobar (void)
+  @{
+     /* bar code */
+     @dots{}
+
+     #ifdef FEATURE_FOO
+        /* foo code */
+        @dots{}
+     #endif
+
+     /* more bar code */
+     @dots{}
+
+     #ifdef FEATURE_FOO
+        /* more foo code */
+        @dots{}
+     #endif          
+
+     #ifndef FEATURE_FOO
+        /* exceptional bar code only to be used if FOO is not available */
+        @dots{}
+     #endif
+
+     @dots{}
+  @}
+@end example
+@noindent
+Do
+@example
+  #ifdef FEATURE_FOO  /* we have FOO */
+  void function_foobar (void)
+  @{
+     /* bar code */
+     @dots{}
+
+     /* foo code */
+     @dots{}
+
+     /* more bar code */
+     @dots{}
+
+     /* more foo code */
+     @dots{}
+  @}
+  #else               /* no FOO available */
+  void function_foobar (void)
+  @{
+     /* bar code */
+     @dots{}
+
+     /* more bar code */
+     @dots{}
+
+     /* exceptional bar code only to be used if FOO is not available */
+     @dots{}
+  @}
+  #endif
+@end example
+
+As everywhere in live, there is one exception for the function splitting. When
+using @posix{} threads, you probably need mutexes. If the only change to a
+function while using threads is switching on and off or waiting for a mutex,
+you might do this within the generalised code. In @libcrbbasic{} this is
+already used at some points without obfuscating the code.
+
+The macro signalling whether @posix{} threads are enabled or not is called
+@code{HAVE_PTHREAD}.
+
+Last but not least a little hint: Conditional compilation is in fact used
+everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
+header. But lets just say this is OK.
+
+
 -------------------------
 
 - function names: static for modules: precede by 's': s_gfile
@@ -860,3 +856,7 @@ because @corb{} already supports several formats.
 
 - if possible: calc no. from other consts
 - one reason for memmegr: valgrind/ efence not available on all systems
+
+naming scheme
+- everything lc/ uc?
+- name for enums?

@@ -5,20 +5,19 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-@corb{} is an ever growing collection of tools for the analysis of
-RNA molecules. This document is the developer's guide to @corb{}, not a user's
-manual.
+@corb{} is an ever growing collection of tools for the analysis of RNA
+molecules. This document is an ever growing description of internals, API
+documentation and coding conventions of @corb{}. Hence, you are reading a
+developer's guide, @emph{not} an user's manual.
 
+This handbook tries to be holistic in its description of the @corb{}
+development process. But it does not claim to be free of all errors. If you
+stumble upon some non-up-to-date information, spelling mistakes, errors in
+grammar or what ever might be wrong, please try to solve the issue. On
+conceptual problems you should contact the author, first. If you do not feel
+like helping us assuring a high quality of this manual, you should at least
+notify the author on errors.
 
-
-- Declare intention of this manual here:
-  - This is a description of internals, conventions and how to change the code.
-- manual for development in corb
-- nothing on using corb
-
-- tries to be holistic
-- but: no anspruch to be free of errors
-- on error: if kein bock to solve them, notify the author of this manual
 
 - this manual is intended to be read, not to be ignored in large parts
 - but: you must not read everything

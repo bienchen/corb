@@ -1,4 +1,4 @@
-# Last modified: 2009-03-20.16
+# Last modified: 2009-04-27.22
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -26,7 +26,7 @@ AC_CONFIG_AUX_DIR([share/misc/config])
 AC_CONFIG_MACRO_DIR([share/misc/m4])
 
 
-AM_INIT_AUTOMAKE([filename-length-max=99 -Wall -Werror -color-tests])
+AM_INIT_AUTOMAKE([filename-length-max=99 -Wall -Werror])
 
 AM_PATH_LISPDIR
 

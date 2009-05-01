@@ -1,4 +1,4 @@
-# Last modified: 2009-04-02.17
+# Last modified: 2009-04-30.00
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -25,8 +25,7 @@ ACLOCAL_AMFLAGS = -I share/misc/m4
 AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS) --no-split
 
 # please note: The version*.texi files are automatically dependencies
-noinst_TEXINFOS = corb-developer-handbook.txi
-info_TEXINFOS = corb-user-manual.txi
+info_TEXINFOS = corb-user-manual.txi corb-developer-handbook.txi
 
 corb_developer_handbook_TEXINFOS = corb.txi         \
                                    corb-copying.txi \

@@ -210,9 +210,9 @@ For indices, single characters are allowed.
 * Assertions::                  
 * Macros::                      
 * Multidimensional arrays::     
-* Testing::                     
 * Visibility::                  
 * External Libraries::          
+* Testing::                     
 * Ordering::                    
 * Functions::                   
 * Conventions and internal routines::  
@@ -411,7 +411,7 @@ allocated but never freed.
 Macro names are written in all upper case letters and use underscores as spaces.
 
 
-@node Multidimensional arrays, Testing, Macros, C
+@node Multidimensional arrays, Visibility, Macros, C
 @subsection Multidimensional arrays
 @cindex Enumerations
 @cindex @code{enum}
@@ -473,36 +473,20 @@ Now the size can be stored in @code{loops[i][size]}. Since you used
 @code{n_bases} for the allocation you do not have to change anything because
 now it is magically set to 3.
 
-ab hier
 
-@node Testing, Visibility, Multidimensional arrays, C
-@subsection Testing
-@cindex Test your code
-@cindex Unit tests
-You should test your code while writing.
-
-Each module should be tested by a separate program. To make each test working
-by calling a test program without arguments, functions should be tested with
-hard coded data. 
-
-A test program should just exit with an appropriate message on problems.
-
-For more details on testing please refer to...
-
-
-@node Visibility, External Libraries, Testing, C
+@node Visibility, External Libraries, Multidimensional arrays, C
 @subsection Visibility
 @cindex Macros
 @cindex @code{enum}
 We try to keep other people's namespaces as unpolluted as possible.
 
 This means, that macros, enumerations and other constants should only be
-declared in header files, if they are needed external. E.g.@: error codes have to
+declared in header files if they are needed external. E.g.@: error codes have to
 be visible with their returning function. Everything else should go with its
 utilising source.
 
 
-@node External Libraries, Ordering, Visibility, C
+@node External Libraries, Testing, Visibility, C
 @subsection External Libraries
 The Prime Directive of @corb{} is that @emph{it has to work everywhere}.
 
@@ -526,7 +510,25 @@ software''-annoyance but a serious law issue. To put it simple: If you use a
 library with an incompatible license, this could cost you a large heap of
 @emph{your} money.
 
-@node Ordering, Functions, External Libraries, C
+
+ab hier
+
+@node Testing, Ordering, External Libraries, C
+@subsection Testing
+@cindex Test your code
+@cindex Unit tests
+You should test your code while writing.
+
+Each module should be tested by a separate program. To make each test working
+by calling a test program without arguments, functions should be tested with
+hard coded data. 
+
+A test program should just exit with an appropriate message on problems.
+
+For more details on testing please refer to...
+
+
+@node Ordering, Functions, Testing, C
 @subsection Ordering
 The order in which you declare variables should make no difference. On the
 Compaq, at least within structures, the compiler makes noise unless you order

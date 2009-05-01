@@ -18,24 +18,18 @@ conceptual problems you should contact the author, first. If you do not feel
 like helping us assuring a high quality of this manual, you should at least
 notify the author on errors.
 
+The intention of this document is to be read, not to be ignored in large parts. 
+But: This is not a novel. You must not read everything or in chronological
+order. If you are an expert on one of the topics, just have a glimpse at the
+relevant chapter/ section, check if we are proposing something unusual there
+and notify the author. In case you have no idea of some topics, do not expect
+too much. We are concentrating on aspects relevant to @corb{}. We do not try to
+illuminate all corners of the techniques/ tools we are using in this project.
+Most of the time you can find very good original documentation on the Internet.
 
-- this manual is intended to be read, not to be ignored in large parts
-- but: you must not read everything
-- simple: if interest/ no knowledge: read
-- if expert, e.g.@: in git, just check that your kowledge aggrees with the guide
-- and: this is not a novel
-- we try to concentrate on what is important for CORB
-- not to enlight all aspects of techniques used/ systems, e.g.@: autoconf
-- there are very good sources for most stuff in the net
-
-- basically gegliedert in two parts:
-  - general stuff
-    - naming scheme
-    - build system
-    - using git
-    - how to write manuals
-  - api docu
-    - c
-    - perl
-    - m4
-
+The content is basically structured into two parts: General information on how
+to maintain the @corb{} project and API documentation. The maintenance chapters
+cover topics like ``how to name tools in @corb{}'', basic @git{}-usage, using
+the build system and how to write manuals. The API documentation deals with the
+programming languages used by @corb{}, like C and Perl but also M4 used by the
+build system. The C documentation follows the libraries provided by @corb{}.

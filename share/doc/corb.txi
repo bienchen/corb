@@ -33,6 +33,11 @@ POSIX
 @crbtool{CoRB}
 @end macro
 
+@c BROT nameplate
+@macro brot{}
+@crbtool{BROT}
+@end macro
+
 @c GCC nameplate
 @macro gcc{}
 @crbtool{GCC}

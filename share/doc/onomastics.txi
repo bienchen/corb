@@ -5,8 +5,22 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-- explain at example ``corb''
-- ``brot''
+@corb{} is an acronym for ``Collection of RNAanalysis Binaries'', but it can
+also be pronounced like the German word ``Korb'' which means ``basket'' which
+in turn is the perfect description for what @corb{} is --- a basket full of
+tools for RNA.
+
+Because acronyms make the world a better place to live, you should also try to
+name your tool for @corb{} with a nice acronym. Most preferable something that
+fits into a picnic basket. Thereby, finding a composition which sounds like a
+word from your native language but consists of English words would be
+appreciated. That gives us an international touch for @corb{}. One example is
+@brot{}, meaning ``bread'' in German which everybody loves to have at a picnic,
+but is the acronym of ``Basic RNA Optimisation Tool''.
+
+In case you can not find a nice name for your tool, try discussing ideas with
+some friends. This helps most of the time. If not, the world will probably not
+stop turning.
 
 
 @cindex Naming scheme

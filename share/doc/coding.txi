@@ -205,6 +205,7 @@ For indices, single characters are allowed.
 @menu
 * CFLAGS::                      
 * typedef::                     
+* Ordering::                    
 * Include files::               
 * Boolean::                     
 * Assertions::                  
@@ -213,7 +214,6 @@ For indices, single characters are allowed.
 * Visibility::                  
 * External Libraries::          
 * Testing::                     
-* Ordering::                    
 * Functions::                   
 * Conventions and internal routines::  
 * Memory allocation philosophy and responsibility::  
@@ -238,14 +238,21 @@ Several compilers are supported beside @gcc{}. It is definitively a good idea to
 check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets} for more details on how @corb{}'s buildsystem simplifies testing.
 
 
-@node typedef, Include files, CFLAGS, C
+@node typedef, Ordering, CFLAGS, C
 @subsection @code{typedef}
 @cindex @code{typedef} rules
 With its information-hiding approach, @code{typedef}s are allowed in @corb{}.
 Structures which are hidden from public should be @code{typedef}ed by default.
 
 
-@node Include files, Boolean, typedef, C
+@node Ordering, Include files, typedef, C
+@subsection Ordering
+The order in which you declare variables should make no difference. On the
+Compaq, at least within structures, the compiler makes noise unless you order
+objects from largest to smallest. This avoids padding to get best alignment.
+
+
+@node Include files, Boolean, Ordering, C
 @subsection Include files
 @cindex Include rules
 @cindex Header
@@ -513,7 +520,7 @@ library with an incompatible license, this could cost you a large heap of
 
 ab hier
 
-@node Testing, Ordering, External Libraries, C
+@node Testing, Functions, External Libraries, C
 @subsection Testing
 @cindex Test your code
 @cindex Unit tests
@@ -528,13 +535,7 @@ A test program should just exit with an appropriate message on problems.
 For more details on testing please refer to...
 
 
-@node Ordering, Functions, Testing, C
-@subsection Ordering
-The order in which you declare variables should make no difference. On the
-Compaq, at least within structures, the compiler makes noise unless you order
-objects from largest to smallest. This avoids padding to get best alignment.
-
-@node Functions, Conventions and internal routines, Ordering, C
+@node Functions, Conventions and internal routines, Testing, C
 @subsection Functions
 @cindex Functions
 @itemize @bullet

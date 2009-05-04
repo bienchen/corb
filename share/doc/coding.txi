@@ -232,7 +232,7 @@ options @option{--enable-development} and @option{--with-development}:
 ./configure --enable-development --with-development
 @end example
 The flags used for developing are very restrictive and pedantic. This should
-assure a very high level of compatibility among different systems.
+ensure a very high level of compatibility among different systems.
 
 Several compilers are supported beside @gcc{}. It is definitively a good idea to
 check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets} for more details on how @corb{}'s buildsystem simplifies testing.
@@ -259,12 +259,12 @@ objects from largest to smallest. This avoids padding to get best alignment.
 @cindex @code{#ifdef}
 @cindex @code{#ifndef}
 @cindex @code{__cplusplus}
-@emph{All} source files must include @file{config.h} as topmost header. This is
+@emph{All} source files must include @file{config.h} as topmost header before any other --- even system --- headers. This is
 the configuration header of the GNU build system and is created by the
 @command{configure} script.
 
 Standard headers should follow the configuration header immediately. After
-this the @corb{} headers and your own should go.
+this come the @corb{} headers and then your own.
 
 All headers of a library are exported into a library-header named
 @file{crb@i{library}.h}. This header is then included by external sources
@@ -278,7 +278,7 @@ are:
 @itemize @bullet
   @item @file{stdbool.h}
   @item @file{pthread.h}
-  @item @file{sting.h}/ @file{strings.h}
+  @item @file{string.h}/ @file{strings.h}
 @end itemize
 
 Your own header files must start with the license header
@@ -327,8 +327,8 @@ When writing functions which could be used by other developers, usually
 functions declared @code{extern}, there has to be some checking on the input
 parameters. In @corb{} this is done via assertions (invoked by
 @file{assert.h}), which are turned off by default. The basic idea is to force
-the developer to hand over only secure input to functions. With this, there is
-no more need for function-side checks in the productive version of @corb{} and
+the developer to only hand over secure input to functions. With this, there is
+no more need for function-side checks in the production version of @corb{} and
 thus assertions are removed from the binary.
 
 By this we avoid the overhead of checking for the normal user. And since we
@@ -398,8 +398,7 @@ Since this is sort of a functional macro, we do not use this at all.
 Nevertheless, macros are allowed for constant values. But try to avoid them
 where possible, e.g.@: for some magic integer values you should use the
 @code{enum} construct. Or use global constants for values which are only seen
-by one module. Especially on character arrays the compiler while benefit on
-this. 
+by one module. Especially on character arrays the compiler benefits from this. 
 
 There is only one case where macros are recommended. In some situations you
 would like to see the file and the line number where a problem occurs in a
@@ -488,8 +487,8 @@ now it is magically set to 3.
 We try to keep other people's namespaces as unpolluted as possible.
 
 This means, that macros, enumerations and other constants should only be
-declared in header files if they are needed external. E.g.@: error codes have to
-be visible with their returning function. Everything else should go with its
+declared in header files if they are needed externally. E.g.@: error codes have
+to be visible with their returning function. Everything else should go with its
 utilising source.
 
 
@@ -499,7 +498,7 @@ The Prime Directive of @corb{} is that @emph{it has to work everywhere}.
 
 This allows external libraries as long as @corb{} still compiles and works
 properly if the library is not available. Therefore the use of libraries is
-restricted to additional functionality. As an exemplary scenario consider file
+restricted to additional functionality. As an exemple scenario consider file
 handling: ANSI C provides everything needed for usual ASCII files. But with
 additional libraries, compressed text files can also be treated like ASCII
 files. Hence the strategy should be to always provide standard C file handling
@@ -528,11 +527,12 @@ You should test your code while writing.
 
 Each module should be tested by a separate program. To make each test working
 by calling a test program without arguments, functions should be tested with
-hard coded data. 
+hard coded data.
 
 A test program should just exit with an appropriate message on problems.
 
 For more details on testing please refer to...
+
 
 
 @node Functions, Conventions and internal routines, Testing, C
@@ -541,7 +541,7 @@ For more details on testing please refer to...
 @itemize @bullet
 @item Function headings
 
-don;t use _ at the start of a function. _ is very often system...
+don't use _ at the start of a function. _ is very often system...
 
 @item Interfaces
 @cindex Interfaces
@@ -575,7 +575,7 @@ If a function can possibly be made static, it should be. Symbols should be no
 more visible than is necessary. There are also optimisation advantages (the
 compiler can assume a function is local and generate only an inlined version).
 
-If you have a static function you must Not declare it, then define it and use
+If you have a static function you must not declare it, then define it and use
 it. Instead, you should define it once, before it is used.
 
 In other words, do
@@ -678,7 +678,7 @@ For more information on memory handling please refer to @dots{} doc of
 @subsection File handling
 
 File handling in C is always an issue. Mostly it is seen as hard and tedious
-work. Additionally opening and reading files is a source for manier errors.
+work. Additionally opening and reading files is a source of many errors.
 Therefore we provide an interface for file handling in @corb{}. With module
 gfile from library libcrbbasic, there should be no more need to invoke
 low-level functions.
@@ -697,6 +697,7 @@ For more information see ...doc of gfile
 Before putting work into reading a certain file format, also check doc of...,
 because @corb{} already supports several formats.
 
+Note: can one do fseek/ fpos with the interface?
 
 @node Conditional compilation,  , File handling, C
 @subsection Conditional compilation
@@ -720,7 +721,7 @@ macros which represent the configuration options:
 @end example
 @noindent
 Conditional compilation makes code hard to debug. Therefore it should not be
-used broadly. Anyway, there are only rare cases where it is needed.
+used too often. Anyway, there are only rare cases where it is needed.
 
 Here are three scenarios, where conditional compilation seems to be unavoidable:
 @itemize @bullet
@@ -756,7 +757,7 @@ This can easily be used to determine if it is safe to turn on @gcc{}s
 @end example
 
 Another issue, where conditional compilation seems to be unavoidable, is
-hardware depending optimisation. The idea of @corb{} is to have everything
+hardware dependent optimisation. The idea of @corb{} is to have everything
 implemented to work everywhere. So as a start you will not code for a certain
 machine type but in generalised C. Once there is a standard solution, you might
 think about some optimisations, e.g.@: parallelising your code. This is where
@@ -838,7 +839,7 @@ Do
   #endif
 @end example
 
-As everywhere in live, there is one exception for the function splitting. When
+As everywhere in life, there is one exception, for function splitting. When
 using @posix{} threads, you probably need mutexes. If the only change to a
 function while using threads is switching on and off or waiting for a mutex,
 you might do this within the generalised code. In @libcrbbasic{} this is

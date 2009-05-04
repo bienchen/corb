@@ -8,7 +8,7 @@
 @include version-crb-dev.texi
 @include corb.txi
 @settitle @crbtitledvl{} @value{VERSION}
-@setchapternewpage odd @c delete when we have at least two pages of toc
+@setchapternewpage odd
 @afourpaper
 @c @afivepaper
 @c @afourlatex

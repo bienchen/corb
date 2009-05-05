@@ -52,19 +52,20 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top, corb Copying Conditions, (dir), (dir)
+@node Top, corb Copying Conditions,,
 @top @crbtitledvl{}
 @insertcopying
 @end ifnottex
 
 @menu
-* @corb{} Copying Conditions: corb Copying Conditions.
+* corb Copying Conditions::     
 * For the impatient::           
 * Preface::                     
 * Onomastics::                  
+* Using GIT::
 * Coding::                      
 * Using Licenses::              
-* The Buildsystem::
+* The Buildsystem::             
 * Writing Documentation::       
 * Concept Index::               
 * GNU Free Documentation License::  
@@ -78,6 +79,8 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @include preface_dvl.txi
 
 @include onomastics.txi
+
+@include using_git.txi
 
 @include coding.txi
 

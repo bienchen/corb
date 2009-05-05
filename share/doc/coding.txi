@@ -1,4 +1,4 @@
-@node Coding
+@node Coding, Using Licenses, Using GIT, Top
 @chapter Code --- Notes and Coding Rules
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -235,7 +235,7 @@ The flags used for developing are very restrictive and pedantic. This should
 ensure a very high level of compatibility among different systems.
 
 Several compilers are supported beside @gcc{}. It is definitively a good idea to
-check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets} for more details on how @corb{}'s buildsystem simplifies testing.
+check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets}, for more details on how @corb{}'s buildsystem simplifies testing.
 
 
 @node typedef, Ordering, CFLAGS, C
@@ -525,7 +525,12 @@ ab hier
 @cindex Unit tests
 You should test your code while writing.
 
-Each module should be tested by a separate program. To make each test working
+For unit tests, the functions of a module should be tested by a separate
+program, instead of placing test code in the module itself. With this, tests
+can be compiled on demand. AUTOMAKE supports this by the special CHECK
+target ref ....
+
+To make each test working
 by calling a test program without arguments, functions should be tested with
 hard coded data.
 

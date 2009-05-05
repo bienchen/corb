@@ -5,6 +5,8 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
+@c * Special @make{} Targets: Special Targets.
+
 @menu
 * Special @make{} Targets: Special Targets.    
 @end menu

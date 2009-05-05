@@ -1,0 +1,9 @@
+@node Using GIT, Coding, Onomastics, Top
+@chapter Using @git{}
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@cindex GIT
+@cindex Versioning system

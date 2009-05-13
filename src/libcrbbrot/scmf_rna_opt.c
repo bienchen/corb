@@ -65,6 +65,7 @@ struct Scmf_Rna_Opt_data {
       float* en_neg;      /* negative energies for incremental updates */
       float** en_neg2;    /* negative energies for incremental updates */
       float** en_neg_35;  /* neg.en. for 5' 3' direction */
+      unsigned long win;  /* window size for the het term */
 };
 
 /** @brief Create new data object for cell energy calculations.
@@ -429,6 +430,12 @@ scmf_rna_opt_data_set_scales (float neg, float het, Scmf_Rna_Opt_data* cedat)
 
    cedat->neg_scale = neg;
    cedat->het_scale = het;
+}
+
+void
+scmf_rna_opt_data_set_het_window (const long size, Scmf_Rna_Opt_data* cedat)
+{
+   cedat->win = size;
 }
 
 void
@@ -2476,69 +2483,68 @@ scmf_rna_opt_calc_neg_loop (const unsigned long state,
 static void
 scmf_rna_opt_calc_het_term (const unsigned long state,
                             const unsigned long n_sites,
-                            const Scmf_Rna_Opt_data* this,
+                            const Scmf_Rna_Opt_data* this __attribute__((unused)),
                             SeqMatrix* sm)
 {
-   unsigned long s_c/* , s_h */;
+   unsigned long s_c;
    float het;
-   /* float het_count = 0.0f; */
 
-   /* do it like gundolf - START */
+   assert (this->win < n_sites / 2);
+
+   het = 0.0f;
+
    /***************************************/
    /* first try: additive, whole sequence */
    /***************************************/
-   het = 0.0f;
-   /* calc first pos */
-   for (s_c = 0; s_c < n_sites; s_c++)
-   {
-      het += seqmatrix_get_probability (state, s_c, sm);
-   }
+/*    /\* calc first pos *\/ */
+/*    for (s_c = 0; s_c < n_sites; s_c++) */
+/*    { */
+/*       het += seqmatrix_get_probability (state, s_c, sm); */
+/*    } */
 
-   /* propagate on whole sequence */
-   for (s_c = 0; s_c < n_sites; s_c++)
-   {
-      seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
-                             / n_sites) * this->het_scale, state, s_c, sm);
-   }
+/*    /\* propagate on whole sequence *\/ */
+/*    for (s_c = 0; s_c < n_sites; s_c++) */
+/*    { */
+/*  seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm)) */
+/*                             / n_sites) * this->het_scale, state, s_c, sm); */
+/*    } */
 
 
    /***************************************/
    /*      2nd try: additive, window      */
    /***************************************/
+   for (s_c = 0; s_c < this->win; s_c++)
+   {
+      het += seqmatrix_get_probability (state, s_c, sm);
+   }
 
-   /* do it like gundolf - END */
+   /* pos 0 up to window size */
+   for (s_c = 0; (s_c < this->win) && ((s_c + this->win) < n_sites); s_c++)
+   {
+      het += seqmatrix_get_probability (state, (s_c + this->win), sm);
+      seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
+                             / (s_c + this->win)) 
+                            * this->het_scale, state, s_c, sm);
+   }
 
-/*    /\* for each site *\/ */
-/*    for (s_c = 0; s_c < n_sites; s_c++) */
-/*    { */
-/*       het = 0.0f; */
+   /* slide until window reaches last pos */
+   for (; (s_c + this->win) < n_sites; s_c++)
+   {
+      het += seqmatrix_get_probability (state, (s_c + this->win), sm);
+      seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
+                             / (this->win + this->win)) 
+                            * this->het_scale, state, s_c, sm);
+      het -= seqmatrix_get_probability (state, (s_c - this->win), sm);
+   }
 
-/*       /\* pay attention to all sites before the current *\/ */
-/*       for (s_h = 0; s_h < s_c; s_h++) */
-/*       { */
-/*          if (rna_base_pairs_with (s_c, this->rna) != s_h) */
-/*          { */
-/*             het += (seqmatrix_get_probability (state, s_h, sm) */
-/*                     * expf(this->het_rate * (s_c - (s_h + 1)))); */
-/*             het_count += expf ( (this->het_rate* (s_c - (s_h + 1)))); */
-/*          } */
-/*       } */
-
-/*       /\* pay attention to all remaining sites *\/ */
-/*       for (s_h = s_c + 1; s_h < n_sites; s_h++) */
-/*       { */
-/*          if (rna_base_pairs_with (s_c, this->rna) != s_h) */
-/*          { */
-/*             het += (seqmatrix_get_probability (state, s_h, sm) */
-/*                         * expf(this->het_rate * (s_h - (s_c + 1)))); */
-/*             het_count += (expf (this->het_rate * (s_h - (s_c + 1)))); */
-/*          } */
-/*       } */
-
-/*       /\* store contribution *\/ */
-/*       /\*mfprintf (stdout, "%lu: %f\n", s_c, this->het_scale);*\/ */
-/*       seqmatrix_add_2_eeff ((het/\* / het_count *\/) * this->het_scale, state, s_c, sm); */
-/*    } */
+   /* shrink window until last pos */
+   for (; s_c < n_sites; s_c++)
+   {
+      seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
+                             / ((n_sites - s_c) + this->win - 1)) 
+                            * this->het_scale, state, s_c, sm);
+      het -= seqmatrix_get_probability (state, (s_c - this->win), sm);
+   }
 }
 
 /** @brief SCMF simulation function.
@@ -2585,6 +2591,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
    n_states = seqmatrix_get_rows (sm);
    n_sites = seqmatrix_get_width (sm);
    r = 0;
+   /* seqmatrix_print_2_stdout (2, sm); */ /* SB 300409*/
    while ((r < n_states) && (!error))
    {
       /*seqmatrix_print_2_stdout (2, sm);*/
@@ -2637,8 +2644,8 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       {
          if (!seqmatrix_is_col_fixed (c, sm))
          {
-/*             mprintf ("CM(%lu,%lu) = %.2f\n", r, c, */
-/*               seqmatrix_get_eeff (r, c, sm)); */
+            /*mprintf ("CM(%lu,%lu) = %.2f\n", r, c,
+              seqmatrix_get_eeff (r, c, sm));*/
             cell = expf((-1.0f) * seqmatrix_get_eeff (r, c, sm)
                         / (t * seqmatrix_get_gas_constant(sm)));
             seqmatrix_set_eeff (cell, r, c, sm);

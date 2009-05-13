@@ -47,10 +47,12 @@ const char *brot_args_info_detailed_help[] = {
   "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n   for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.                  \n  Only takes effect when using with `NN' as scoring scheme.",
   "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  (default=`1.01')",
   "  Scaling factor for the negative design term.",
-  "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`1.000000')",
+  "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`12.000000')",
   "  Scaling factor for the sequence heterogenity term.",
   "  -p, --entropy-output=FILENAME Write down entropy and temperature changes",
-  "  Write the changes of the seuqence matrix entropy, short and                  \n  long term avg.'s and temperature to given file. Only values                  \n  from the simulation of interest are written.",
+  "  Write the changes of the sequence matrix entropy, short and                  \n  long term avg.'s and temperature to given file. Only values                  \n  from the simulation of interest are written.",
+  "  -w, --window-size=INT         Window size for the heterogeneity term  \n                                  (default=`1')",
+  "  Size of the window to the left and right of a base to be                 \n  considered for calculating the heterogeneity term when using                 \n  the `NN' scoring scheme. Please note that this is always only                 \n  one half of the window. Only takes effect when using with `NN'                \n   as scoring scheme.",
   "  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  \n                                  (default=`0.05')",
   "  If the entropy of the sequence matrix drops below this value,                 \n   the simulation will stop.",
   "  -l, --lambda=FLOAT            Portion of a new step to be accepted  \n                                  (default=`0.6')",
@@ -89,11 +91,12 @@ init_full_help_array(void)
   brot_args_info_full_help[16] = brot_args_info_detailed_help[28];
   brot_args_info_full_help[17] = brot_args_info_detailed_help[30];
   brot_args_info_full_help[18] = brot_args_info_detailed_help[32];
-  brot_args_info_full_help[19] = 0; 
+  brot_args_info_full_help[19] = brot_args_info_detailed_help[34];
+  brot_args_info_full_help[20] = 0; 
   
 }
 
-const char *brot_args_info_full_help[20];
+const char *brot_args_info_full_help[21];
 
 static void
 init_help_array(void)
@@ -179,6 +182,7 @@ void clear_given (struct brot_args_info *args_info)
   args_info->negative_design_scaling_given = 0 ;
   args_info->heterogenity_term_scaling_given = 0 ;
   args_info->entropy_output_given = 0 ;
+  args_info->window_size_given = 0 ;
   args_info->sm_entropy_given = 0 ;
   args_info->lambda_given = 0 ;
   args_info->beta_long_given = 0 ;
@@ -204,10 +208,12 @@ void clear_args (struct brot_args_info *args_info)
   args_info->seed_orig = NULL;
   args_info->negative_design_scaling_arg = 1.01;
   args_info->negative_design_scaling_orig = NULL;
-  args_info->heterogenity_term_scaling_arg = 1.000000;
+  args_info->heterogenity_term_scaling_arg = 12.000000;
   args_info->heterogenity_term_scaling_orig = NULL;
   args_info->entropy_output_arg = NULL;
   args_info->entropy_output_orig = NULL;
+  args_info->window_size_arg = 1;
+  args_info->window_size_orig = NULL;
   args_info->sm_entropy_arg = 0.05;
   args_info->sm_entropy_orig = NULL;
   args_info->lambda_arg = 0.6;
@@ -244,13 +250,14 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->negative_design_scaling_help = brot_args_info_detailed_help[14] ;
   args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[16] ;
   args_info->entropy_output_help = brot_args_info_detailed_help[18] ;
-  args_info->sm_entropy_help = brot_args_info_detailed_help[20] ;
-  args_info->lambda_help = brot_args_info_detailed_help[22] ;
-  args_info->beta_long_help = brot_args_info_detailed_help[24] ;
-  args_info->beta_short_help = brot_args_info_detailed_help[26] ;
-  args_info->speedup_threshold_help = brot_args_info_detailed_help[28] ;
-  args_info->min_cool_help = brot_args_info_detailed_help[30] ;
-  args_info->scale_cool_help = brot_args_info_detailed_help[32] ;
+  args_info->window_size_help = brot_args_info_detailed_help[20] ;
+  args_info->sm_entropy_help = brot_args_info_detailed_help[22] ;
+  args_info->lambda_help = brot_args_info_detailed_help[24] ;
+  args_info->beta_long_help = brot_args_info_detailed_help[26] ;
+  args_info->beta_short_help = brot_args_info_detailed_help[28] ;
+  args_info->speedup_threshold_help = brot_args_info_detailed_help[30] ;
+  args_info->min_cool_help = brot_args_info_detailed_help[32] ;
+  args_info->scale_cool_help = brot_args_info_detailed_help[34] ;
   
 }
 
@@ -405,6 +412,7 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   free_string_field (&(args_info->heterogenity_term_scaling_orig));
   free_string_field (&(args_info->entropy_output_arg));
   free_string_field (&(args_info->entropy_output_orig));
+  free_string_field (&(args_info->window_size_orig));
   free_string_field (&(args_info->sm_entropy_orig));
   free_string_field (&(args_info->lambda_orig));
   free_string_field (&(args_info->beta_long_orig));
@@ -519,6 +527,8 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "heterogenity-term-scaling", args_info->heterogenity_term_scaling_orig, 0);
   if (args_info->entropy_output_given)
     write_into_file(outfile, "entropy-output", args_info->entropy_output_orig, 0);
+  if (args_info->window_size_given)
+    write_into_file(outfile, "window-size", args_info->window_size_orig, 0);
   if (args_info->sm_entropy_given)
     write_into_file(outfile, "sm-entropy", args_info->sm_entropy_orig, 0);
   if (args_info->lambda_given)
@@ -1729,6 +1739,7 @@ brot_cmdline_parser_internal (
         { "negative-design-scaling",	1, NULL, 'd' },
         { "heterogenity-term-scaling",	1, NULL, 'h' },
         { "entropy-output",	1, NULL, 'p' },
+        { "window-size",	1, NULL, 'w' },
         { "sm-entropy",	1, NULL, 'e' },
         { "lambda",	1, NULL, 'l' },
         { "beta-long",	1, NULL, 'o' },
@@ -1744,7 +1755,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:p:e:l:o:i:u:j:q:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:p:w:e:l:o:i:u:j:q:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1834,7 +1845,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->heterogenity_term_scaling_arg), 
                &(args_info->heterogenity_term_scaling_orig), &(args_info->heterogenity_term_scaling_given),
-              &(local_args_info.heterogenity_term_scaling_given), optarg, 0, "1.000000", ARG_FLOAT,
+              &(local_args_info.heterogenity_term_scaling_given), optarg, 0, "12.000000", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "heterogenity-term-scaling", 'h',
               additional_error))
@@ -1849,6 +1860,18 @@ brot_cmdline_parser_internal (
               &(local_args_info.entropy_output_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
               "entropy-output", 'p',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'w':	/* Window size for the heterogeneity term.  */
+        
+        
+          if (update_arg( (void *)&(args_info->window_size_arg), 
+               &(args_info->window_size_orig), &(args_info->window_size_given),
+              &(local_args_info.window_size_given), optarg, 0, "1", ARG_LONG,
+              check_ambiguity, override, 0, 0,
+              "window-size", 'w',
               additional_error))
             goto failure;
         

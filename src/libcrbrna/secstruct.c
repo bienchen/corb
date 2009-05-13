@@ -478,7 +478,7 @@ secstruct_find_interactions (const unsigned long* pairs,
       }
    }
 
-   mprintf ("Stacked base pairs:\n");
+   /*mprintf ("Stacked base pairs:\n");
    secstruct_fprintf_stacks (stdout, this);
    mprintf ("\nHairpin loops:\n");
    secstruct_fprintf_hairpins (stdout, this);
@@ -489,7 +489,7 @@ secstruct_find_interactions (const unsigned long* pairs,
    mprintf ("\nExternal loop:\n");
    secstruct_fprintf_external (stdout, this);
    mprintf ("\nMulti loops:\n");
-   secstruct_fprintf_multiloops (stdout, this);
+   secstruct_fprintf_multiloops (stdout, this);*/
 
    return error;
 }

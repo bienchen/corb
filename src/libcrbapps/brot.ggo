@@ -84,16 +84,28 @@ option "heterogenity-term-scaling" h "Scale heterogenity term"
        details="Scaling factor for the sequence heterogenity term."
        float
        typestr="FLOAT"
-       default="1.000000"
+       default="12.000000"
        optional
 
 option "entropy-output" p "Write down entropy and temperature changes"
-       details="Write the changes of the seuqence matrix entropy, short and \
+       details="Write the changes of the sequence matrix entropy, short and \
                  long term avg.'s and temperature to given file. Only values \
                  from the simulation of interest are written."
        string
        typestr="FILENAME"
        optional
+
+option "window-size" w "Window size for the heterogeneity term"
+       details="Size of the window to the left and right of a base to be \
+                considered for calculating the heterogeneity term when using \
+                the `NN' scoring scheme. Please note that this is always only \
+                one half of the window. Only takes effect when using with `NN' \
+                as scoring scheme."
+       long
+       typestr="INT"
+       default="1"
+       optional
+       hidden
 
 option "sm-entropy" e "Sequence matrix entropy threshold"
        details="If the entropy of the sequence matrix drops below this value, \

@@ -58,12 +58,15 @@ struct brot_args_info
   float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='1.01').  */
   char * negative_design_scaling_orig;	/**< @brief Scale negative design term original value given at command line.  */
   const char *negative_design_scaling_help; /**< @brief Scale negative design term help description.  */
-  float heterogenity_term_scaling_arg;	/**< @brief Scale heterogenity term (default='1.000000').  */
+  float heterogenity_term_scaling_arg;	/**< @brief Scale heterogenity term (default='12.000000').  */
   char * heterogenity_term_scaling_orig;	/**< @brief Scale heterogenity term original value given at command line.  */
   const char *heterogenity_term_scaling_help; /**< @brief Scale heterogenity term help description.  */
   char * entropy_output_arg;	/**< @brief Write down entropy and temperature changes.  */
   char * entropy_output_orig;	/**< @brief Write down entropy and temperature changes original value given at command line.  */
   const char *entropy_output_help; /**< @brief Write down entropy and temperature changes help description.  */
+  long window_size_arg;	/**< @brief Window size for the heterogeneity term (default='1').  */
+  char * window_size_orig;	/**< @brief Window size for the heterogeneity term original value given at command line.  */
+  const char *window_size_help; /**< @brief Window size for the heterogeneity term help description.  */
   float sm_entropy_arg;	/**< @brief Sequence matrix entropy threshold (default='0.05').  */
   char * sm_entropy_orig;	/**< @brief Sequence matrix entropy threshold original value given at command line.  */
   const char *sm_entropy_help; /**< @brief Sequence matrix entropy threshold help description.  */
@@ -98,6 +101,7 @@ struct brot_args_info
   unsigned int negative_design_scaling_given ;	/**< @brief Whether negative-design-scaling was given.  */
   unsigned int heterogenity_term_scaling_given ;	/**< @brief Whether heterogenity-term-scaling was given.  */
   unsigned int entropy_output_given ;	/**< @brief Whether entropy-output was given.  */
+  unsigned int window_size_given ;	/**< @brief Whether window-size was given.  */
   unsigned int sm_entropy_given ;	/**< @brief Whether sm-entropy was given.  */
   unsigned int lambda_given ;	/**< @brief Whether lambda was given.  */
   unsigned int beta_long_given ;	/**< @brief Whether beta-long was given.  */

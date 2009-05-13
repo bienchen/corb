@@ -102,6 +102,9 @@ scmf_rna_opt_data_set_scores (void*, Scmf_Rna_Opt_data*);
 void
 scmf_rna_opt_data_set_bp_allowed (char**, Scmf_Rna_Opt_data*);
 
+void
+scmf_rna_opt_data_set_het_window (const long, Scmf_Rna_Opt_data*);
+
 Alphabet*
 scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data*);
 

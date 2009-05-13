@@ -925,7 +925,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 
       /* write info on simulation */
       if (gfile_printf (entropy_file, "# step | T | S | S_short | S_long | "
-                        "(S_short / S_long) | k\n") < 0)
+                        "(S_short / S_long) | cooling rate\n") < 0)
       {
          error = 1;
       }
@@ -948,6 +948,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    /* perform for a certain number of steps */
    while ((!error) && (t < steps) && (T > 1.0f) && (s_cur >= s_thresh))
    {
+      /* mfprintf (stderr, "Step: %lu\n", t); */
       error = sm->pre_col_iter_hook (sco, sm);
 
       s_cur = 0.0f;

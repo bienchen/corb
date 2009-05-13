@@ -101,6 +101,24 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
       }
    }
 
+   if (args_info->window_size_given)
+   {
+      if (args_info->window_size_arg < 0)
+      {
+         THROW_ERROR_MSG ("Option \"--window_size\" requires positive integer "
+                          "as argument, found: %ld",
+                          args_info->window_size_arg);
+         return 1;         
+      }
+
+      if ((unsigned) args_info->window_size_arg > (strlen (args_info->inputs[1])/2 - 1))
+      {
+         THROW_ERROR_MSG ("Option \"--window_size\" must be less than or equal to half of the size of the input structure. Is: \"%ld\", allowed: \"%lu\"",
+                          args_info->window_size_arg, (unsigned long) strlen (args_info->inputs[1])/2 - 1);
+         return 1;
+      }
+   }
+
    return 0;
 }
 
@@ -389,6 +407,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       scmf_rna_opt_data_set_scales (brot_args->negative_design_scaling_arg,
                                     brot_args->heterogenity_term_scaling_arg,
                                     data);
+      scmf_rna_opt_data_set_het_window (brot_args->window_size_arg, data);
 
       seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
       seqmatrix_set_gas_constant (8.314472, sm);
@@ -410,7 +429,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    /* collate */
    if (!error)
    {
-      seqmatrix_print_2_stdout (2, sm);
+     /*  seqmatrix_print_2_stdout (2, sm); */
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
 
       error = seqmatrix_collate_is (0.99,
@@ -688,7 +707,7 @@ brot_main(const char *cmdline)
 
    if (retval == 0)
    {
-      seqmatrix_print_2_stdout (2, sm);
+      /* seqmatrix_print_2_stdout (2, sm); */
       mprintf ("%s\n", scmf_rna_opt_data_get_seq(sim_data));
    }   
 

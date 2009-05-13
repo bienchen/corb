@@ -1,4 +1,4 @@
-# Last modified: 2009-04-30.00
+# Last modified: 2009-05-13.11
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -40,7 +40,8 @@ corb_developer_handbook_TEXINFOS = corb.txi         \
                                    fdl_wrapper.txi  \
                                    fdl-1.3.txi
 
-corb_user_manual_TEXINFOS = corb.txi
+corb_user_manual_TEXINFOS = corb.txi \
+                            fdl-1.3.txi
 
 # create pdf and html docs along with `make all`
 all-local: pdf html

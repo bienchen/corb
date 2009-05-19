@@ -1,4 +1,4 @@
-# Last modified: 2009-05-19.22
+# Last modified: 2009-05-19.23
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -27,18 +27,19 @@ AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS) --no-split
 # please note: The version*.texi files are automatically dependencies
 info_TEXINFOS = corb-user-manual.txi corb-developer-handbook.txi
 
-corb_developer_handbook_TEXINFOS = corb.txi         \
-                                   corb-copying.txi \
-                                   impatient.txi    \
-                                   preface_dvl.txi  \
-                                   onomastics.txi   \
-                                   using_git.txi    \
-                                   coding.txi       \
-                                   licensing.txi    \
-                                   documenting.txi  \
-                                   buildsystem.txi  \
-                                   indeces.txi      \
-                                   fdl_wrapper.txi  \
+corb_developer_handbook_TEXINFOS = corb.txi          \
+                                   corb-copying.txi  \
+                                   impatient.txi     \
+                                   preface_dvl.txi   \
+                                   onomastics.txi    \
+                                   abbreviations.txi \
+                                   using_git.txi     \
+                                   coding.txi        \
+                                   licensing.txi     \
+                                   documenting.txi   \
+                                   buildsystem.txi   \
+                                   indeces.txi       \
+                                   fdl_wrapper.txi   \
                                    fdl-1.3.txi
 
 corb_user_manual_TEXINFOS = corb.txi \

@@ -1,4 +1,4 @@
-@node Symbolism & Abbreviations, Using GIT, Onomastics, Top
+@node Symbolism & Abbreviations
 @unnumbered Symbolism & Abbreviations 
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -7,3 +7,16 @@
 
 @cindex Abbreviations
 @cindex Symbols
+
+
+@menu
+* Abbreviations::               
+* Symbolism::                   
+@end menu
+
+
+@node Abbreviations, Symbolism,, Symbolism & Abbreviations
+@section Abbreviations
+
+@node Symbolism,  , Abbreviations, Symbolism & Abbreviations
+@section Symbolism

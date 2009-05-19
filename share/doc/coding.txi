@@ -532,9 +532,11 @@ can be compiled on demand. @automake{} supports lightweight testing via the
 Special @make{} Targets}, for more details on how @corb{}'s buildsystem
 simplifies testing.
 
-To make each test working
-by calling a test program without arguments, functions should be tested with
-hard coded data.
+To make a test working by calling a test program without arguments, functions
+should be tested with hard coded data.
+
+- everything in one main function
+While all functions of a module to be tested go in one main function, consider to...vorbereiten data with a function to be tested and use it with following funcs...
 
 A test program should just exit with an appropriate message on problems.
 

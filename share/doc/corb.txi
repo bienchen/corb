@@ -19,6 +19,11 @@ POSIX
 @code{\lib\}
 @end macro
 
+@c Make targets
+@macro crbtarget{target}
+@option{\target\}
+@end macro
+
 @c several CoRB libs predefined
 @macro libcrbbasic{}
 @crblib{libcrbbasic}

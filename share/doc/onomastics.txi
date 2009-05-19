@@ -1,4 +1,4 @@
-@node Onomastics, Using GIT, Preface, Top
+@node Onomastics, Symbolism & Abbreviations, Preface, Top
 @unnumbered Onomastics
 
 @c This file is part of `CoRB --- A Developers Handbook`

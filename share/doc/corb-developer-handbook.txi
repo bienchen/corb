@@ -52,7 +52,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top, corb Copying Conditions,,
+@node Top, corb Copying Conditions, (dir), (dir)
 @top @crbtitledvl{}
 @insertcopying
 @end ifnottex
@@ -62,7 +62,8 @@ Copyright @copyright{} 2009 Stefan Bienert.
 * For the impatient::           
 * Preface::                     
 * Onomastics::                  
-* Using GIT::
+* Symbolism & Abbreviations::   
+* Using GIT::                   
 * Coding::                      
 * Using Licenses::              
 * The Buildsystem::             
@@ -79,6 +80,8 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @include preface_dvl.txi
 
 @include onomastics.txi
+
+@include abbreviations.txi
 
 @include using_git.txi
 

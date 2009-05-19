@@ -527,8 +527,10 @@ You should test your code while writing.
 
 For unit tests, the functions of a module should be tested by a separate
 program, instead of placing test code in the module itself. With this, tests
-can be compiled on demand. AUTOMAKE supports this by the special CHECK
-target ref ....
+can be compiled on demand. @automake{} supports lightweight testing via the
+@crbtarget{check} target. @xref{Special Targets, Special @make{} Targets,
+Special @make{} Targets}, for more details on how @corb{}'s buildsystem
+simplifies testing.
 
 To make each test working
 by calling a test program without arguments, functions should be tested with
@@ -538,6 +540,7 @@ A test program should just exit with an appropriate message on problems.
 
 For more details on testing please refer to...
 
+everything in 1 main function
 
 
 @node Functions, Conventions and internal routines, Testing, C

@@ -7,6 +7,7 @@
 
 @cindex Abbreviations
 @cindex Symbols
+@cindex Shell
 
 
 @menu
@@ -20,3 +21,4 @@
 
 @node Symbolism,  , Abbreviations, Symbolism & Abbreviations
 @section Symbolism
+Intro@dots{}

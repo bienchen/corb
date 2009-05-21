@@ -26,7 +26,7 @@ chapter a set of language specific rules is listed.
 @end menu
 
 
-@node General rules, C, Coding, Coding
+@node General rules, C,, Coding
 @section General rules
 @cindex General rules
 This is a set of rules applying to all programming languages used in @corb{}.
@@ -532,17 +532,13 @@ can be compiled on demand. @automake{} supports lightweight testing via the
 Special @make{} Targets}, for more details on how @corb{}'s buildsystem
 simplifies testing.
 
-To make a test working by calling a test program without arguments, functions
-should be tested with hard coded data.
+With all functions of a module to be tested in the same @code{main} function,
+also use hardcoded data with the test code. 
 
-- everything in one main function
-While all functions of a module to be tested go in one main function, consider to...vorbereiten data with a function to be tested and use it with following funcs...
-
-A test program should just exit with an appropriate message on problems.
-
-For more details on testing please refer to...
-
-everything in 1 main function
+Providing a short message of what is tested before a function call is a good
+idea to help finding problems. You should use the @code{THROW_WARN_MSG} macro
+to do so. Use the @code{THROW_ERROR_MSG} macro if a check fails and exit the
+@code{main} function with the @code{EXIT_FAILURE} macro. 
 
 
 @node Functions, Conventions and internal routines, Testing, C

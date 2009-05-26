@@ -6,7 +6,7 @@
 
 @c POSIX nameplate
 @macro posix{}
-POSIX
+@acronym{POSIX}
 @end macro
 
 @c Format of CoRB tools and CoRB nameplate itself
@@ -22,6 +22,11 @@ POSIX
 @c Make targets
 @macro crbtarget{target}
 @option{\target\}
+@end macro
+
+@c C macros
+@macro crbmacro{def}
+@w{@code{\def\}}
 @end macro
 
 @c several CoRB libs predefined

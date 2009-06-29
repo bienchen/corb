@@ -1,4 +1,4 @@
-# Last modified: 2009-03-17.15
+# Last modified: 2009-06-29.13
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -207,7 +207,7 @@ AC_DEFUN([CRB_ARG_WITH_CUM],
 # convention which is hard coded. This macro is for perl scripts only.
 AC_DEFUN([CRB_ARG_WITH_PERL_PROG],
 [dnl# macro-body
- AC_REQUIRE([CRB_PROG_PERL])
+ AC_REQUIRE([CRB_PERL_PROG])
  AC_REQUIRE([AC_PROG_SED])
  CRB_ARG_WITH(m4_translit([$1],[_.],[--]),
               [whether to build $1 tool],

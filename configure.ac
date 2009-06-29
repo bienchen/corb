@@ -1,4 +1,4 @@
-# Last modified: 2009-05-13.11
+# Last modified: 2009-06-29.13
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -157,6 +157,7 @@ AC_MSG_NOTICE(
               Enable assertions:               $enable_assert
               Enable usage of POSIX threads:   $enable_pthreads
               CC:                              $CC
+              Perl:                            $PERL
               CFLAGS:                          $__crb_fmtd_cflags
            Installation directories:
               Executables:   $__crb_bindir]

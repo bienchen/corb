@@ -1,4 +1,4 @@
-# Last modified: 2009-03-17.15
+# Last modified: 2009-06-29.13
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -17,12 +17,12 @@ dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
-# CRB_PROG_PERL
+# CRB_PERL_PROG
 # -------------
-# CRB_PROG_PERL ()
+# CRB_PERL_PROG ()
 # Tries to find the path to the Perl executable and stores it with the binary
 # name in a variable PERL.
-AC_DEFUN([CRB_PROG_PERL],
+AC_DEFUN([CRB_PERL_PROG],
 [dnl# macro-body
  AC_ARG_VAR(PERL, [Path and name of the Perl executable. Used for ]
                   [substitution in Perl scripts.])

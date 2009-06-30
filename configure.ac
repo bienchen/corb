@@ -1,4 +1,4 @@
-# Last modified: 2009-06-29.13
+# Last modified: 2009-06-30.08
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -44,7 +44,7 @@ AC_PROG_GREP
 
 # development options
 # development features
-CRB_ARG_ENABLE_CUM([development], [cflags_warnings assert memcheck])
+CRB_ARG_ENABLE_CUM([development], [cflags-warnings assert memcheck])
 
 CRB_ARG_ENABLE_CFLAGS_WARNINGS_OPT
 CRB_ARG_ENABLE_MEMCHECK
@@ -153,11 +153,11 @@ AC_MSG_NOTICE(
                        emacs lisp byte code:   $with_pc_elisp
            
            Build settings:
+              Perl:                            $PERL
               Enable memory checking:          $enable_memcheck
               Enable assertions:               $enable_assert
               Enable usage of POSIX threads:   $enable_pthreads
               CC:                              $CC
-              Perl:                            $PERL
               CFLAGS:                          $__crb_fmtd_cflags
            Installation directories:
               Executables:   $__crb_bindir]

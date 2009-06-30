@@ -1,4 +1,4 @@
-# Last modified: 2009-06-29.13
+# Last modified: 2009-06-30.08
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -36,6 +36,7 @@ AC_DEFUN([CRB_PERL_PROG],
 # Check that Perl is available in the version needed by CoRB's Perl scripts.
 AC_DEFUN([CRB_CHECK_MATCHINGPERL],
 [dnl# macro-body
+  AC_REQUIRE([CRB_PERL_PROG])
   AS_IF([test -z $PERL],
         AC_MSG_ERROR([perl not found])dnl# run-if-true
        )dnl# AS_IF
@@ -45,6 +46,25 @@ AC_DEFUN([CRB_CHECK_MATCHINGPERL],
        )dnl# AS_IF
 ]dnl# macro-body 
         )
+
+# CRB_PERL_CHECK_MODULE
+# ---------------------
+# CRB_PERL_CHECK_MODULE (module[, run-if-true][, run-if-false])
+# Check wheter Perl can find a certain module.
+# Please note: We do not test for the Perl binary, we just use $PERL.
+AC_DEFUN([CRB_PERL_CHECK_MODULE],
+[dnl# macro-body
+ AC_MSG_CHECKING([for Perl module $1])
+ $PERL -e 'require $1;' 2>/dev/null
+ AS_IF([test $? -eq 0],
+       AC_MSG_RESULT(yes)
+       m4_ifvaln([$2],[$2]),dnl# run-if-true
+       AC_MSG_RESULT(no)
+       m4_ifvaln([$3],[$3])dnl # run-if-false
+      )dnl# AS_IF
+]dnl# macro-body 
+        )
+
 
 dnl# Local variables:
 dnl# eval: (add-hook 'write-file-hooks 'time-stamp)

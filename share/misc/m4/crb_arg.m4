@@ -1,4 +1,4 @@
-# Last modified: 2009-06-29.13
+# Last modified: 2009-06-30.08
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -340,7 +340,7 @@ AC_DEFUN([CRB_ARG_ENABLE_MEMCHECK],
         )
 
 # CRB_ARG_WITH_PC_ELISP
-# -----------------------
+# ---------------------
 # CRB_ARG_WITH_PC_ELISP ()
 # Create an option (--with-pc-elisp) to indicate whether to
 # precompile elisp code. Sets an automake conditional (AM_CONDITIONAL())

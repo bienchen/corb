@@ -37,12 +37,12 @@
 @node Symbolism,  , Abbreviations, Symbolism & Abbreviations
 @section Symbolism
 This section describes notations, symbols and exemplary systems used in our
-explanations. 
+explanations.
 
 
 @menu
-* Directory Paths::             
-* Shell Examples::              
+* Directory Paths::
+* Shell Examples::
 @end menu
 
 

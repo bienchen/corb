@@ -658,7 +658,7 @@ have to use a pointer to retrieve dedicated codes in its parameter list.
 Another mechanism for reporting problems is provided via
 @code{THROW_WARN_MSG()}. Instead of @samp{ERROR}, the message will be prefixed
 by @samp{WARNING}. Hence, this is to be used on non-fatal errors, e.g.@: format
-violations in input files which are fixed by @corb{}. 
+violations in input files which are fixed by @corb{}.
 
 The exact output of the message functions depends on the configuration of
 @corb{}. If the @command{configure} script is invoked with

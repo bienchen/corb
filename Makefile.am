@@ -1,4 +1,4 @@
-# Last modified: 2009-01-29.17
+# Last modified: 2009-06-23.22
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -22,31 +22,6 @@
 ACLOCAL_AMFLAGS = -I share/misc/m4
 
 SUBDIRS=share src 
-
-#  One target to rule them all, 
-#    one target to check them,
-#  one target to verify them all,
-# and before the commit find them.
-# Or in other words: A check to be performed before commiting anyting to git
-check-commit:
-	@echo "[ ============= Resetting to a virginal state ============= ]"
-	@make -s maintainer-clean
-	@echo "[ ===================== Bootstrapping ===================== ]"
-	@$(top_srcdir)/bootstrap
-	@echo "[ ============== Configuring for Development ============== ]"
-	@$(top_srcdir)/configure --with-development --enable-development
-	@echo "[ ================= Running  \`make check\` ================= ]"
-	@make -s check
-	@echo "[ =============== Running  \`make distcheck\` =============== ]"
-	@make -s distcheck
-	@echo "[ ====================== Cleaning up ====================== ]"
-	@make -s clean
-	@echo "[ ============ Configuring  Productive Version ============ ]"
-	@$(top_srcdir)/configure
-	@echo "[ ================= Running  \`make check\` ================= ]"
-	@make -s check
-	@echo "[ =============== Running  \`make distcheck\` =============== ]"
-	@make -s distcheck
 
 
 ## Local variables:

@@ -18,7 +18,75 @@
 
 @node Abbreviations, Symbolism,, Symbolism & Abbreviations
 @section Abbreviations
+@cindex Abbreviations
+@table @abbr
+@item @brot{}
+@brotexp{}
+
+@item @corb{}
+@corbexp{}
+
+@item @erde{}
+@erdeexp{}
+
+@item @posix{}
+@posixexp{}
+@end table
+
 
 @node Symbolism,  , Abbreviations, Symbolism & Abbreviations
 @section Symbolism
-Intro@dots{}
+This section describes notations, symbols and exemplary systems used in our
+explanations. 
+
+
+@menu
+* Directory Paths::             
+* Shell Examples::              
+@end menu
+
+
+@node Directory Paths, Shell Examples, Symbolism, Symbolism
+@subsection Directory Paths
+For examples referring to directories, we keep up with the usual @posix{}
+syntax:
+
+@itemize @bullet
+@item
+On a path through a branch of the file system, directories and subdirectories
+are delimited by @file{/}.
+
+@item
+@file{/} at the start of a path points to the file system's root, the topmost
+directory.
+
+@item
+The tilde (@file{~}) always points to your home directory.
+
+@item
+For arbitrary paths, and paths depending on your system, we use @file{@dots{}}
+as an indicator. E.g.@: @file{~/@dots{}/corb} describes the path in your home
+directory which ends in your local installation directory of @corb{}.
+@end itemize
+
+
+@node Shell Examples,  , Directory Paths, Symbolism
+@subsection Shell Examples
+When referring to shell commands, we use a simple notation. Our shell prompt
+starts with a @samp{$} and is finished by @samp{>}. In between, the current path
+is placed, following the former explanations. Accordingly,
+@example
+$ ~ >
+@end example
+@noindent shows a prompt waiting for commands to be executed in your
+home directory.
+
+If a command exceeds line width, the line break is escaped by @samp{\}.
+Until the command is fully expanded, upcoming lines start with @samp{>} instead
+of a full prompt.
+@example
+$ ~/@dots{}/corb/src > gcc -g -O2 -D_XOPEN_SOURCE=600 -o corb crb_cmdline.o \
+> corb.o libcrbapps/libcrbapps.a libcrbbrot/libcrbbrot.a \
+> libcrbrna/libcrbrna.a libcrbbasic/libcrbbasic.a \
+> libcrbfallback/libcrbfallback.a -lm
+@end example

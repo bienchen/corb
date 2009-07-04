@@ -25,7 +25,7 @@ because you are already reading this manual.
 Clone the repository:
 @example
 
-$ ~> git clone ssh://[user@@]host_of_reposito.ry/path/to/corb.git/
+$ ~ > git clone ssh://[user@@]host_of_reposito.ry/path/to/corb.git/
 
 @end example
 

@@ -539,22 +539,29 @@ macro to do so. Use the @crbmacro{THROW_ERROR_MSG} macro if a check fails and
 exit the @code{main} function with the @crbmacro{EXIT_FAILURE} macro. 
 
 
-ab hier
-
 @node Functions, Conventions and internal routines, Testing, C
 @subsection Functions
 @cindex Functions
 @itemize @bullet
-@item Function headings
+@item Function names
 
-don't use _ at the start of a function. _ is very often system...
+Do not start function names with @samp{_}. @samp{_} is usually used in the
+namespace of system libraries. You should use the module name with an
+underscore as a prefix to your function names. For example all functions in the
+@code{rna} module of @libcrbrna{} start with @samp{rna_}.
+
+For static functions, you should not use the module name as a prefix but just
+@samp{s_}.
+
 
 @item Interfaces
 @cindex Interfaces
 
 
-Keep the definition of the interface minimal. If you have a C file call
-@file{foo.c}, then put the public interface in @file{foo.h}.
+Keep the definition of the interface minimal. If you have a C file called
+@file{foo.c}, then put the public interface in @file{foo.h}. For libraries,
+gather all interfaces in a file @file{crb@i{library}.h} via including their
+separate definition files. @xref{Include files}, for details.
 
 
 @item Function declarations & prototypes
@@ -563,7 +570,8 @@ Keep the definition of the interface minimal. If you have a C file call
 
 
 The function type goes on its own line. If the parameter list exceeds one line,
-all but the first go on their own line. The opening brace is on its own line:
+all but the first go on their own line. Opening and closing braces are on their
+own lines without indent:
 @example
 int
 function_foo (int arg1,
@@ -571,7 +579,9 @@ function_foo (int arg1,
               int arg1098)
 @{
   @dots{}
+@}
 @end example
+
 
 @item @code{static} Functions
 @cindex @code{static}
@@ -586,25 +596,27 @@ it. Instead, you should define it once, before it is used.
 
 In other words, do
 @example
-static int function (int arg) @{ @dots{} @}
+static int s_function (int arg) @{ @dots{} @}
 @dots{}
-b = function (a);
+b = s_function (a);
 @end example
 @noindent
 Rather than
 @example
-static int function (int arg);
+static int s_function (int arg);
 @dots{}
-static int function (int arg) @{ @dots{} @}
+static int s_function (int arg) @{ @dots{} @}
 @dots{}
-b = function (a);
+b = s_function (a);
 @end example
+@noindent
 Obviously this rule has to be broken if there is mutual recursion.
 
 This rule exists for consistency (it is used in every file) and to follow the
 principle that we should write things the minimum number of times and lastly,
 to ensure that whenever possible, a compiler is given all the information about
 a static function by the time it is used.
+
 
 @item Return values and errors
 @cindex Errors
@@ -613,19 +625,49 @@ a static function by the time it is used.
 @cindex @code{return}
 
 
-Generally, the C functions do not print out too much information in case of
-error. They must, however, return an error code. The C functions should use
+Generally, C functions in @corb{} do not print out too much information in case
+of error. They must, however, return an error code. The C functions should use
 @code{THROW_ERROR_MSG()} to pass on the result of @code{strerror()}/
-@code{perror()}. Typically, this means the lower level C code will write
-something like @samp{no such file or directory}, but it is up to the calling
-function to decide whether or not to go on.
+@code{perror()} as early as possible. Typically, this means the lower level C
+code will write something like @samp{no such file or directory}, but it is up
+to the calling function to decide whether or not to go on.
 
 A function should return 0 if it is happy and a special value on problems. All
-error codes of a module should be defined in an @code{enum}eration in its header
-file.
+error codes should be defined in a per module manner. Use
+@example
+enum @i{module}_retvals
+@{
+  ERR_@i{MODULE}_FOO = 1,      /* Problems on fooing. */
+  ERR_@i{MODULE}_BAR,          /* Bar was not given in correct format. */
+  @enddots{},
+@};
+@end example
+@noindent
+at the beginning of your module header to enumerate codes automatically. Since
+only 0 has a special meaning, true numbers are arbitrary. For the @samp{Foo}
+and @samp{Bar} part of error codes, there is no simple rule on how they should
+be assembled. One neat idea is to shorten descriptive bits of error codes to a
+form where they can be reused throughout the functions of a single module.
+E.g.@: something like @code{ERR_@i{MODULE}_ALLOC} should be enough to describe
+memory allocation problems everywhere in the module.
 
-Error codes should look like @enddots{}.
+A more complicated scenario concerning error values are functions returning
+pointers. In the worst case, a function which can fail in several ways, you
+have to use a pointer to retrieve dedicated codes in its parameter list.
+
+Another mechanism for reporting problems is provided via
+@code{THROW_WARN_MSG()}. Instead of @samp{ERROR}, the message will be prefixed
+by @samp{WARNING}. Hence, this is to be used on non-fatal errors, e.g.@: format
+violations in input files which are fixed by @corb{}. 
+
+The exact output of the message functions depends on the configuration of
+@corb{}. If the @command{configure} script is invoked with
+@option{--enable-assert}, file and line where an error occurred will be
+reported. See @dots{} for more information on configuring @corb{}.
+
 @end itemize
+
+ab hier
 
 @node Conventions and internal routines, Memory allocation philosophy and responsibility, Functions, C
 @subsection Functions Conventions and internal routines
@@ -861,12 +903,12 @@ header. But lets just say this is OK.
 
 -------------------------
 
-- function names: static for modules: precede by 's': s_gfile
-- create macro for C macros
-
 - if possible: calc no. from other consts
 - one reason for memmegr: valgrind/ efence not available on all systems
+- exit states: EXIT_SUCCESS, EXIT_FAILURE
+- global vars?
 
 naming scheme
 - everything lc/ uc?
 - name for enums?
+- separete section naming or mentioned where it applies?

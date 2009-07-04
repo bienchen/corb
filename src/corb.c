@@ -121,10 +121,10 @@ int main(int argc,char *argv[])
       retval = crb_cmdline_parser_required(&crb_args, get_progname());
    }   
 
-   /* postprocess parsed options */
+   /* post-process parsed options */
    if (crb_args.inputs_num != 1)
    {
-      THROW_ERROR_MSG ("Exactly one applicion string is needed, try "
+      THROW_ERROR_MSG ("Exactly one application string is needed, try "
                        "`%s --help` for more information.",
                        get_progname());
       retval = 1;
@@ -136,8 +136,8 @@ int main(int argc,char *argv[])
       tool = parse_toolname (crb_args.inputs[0]);
       if (tool == NULL)
       {
-         THROW_ERROR_MSG ("No applicion name found in string provided: \"%s\", "
-                          "try %s --help` for more information.",
+         THROW_ERROR_MSG ("No application name found in string provided: "
+                          "\"%s\", try %s --help` for more information.",
                           crb_args.inputs[0], get_progname());
          retval = 1;
       }

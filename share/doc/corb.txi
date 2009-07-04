@@ -9,6 +9,11 @@
 @acronym{POSIX}
 @end macro
 
+@c POSIX expanded
+@macro posixexp{}
+Portable Operating System Interface
+@end macro
+
 @c Format of CoRB tools and CoRB nameplate itself
 @macro crbtool{tool}
 @sansserif{\tool\}
@@ -34,6 +39,10 @@
 @crblib{libcrbbasic}
 @end macro
 
+@macro libcrbrna{}
+@crblib{libcrbrna}
+@end macro
+
 @c several CoRB tools predefined
 @c convention: macro names may only contain small letters, no digits, no special
 @c             chars
@@ -43,9 +52,29 @@
 @crbtool{CoRB}
 @end macro
 
+@c CoRB expanded
+@macro corbexp{}
+Collection of RNAanalysis Binaries
+@end macro
+
 @c BROT nameplate
 @macro brot{}
 @crbtool{BROT}
+@end macro
+
+@c BROT expanded
+@macro brotexp{}
+Basic RNA Optimisation Tool
+@end macro
+
+@c ER2DE nameplate
+@macro erde{}
+@crbtool{ER2DE}
+@end macro
+
+@c ER2DE expanded
+@macro erdeexp{}
+Evaluating RNA 2D energy
 @end macro
 
 @c GCC nameplate

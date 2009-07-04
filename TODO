@@ -2,7 +2,7 @@ Copyright (C) 2008 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2009-01-25.21
+Last modified: 2009-06-06.01
 
 Build system
 ------------
@@ -57,6 +57,10 @@ Build system
 - creation of develdocs should depend on --enable-/ --with-development?
     - would shorten compilation time/ no need to run scripts to fetch doc info
       from source
+- for Perl Scripts: in devel mode: enable warnings/ strict
+- Perl: Productive: skip warnings/ strict to speed up scripts (less checking)
+- do we gain speed from commenting all my declarations out?
+- Perl devel/ productive mode also applies to Perl Modules!
 
 Emacs
 -----

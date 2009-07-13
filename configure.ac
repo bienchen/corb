@@ -1,4 +1,4 @@
-# Last modified: 2009-06-30.08
+# Last modified: 2009-07-13.15
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -133,7 +133,10 @@ AC_CONFIG_FILES([
 AC_OUTPUT
 
 
-eval __crb_bindir=`eval "echo $bindir"`
+CRB_EVAL_VAR([__crb_bindir],  [$bindir])
+CRB_EVAL_VAR([__crb_infodir], [$infodir])
+CRB_EVAL_VAR([__crb_pdfdir],  [$pdfdir])
+CRB_EVAL_VAR([__crb_htmldir], [$htmldir])
 
 CRB_CFLAGS_CREATE_LIST([__crb_fmtd_cflags],
                        [                                               ])
@@ -160,7 +163,10 @@ AC_MSG_NOTICE(
               CC:                              $CC
               CFLAGS:                          $__crb_fmtd_cflags
            Installation directories:
-              Executables:   $__crb_bindir]
+              Executables:     $__crb_bindir
+              Manual (pdf):    $__crb_pdfdir
+              Manual (info):   $__crb_infodir
+              Manual (html):   $__crb_htmldir]
             )dnl# AC_MSG_NOTICE
  
 dnl# Local variables:

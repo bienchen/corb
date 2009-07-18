@@ -4,6 +4,10 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
+@c xxx make everything used from the manuals themselves links?
+@c xxx like @libcrbbasic{} compiled points to docu of libcrbbasic?
+@c xxx also for functions?
+
 @c POSIX nameplate
 @macro posix{}
 @acronym{POSIX}
@@ -125,8 +129,8 @@ This is the @corb{} Development Handbook (version @value{VERSION},
 
 @c copyright line for the user manual
 @macro crbcpylineuse{}
-This manual is the @corb{} User Manual (version @value{VERSION},
-@value{UPDATED}).
+This manual is for @corb{} (version @value{VERSION}, @value{UPDATED}), a
+Collection of RNAanalysis Binaries.
 @end macro
 
 @c permission statement for page 2 of a manual

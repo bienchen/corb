@@ -1,0 +1,57 @@
+@node Preface, Concept Index, corb Copying Conditions, Top
+@unnumbered Preface
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@corb{} is an ever growing collection of tools for the analysis of RNA
+molecules. This document is an ever growing description of the tools in, the
+data formats accepted by and script invocations of  @corb{}. Hence, you are
+reading an user's manual, @emph{not} a developer's
+guide.
+
+This handbook tries to be holistic in its description of the tools adding up to
+@corb{}. But it does not claim to be free of all errors. If you stumble upon
+some non-up-to-date information, spelling mistakes, errors in grammar,
+conceptual problems or what ever might be wrong, please contact the author. Of
+course, you are also invited to help us with the manual and contribute, instead
+of just notifying us on problems. To do so, you can fix problems in plain text
+and send it to the author, or ask for help on setting up the @corb{}
+development environment to apply your changes to the manual, immediately.
+
+The intention of this document is to be read, not to be ignored in large parts. 
+Therefore, before you ask us for personal assistance, you should really try to
+get the most out of this manual. If you still see problems or something is not
+working as intended, after reading relevant sections, you probably found a bug.
+This is definitively a ticket for getting into close contact@dots{} and we are
+always enjoying work on complicated problems.
+
+The content of this manual is basically structured into three parts: The
+installation, documentation of each single tool and general information which
+is relevant for all tools together. The installation is described for the
+source-distribution, but may contain useful information on files coming with
+@corb{}, in general. The chapter describing tools only includes those from the
+``collection'' and nothing from the development side, which has its very own
+handbook to be found in the source package. In the last major section, you will
+find topics like file formats, which @corb{} is able to talk to.
+
+Now for a few last words on this manual being a manual written mostly by the
+developers of the @corb{} software. To a programmer, writing a manual always
+means extra work. Instead of writing, one could also invest time into
+implementing the next cool bit of software. In short words, arranging natural
+language into a handbook is just not the natural habitat for peoples thinking
+in 1's and 0's. Next, there is the problem of detail. When you write a program,
+you know all the effects of the options down to the code level. But how much
+detail should be passed to a user avoiding boredom or to excessive demands?
+
+Therefore, do not get grumpy with us, if you find anything in the manual not
+the way you like it. There is one unbeatable argument against complains, which
+you probably expected to surface somewhere for a GPL project: @corb{} is free. 
+But not as ``free'' as in ``free beer'', more like ``feel free to change''.
+This means, if you dislike something in the manual, start contributing.  Most
+programmers will gladly introduce you to more details of their work if you
+promise to cast it into a well written manual.
+
+@sp 2
+@dots{} and now have fun with @corb{}, a basket full of RNA related tools.

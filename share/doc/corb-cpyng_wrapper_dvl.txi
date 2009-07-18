@@ -1,0 +1,8 @@
+@node corb Copying Conditions, For the impatient, Top, Top
+@unnumbered @corb{} Copying Conditions
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2009 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@include corb-copying.txi

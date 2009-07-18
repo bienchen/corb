@@ -1,4 +1,4 @@
-# Last modified: 2009-05-19.23
+# Last modified: 2009-07-18.00
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -27,22 +27,28 @@ AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS) --no-split
 # please note: The version*.texi files are automatically dependencies
 info_TEXINFOS = corb-user-manual.txi corb-developer-handbook.txi
 
-corb_developer_handbook_TEXINFOS = corb.txi          \
-                                   corb-copying.txi  \
-                                   impatient.txi     \
-                                   preface_dvl.txi   \
-                                   onomastics.txi    \
-                                   abbreviations.txi \
-                                   using_git.txi     \
-                                   coding.txi        \
-                                   licensing.txi     \
-                                   documenting.txi   \
-                                   buildsystem.txi   \
-                                   indeces.txi       \
-                                   fdl_wrapper.txi   \
+corb_developer_handbook_TEXINFOS = corb.txi                   \
+                                   corb-cpyng_wrapper_dvl.txi \
+                                   corb-copying.txi           \
+                                   impatient.txi              \
+                                   preface_dvl.txi            \
+                                   onomastics.txi             \
+                                   abbreviations.txi          \
+                                   using_git.txi              \
+                                   coding.txi                 \
+                                   licensing.txi              \
+                                   documenting.txi            \
+                                   buildsystem.txi            \
+                                   indeces-dvl.txi            \
+                                   fdl_wrapper.txi            \
                                    fdl-1.3.txi
 
-corb_user_manual_TEXINFOS = corb.txi \
+corb_user_manual_TEXINFOS = corb.txi                   \
+                            corb-cpyng_wrapper_use.txi \
+                            corb-copying.txi           \
+                            preface_use.txi            \
+                            indeces-use.txi            \
+                            fdl_wrapper.txi            \
                             fdl-1.3.txi
 
 # create pdf and html docs along with `make all`
@@ -54,7 +60,8 @@ install-data-hook:
 	@$(MAKE) $(AM_MAKEFLAGS) install-pdf install-html
 
 # distribute html and pdf docs along with this package
-EXTRA_DIST = corb-developer-handbook.pdf corb-developer-handbook.html
+EXTRA_DIST = corb-developer-handbook.pdf corb-developer-handbook.html \
+             corb-user-manual.pdf corb-user-manual.html
 
 
 ## Local variables:

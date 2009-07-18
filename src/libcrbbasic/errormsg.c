@@ -437,7 +437,7 @@ print_fmt_msg (const char* type,
    {
       if (retval > 0)
       {
-         retval = mfprintf (stderr,":");
+         retval = mfprintf (stderr,": "); /* SB-13-07-09: added wspace */
          CHK_RETVAL; 
       }
       retval = mvfprintf (stderr, format, ap);
@@ -448,7 +448,7 @@ print_fmt_msg (const char* type,
    if ((format == NULL)
        ||((format[0] != '\0')&&(format[strlen(format) - 1] == ':')))
    {
-      retval = mfprintf (stderr, "%s", strerror(errno));
+      retval = mfprintf (stderr, " %s", strerror(errno)); /* SB-13-07-09: ws */
       CHK_RETVAL;
    }
    retval = mfprintf (stderr, "\n");

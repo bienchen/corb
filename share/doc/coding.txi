@@ -663,11 +663,11 @@ violations in input files which are fixed by @corb{}.
 The exact output of the message functions depends on the configuration of
 @corb{}. If the @command{configure} script is invoked with
 @option{--enable-assert}, file and line where an error occurred will be
-reported. See @dots{} for more information on configuring @corb{}.
+reported.
+@c xxx See @dots{} for more information on configuring @corb{}.
 
 @end itemize
 
-ab hier
 
 @node Conventions and internal routines, Memory allocation philosophy and responsibility, Functions, C
 @subsection Functions Conventions and internal routines
@@ -678,37 +678,44 @@ ab hier
 @itemize @bullet
 @item @code{printf()}
 
-@item @code{fprintf()} (At least not to @file{stderr}.)
+@item @code{fprintf()}
 
 @item @code{malloc()}
-
 @end itemize
 
-There are some general areas to think about.
+There are some general areas to think about:
 @itemize @bullet
-
 @item Printing
 
 Functions should not print to @file{stdout} or @file{stderr} directly.
-Everything should go via @code{THROW_ERROR_MSG()} or @code{mprintf()} or
-@code{mfprintf()}.
+Everything should go via @code{THROW_ERROR_MSG()}, @code{THROW_WARN_MSG()} or
+@code{mprintf()}.
 
-If you have to print, please refer to @dots{} documentation of @libcrbbasic{}.
+@c xxx point to docu of libcrbbasic here, either divided hints for errormsg and
+@c xxx mprintf or a general pointer to libcrbbasic
 
 @item Memory allocation and @code{malloc}
 @cindex @code{malloc}
 
 
 Do not call @code{malloc()}. Instead, call the macro @code{XMALLOC()} or any
-other from @corb{}'s own memory manager in @libcrbbasic{}. This takes exactly
-the same arguments as @code{malloc()}, but expands to print out the file and
-line number if @code{malloc()} fails.
+other from @corb{}'s own memory manager in @libcrbbasic{}. @code{XMALLOC()}
+takes exactly the same arguments as @code{malloc()}, but expands to print out
+the file and line number if @code{malloc()} fails, in case @corb{} was
+configured with @option{--enable-assert}. If the @command{configure} script was
+invoked with @option{--enable-memcheck}, you also get a simple memory-leak
+checker build into @corb{}. Every time a block, allocated using the
+@code{XMALLOC()}-family, was not freed at the end of run-time, you will be
+notified by a message like:
+@example
+WARNING:memmgr.c:366: Memory block of size 800000 not freed, allocated at "test_memmgr.c" line 131.
+@end example
 
-For more information on memory handling please refer to @dots{} doc of
-@libcrbbasic{}
-
+@c xxx link to memory manager stuff
+@c xxx mention: ``see foo for configure stuff'' in the end for both options: Line/ file and memmgr.
 @end itemize
 
+@c ab hier
 
 @node Memory allocation philosophy and responsibility, File handling, Conventions and internal routines, C
 @subsection Memory allocation philosophy and responsibility
@@ -719,7 +726,12 @@ in @corb{} requires constructors wrapped around object allocation. You also must
 declare an appropriate routine like @code{foo_delete()}. This routine must clean
 up any occupied memory.
 
-For more information on memory handling please refer to @dots{} doc of
+@c - to avoid leaks
+@c - own leak checker
+@c - only basic functionality
+@c - works by...but already used in corb, so for tools already in
+
+@c For more information on memory handling please refer to @dots{} doc of
 @libcrbbasic{}
 
 @node File handling, Conditional compilation, Memory allocation philosophy and responsibility, C

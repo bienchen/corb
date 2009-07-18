@@ -4,13 +4,14 @@
 @c See the file fdl-1.3.txi for copying conditions.
 @c %**start of header
 @setfilename corb-user-manual.info
+@documentlanguage en
 @include version-crb-use.texi
 @include corb.txi
 @settitle @crbtitleuse{} @value{VERSION}
 @setchapternewpage odd
-@c @afourpaper
+@afourpaper
 @c @afivepaper
-@afourlatex
+@c @afourlatex
 @c @afourwide
 @c %**end of header
 
@@ -19,7 +20,7 @@
 @copying
 @crbcpylineuse
 
-Copyright @copyright{} 2008 Stefan Bienert.
+Copyright @copyright{} 2009 Stefan Bienert.
 
 @crbfdlpermission{}
 @end copying
@@ -45,28 +46,42 @@ Copyright @copyright{} 2008 Stefan Bienert.
 @oddfooting  @| @| @thispage
 
 @c So the toc is printed at the start.
+@ifnottex
+@shortcontents
+@end ifnottex
 @contents
-
+@c @setchapternewpage odd set this when we have at least two pages of toc
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top
+@node Top, corb Copying Conditions, (dir), (dir)
 @top @crbtitleuse{}
-
-@crbcpylineuse
+@insertcopying
 @end ifnottex
 
 @menu
-* GNU Free Documentation License::
+* corb Copying Conditions::     
+* Preface::                     
+* Concept Index::               
+* GNU Free Documentation License::  
 @end menu
 
-
 @c  V: Body
+@include corb-cpyng_wrapper_use.txi
 
+@include preface_use.txi
+
+@c Intro
+
+@c Installation
+
+@c Tools
+
+@c File Formats
 
 @c VI: End
-@node GNU Free Documentation License
-@appendix GNU Free Documentation License
-@include fdl-1.3.txi
+@include indeces-use.txi
+
+@include fdl_wrapper.txi
 
 @bye

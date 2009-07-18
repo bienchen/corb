@@ -46,13 +46,15 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @oddfooting  @| @| @thispage
 
 @c So the toc is printed at the start.
+@ifnottex
 @shortcontents
+@end ifnottex
 @contents
 @c @setchapternewpage odd set this when we have at least two pages of toc
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top, corb Copying Conditions, (dir), (dir)
+@node Top, corb Copying Conditions,,
 @top @crbtitledvl{}
 @insertcopying
 @end ifnottex
@@ -73,7 +75,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @end menu
 
 @c  V: Body
-@include corb-copying.txi
+@include corb-cpyng_wrapper_dvl.txi
 
 @include impatient.txi
 
@@ -94,7 +96,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @include documenting.txi
 
 @c VI: End
-@include indeces.txi
+@include indeces-dvl.txi
 
 @include fdl_wrapper.txi
 

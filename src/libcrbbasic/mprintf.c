@@ -49,6 +49,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
 /* #include <errno.h> */
 #include <libcrbfallback/snprintf.h>
 #include "inc_strg.h"
@@ -72,6 +73,8 @@ __attribute__ ((format (printf, 2, 0)))
 mvfprintf (FILE *stream, const char *format, va_list ap)
 {
    int retval;
+
+   assert (stream);
 
    retval = vfprintf (stream, format, ap);
 
@@ -168,6 +171,8 @@ mvsprintf (char *str, const char *format, va_list ap)
 {
    int retval;
 
+   assert (str);
+
    retval = vsprintf (str, format, ap);
 
    return retval;
@@ -222,6 +227,8 @@ __attribute__ ((format (printf, 3, 0)))
 mvsnprintf (char *str, const size_t size, const char *format, va_list ap)
 {
    int retval;
+
+   assert (str);
 
    retval = vsnprintf (str, size, format, ap);
 

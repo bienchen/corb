@@ -890,9 +890,9 @@ xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
  * @params[in] ... List of sizes of the dimensions (@c size_t).
  */
 void*
-xmalloc_nd (const size_t size __attribute__((unused)),
-            const char* file __attribute__((unused)),
-            const int line __attribute__((unused)),
+xmalloc_nd (const size_t size,
+            const char* file,
+            const int line,
             const size_t n, ...)
 {
    size_t i, j, part, idx, curr_dim;

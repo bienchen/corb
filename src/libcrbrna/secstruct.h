@@ -52,6 +52,11 @@ extern "C" {
 /*#include "rna.h"*/
 #include "nn_scores.h"
 
+/* error numbers */
+enum secstruct_retvals{
+   ERR_SCSTRCT_ALLOC = 1,      /* (re)allocation problems */
+};
+
 typedef struct SecStruct SecStruct;
 
 
@@ -266,19 +271,34 @@ secstruct_calculate_DG (const char*, const NN_scores*, const SecStruct*);
 /*********************************   Output   *********************************/
 
 void
+secstruct_fprintf_i_stack (FILE*, const unsigned long, const SecStruct*);
+
+void
 secstruct_fprintf_stacks (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_i_hairpin (FILE*, const unsigned long, const SecStruct*);
 
 void
 secstruct_fprintf_hairpins (FILE*, const SecStruct*);
 
 void
+secstruct_fprintf_i_bulge (FILE*, const unsigned long, const SecStruct*);
+
+void
 secstruct_fprintf_bulges (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_i_internal (FILE*, const unsigned long, const SecStruct*);
 
 void
 secstruct_fprintf_internals (FILE*, const SecStruct*);
 
 void
 secstruct_fprintf_external (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_i_multiloop (FILE*, const unsigned long, const SecStruct*);
 
 void
 secstruct_fprintf_multiloops (FILE*, const SecStruct*);

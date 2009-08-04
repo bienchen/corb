@@ -302,7 +302,9 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
    assert (row < sm->rows);
 
    /* fix site */
-   sm->fixed_sites[(col / CHAR_BIT)] |= 1 << (col % CHAR_BIT);
+
+   sm->fixed_sites[(col / CHAR_BIT)] = 
+      (char) (sm->fixed_sites[(col / CHAR_BIT)] | (1 << (col % CHAR_BIT)));
 
    /* set everything to 0 */
    for (i = 0; i < sm->rows; i++)
@@ -685,7 +687,7 @@ seqmatrix_collate_is (const float fthresh,
                       const float b_short,
                       const float sc_thresh,
                       const float c_min,
-                      const float c_scale,
+                      /*const float c_scale,*/
                       const float lambda,
                       const float s_thresh,
                       SeqMatrix* sm,
@@ -737,7 +739,7 @@ seqmatrix_collate_is (const float fthresh,
                                            b_short,
                                            sc_thresh,
                                            c_min,
-                                           c_scale,
+                                           /*c_scale,*/
                                            lambda,
                                            s_thresh,
                                            NULL,
@@ -875,9 +877,9 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          const float t_init,
                          const float b_long,
                          const float b_short,
-                         const float sc_thresh __attribute__((unused)),
+                         const float sc_thresh,
                          const float c_min,
-                         const float c_scale,
+/*                         const float c_scale __attribute__((unused)),*/
                          const float lambda,
                          const float s_thresh,
                          GFile* entropy_file,
@@ -889,7 +891,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
    unsigned long i, j;          /* iterator */
    float col_sum;
    float T = t_init;            /* current temperature */
-   float c_rate = 1.0f;         /* cooling rate */
+   float c_rate = 0.999999f;/* SB 090715 for testing 1.0f; */         /* cooling rate */
    float s_cur/* , s_last */;         /* matrix entropy */
    /* unsigned long s_count; */       /* count times s did not change */
    /* unsigned long s_dropout;  */    /* convergence criterion */
@@ -1006,15 +1008,26 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          /*if ((s_short + 0.1) < s_long)*/
          {
             /* entropy changes to fast, slow down */
+            /*mfprintf (stderr, "SLOWDOWN: %.6f -> ", c_rate);*/
             c_rate = sqrtf (c_rate);
+            if (c_rate >= 1.000000f)
+            {
+               c_rate = 0.999999f;
+            }
+            /*mfprintf (stderr, "%.6f (%.6f; %.6f; %.6f; %.6f)\n", c_rate, T,
+              s_cur, s_short, s_long);*/
          }
          else
          {
             /* small changes, speed up */
+            /*mfprintf (stderr, "SPEEDUP:  %.6f -> ", c_rate);*/
             if (c_rate > c_min)
             {
-               c_rate = c_rate * (c_rate * c_scale);
+               /* SB 090714 for testing c_rate = c_rate * (c_rate * c_scale);*/
+               c_rate = c_rate * c_rate; /* SB 090714 for testing */
             }
+            /*mfprintf (stderr, "%.6f (%.6f; %.6f; %.6f; %.6f)\n", c_rate, T,
+              s_cur, s_short, s_long);*/
          }
 
          /* entropy strategies: when converged/ only small changes,

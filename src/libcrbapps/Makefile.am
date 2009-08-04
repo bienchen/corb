@@ -1,4 +1,4 @@
-# Last modified: 2009-01-29.17
+# Last modified: 2009-07-21.14
 
 ## Copyright (C) 2008 Stefan Bienert
 ##
@@ -38,7 +38,9 @@ libcrbapps_a_SOURCES =  \
 	fold.c          \
         fold_cmdline.c  \
         er2de.c         \
-        er2de_cmdline.c
+        er2de_cmdline.c \
+        salat.c         \
+        salat_cmdline.c
 
 noinst_HEADERS =        \
 	brot_cmdline.h  \
@@ -46,8 +48,9 @@ noinst_HEADERS =        \
 	fold_cmdline.h  \
         fold.h          \
         er2de.h         \
-        er2de_cmdline.h
-
+        er2de_cmdline.h \
+        salat.h         \
+        salat_cmdline.h
 
 # Do we need testing here?
 

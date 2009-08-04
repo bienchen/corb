@@ -936,7 +936,9 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
 
    alpha_size = alphabet_size (this->sigma);
 
-   rna_secstruct_get_geometry_hairpin(&start, &end, &size, hairpin, this->rna);
+   secstruct_get_geometry_hairpin(&start, &end, &size, hairpin,
+                                  rna_get_secstruct(this->rna));
+
 /*  mfprintf (stdout, "process hairpin loop %lu, %c %.2f: %lu - %lu | %lu\n", */
 /*              hairpin, alphabet_no_2_base(row, this->sigma), */
 /*              t, start, end, size); */
@@ -1061,15 +1063,17 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
    char bpp, bi, bj;
    float cell5p, cell3p;
    float p5p, p3p;                    /* probability */
+   SecStruct* structure;
 
    /* penalty for non gc basepair initiating a stem */
-   n = rna_secstruct_get_noof_stems_extloop (this->rna);
+   structure = rna_get_secstruct (this->rna);
+   n = secstruct_get_noof_stems_extloop (structure);
 
    for (k = 0; k < n; k++)
    {
       cell5p = 0.0f;
       cell3p = 0.0f;
-      rna_secstruct_get_i_stem_extloop (&p5pos, &p3pos, k, this->rna);
+      secstruct_get_i_stem_extloop (&p5pos, &p3pos, k, structure);
 
       /* for all possible closing bp */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
@@ -1097,14 +1101,14 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
    }
 
    /* 5' dangle */
-   n = rna_secstruct_get_noof_5pdangles_extloop (this->rna);
+   n = secstruct_get_noof_5pdangles_extloop (structure);
    for (k = 0; k < n; k++)
    {
       cell5p = 0.0f;
       cell3p = 0.0f;
 
-      rna_secstruct_get_i_5pdangle_extloop (&p5pos, &p3pos, &fbpos, k,
-                                            this->rna);
+      secstruct_get_i_5pdangle_extloop (&p5pos, &p3pos, &fbpos, k,
+                                        structure);
 
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
@@ -1144,14 +1148,14 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
    }
 
    /* 3' dangle */
-   n = rna_secstruct_get_noof_3pdangles_extloop (this->rna);
+   n = secstruct_get_noof_3pdangles_extloop (structure);
    for (k = 0; k < n; k++)
    {
       cell5p = 0.0f;
       cell3p = 0.0f;
 
-      rna_secstruct_get_i_3pdangle_extloop (&p5pos, &p3pos, &fbpos, k,
-                                            this->rna);
+      secstruct_get_i_3pdangle_extloop (&p5pos, &p3pos, &fbpos, k,
+                                        structure);
 
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
@@ -1205,17 +1209,18 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
    float p5p, p3p;                    /* probabilities */
    unsigned long alpha_size = alphabet_size (this->sigma);
    unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
+   SecStruct* structure;
 
    /* penalty for non gc basepair initiating a stem */
-   n = rna_secstruct_get_i_noof_stems_multiloop (loop, this->rna);
+   structure = rna_get_secstruct (this->rna);
+   n = secstruct_get_i_noof_stems_multiloop (loop, structure);
 
    for (k = 0; k < n; k++)
    {
       cell5p = 0.0f;
       cell3p = 0.0f;
 
-      rna_secstruct_get_i_stem_multiloop (&p5pos, &p3pos, k, loop, this->rna);
-
+      secstruct_get_i_stem_multiloop (&p5pos, &p3pos, k, loop, structure);
       /* for all possible closing bp */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
       {
@@ -1238,14 +1243,14 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
    }
 
    /* 5' dangle */
-   n = rna_secstruct_get_i_noof_5pdangles_multiloop (loop, this->rna);
+   n = secstruct_get_i_noof_5pdangles_multiloop (loop, structure);
    for (k = 0; k < n; k++)
    {
       cell5p = 0.0f;
       cell3p = 0.0f;
 
-      rna_secstruct_get_i_5pdangle_multiloop (&p5pos, &p3pos, &fbpos, k, loop,
-                                              this->rna);
+      secstruct_get_i_5pdangle_multiloop (&p5pos, &p3pos, &fbpos, k, loop,
+                                          structure);
 
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
@@ -1284,14 +1289,14 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
    }
 
    /* 3' dangle */
-   n = rna_secstruct_get_i_noof_3pdangles_multiloop (loop, this->rna);
+   n = secstruct_get_i_noof_3pdangles_multiloop (loop, structure);
    for (k = 0; k < n; k++)
    {
       cell5p = 0.0f;
       cell3p = 0.0f;
 
-      rna_secstruct_get_i_3pdangle_multiloop (&p5pos, &p3pos, &fbpos, k, loop,
-                                              this->rna);
+      secstruct_get_i_3pdangle_multiloop (&p5pos, &p3pos, &fbpos, k, loop,
+                                          structure);
 
       /* design bp: for all bp allowed with 'row' and all free bases */
       for (l = 0; this->bp_allowed[row][l] != 0; l++)
@@ -1357,9 +1362,9 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
    float p;                     /* probability */
 
    /* fetch loop geometry */
-   rna_secstruct_get_geometry_bulge (&i1pos, &j1pos, &i2pos, &j2pos, &size,
-                                     loop,
-                                     this->rna);
+   secstruct_get_geometry_bulge (&i1pos, &j1pos, &i2pos, &j2pos, &size,
+                                 loop,
+                                 rna_get_secstruct(this->rna));
 
    /* loop over allowed bp */
    cell_i1 = 0.0f;
@@ -1426,7 +1431,7 @@ scmf_rna_opt_calc_stack (const unsigned long row,
    float p;                     /* probability */
 
    /* get base pair */
-   rna_secstruct_get_i_geometry_stack (&i, &j, stack, this->rna);
+  secstruct_get_i_geometry_stack (&i, &j, stack, rna_get_secstruct (this->rna));
 
    /* for all allowed pairs */
    cell_i   = 0.0f;
@@ -2198,9 +2203,9 @@ scmf_rna_opt_calc_internals (const unsigned long row,
    unsigned long alpha_size = alphabet_size (this->sigma);
 
    /* fetch loop geometry */
-   rna_secstruct_get_geometry_internal (&pi1, &pj1, &pi2, &pj2, &size1, &size2,
-                                        loop,
-                                        this->rna);
+   secstruct_get_geometry_internal (&pi1, &pj1, &pi2, &pj2, &size1, &size2,
+                                    loop,
+                                    rna_get_secstruct(this->rna));
 
    /*mfprintf (stderr, "%lu: i1: %lu j1: %lu size1: %lu "
              "i2: %lu j2: %lu size2: %lu\n", loop,
@@ -2576,6 +2581,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
    /* float prob; */
    unsigned long allowed_bp;
    unsigned long alpha_size;
+   SecStruct* structure;
 
    assert (sm);
    assert (sco);
@@ -2591,6 +2597,7 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
    n_states = seqmatrix_get_rows (sm);
    n_sites = seqmatrix_get_width (sm);
    r = 0;
+   structure = rna_get_secstruct(this->rna);
    /* seqmatrix_print_2_stdout (2, sm); */ /* SB 300409*/
    while ((r < n_states) && (!error))
    {
@@ -2600,35 +2607,35 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       scmf_rna_opt_calc_ext_loop (r, sm, this);
 
       /* stacking pairs */
-      n = rna_secstruct_get_noof_stacks (this->rna);
+      n = secstruct_get_noof_stacks (structure);
       for (i = 0; i < n; i++)
       {
          scmf_rna_opt_calc_stack (r, i, sm, this);
       }
 
       /* bulge loops */
-      n = rna_secstruct_get_noof_bulges (this->rna);
+      n = secstruct_get_noof_bulges (structure);
       for (i = 0; i < n; i++)
       {
          scmf_rna_opt_calc_bulge (r, i, sm, this);
       }
 
       /* internal loops */
-      n = rna_secstruct_get_noof_internals (this->rna);
+      n = secstruct_get_noof_internals (structure);
       for (i = 0; i < n; i++)
       {
          scmf_rna_opt_calc_internals (r, i, sm, this);
       }      
 
       /* hairpin loops */
-      n = rna_secstruct_get_noof_hairpins (this->rna);
+      n = secstruct_get_noof_hairpins (structure);
       for (i = 0; i < n; i++)
       {
          scmf_rna_opt_calc_hairpin (r, i, sm, this);
       }
 
       /* multiloops */
-      n = rna_secstruct_get_noof_multiloops (this->rna);
+      n = secstruct_get_noof_multiloops (structure);
       for (i = 0; i < n; i++)
       {
          scmf_rna_opt_calc_multi_loop (r, i, sm, this);

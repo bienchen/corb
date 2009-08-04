@@ -1,4 +1,4 @@
-# Last modified: 2009-03-17.15
+# Last modified: 2009-07-01.15
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -25,6 +25,8 @@ dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 # to adopt it). The detection mechanism just fetches the first value which
 # "looks" like a version number (Major.Minro.Whatever). If a version is found,
 # stores it in variable.
+# former matching line for both greps: $GREP '\(^\| \)[0-9][0-9]*\.[0-9]'
+# parenthesis do not work on sun
 AC_DEFUN([CRB_GET_VERSION],
 [dnl# macro-body
  _crb_version_options="--version -v -V"
@@ -37,11 +39,11 @@ AC_DEFUN([CRB_GET_VERSION],
         for _crb_opt in $_crb_version_options
           do
             _crb_ver=[`"$_crb_prog" $_crb_opt 2>&1                    \
-                      | $GREP '\(^\| \)[0-9][0-9]*\.[0-9]'            \
+                      | $GREP '[0-9][0-9]*\.[0-9]'            \
                       | $CRB_HEAD -n 1                                \
                       | tr ' ' '\n'                                   \
                       | $SED 's/\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/g' \
-                      | $GREP '\(^\| \)[0-9][0-9]*\.[0-9]'            \
+                      | $GREP '[0-9][0-9]*\.[0-9]'            \
                       | $CRB_HEAD -n 1`]
             AS_IF([test -n "$_crb_ver"],
                   [dnl# run-if-true

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Stefan Bienert
+ * Copyright (C) 2009 Stefan Bienert
  *
  * See COPYING file in the top level directory of this tree for licence.
  */
@@ -7,11 +7,11 @@
 /*
  ****   Documentation header   ***
  *
- *  @file libcrbapps/er2de.h
+ *  @file libcrbapps/salat.h
  *
- *  @brief eR2De, evaluate RNA 2D energy
+ *  @brief saLaT, simply annotate Loop-assembly Topologies
  *
- *  Module: er2de
+ *  Module: salat
  *
  *  Library: libcrbapps
  *
@@ -19,11 +19,11 @@
  *
  *  @author Stefan Bienert
  *
- *  @date 2008-09-24
+ *  @date 2009-07-21
  *
  *
  *  Revision History:
- *         - 2008Sep24 bienert: created
+ *         - 2009Jul21 bienert: created
  *
  */
 
@@ -31,13 +31,13 @@
 extern "C" {
 #endif
 
-#ifndef ER2DE_H
-#define ER2DE_H
+#ifndef SALAT_H
+#define SALAT_H
 
 int
-er2de_main(const char*);
+salat_main(const char*);
    
-#endif /* ER2DE_H */
+#endif /* SALAT_H */
 
 #ifdef __cplusplus
 }

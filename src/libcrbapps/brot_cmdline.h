@@ -85,9 +85,6 @@ struct brot_args_info
   float min_cool_arg;	/**< @brief Minimal cooling factor (default='0.85').  */
   char * min_cool_orig;	/**< @brief Minimal cooling factor original value given at command line.  */
   const char *min_cool_help; /**< @brief Minimal cooling factor help description.  */
-  float scale_cool_arg;	/**< @brief Scale cooling factor (default='0.99').  */
-  char * scale_cool_orig;	/**< @brief Scale cooling factor original value given at command line.  */
-  const char *scale_cool_help; /**< @brief Scale cooling factor help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
@@ -108,7 +105,6 @@ struct brot_args_info
   unsigned int beta_short_given ;	/**< @brief Whether beta-short was given.  */
   unsigned int speedup_threshold_given ;	/**< @brief Whether speedup-threshold was given.  */
   unsigned int min_cool_given ;	/**< @brief Whether min-cool was given.  */
-  unsigned int scale_cool_given ;	/**< @brief Whether scale-cool was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */

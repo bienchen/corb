@@ -38,7 +38,7 @@ const char *brot_args_info_detailed_help[] = {
   "  -c, --scoring=NAME            Choose a different scoring scheme  (possible \n                                  values=\"NN\", \"nussinov\", \"simpleNN\" \n                                  default=`NN')",
   "  Use a certain energy model to score the RNA sequence.                  \n  Possible NAMEs are `NN', `nussinov' and `simpleNN'.                  \n  `nussinov' uses a Nussinov model, only counting Hbonds. `NN'                  \n  invokes the Nearest Neighbour model. `simpleNN' uses a very                  \n  coarse grained approximation of the Nearest Neighbour model,                  \n  scoring every base pair as a stack, averaging mismatches in                  \n  stacked pairs and without any loop parameters.",
   "  -n, --fixed-nuc=NUCLEOTIDE:INT\n                                Preset a nucleotide in a position",
-  "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE the whole 15 letter RNA                  \n  alphabet is allowed. The position INT has to be in the range                  \n  of the structure.",
+  "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE the whole 15 letter RNA                  \n  alphabet is allowed. The position INT has to be in the range                  \n  of the structure. Index starts at 0.",
   "  -s, --steps=INT               Number of iterations  (default=`1000')",
   "  Iteration steps for the update of site probabilities.",
   "  -t, --temp=FLOAT              Initial temperature  (default=`10')",
@@ -65,8 +65,6 @@ const char *brot_args_info_detailed_help[] = {
   "  If the ratio of current short- and long term entropy drops                  \n  below this value, we slow down cooling, above we speed up.",
   "  -j, --min-cool=FLOAT          Minimal cooling factor  (default=`0.85')",
   "  If the cooling factor drops below this value we do no further                 \n   speedups.",
-  "  -q, --scale-cool=FLOAT        Scale cooling factor  (default=`0.99')",
-  "  Speeding up cooling is done via (c * (c * q)).",
     0
 };
 static void
@@ -91,12 +89,11 @@ init_full_help_array(void)
   brot_args_info_full_help[16] = brot_args_info_detailed_help[28];
   brot_args_info_full_help[17] = brot_args_info_detailed_help[30];
   brot_args_info_full_help[18] = brot_args_info_detailed_help[32];
-  brot_args_info_full_help[19] = brot_args_info_detailed_help[34];
-  brot_args_info_full_help[20] = 0; 
+  brot_args_info_full_help[19] = 0; 
   
 }
 
-const char *brot_args_info_full_help[21];
+const char *brot_args_info_full_help[20];
 
 static void
 init_help_array(void)
@@ -189,7 +186,6 @@ void clear_given (struct brot_args_info *args_info)
   args_info->beta_short_given = 0 ;
   args_info->speedup_threshold_given = 0 ;
   args_info->min_cool_given = 0 ;
-  args_info->scale_cool_given = 0 ;
 }
 
 static
@@ -226,8 +222,6 @@ void clear_args (struct brot_args_info *args_info)
   args_info->speedup_threshold_orig = NULL;
   args_info->min_cool_arg = 0.85;
   args_info->min_cool_orig = NULL;
-  args_info->scale_cool_arg = 0.99;
-  args_info->scale_cool_orig = NULL;
   
 }
 
@@ -257,7 +251,6 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->beta_short_help = brot_args_info_detailed_help[28] ;
   args_info->speedup_threshold_help = brot_args_info_detailed_help[30] ;
   args_info->min_cool_help = brot_args_info_detailed_help[32] ;
-  args_info->scale_cool_help = brot_args_info_detailed_help[34] ;
   
 }
 
@@ -419,7 +412,6 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   free_string_field (&(args_info->beta_short_orig));
   free_string_field (&(args_info->speedup_threshold_orig));
   free_string_field (&(args_info->min_cool_orig));
-  free_string_field (&(args_info->scale_cool_orig));
   
   
   for (i = 0; i < args_info->inputs_num; ++i)
@@ -541,8 +533,6 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "speedup-threshold", args_info->speedup_threshold_orig, 0);
   if (args_info->min_cool_given)
     write_into_file(outfile, "min-cool", args_info->min_cool_orig, 0);
-  if (args_info->scale_cool_given)
-    write_into_file(outfile, "scale-cool", args_info->scale_cool_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -686,7 +676,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
               /* specific occurrences */
               if (option_given != (unsigned int) min)
                 {
-                  fprintf (stderr, "%s: %s option occurrences must be %ud\n",
+                  fprintf (stderr, "%s: %s option occurrences must be %u\n",
                     prog_name, option_desc, min);
                   error = 1;
                 }
@@ -695,7 +685,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
                 || option_given > (unsigned int) max)
             {
               /* range occurrences */
-              fprintf (stderr, "%s: %s option occurrences must be between %ud and %ud\n",
+              fprintf (stderr, "%s: %s option occurrences must be between %u and %u\n",
                 prog_name, option_desc, min, max);
               error = 1;
             }
@@ -705,7 +695,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at least check */
           if (option_given < min)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at least %ud\n",
+              fprintf (stderr, "%s: %s option occurrences must be at least %u\n",
                 prog_name, option_desc, min);
               error = 1;
             }
@@ -715,7 +705,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at most check */
           if (option_given > max)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at most %ud\n",
+              fprintf (stderr, "%s: %s option occurrences must be at most %u\n",
                 prog_name, option_desc, max);
               error = 1;
             }
@@ -1746,7 +1736,6 @@ brot_cmdline_parser_internal (
         { "beta-short",	1, NULL, 'i' },
         { "speedup-threshold",	1, NULL, 'u' },
         { "min-cool",	1, NULL, 'j' },
-        { "scale-cool",	1, NULL, 'q' },
         { 0,  0, 0, 0 }
       };
 
@@ -1755,7 +1744,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:p:w:e:l:o:i:u:j:q:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:p:w:e:l:o:i:u:j:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1944,18 +1933,6 @@ brot_cmdline_parser_internal (
               &(local_args_info.min_cool_given), optarg, 0, "0.85", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "min-cool", 'j',
-              additional_error))
-            goto failure;
-        
-          break;
-        case 'q':	/* Scale cooling factor.  */
-        
-        
-          if (update_arg( (void *)&(args_info->scale_cool_arg), 
-               &(args_info->scale_cool_orig), &(args_info->scale_cool_given),
-              &(local_args_info.scale_cool_given), optarg, 0, "0.99", ARG_FLOAT,
-              check_ambiguity, override, 0, 0,
-              "scale-cool", 'q',
               additional_error))
             goto failure;
         

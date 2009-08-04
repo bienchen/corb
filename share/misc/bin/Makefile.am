@@ -1,6 +1,6 @@
-# Last modified: 2009-03-20.11
+# Last modified: 2009-07-07.15
 
-## Copyright (C) 2008 Stefan Bienert
+## Copyright (C) 2009 Stefan Bienert
 ##
 ## This file is part of CoRB.
 ##
@@ -36,6 +36,12 @@ endif
 if CRB_OPT_BROT_DESIGN_TERMS
   noinst_SCRIPTS += opt_brot_design_terms
   noinst_SCRIPTS += simplex_brot_params
+endif
+if CRB_BROT_ITERATIVE
+  noinst_SCRIPTS += brot_iterative
+endif
+if CRB_EVAL_STRUCTURE_FILE
+  noinst_SCRIPTS += eval_structure_file
 endif
 
 pl_mods = PBar.pm CorbIO.pm RNA.pm Simplex.pm

@@ -249,7 +249,7 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
             nn_scores_get_allowed_basepair (j, &bi, &bj, scores);
             if (i == (unsigned) bi)
             {
-               bp_allowed[0][k] = bj + 1;
+               bp_allowed[0][k] = (char)(bj + 1);
                k++;
             }
          }
@@ -277,7 +277,7 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
                                        brot_args->beta_short_arg,
                                        brot_args->speedup_threshold_arg,
                                        brot_args->min_cool_arg,
-                                       brot_args->scale_cool_arg,
+                                       /*brot_args->scale_cool_arg,*/
                                        brot_args->lambda_arg,
                                        brot_args->sm_entropy_arg,
                                        entropy_file,
@@ -299,7 +299,7 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
                                     brot_args->beta_short_arg,
                                     brot_args->speedup_threshold_arg,
                                     brot_args->min_cool_arg,
-                                    brot_args->scale_cool_arg,
+                                    /*brot_args->scale_cool_arg,*/
                                     brot_args->lambda_arg,
                                     brot_args->sm_entropy_arg,
                                     sm,
@@ -379,7 +379,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
             nn_scores_get_allowed_basepair (j, &bi, &bj, scores);
             if (i == (unsigned) bi)
             {
-               bp_allowed[0][k] = bj + 1;
+               bp_allowed[0][k] = (char)(bj + 1);
                k++;
             }
          }
@@ -418,7 +418,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
                                        brot_args->beta_short_arg,
                                        brot_args->speedup_threshold_arg,
                                        brot_args->min_cool_arg,
-                                       brot_args->scale_cool_arg,
+                                       /* brot_args->scale_cool_arg,*/
                                        brot_args->lambda_arg,
                                        brot_args->sm_entropy_arg,
                                        entropy_file,
@@ -439,7 +439,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
                                     brot_args->beta_short_arg,
                                     brot_args->speedup_threshold_arg,
                                     brot_args->min_cool_arg,
-                                    brot_args->scale_cool_arg,
+                                    /*brot_args->scale_cool_arg,*/
                                     brot_args->lambda_arg,
                                     brot_args->sm_entropy_arg,
                                     sm,
@@ -486,7 +486,7 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
                                        brot_args->beta_short_arg,
                                        brot_args->speedup_threshold_arg,
                                        brot_args->min_cool_arg,
-                                       brot_args->scale_cool_arg,
+                                       /*brot_args->scale_cool_arg,*/
                                        brot_args->lambda_arg,
                                        brot_args->sm_entropy_arg,
                                        entropy_file,
@@ -505,7 +505,7 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
                                     brot_args->beta_short_arg,
                                     brot_args->speedup_threshold_arg,
                                     brot_args->min_cool_arg,
-                                    brot_args->scale_cool_arg,
+                                    /*brot_args->scale_cool_arg,*/
                                     brot_args->lambda_arg,
                                     brot_args->sm_entropy_arg,
                                     sm,
@@ -630,11 +630,11 @@ brot_main(const char *cmdline)
          {
             retval = 1;
          }
-         else if (gfile_printf (entropy_file, "# scale-cool:        %f\n",
-                                brot_args.scale_cool_arg) < 0)
-         {
-            retval = 1;
-         }
+/*          else if (gfile_printf (entropy_file, "# scale-cool:        %f\n", */
+/*                                 brot_args.scale_cool_arg) < 0) */
+/*          { */
+/*             retval = 1; */
+/*          } */
          else if (gfile_printf (entropy_file, "# lambda:            %f\n",
                                 brot_args.lambda_arg) < 0)
          {

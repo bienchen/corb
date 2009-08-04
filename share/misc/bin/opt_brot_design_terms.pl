@@ -1,7 +1,7 @@
-#!@PERL@ -w
+#!@PERL@
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-03-07.10
+# Last modified: 2009-07-02.09
 
 
 # Copyright (C) 2009 Stefan Bienert

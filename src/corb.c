@@ -49,6 +49,7 @@
 #include <libcrbapps/brot.h>
 #include <libcrbapps/fold.h>
 #include <libcrbapps/er2de.h>
+#include <libcrbapps/salat.h>
 
 static int
 verify_tool (const Str* tool)
@@ -56,7 +57,8 @@ verify_tool (const Str* tool)
    /* verify name */
    if (  (str_compare_cstr (tool, "brot"))
        &&(str_compare_cstr (tool, "fold"))
-       &&(str_compare_cstr (tool, "er2de")))
+       &&(str_compare_cstr (tool, "er2de"))
+       &&(str_compare_cstr (tool, "salat")))
    {
       THROW_ERROR_MSG ("Unknown application: \"%s\", try `%s --help` for more "
                        "information.",str_get (tool), get_progname());
@@ -168,7 +170,11 @@ int main(int argc,char *argv[])
       else if (str_compare_cstr (tool, "er2de") == 0)
       {
          retval = er2de_main(crb_args.inputs[0]);
-      }      
+      }
+      else if (str_compare_cstr (tool, "salat") == 0)
+      {
+         retval = salat_main(crb_args.inputs[0]);
+      }
    }
 
    /* finalise */

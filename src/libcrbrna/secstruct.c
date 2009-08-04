@@ -386,7 +386,7 @@ secstruct_find_interactions (const unsigned long* pairs,
             HairpinLoop hl = { .i = i, .j = pairs[i],
                                .size = pairs[i] - i - 1 };
             ARRAY_PUSH(this->hairpin_loop, hl, HairpinLoop,
-                       { error = ERR_RNA_ALLOC; });
+                       { error = ERR_SCSTRCT_ALLOC; });
          }
          else
          {
@@ -408,7 +408,7 @@ secstruct_find_interactions (const unsigned long* pairs,
                   /* stacking pair of base pairs */
                   StackLoop st = { .i = pi1, .j = pj1};
                   ARRAY_PUSH(this->stack, st, StackLoop,
-                             { error = ERR_RNA_ALLOC; });
+                             { error = ERR_SCSTRCT_ALLOC; });
                }
                else if ((size1 == 0) || (size2 == 0))
                {
@@ -416,7 +416,7 @@ secstruct_find_interactions (const unsigned long* pairs,
                   BulgeLoop bg = { .i1 = pi1, .j1 = pj1, .i2 = pi2, .j2 = pj2,
                                    .size = (size1 > size2 ? size1 : size2) };
                   ARRAY_PUSH(this->bulge_loop, bg, BulgeLoop,
-                             { error = ERR_RNA_ALLOC; });
+                             { error = ERR_SCSTRCT_ALLOC; });
                   /*mfprintf (stderr, "Found bulge: Start %lu, %lu, stop: "
                     "%lu, %lu, size: %lu\n", pi1, pj1, pi2, pj2, bg.size);*/
                }
@@ -426,7 +426,7 @@ secstruct_find_interactions (const unsigned long* pairs,
                   IntLoop in = { .i1 = pi1, .j1 = pj1, .i2 = pi2, .j2 = pj2,
                                  .size1 = size1, .size2 = size2};
                   ARRAY_PUSH(this->internal_loop, in, IntLoop,
-                             { error = ERR_RNA_ALLOC; });
+                             { error = ERR_SCSTRCT_ALLOC; });
                   /*mfprintf (stderr, "Found internal: Start %lu, %lu, stop: "
                             "%lu, %lu, size: %lu, %lu\n", pi1, pj1, pi2, pj2,
                             size1, size2);*/
@@ -468,7 +468,7 @@ secstruct_find_interactions (const unsigned long* pairs,
                   ml.ndangle3++;
                   
                   ARRAY_PUSH (this->multi_loop, ml, MultiLoop,
-                              { error = ERR_RNA_ALLOC; });
+                              { error = ERR_SCSTRCT_ALLOC; });
                }
             }
          }
@@ -1467,6 +1467,31 @@ secstruct_calculate_DG (const char* seq, const NN_scores* scores,
 
 /*********************************   Output   *********************************/
 
+/** @brief Print a certain stack of a secondary structure to a stream.
+ *
+ * Format is "k - l". The trick is just, that "k" and "l" have the same column
+ * width.\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] i Stacking pair to print.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_i_stack (FILE* stream,
+                           const unsigned long i,
+                           const SecStruct* this)
+{
+   unsigned long p5, p3;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->stack));
+   assert (ARRAY_CURRENT (this->stack) > i);
+
+   p5 = ARRAY_ACCESS (this->stack, i).i;
+   p3 = ARRAY_ACCESS (this->stack, i).j;
+
+   mfprintf (stream, "%lu - %lu", p5, p3);
+}
+
 /** @brief Print the list of stacks of a secondary structure to a stream.
  *
  * Format is "index of pair: i - j".\n
@@ -1551,6 +1576,32 @@ secstruct_fprintf_stacks (FILE* stream, const SecStruct* this)
    mfprintf (stream, "%s", string_start);  
 
    XFREE (string_start);
+}
+
+/** @brief Print a certain hairpin loop of a secondary structure to a stream.
+ *
+ * Format is "k - l (size)". The trick is just, that "k" and "l" have the same
+ * column width.\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] i Hairpin loop to print.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_i_hairpin (FILE* stream,
+                             const unsigned long i,
+                             const SecStruct* this)
+{
+   unsigned long start, end, size;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->hairpin_loop));
+   assert (ARRAY_CURRENT (this->hairpin_loop) > i);
+
+   start = ARRAY_ACCESS (this->hairpin_loop, i).i;
+   end   = ARRAY_ACCESS (this->hairpin_loop, i).j;
+   size  = ARRAY_ACCESS (this->hairpin_loop, i).size;
+
+   mfprintf (stream, "%lu - %lu (%lu)", start, end, size);
 }
 
 /** @brief Print the list of hairpins of a secondary structure to a stream.
@@ -1655,6 +1706,33 @@ secstruct_fprintf_hairpins (FILE* stream, const SecStruct* this)
    mfprintf (stream, "%s", string_start);  
 
    XFREE (string_start);
+}
+
+/** @brief Print a certain bulge loop of a secondary structure to a stream.
+ *
+ * Format is "i/j -  k/l (size)".\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] i Bulge loop to print.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_i_bulge (FILE* stream,
+                           const unsigned long i,
+                           const SecStruct* this)
+{
+   unsigned long pi1, pj1, pi2, pj2, size;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->bulge_loop));
+   assert (ARRAY_CURRENT (this->bulge_loop) > i);
+
+   pi1 = ARRAY_ACCESS(this->bulge_loop, i).i1;
+   pj1 = ARRAY_ACCESS(this->bulge_loop, i).j1;
+   pi2 = ARRAY_ACCESS(this->bulge_loop, i).i2;
+   pj2 = ARRAY_ACCESS(this->bulge_loop, i).j2;
+   size = ARRAY_ACCESS(this->bulge_loop, i).size;
+
+   mfprintf (stream, "%lu/%lu - %lu/%lu (%lu)", pi1, pj1, pi2, pj2, size);
 }
 
 /** @brief Print the list of bulges of a secondary structure to a stream.
@@ -1772,6 +1850,35 @@ secstruct_fprintf_bulges (FILE* stream, const SecStruct* this)
    mfprintf (stream, "%s", string_start);
 
    XFREE (string_start);
+}
+
+/** @brief Print a certain internal loop of a secondary structure to a stream.
+ *
+ * Format is "i/j -  k/l (size/size)".\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] i Index of internal loop to print.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_i_internal (FILE* stream,
+                              const unsigned long i,
+                              const SecStruct* this)
+{
+   unsigned long pi1, pj1, pi2, pj2, size1, size2;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->internal_loop));
+   assert (ARRAY_CURRENT (this->internal_loop) > i);
+
+   pi1   = ARRAY_ACCESS(this->internal_loop, i).i1;
+   pj1   = ARRAY_ACCESS(this->internal_loop, i).j1;
+   pi2   = ARRAY_ACCESS(this->internal_loop, i).i2;
+   pj2   = ARRAY_ACCESS(this->internal_loop, i).j2;
+   size1 = ARRAY_ACCESS(this->internal_loop, i).size1;
+   size2 = ARRAY_ACCESS(this->internal_loop, i).size2;
+
+   mfprintf (stream, "%lu/%lu - %lu/%lu (%lu/%lu)",
+             pi1, pj1, pi2, pj2, size1, size2);
 }
 
 /** @brief Print a list of internal loops of a secondary structure to a stream.
@@ -2250,6 +2357,41 @@ secstruct_fprintf_external (FILE* stream, const SecStruct* this)
    }
 
    sprintf_multiloop (string, &this->ext_loop);
+
+   mfprintf (stream, "%s", string);
+
+   XFREE (string);
+}
+
+/** @brief Print a certain multiloop of a secondary structure to a stream.
+ *
+ * Print a certain multiloop of a secondary structure to a stream..\n
+ * @params[in] stream Output stream to write to.
+ * @params[in] i Index of loop to print.
+ * @params[in] this secondary structure.
+ */
+void
+secstruct_fprintf_i_multiloop (FILE* stream,
+                               const unsigned long i,
+                               const SecStruct* this)
+{
+   char* string;
+   size_t loop_storage;
+
+   assert (this != NULL);
+   assert (ARRAY_NOT_NULL (this->multi_loop));
+   assert (ARRAY_CURRENT (this->multi_loop) > i);
+
+   loop_storage = printsize_of_multiloop (&(ARRAY_ACCESS(this->multi_loop, i)));
+
+   string = (char*) XMALLOC (sizeof (*string) * (loop_storage + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+
+   sprintf_multiloop (string,
+                      &(ARRAY_ACCESS (this->multi_loop, i)));
 
    mfprintf (stream, "%s", string);
 

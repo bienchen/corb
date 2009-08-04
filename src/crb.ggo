@@ -12,8 +12,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
 package     "CoRB"
 version     "0.1"
@@ -23,7 +23,8 @@ description "Collection of RNAanalysis Binaries
              available tools:
              brot:  Basic RNA Optimisation Tool
              fold:  Prediction of RNA Secondary Structures
-             er2de: Evaluating RNA 2D energy"
+             er2de: Evaluating RNA 2D energy
+             salat: Simply annotate Loop-assembly Topologies"
 
 # arguments to gengetopt
 args "--func-name=crb_cmdline_parser --file-name=crb_cmdline --include-getopt \

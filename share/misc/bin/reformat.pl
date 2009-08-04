@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-07-21.13
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -295,7 +295,6 @@ sub format_preamble_m4($ $ $ $ \@)
 
 #    a
 # Copyright (C) 2008 Stefan Bienert
-# Copyright (C) 2008 Center for Bioinformatics, University of Hamburg
 #
 # See COPYING file in the top level directory of this tree for licence.
 #
@@ -432,7 +431,6 @@ sub format_preamble_m4($ $ $ $ \@)
 
 #    a
 # Copyright (C) 2008 Stefan Bienert
-# Copyright (C) 2008 Center for Bioinformatics, University of Hamburg
 #
 # See COPYING file in the top level directory of this tree for licence.
 #

@@ -1,0 +1,36 @@
+# Copyright (C) 2009 Stefan Bienert
+#
+# This file is part of CoRB.
+#
+# CoRB is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# CoRB is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
+
+package     "salat"
+version     "0.1"
+purpose     "Simply annotate Loop-assembly Topologies"
+usage       "salat [OPTIONS]... STRUCTURE"
+description "Enumerate loops of an RNA secondary structure"
+
+# arguments to gengetopt
+args "--string-parser --func-name=salat_cmdline_parser --file-name=salat_cmdline --include-getopt --unamed-opts=STRUCTURE --arg-struct-name=salat_args_info --no-handle-error"
+
+option "position" p "Only get information for a certain position"
+       details="Name a certain position in the structure to investigate. This \
+                means, you get information on the loop type and pairing \
+                 partner of a named position. The position INT has to be in \
+                 the range of the structure. Index starts at 0. May be \
+                 invoked several times."
+       long
+       typestr="INT"
+       optional
+       multiple

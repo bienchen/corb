@@ -39,7 +39,7 @@ option "fixed-nuc" n "Preset a nucleotide in a position"
        details="Use a fixed nucleotide in a position in the sequence during \
                  the simulation. As NUCLEOTIDE the whole 15 letter RNA \
                  alphabet is allowed. The position INT has to be in the range \
-                 of the structure."
+                 of the structure. Index starts at 0."
        string
        typestr="NUCLEOTIDE:INT"
        optional
@@ -164,10 +164,10 @@ option "min-cool" j "Minimal cooling factor"
        optional
        hidden
 
-option "scale-cool" q "Scale cooling factor"
-       details="Speeding up cooling is done via (c * (c * q))."
-       float
-       typestr="FLOAT"
-       default="0.99"
-       optional
-       hidden
+# option "scale-cool" q "Scale cooling factor"
+#       details="Speeding up cooling is done via (c * (c * q))."
+#       float
+#       typestr="FLOAT"
+#       default="0.99"
+#       optional
+#       hidden

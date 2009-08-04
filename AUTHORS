@@ -32,5 +32,7 @@ Stefan Bienert (bienert, bienert@zbh.uni-hamburg.de):
         libcrbbrot/ef_energy.[c,h] libcrbbrot/preset.[c,h]
         libcrbbrot/seqmatrix.[c,h] libcrbrna/alphabet.[c,h] libcrbrna/crbrna.h
         libcrbrna/nn_scores.[c,h] libcrbrna/rna.[c,h]
-        libcrbrna/secstruct.[c,h] libcrbrna/test_secstruct.c libcrbrna/test_alphabet.c
-        libcrbrna/test_nn_scores libcrbrna/test_rna.c test test.test libcrbbasic/gfile.c libcrbbasic/gfile.h libcrbbasic/test_gfile.c
+        libcrbrna/secstruct.[c,h] libcrbrna/test_secstruct.c
+        libcrbrna/test_alphabet.c libcrbrna/test_nn_scores.c
+        libcrbrna/test_rna.c libcrbbasic/gfile.c libcrbbasic/gfile.h
+        libcrbbasic/test_gfile.c libcrbapps/salat.[c,h]

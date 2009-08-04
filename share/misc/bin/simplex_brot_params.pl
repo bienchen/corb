@@ -1,7 +1,7 @@
-#!@PERL@ -w
+#!@PERL@
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-03-02.13
+# Last modified: 2009-07-06.16
 
 
 # Copyright (C) 2009 Stefan Bienert
@@ -219,7 +219,7 @@ sub compare_structures (\$ \$)
 
     unless(open(FH, "echo \"$$ref_ref\n$$pred_ref\" | ./RNAdistance  2>&1 |"))
     {
-        msg_error_and_die ("Could not start RNAfold\n");
+        msg_error_and_die ("Could not start RNAdistance\n");
     }
 
     foreach (<FH>)

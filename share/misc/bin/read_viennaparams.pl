@@ -1,7 +1,7 @@
 #!@PERL@
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-06-30.08
+# Last modified: 2009-07-02.11
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -76,7 +76,7 @@ sub log10($)
 }
 
 # parse the arguments of the script and store them in a hash
-#   parseargs(argument_hashref, error_msgref)
+#   parseargs(argument_hashref)
 sub parseargs(\%)
 {
     my ($argument_hashref) = @_;
@@ -135,7 +135,7 @@ sub parseargs(\%)
     {
         msg_error_and_die("Param file does not exist or is not readable: "
                          ."$ARGV[0]\n");
-    }    
+    }
     $argument_hashref->{paramfile} = $ARGV[0];
 
     if (defined ($argument_hashref->{sourcefile}))

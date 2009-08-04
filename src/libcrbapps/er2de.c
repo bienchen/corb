@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2008 Stefan Bienert
- * Copyright (C) 2008 Center for Bioinformatics, University of Hamburg
  *
  * See COPYING file in the top level directory of this tree for licence.
  */
@@ -104,7 +103,7 @@ er2de_main(const char *cmdline)
    }
 
    if (retval == 0)
-   {      
+   {
       retval = RNA_INIT_SEQUENCE_STRUCTURE(erde_args.inputs[1],
                                            erde_args.inputs[2],
                                            strlen (erde_args.inputs[1]),
@@ -151,7 +150,9 @@ er2de_main(const char *cmdline)
    if (retval == 0)
    {
       /* nn_scores_fprintf_tetra_loop(stdout, scores, sigma); */
-      G = rna_secstruct_calculate_DG (scores, rna);
+      G = secstruct_calculate_DG (rna_get_sequence(rna),
+                                  scores,
+                                  rna_get_secstruct(rna));
       mfprintf (stdout, "G = %5.2f\n", G * 0.01);
    }
 

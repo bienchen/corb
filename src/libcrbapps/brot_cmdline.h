@@ -49,16 +49,16 @@ struct brot_args_info
   long steps_arg;	/**< @brief Number of iterations (default='1000').  */
   char * steps_orig;	/**< @brief Number of iterations original value given at command line.  */
   const char *steps_help; /**< @brief Number of iterations help description.  */
-  float temp_arg;	/**< @brief Initial temperature (default='10').  */
+  float temp_arg;	/**< @brief Initial temperature (default='14.2').  */
   char * temp_orig;	/**< @brief Initial temperature original value given at command line.  */
   const char *temp_help; /**< @brief Initial temperature help description.  */
   long seed_arg;	/**< @brief Random seed (default='-791122').  */
   char * seed_orig;	/**< @brief Random seed original value given at command line.  */
   const char *seed_help; /**< @brief Random seed help description.  */
-  float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='1.01').  */
+  float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='0.414').  */
   char * negative_design_scaling_orig;	/**< @brief Scale negative design term original value given at command line.  */
   const char *negative_design_scaling_help; /**< @brief Scale negative design term help description.  */
-  float heterogenity_term_scaling_arg;	/**< @brief Scale heterogenity term (default='12.000000').  */
+  float heterogenity_term_scaling_arg;	/**< @brief Scale heterogenity term (default='14.5').  */
   char * heterogenity_term_scaling_orig;	/**< @brief Scale heterogenity term original value given at command line.  */
   const char *heterogenity_term_scaling_help; /**< @brief Scale heterogenity term help description.  */
   char * entropy_output_arg;	/**< @brief Write down entropy and temperature changes.  */
@@ -67,22 +67,22 @@ struct brot_args_info
   long window_size_arg;	/**< @brief Window size for the heterogeneity term (default='1').  */
   char * window_size_orig;	/**< @brief Window size for the heterogeneity term original value given at command line.  */
   const char *window_size_help; /**< @brief Window size for the heterogeneity term help description.  */
-  float sm_entropy_arg;	/**< @brief Sequence matrix entropy threshold (default='0.05').  */
+  float sm_entropy_arg;	/**< @brief Sequence matrix entropy threshold (default='0.32').  */
   char * sm_entropy_orig;	/**< @brief Sequence matrix entropy threshold original value given at command line.  */
   const char *sm_entropy_help; /**< @brief Sequence matrix entropy threshold help description.  */
-  float lambda_arg;	/**< @brief Portion of a new step to be accepted (default='0.6').  */
+  float lambda_arg;	/**< @brief Portion of a new step to be accepted (default='0.695').  */
   char * lambda_orig;	/**< @brief Portion of a new step to be accepted original value given at command line.  */
   const char *lambda_help; /**< @brief Portion of a new step to be accepted help description.  */
-  float beta_long_arg;	/**< @brief Define the long term entropy contribution (default='0.95').  */
+  float beta_long_arg;	/**< @brief Define the long term entropy contribution (default='0.93').  */
   char * beta_long_orig;	/**< @brief Define the long term entropy contribution original value given at command line.  */
   const char *beta_long_help; /**< @brief Define the long term entropy contribution help description.  */
   float beta_short_arg;	/**< @brief Define the short term entropy contribution (default='0.5').  */
   char * beta_short_orig;	/**< @brief Define the short term entropy contribution original value given at command line.  */
   const char *beta_short_help; /**< @brief Define the short term entropy contribution help description.  */
-  float speedup_threshold_arg;	/**< @brief Speedup/ slow down cooling threshold (default='0.99').  */
+  float speedup_threshold_arg;	/**< @brief Speedup/ slow down cooling threshold (default='0.985').  */
   char * speedup_threshold_orig;	/**< @brief Speedup/ slow down cooling threshold original value given at command line.  */
   const char *speedup_threshold_help; /**< @brief Speedup/ slow down cooling threshold help description.  */
-  float min_cool_arg;	/**< @brief Minimal cooling factor (default='0.85').  */
+  float min_cool_arg;	/**< @brief Minimal cooling factor (default='0.866').  */
   char * min_cool_orig;	/**< @brief Minimal cooling factor original value given at command line.  */
   const char *min_cool_help; /**< @brief Minimal cooling factor help description.  */
   

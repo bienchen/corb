@@ -41,29 +41,29 @@ const char *brot_args_info_detailed_help[] = {
   "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE the whole 15 letter RNA                  \n  alphabet is allowed. The position INT has to be in the range                  \n  of the structure. Index starts at 0.",
   "  -s, --steps=INT               Number of iterations  (default=`1000')",
   "  Iteration steps for the update of site probabilities.",
-  "  -t, --temp=FLOAT              Initial temperature  (default=`10')",
+  "  -t, --temp=FLOAT              Initial temperature  (default=`14.2')",
   "  Initial temperature of the system.",
   "  -r, --seed=INT                Random seed  (default=`-791122')",
   "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n   for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.                  \n  Only takes effect when using with `NN' as scoring scheme.",
-  "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  (default=`1.01')",
+  "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  (default=`0.414')",
   "  Scaling factor for the negative design term.",
-  "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`12.000000')",
+  "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`14.5')",
   "  Scaling factor for the sequence heterogenity term.",
   "  -p, --entropy-output=FILENAME Write down entropy and temperature changes",
   "  Write the changes of the sequence matrix entropy, short and                  \n  long term avg.'s and temperature to given file. Only values                  \n  from the simulation of interest are written.",
   "  -w, --window-size=INT         Window size for the heterogeneity term  \n                                  (default=`1')",
   "  Size of the window to the left and right of a base to be                 \n  considered for calculating the heterogeneity term when using                 \n  the `NN' scoring scheme. Please note that this is always only                 \n  one half of the window. Only takes effect when using with `NN'                \n   as scoring scheme.",
-  "  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  \n                                  (default=`0.05')",
+  "  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  \n                                  (default=`0.32')",
   "  If the entropy of the sequence matrix drops below this value,                 \n   the simulation will stop.",
-  "  -l, --lambda=FLOAT            Portion of a new step to be accepted  \n                                  (default=`0.6')",
+  "  -l, --lambda=FLOAT            Portion of a new step to be accepted  \n                                  (default=`0.695')",
   "  Describes the portion of an old probability to be mixed with                  \n  the new one. The old probability gets l a share of l, the new                 \n   (1 - l). Used to avoid oscillation in the system.",
-  "  -o, --beta-long=FLOAT         Define the long term entropy contribution  \n                                  (default=`0.95')",
+  "  -o, --beta-long=FLOAT         Define the long term entropy contribution  \n                                  (default=`0.93')",
   "  Share of the current long term avg. entropy to be used for the                \n    next step. New value calculates from                  o * S_long + (1-o) * \n  S_current.",
   "  -i, --beta-short=FLOAT        Define the short term entropy contribution  \n                                  (default=`0.5')",
   "  Share of the current short term avg. entropy to be used for                  \n  the next step. New value calculates from                  o * S_short + (1-o) \n  * S_current.",
-  "  -u, --speedup-threshold=FLOAT Speedup/ slow down cooling threshold  \n                                  (default=`0.99')",
+  "  -u, --speedup-threshold=FLOAT Speedup/ slow down cooling threshold  \n                                  (default=`0.985')",
   "  If the ratio of current short- and long term entropy drops                  \n  below this value, we slow down cooling, above we speed up.",
-  "  -j, --min-cool=FLOAT          Minimal cooling factor  (default=`0.85')",
+  "  -j, --min-cool=FLOAT          Minimal cooling factor  (default=`0.866')",
   "  If the cooling factor drops below this value we do no further                 \n   speedups.",
     0
 };
@@ -198,29 +198,29 @@ void clear_args (struct brot_args_info *args_info)
   args_info->fixed_nuc_orig = NULL;
   args_info->steps_arg = 1000;
   args_info->steps_orig = NULL;
-  args_info->temp_arg = 10;
+  args_info->temp_arg = 14.2;
   args_info->temp_orig = NULL;
   args_info->seed_arg = -791122;
   args_info->seed_orig = NULL;
-  args_info->negative_design_scaling_arg = 1.01;
+  args_info->negative_design_scaling_arg = 0.414;
   args_info->negative_design_scaling_orig = NULL;
-  args_info->heterogenity_term_scaling_arg = 12.000000;
+  args_info->heterogenity_term_scaling_arg = 14.5;
   args_info->heterogenity_term_scaling_orig = NULL;
   args_info->entropy_output_arg = NULL;
   args_info->entropy_output_orig = NULL;
   args_info->window_size_arg = 1;
   args_info->window_size_orig = NULL;
-  args_info->sm_entropy_arg = 0.05;
+  args_info->sm_entropy_arg = 0.32;
   args_info->sm_entropy_orig = NULL;
-  args_info->lambda_arg = 0.6;
+  args_info->lambda_arg = 0.695;
   args_info->lambda_orig = NULL;
-  args_info->beta_long_arg = 0.95;
+  args_info->beta_long_arg = 0.93;
   args_info->beta_long_orig = NULL;
   args_info->beta_short_arg = 0.5;
   args_info->beta_short_orig = NULL;
-  args_info->speedup_threshold_arg = 0.99;
+  args_info->speedup_threshold_arg = 0.985;
   args_info->speedup_threshold_orig = NULL;
-  args_info->min_cool_arg = 0.85;
+  args_info->min_cool_arg = 0.866;
   args_info->min_cool_orig = NULL;
   
 }
@@ -1798,7 +1798,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->temp_arg), 
                &(args_info->temp_orig), &(args_info->temp_given),
-              &(local_args_info.temp_given), optarg, 0, "10", ARG_FLOAT,
+              &(local_args_info.temp_given), optarg, 0, "14.2", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "temp", 't',
               additional_error))
@@ -1822,7 +1822,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->negative_design_scaling_arg), 
                &(args_info->negative_design_scaling_orig), &(args_info->negative_design_scaling_given),
-              &(local_args_info.negative_design_scaling_given), optarg, 0, "1.01", ARG_FLOAT,
+              &(local_args_info.negative_design_scaling_given), optarg, 0, "0.414", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "negative-design-scaling", 'd',
               additional_error))
@@ -1834,7 +1834,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->heterogenity_term_scaling_arg), 
                &(args_info->heterogenity_term_scaling_orig), &(args_info->heterogenity_term_scaling_given),
-              &(local_args_info.heterogenity_term_scaling_given), optarg, 0, "12.000000", ARG_FLOAT,
+              &(local_args_info.heterogenity_term_scaling_given), optarg, 0, "14.5", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "heterogenity-term-scaling", 'h',
               additional_error))
@@ -1870,7 +1870,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->sm_entropy_arg), 
                &(args_info->sm_entropy_orig), &(args_info->sm_entropy_given),
-              &(local_args_info.sm_entropy_given), optarg, 0, "0.05", ARG_FLOAT,
+              &(local_args_info.sm_entropy_given), optarg, 0, "0.32", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "sm-entropy", 'e',
               additional_error))
@@ -1882,7 +1882,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->lambda_arg), 
                &(args_info->lambda_orig), &(args_info->lambda_given),
-              &(local_args_info.lambda_given), optarg, 0, "0.6", ARG_FLOAT,
+              &(local_args_info.lambda_given), optarg, 0, "0.695", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "lambda", 'l',
               additional_error))
@@ -1894,7 +1894,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->beta_long_arg), 
                &(args_info->beta_long_orig), &(args_info->beta_long_given),
-              &(local_args_info.beta_long_given), optarg, 0, "0.95", ARG_FLOAT,
+              &(local_args_info.beta_long_given), optarg, 0, "0.93", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "beta-long", 'o',
               additional_error))
@@ -1918,7 +1918,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->speedup_threshold_arg), 
                &(args_info->speedup_threshold_orig), &(args_info->speedup_threshold_given),
-              &(local_args_info.speedup_threshold_given), optarg, 0, "0.99", ARG_FLOAT,
+              &(local_args_info.speedup_threshold_given), optarg, 0, "0.985", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "speedup-threshold", 'u',
               additional_error))
@@ -1930,7 +1930,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->min_cool_arg), 
                &(args_info->min_cool_orig), &(args_info->min_cool_given),
-              &(local_args_info.min_cool_given), optarg, 0, "0.85", ARG_FLOAT,
+              &(local_args_info.min_cool_given), optarg, 0, "0.866", ARG_FLOAT,
               check_ambiguity, override, 0, 0,
               "min-cool", 'j',
               additional_error))

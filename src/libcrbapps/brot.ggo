@@ -56,7 +56,7 @@ option "temp" t "Initial temperature"
        details="Initial temperature of the system."
        float
        typestr="FLOAT"
-       default="10"
+       default="14.2"
        optional
 
 option "seed" r "Random seed"
@@ -77,14 +77,14 @@ option "negative-design-scaling" d "Scale negative design term"
        details="Scaling factor for the negative design term."
        float
        typestr="FLOAT"
-       default="1.01"
+       default="0.414"
        optional
 
 option "heterogenity-term-scaling" h "Scale heterogenity term"
        details="Scaling factor for the sequence heterogenity term."
        float
        typestr="FLOAT"
-       default="12.000000"
+       default="14.5"
        optional
 
 option "entropy-output" p "Write down entropy and temperature changes"
@@ -112,7 +112,7 @@ option "sm-entropy" e "Sequence matrix entropy threshold"
                  the simulation will stop."
        float
        typestr="FLOAT"
-       default="0.05"
+       default="0.32"
        optional
        hidden
 
@@ -122,7 +122,7 @@ option "lambda" l "Portion of a new step to be accepted"
                  (1 - l). Used to avoid oscillation in the system."
        float
        typestr="FLOAT"
-       default="0.6"
+       default="0.695"
        optional
        hidden
 
@@ -132,7 +132,7 @@ option "beta-long" o "Define the long term entropy contribution"
                  o * S_long + (1-o) * S_current."
        float
        typestr="FLOAT"
-       default="0.95"
+       default="0.93"
        optional
        hidden
 
@@ -151,7 +151,7 @@ option "speedup-threshold" u "Speedup/ slow down cooling threshold"
                  below this value, we slow down cooling, above we speed up."
        float
        typestr="FLOAT"
-       default="0.99"
+       default="0.985"
        optional
        hidden
 
@@ -160,7 +160,7 @@ option "min-cool" j "Minimal cooling factor"
                  speedups."
        float
        typestr="FLOAT"
-       default="0.85"
+       default="0.866"
        optional
        hidden
 

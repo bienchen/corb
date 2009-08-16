@@ -1,4 +1,4 @@
-# Last modified: 2009-08-06.20
+# Last modified: 2009-08-17.00
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -33,7 +33,7 @@ corb_developer_handbook_TEXINFOS = corb.txi                      \
                                    impatient.txi                 \
                                    preface_dvl.txi               \
                                    onomastics.txi                \
-                                   abbreviations_wrapper_use.txi \
+                                   abbreviations_wrapper_dvl.txi \
                                    abbreviations.txi             \
                                    using_git.txi                 \
                                    coding.txi                    \

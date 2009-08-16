@@ -29,24 +29,24 @@ SUBDIRS=share src
 # and before the commit find them.
 # Or in other words: A check to be performed before commiting anyting to git
 check-commit:
-        @echo "[ ============= Resetting to a virginal state ============= ]"
-        @make -s maintainer-clean
-        @echo "[ ===================== Bootstrapping ===================== ]"
-        @$(top_srcdir)/bootstrap
-        @echo "[ ============== Configuring for Development ============== ]"
-        @$(top_srcdir)/configure --with-development --enable-development
-        @echo "[ ================= Running  \`make check\` ================= ]"
-        @make -s check
-        @echo "[ =============== Running  \`make distcheck\` =============== ]"
-        @make -s distcheck
-        @echo "[ ====================== Cleaning up ====================== ]"
-        @make -s clean
-        @echo "[ ============ Configuring  Productive Version ============ ]"
-        @$(top_srcdir)/configure
-        @echo "[ ================= Running  \`make check\` ================= ]"
-        @make -s check
-        @echo "[ =============== Running  \`make distcheck\` =============== ]"
-        @make -s distcheck
+	@echo "[ ============= Resetting to a virginal state ============= ]"
+	@make -s maintainer-clean
+	@echo "[ ===================== Bootstrapping ===================== ]"
+	@$(top_srcdir)/bootstrap
+	@echo "[ ============== Configuring for Development ============== ]"
+	@$(top_srcdir)/configure --with-development --enable-development
+	@echo "[ ================= Running  \`make check\` ================= ]"
+	@make -s check
+	@echo "[ =============== Running  \`make distcheck\` =============== ]"
+	@make -s distcheck
+	@echo "[ ====================== Cleaning up ====================== ]"
+	@make -s clean
+	@echo "[ ============ Configuring  Productive Version ============ ]"
+	@$(top_srcdir)/configure
+	@echo "[ ================= Running  \`make check\` ================= ]"
+	@make -s check
+	@echo "[ =============== Running  \`make distcheck\` =============== ]"
+	@make -s distcheck
 
 
 ## Local variables:

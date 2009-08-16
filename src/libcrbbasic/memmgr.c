@@ -100,7 +100,7 @@ static MemManSys __memman = {NULL,     /* address table */
 
 /** @brief Calculates a hash value for an address.
  *
- * Calulates the hash value for a given pointer in @c unsigned long format.
+ * Calculates the hash value for a given pointer in @c unsigned long format.
  * Immediately applies the modulo operator with the size of the address table
  * to the result.\n
  * Returns the index where the memory block should be stored.
@@ -388,7 +388,7 @@ free_memory_manager (void)
 /** @brief Wrapper function for malloc.
  *
  * Do not call this directly. Use the macro @c XMALLOC(size_t size) instead.
- * This will asure the memory manager to work properly and set the calling file
+ * This will assure the memory manager to work properly and set the calling file
  * and line for you.\n
  * Returns NULL on failure, a pointer to the allocated memory else.
  *
@@ -430,7 +430,7 @@ xmalloc (const size_t size, const char* file, const int line)
 /** @brief Memory checking wrapper function for malloc.
  *
  * Do not call this directly. Use the macro @c XMALLOC(size_t size) instead.
- * This will asure the memory manager to work properly and set the calling file
+ * This will assure the memory manager to work properly and set the calling file
  * and line for you.\n
  * Returns NULL on failure, a pointer to the allocated memory else.
  *
@@ -475,7 +475,7 @@ checked_xmalloc (const size_t size, const char* file, const int line)
 /** @brief Wrapper function for realloc.
  * 
  * Do not call this directly. Use the macro @c XREALLOC(void* ptr, size_t size)
- * instead. This will asure the memory manager to work properly and set the
+ * instead. This will assure the memory manager to work properly and set the
  * calling file and line for you.\n
  * Returns NULL on failure, a pointer to the allocated memory else.
  *
@@ -524,7 +524,7 @@ xrealloc (void* ptr, const size_t size, const char* file, const int line)
 /** @brief Memory checking wrapper function for realloc.
  * 
  * Do not call this directly. Use the macro @c XREALLOC(void* ptr, size_t size)
- * instead. This will asure the memory manager to work properly and set the
+ * instead. This will assure the memory manager to work properly and set the
  * calling file and line for you.\n
  * Returns NULL on failure, a pointer to the allocated memory else.
  *
@@ -598,7 +598,7 @@ checked_xrealloc (void* ptr,
  *
  * Do not call this directly. Use the macro
  * @c XCALLOC(size_t nmemb, size_t size, char* file, int line)
- * instead. This will asure the memory manager to work properly and set the
+ * instead. This will assure the memory manager to work properly and set the
  * calling file and line for you.\n
  * Returns NULL on failure, a pointer to the allocated memory else.
  *
@@ -641,7 +641,7 @@ xcalloc (const size_t nmemb,
  *
  * Do not call this directly. Use the macro
  * @c XCALLOC(size_t nmemb, size_t size, char* file, int line)
- * instead. This will asure the memory manager to work properly and set the
+ * instead. This will assure the memory manager to work properly and set the
  * calling file and line for you.\n
  * Returns NULL on failure, a pointer to the allocated memory else.
  *
@@ -680,7 +680,7 @@ checked_xcalloc (const size_t nmemb,
  *
  * Do not call this directly. Use the macro
  * @c XMALLOC_2D(size_t n_rows, size_t n_cols, size_t size) instead. This will
- * asure the memory manager to work properly and set the calling file and line
+ * assure the memory manager to work properly and set the calling file and line
  * for you.\n
  * Allocates a matrix with @c n_rows and @c n_cols with cells of @c size bytes
  * size.\n
@@ -757,9 +757,9 @@ matrix2d_set_zero (void** m,
  *
  * Do not call this directly. Use the macro
  * @c XMALLOC_RND(size_t size, size_t dim) instead. This will
- * asure the memory manager to work properly and set the calling file and line
+ * assure the memory manager to work properly and set the calling file and line
  * for you.\n
- * This function is ment to allocate memory for an array with n-dimensions.
+ * This function is meant to allocate memory for an array with n-dimensions.
  * "runtime" means, that it is theoretically possible to determine the no. and
  * size of dimensions entirely during the runtime of a program. If you do not
  * need this it is probably a good idea to use @c xmalloc_nd instead. The
@@ -779,7 +779,7 @@ void*
 xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
              const char* file, const int line)
 {
-   /* for all further explainations we consider D to have indeces 0...n
+   /* for all further explanations we consider D to have indices 0...n
       NOT 0...n-1 as in C */
    size_t i, j;
    size_t part;          /* end idx of current partition */
@@ -796,7 +796,7 @@ xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
    }
 
    /* Calculate no. of required pointers and size of data storage. */
-   /* All dimensions but the last one are just partioning a single array. */
+   /* All dimensions but the last one are just partitioning a single array. */
    /* The last dimension is of course the data storage and hence the pre-last */
    /* dimension is a set of pointers pointing to the data. */
    /* Therefore the size of the pointer array has to be the sum of the */
@@ -818,7 +818,7 @@ xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
       return NULL;
    }
 
-   /* partion pointer space/ set pointer. */
+   /* partition pointer space/ set pointer. */
    /* We have to arrange n-1 dimensions into the pointer array. The last */
    /* dimension is a set of pointers referring to the "real" data storage. */
    /* Therefore we loop over the first n-1 dimensions and set a first pointer */
@@ -831,8 +831,8 @@ xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
    array[0] = (char*) array + (dim[0] * sizeof (*array));
    for (i = 0; i < (n-2); i++)
    {
-      part *= dim[i]; /* calculate last index of current partioning process */
-      idx++;          /* increase, since the last poitner was already set */
+      part *= dim[i]; /* calculate last index of current partitioning process */
+      idx++;          /* increase, since the last pointer was already set */
       /* arrange pointers with partitions */
       for (j = 1; j < part; j++)
       {
@@ -866,12 +866,12 @@ xmalloc_rnd (const size_t size, const size_t n, const size_t* dim,
  *
  * Do not call this directly. Use the macro
  * @c XMALLOC_ND(size_t size, size_t dim, ...) instead. This will
- * asure the memory manager to work properly and set the calling file and line
+ * assure the memory manager to work properly and set the calling file and line
  * for you.\n
- * This function is ment to allocate memory for an array with n-dimensions
+ * This function is meant to allocate memory for an array with n-dimensions
  * using a variable argument list. This gives you the convenience of the
  * abundance of an additional array for the dimension sizes. The problem with
- * var.arg. lists is the lack of possiblity for type checking. Beside it should
+ * var.arg. lists is the lack of possibility for type checking. Beside it should
  * be obvious that only positive integers are acceptable as dimension sizes,
  * it is possible to force all kinds of data types into such a list, even
  * structs. Using the wrong data type with this function will lead to undefined
@@ -930,7 +930,7 @@ xmalloc_nd (const size_t size,
       return NULL;
    }   
 
-   /* partion pointer space/ set pointer. */
+   /* partition pointer space/ set pointer. */
    va_start(ap, n);  
 
    part = 1;
@@ -976,7 +976,7 @@ xmalloc_nd (const size_t size,
 /** @brief Wrapper function for free.
  *
  * Do not call this directly. Use the macro @c XFREE(void* ptr) instead. This
- * will asure the memory manager to work properly.
+ * will assure the memory manager to work properly.
  *
  * @param[in] ptr Address to be freed.
  */
@@ -990,7 +990,7 @@ xfree (void* ptr)
 /** @brief Memory checking wrapper function for free.
  *
  * Do not call this directly. Use the macro @c XFREE(void* ptr) instead. This
- * will asure the memory manager to work properly.
+ * will assure the memory manager to work properly.
  *
  * @param[in] ptr Address to be freed.
  * @param[in] file Calling file.
@@ -1032,7 +1032,7 @@ xfree_2d (void** matrix)
 
 /** brief Free nD memory.
  *
- * Free the memory held by a n-dimensional arry. May be called directly. For
+ * Free the memory held by a n-dimensional array. May be called directly. For
  * consistent style (all memory allocation & releasing via macros), we provide
  * XFREE_ND(void**).
  *

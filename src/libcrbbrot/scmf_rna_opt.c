@@ -496,7 +496,7 @@ scmf_rna_opt_calc_nussinov (const unsigned long row,
 {
    float cell = 0.0f;             /* cell to be calculated */
    unsigned long interaction;     /* col of cell interacts with col of sm */
-   unsigned long i, j;            /* indeces */
+   unsigned long i, j;            /* indices */
    unsigned long rows;            /* no. of rows of the matrix */
    unsigned long cols;            /* no. of cols of the matrix */
    float tmp_neg = 0.0f;          /* tmp for negative design term */
@@ -614,7 +614,7 @@ scmf_rna_opt_calc_simplenn (const unsigned long row,
    unsigned long allowed_bp;      /* no. of allowed base pairs */
    unsigned long alpha_size;      /* size of the alphabet */
    unsigned long interaction;     /* col of cell interacts with col of sm */
-   unsigned long l, k, m;         /* indeces */
+   unsigned long l, k, m;         /* indices */
    char bi, bj, bip1, bjm1;       /* container for bases i and j */
    long G_stack_score;            /* fetch Gibb's free energy for a stack */
    float update_prob;             /* probability component for cell energy */

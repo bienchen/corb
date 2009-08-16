@@ -54,7 +54,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top, corb Copying Conditions,,
+@node Top, corb Copying Conditions, (dir), (dir)
 @top @crbtitledvl{}
 @insertcopying
 @end ifnottex
@@ -68,7 +68,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 * Using GIT::                   
 * Coding::                      
 * Using Licenses::              
-* The Buildsystem::             
+* The Build system::             
 * Writing Documentation::       
 * Concept Index::               
 * GNU Free Documentation License::  
@@ -83,7 +83,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @include onomastics.txi
 
-@include abbreviations.txi
+@include abbreviations_wrapper_dvl.txi
 
 @include using_git.txi
 
@@ -96,8 +96,8 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @include documenting.txi
 
 @c VI: End
-@include indeces-dvl.txi
+@include indices-dvl.txi
 
-@include fdl_wrapper.txi
+@include fdl_wrapper_dvl.txi
 
 @bye

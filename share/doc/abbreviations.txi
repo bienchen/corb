@@ -1,22 +1,16 @@
-@node Symbolism & Abbreviations
-@unnumbered Symbolism & Abbreviations 
-
-@c This file is part of `CoRB --- A Developers Handbook`
+@c This file is part of `CoRB --- A Developers Handbook`, Using GIT, Onomastics, Top
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
-
-@cindex Abbreviations
-@cindex Symbols
-@cindex Shell
 
 
 @menu
 * Abbreviations::               
+* Keys::                        
 * Symbolism::                   
 @end menu
 
 
-@node Abbreviations, Symbolism,, Symbolism & Abbreviations
+@node Abbreviations, Keys, Symbolism & Abbreviations, Symbolism & Abbreviations
 @section Abbreviations
 @cindex Abbreviations
 @table @abbr
@@ -29,20 +23,47 @@
 @item @erde{}
 @erdeexp{}
 
+@item @ansi{}
+@ansiexp{}
+
+@item @bash{}
+@bashexp{}
+
+@item @gcc{}
+@gccexp{}
+
 @item @posix{}
 @posixexp{}
+
+@item RTFM
+Read the f@bullet{}@bullet{}@bullet{}@bullet{}@bullet{}@bullet{} Manual
 @end table
 
 
-@node Symbolism,  , Abbreviations, Symbolism & Abbreviations
+@node Keys, Symbolism, Abbreviations, Symbolism & Abbreviations
+@section Keys
+@cindex Key
+@cindex Keys
+@cindex Keyboard
+This is just a list of abbreviations for keys on your keyboard.
+
+@table @abbr
+@item @key{RET}
+Return or Enter key
+@end table
+
+
+@node Symbolism,  , Keys, Symbolism & Abbreviations
 @section Symbolism
+@cindex Symbols
+@cindex Shell
 This section describes notations, symbols and exemplary systems used in our
 explanations.
 
 
 @menu
-* Directory Paths::
-* Shell Examples::
+* Directory Paths::             
+* Shell Examples::              
 @end menu
 
 

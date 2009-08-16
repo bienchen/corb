@@ -226,7 +226,7 @@ For indices, single characters are allowed.
 @subsection @env{CFLAGS}
 @cindex @env{CFLAGS}
 While writing code for @corb{} you have to compile with special @env{CFLAGS}
-enabled. For our build system these are set by running @command{configure} with
+enabled. For our build system these are set by running @configure{} with
 options @option{--enable-development} and @option{--with-development}:
 @example
 ./configure --enable-development --with-development
@@ -235,7 +235,7 @@ The flags used for developing are very restrictive and pedantic. This should
 ensure a very high level of compatibility among different systems.
 
 Several compilers are supported beside @gcc{}. It is definitively a good idea to
-check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets}, for more details on how @corb{}'s buildsystem simplifies testing.
+check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets}, for more details on how @corb{}'s build system simplifies testing.
 
 
 @node typedef, Ordering, CFLAGS, C
@@ -261,7 +261,7 @@ objects from largest to smallest. This avoids padding to get best alignment.
 @cindex @code{__cplusplus}
 @emph{All} source files must include @file{config.h} as topmost header before any other --- even system --- headers. This is
 the configuration header of the GNU build system and is created by the
-@command{configure} script.
+@configure{} script.
 
 Standard headers should follow the configuration header immediately. After
 this come the @corb{} headers and then your own.
@@ -347,7 +347,7 @@ beside checking for values in an @code{assert}-statement. Something like
 @noindent
 is definitively @strong{NOT ALLOWED}.
 
-To turn on assertions while developing, just run the @command{configure} script
+To turn on assertions while developing, just run the @configure{} script
 with @option{--enable-assert}. Usually you want all development features
 enabled so it is a better idea to use @option{--enable-development} which
 invokes @option{--enable-assert} automatically.
@@ -498,7 +498,7 @@ The Prime Directive of @corb{} is that @emph{it has to work everywhere}.
 
 This allows external libraries as long as @corb{} still compiles and works
 properly if the library is not available. Therefore the use of libraries is
-restricted to additional functionality. As an exemple scenario consider file
+restricted to additional functionality. As an example scenario consider file
 handling: ANSI C provides everything needed for usual ASCII files. But with
 additional libraries, compressed text files can also be treated like ASCII
 files. Hence the strategy should be to always provide standard C file handling
@@ -525,7 +525,7 @@ You should test your code while writing.
 
 For unit tests, the functions of a module should be tested by a separate
 program, instead of placing test code in the module itself. With this, tests
-can be compiled on demand. @automake{} supports lightweight testing via the
+can be compiled on demand. Automake supports lightweight testing via the
 @crbtarget{check} target. @xref{Special Targets, Special @make{} Targets,
 Special @make{} Targets}, for more details on how @corb{}'s build system
 simplifies testing.
@@ -661,7 +661,7 @@ by @samp{WARNING}. Hence, this is to be used on non-fatal errors, e.g.@: format
 violations in input files which are fixed by @corb{}.
 
 The exact output of the message functions depends on the configuration of
-@corb{}. If the @command{configure} script is invoked with
+@corb{}. If the @configure{} script is invoked with
 @option{--enable-assert}, file and line where an error occurred will be
 reported.
 @c xxx See @dots{} for more information on configuring @corb{}.
@@ -702,7 +702,7 @@ Do not call @code{malloc()}. Instead, call the macro @code{XMALLOC()} or any
 other from @corb{}'s own memory manager in @libcrbbasic{}. @code{XMALLOC()}
 takes exactly the same arguments as @code{malloc()}, but expands to print out
 the file and line number if @code{malloc()} fails, in case @corb{} was
-configured with @option{--enable-assert}. If the @command{configure} script was
+configured with @option{--enable-assert}. If the @configure{} script was
 invoked with @option{--enable-memcheck}, you also get a simple memory-leak
 checker build into @corb{}. Every time a block, allocated using the
 @code{XMALLOC()}-family, was not freed at the end of run-time, you will be
@@ -715,8 +715,6 @@ WARNING:memmgr.c:366: Memory block of size 800000 not freed, allocated at "test_
 @c xxx mention: ``see foo for configure stuff'' in the end for both options: Line/ file and memmgr.
 @end itemize
 
-@c ab hier
-
 @node Memory allocation philosophy and responsibility, File handling, Conventions and internal routines, C
 @subsection Memory allocation philosophy and responsibility
 
@@ -726,38 +724,41 @@ in @corb{} requires constructors wrapped around object allocation. You also must
 declare an appropriate routine like @code{foo_delete()}. This routine must clean
 up any occupied memory.
 
-@c - to avoid leaks
-@c - own leak checker
-@c - only basic functionality
-@c - works by...but already used in corb, so for tools already in
+To help you avoiding memory leaks, @corb{} comes with its own leak-checker
+built into @libcrbbasic{} (module @modcrbmemmgr{}). It only provides basic
+functionality and is by far no match for professional memory managers, like
+e.g.@: @crbtool{Valgrind}. On integrating your tool into the @corb{} binary, the
+leak checker is already invoked and controlling your @code{malloc}s.
 
-@c For more information on memory handling please refer to @dots{} doc of
-@libcrbbasic{}
+@c xxx For more information on memory handling please refer to @dots{} doc of
+@c xxx @libcrbbasic{}
 
 @node File handling, Conditional compilation, Memory allocation philosophy and responsibility, C
 @subsection File handling
 
 File handling in C is always an issue. Mostly it is seen as hard and tedious
 work. Additionally opening and reading files is a source of many errors.
-Therefore we provide an interface for file handling in @corb{}. With module
-gfile from library libcrbbasic, there should be no more need to invoke
-low-level functions.
+Therefore we provide our own simplified interface for file handling in @corb{}.
+With module @modcrbgfile{} from library @libcrbbasic{}, there should be no more
+need to invoke low-level functions.
 
-gfile has wrappers for opening, reading and writing files. All functions are
-able to handle both, compressed and uncompressed files via one interface.
-Additionally we catch all sorts of errors in the gfile module. With this, you
+@modcrbgfile{} has wrappers for opening, reading and writing files. 
+@c xxx All functions are able to handle both, compressed and uncompressed files
+@c xxx via one interface.
+Additionally we catch all sorts of errors within the module. With this, you
 only have to catch an error value and we care for retrieving and reporting
 error messages.
 
-Instead of using wrappers for low-level functions, you should use higher level
-functions which do the whole job you are intending to do. E.g.@: reading line
-by line is already in gfile with the ability to skip comments in text.
+But, instead of using wrappers for low-level functions, you should use our
+high-level functions which do the whole job you are intending to do. E.g.@:
+Linewise reading is already in @modcrbgfile{}, even with the ability to skip
+comments.
 
-For more information see ...doc of gfile
-Before putting work into reading a certain file format, also check doc of...,
-because @corb{} already supports several formats.
+@c xxx For more information see ...doc of gfile
+@c xxx Before putting work into reading a certain file format, also check doc
+@c xxx of..., because @corb{} already supports several formats.
 
-Note: can one do fseek/ fpos with the interface?
+@c xxx Note: can one do fseek/ fpos with the interface?
 
 @node Conditional compilation,  , File handling, C
 @subsection Conditional compilation
@@ -794,7 +795,8 @@ For a broad discussion of external libraries and @corb{}, please refer to
 @ref{External Libraries}. In principle, one can not set up rules for the use of
 conditional compilation and libraries. This is due to the many ways you can
 invoke libraries in your code. So the rule is just to be ``careful'' on this
-issue. @strong{An example can be found in the code of the gfile module...}
+issue.
+@c xxx @strong{An example can be found in the code of the gfile module...}
 
 One scenario where we encourage you to use conditional compilation is for
 enabling @emph{additional} checking/ optimisation techniques of certain
@@ -826,11 +828,12 @@ enable certain features like @posix{} threads in multi core environments.
 
 In principle, there are two ways to switch between two versions of an
 algorithm: In code and via separate declarations. Mixing two different versions
-of one algorithm in one function, using macros as switches is definitively
-unwanted. This is not only hard to debug, for larger code segments it is
-regarded as impossible to read code without slipping something. Therefore we
-switch between different implementations of the same function. Thereby no
-preprocessor directive occurs in code but on the level of declaration. 
+of one algorithm in one function, using macros as switches is
+@strong{DEFINITIVELY UNWANTED}. This is not only hard to debug, for larger code
+segments it is regarded as impossible to read code without slipping something.
+Therefore we switch between different implementations of the same function.
+Thereby no preprocessor directive occurs in code but on the level of
+declaration. 
 
 Explicitly this means, that we duplicate a function to be optimised, leave the
 general version unchanged and optimise the copy. Both versions are then wrapped
@@ -912,15 +915,15 @@ Last but not least a little hint: Conditional compilation is in fact used
 everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
 header. But lets just say this is OK.
 
+@c ab hier
+@c -------------------------
 
--------------------------
+@c - if possible: calc no. from other consts
+@c - one reason for memmegr: valgrind/ efence not available on all systems
+@c - exit states: EXIT_SUCCESS, EXIT_FAILURE
+@c - global vars?
 
-- if possible: calc no. from other consts
-- one reason for memmegr: valgrind/ efence not available on all systems
-- exit states: EXIT_SUCCESS, EXIT_FAILURE
-- global vars?
-
-naming scheme
-- everything lc/ uc?
-- name for enums?
-- separete section naming or mentioned where it applies?
+@c naming scheme
+@c - everything lc/ uc?
+@c - name for enums?
+@c - separete section naming or mentioned where it applies?

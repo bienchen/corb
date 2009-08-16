@@ -101,7 +101,7 @@ struct NN_scores {
       unsigned long G_dangle3_size;
       char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
-      char** bp_idx;                     /* indeces for base pairs */
+      char** bp_idx;                     /* indices for base pairs */
       unsigned long bp_idx_size;
 };
 
@@ -202,7 +202,7 @@ allocate_init_bp_idx (unsigned long size,
    }
    this->bp_idx_size = size * size;
 
-   /* place indeces of allowed base pairs at the begining of the table */
+   /* place indices of allowed base pairs at the begining of the table */
    for (i = 0; (unsigned long) i < this->bp_allowed_size; i++)
    {
       this->bp_idx[(int) this->bp_allowed[(int) i][0]]
@@ -14258,7 +14258,7 @@ nn_scores_new_init (float offset, Alphabet* sigma,
       return NULL;
    }
 
-   /* create table of base pair indeces */
+   /* create table of base pair indices */
    if (allocate_init_bp_idx (alphabet_size (sigma), a, u, g, c, this,
                              file, line))
    {
@@ -14596,7 +14596,7 @@ nn_scores_get_no_of_tetra_loops (const NN_scores* this)
  *
  * Returns a pointer to the sequence of a tetra loop from the parameter table.
  * Since you got no copy of the sequence, you must NOT free it after use! Be
- * sure to access only indeces smaller than
+ * sure to access only indices smaller than
  * @c nn_scores_get_no_of_tetra_loops(). Please note that the sequence are
  * stored in transformed form.
  *
@@ -15269,7 +15269,7 @@ nn_scores_fprintf_bp_allowed (FILE* stream,
    XFREE (string_start);
 }
 
-/** @brief Print the indeces of base pairs of a scoring scheme to a stream.
+/** @brief Print the indices of base pairs of a scoring scheme to a stream.
  *
  * @params[in] stream Output stream to write to. FILE *stream
  * @params[in] scheme The scoring scheme.

@@ -1,8 +1,8 @@
-@node Preface, Concept Index, corb Copying Conditions, Top
+@node Preface, Symbolism & Abbreviations, corb Copying Conditions, Top
 @unnumbered Preface
 
 @c This file is part of `CoRB --- A Developers Handbook`
-@c Copyright (C) 2008 Stefan Bienert
+@c Copyright (C) 2009 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
 @corb{} is an ever growing collection of tools for the analysis of RNA

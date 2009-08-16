@@ -62,7 +62,10 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @menu
 * corb Copying Conditions::     
 * Preface::                     
+* Symbolism & Abbreviations::   
+* Installation::                
 * Concept Index::               
+* Program Index::               
 * GNU Free Documentation License::  
 @end menu
 
@@ -71,17 +74,19 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @include preface_use.txi
 
-@c Intro
+@include abbreviations_wrapper_use.txi
 
-@c Installation
+@include installation.txi
 
 @c Tools
 
 @c File Formats
 
 @c VI: End
-@include indeces-use.txi
+@include indices-cp-use.txi
 
-@include fdl_wrapper.txi
+@include indices-pg-use.txi
+
+@include fdl_wrapper_use.txi
 
 @bye

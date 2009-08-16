@@ -57,6 +57,9 @@
 #include "brot_cmdline.h"
 #include "brot.h"
 
+#define GAS_CONST 8.314472
+#define COLLATE_THRESH 0.99
+
 static const char NN_2_SMALL_WARNING[] = "Nearest Neighbour model can only be used with "
                              "structures of size greater than 1, size of "
    "given structure (\"%s\"): %lu";
@@ -265,7 +268,7 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
       scmf_rna_opt_data_set_scores (scores, data);
       scmf_rna_opt_data_set_bp_allowed (bp_allowed, data);
 
-      seqmatrix_set_gas_constant (8.314472, sm);
+      seqmatrix_set_gas_constant (GAS_CONST, sm);
 
       seqmatrix_set_func_calc_cell_energy (scmf_rna_opt_calc_simplenn, sm);
       /*scmf_rna_opt_data_init_negative_design_energies (data, sm);*/
@@ -292,7 +295,7 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
       seqmatrix_set_fixed_site_hook (scmf_rna_opt_data_update_neg_design_energy,
                                      sm);
 
-      error = seqmatrix_collate_is (0.99,
+      error = seqmatrix_collate_is (COLLATE_THRESH,
                                     brot_args->steps_arg / 2,
                                     brot_args->temp_arg, 
                                     brot_args->beta_long_arg,
@@ -410,7 +413,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       scmf_rna_opt_data_set_het_window (brot_args->window_size_arg, data);
 
       seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
-      seqmatrix_set_gas_constant (8.314472, sm);
+      seqmatrix_set_gas_constant (GAS_CONST, sm);
 
       error = seqmatrix_simulate_scmf (brot_args->steps_arg,
                                        brot_args->temp_arg,
@@ -432,7 +435,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
      /*  seqmatrix_print_2_stdout (2, sm); */
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
 
-      error = seqmatrix_collate_is (0.99,
+      error = seqmatrix_collate_is (COLLATE_THRESH,
                                     brot_args->steps_arg / 2,
                                     brot_args->temp_arg,
                                     brot_args->beta_long_arg,
@@ -498,7 +501,7 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
    {
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
 
-      error = seqmatrix_collate_is (0.99,
+      error = seqmatrix_collate_is (COLLATE_THRESH,
                                     brot_args->steps_arg / 2,
                                     brot_args->temp_arg,
                                     brot_args->beta_long_arg,

@@ -8,6 +8,11 @@
 @c xxx like @libcrbbasic{} compiled points to docu of libcrbbasic?
 @c xxx also for functions?
 
+@c keys
+@macro keyret{}
+@key{RET}
+@end macro
+
 @c POSIX nameplate
 @macro posix{}
 @acronym{POSIX}
@@ -16,6 +21,23 @@
 @c POSIX expanded
 @macro posixexp{}
 Portable Operating System Interface
+@end macro
+
+@c ANSI nameplate
+@macro ansi{}
+@acronym{ANSI}
+@end macro
+
+@c ANSI expanded
+@macro ansiexp{}
+American National Standards Institute
+@end macro
+
+@c Unix nameplate
+@c Please note: ``Unix'' is most often used for ``UNIX-like'' systems
+@c while ``UNIX'' is used for the UNIX OS
+@macro unix{}
+Unix
 @end macro
 
 @c Format of CoRB tools and CoRB nameplate itself
@@ -28,14 +50,19 @@ Portable Operating System Interface
 @code{\lib\}
 @end macro
 
+@c Format a module name
+@macro crbmod{module}
+@code{\module\}
+@end macro
+
 @c Make targets
 @macro crbtarget{target}
-@option{\target\}
+@sansserif{\target\}
 @end macro
 
 @c C macros
-@macro crbmacro{def}
-@w{@code{\def\}}
+@macro crbmacro{macro}
+@w{@code{\macro\}}
 @end macro
 
 @c several CoRB libs predefined
@@ -45,6 +72,15 @@ Portable Operating System Interface
 
 @macro libcrbrna{}
 @crblib{libcrbrna}
+@end macro
+
+@c several CoRB libs modules predefined
+@macro modcrbmemmgr{}
+@crbmod{memmgr}
+@end macro
+
+@macro modcrbgfile{}
+@crbmod{gfile}
 @end macro
 
 @c several CoRB tools predefined
@@ -86,6 +122,26 @@ Evaluating RNA 2D energy
 @crbtool{GCC}
 @end macro
 
+@c GCC expanded
+@macro gccexp{}
+GNU Compiler Collection
+@end macro
+
+@c BASH nameplate
+@macro bash{}
+@crbtool{BASH}
+@end macro
+
+@c BASH expanded
+@macro bashexp{}
+Bourne-again shell
+@end macro
+
+@c configure script nameplate
+@macro configure{}
+@crbtool{configure}
+@end macro
+
 @c Emacs nameplate
 @macro emacs{}
 @crbtool{Emacs}
@@ -94,16 +150,6 @@ Evaluating RNA 2D energy
 @c git name
 @macro git{}
 @crbtool{GIT}
-@end macro
-
-@c Autoconf nameplate
-@macro autoconf{}
-@crbtool{Autoconf}
-@end macro
-
-@c Automake nameplate
-@macro automake{}
-@crbtool{Automake}
 @end macro
 
 @c Make nameplate

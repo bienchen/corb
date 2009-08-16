@@ -1,4 +1,4 @@
-@node Writing Documentation, Concept Index, The Buildsystem, Top
+@node Writing Documentation, Concept Index, The Build system, Top
 @chapter Writing Documentation --- Texinfofy Your Code & Tool
 
 @c This file is part of `CoRB --- A Developers Handbook`

@@ -1,4 +1,4 @@
-# Last modified: 2009-07-18.00
+# Last modified: 2009-08-06.20
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -27,28 +27,33 @@ AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS) --no-split
 # please note: The version*.texi files are automatically dependencies
 info_TEXINFOS = corb-user-manual.txi corb-developer-handbook.txi
 
-corb_developer_handbook_TEXINFOS = corb.txi                   \
-                                   corb-cpyng_wrapper_dvl.txi \
-                                   corb-copying.txi           \
-                                   impatient.txi              \
-                                   preface_dvl.txi            \
-                                   onomastics.txi             \
-                                   abbreviations.txi          \
-                                   using_git.txi              \
-                                   coding.txi                 \
-                                   licensing.txi              \
-                                   documenting.txi            \
-                                   buildsystem.txi            \
-                                   indeces-dvl.txi            \
-                                   fdl_wrapper.txi            \
+corb_developer_handbook_TEXINFOS = corb.txi                      \
+                                   corb-cpyng_wrapper_dvl.txi    \
+                                   corb-copying.txi              \
+                                   impatient.txi                 \
+                                   preface_dvl.txi               \
+                                   onomastics.txi                \
+                                   abbreviations_wrapper_use.txi \
+                                   abbreviations.txi             \
+                                   using_git.txi                 \
+                                   coding.txi                    \
+                                   licensing.txi                 \
+                                   documenting.txi               \
+                                   buildsystem.txi               \
+                                   indices-dvl.txi               \
+                                   fdl_wrapper_dvl.txi           \
                                    fdl-1.3.txi
 
-corb_user_manual_TEXINFOS = corb.txi                   \
-                            corb-cpyng_wrapper_use.txi \
-                            corb-copying.txi           \
-                            preface_use.txi            \
-                            indeces-use.txi            \
-                            fdl_wrapper.txi            \
+corb_user_manual_TEXINFOS = corb.txi                      \
+                            corb-cpyng_wrapper_use.txi    \
+                            corb-copying.txi              \
+                            preface_use.txi               \
+                            abbreviations_wrapper_use.txi \
+                            abbreviations.txi             \
+                            installation.txi              \
+                            indices-cp-use.txi            \
+                            indices-pg-use.txi            \
+                            fdl_wrapper_use.txi           \
                             fdl-1.3.txi
 
 # create pdf and html docs along with `make all`

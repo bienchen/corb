@@ -51,14 +51,14 @@ extern "C" {
 #ifndef NN_SCORES_H
 #define NN_SCORES_H
 
-/* indeces for multiloop arrays */
-enum stem_indeces {
+/* indices for multiloop arrays */
+enum stem_indices {
    P5_Strand = 0,
    P3_Strand,
    No_Of_Strands
 };
 
-enum dangle_indeces {
+enum dangle_indices {
    P5_Dangle = 0,
    P3_Dangle,
    Ne_Dangle,

@@ -1,5 +1,5 @@
-@node The Buildsystem, Writing Documentation, Using Licenses, Top
-@chapter @autoconf{} & Friends --- The Buildsystem
+@node The Build system, Writing Documentation, Using Licenses, Top
+@chapter Autoconf & Friends --- The Build system
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2008 Stefan Bienert
@@ -11,5 +11,5 @@
 * Special @make{} Targets: Special Targets.    
 @end menu
 
-@node Special Targets,  , The Buildsystem, The Buildsystem
+@node Special Targets,  , The Build system, The Build system
 @section Special @make{} Targets

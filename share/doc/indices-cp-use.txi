@@ -1,0 +1,9 @@
+@node Concept Index, Program Index, Installation, Top
+@appendix Concept Index
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2008 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@printindex cp
+

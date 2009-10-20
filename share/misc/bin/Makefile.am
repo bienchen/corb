@@ -1,4 +1,4 @@
-# Last modified: 2009-07-07.15
+# Last modified: 2009-09-05.14
 
 ## Copyright (C) 2009 Stefan Bienert
 ##
@@ -42,6 +42,9 @@ if CRB_BROT_ITERATIVE
 endif
 if CRB_EVAL_STRUCTURE_FILE
   noinst_SCRIPTS += eval_structure_file
+endif
+if CRB_DOCTOOL
+  noinst_SCRIPTS += doctool
 endif
 
 pl_mods = PBar.pm CorbIO.pm RNA.pm Simplex.pm

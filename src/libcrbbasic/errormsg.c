@@ -56,15 +56,16 @@
 #include "memmgr.h"
 #include "errormsg.h"
 
+
 static int
-throw_error_msg_internal (const char*, int, const char*, va_list)
+throw_error_msg_internal (const char*, const int, const char*, va_list)
 #ifdef __GNUC__
 __attribute__ ((format (printf, 3, 0)))
 #endif /* __GNUC__ */
 ;
 
 static int
-throw_warn_msg_internal (const char*, int, const char*, va_list)
+throw_warn_msg_internal (const char*, const int, const char*, va_list)
 #ifdef __GNUC__
 __attribute__ ((format (printf, 3, 0)))
 #endif /* __GNUC__ */

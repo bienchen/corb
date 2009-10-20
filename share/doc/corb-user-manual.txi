@@ -64,8 +64,11 @@ Copyright @copyright{} 2009 Stefan Bienert.
 * Preface::                     
 * Symbolism & Abbreviations::   
 * Installation::                
+* Rummaging around the CoRB::   
+* and Everything::              
 * Concept Index::               
 * Program Index::               
+* List of Figures::             
 * GNU Free Documentation License::  
 @end menu
 
@@ -78,14 +81,18 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @include installation.txi
 
-@c Tools
+@include corb_tools.txi
 
-@c File Formats
+@include and_everything.txi
+
+@c Energy functions? Probably as Appendix?
 
 @c VI: End
 @include indices-cp-use.txi
 
 @include indices-pg-use.txi
+
+@include indices-fig-use.txi
 
 @include fdl_wrapper_use.txi
 

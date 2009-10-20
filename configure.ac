@@ -1,4 +1,4 @@
-# Last modified: 2009-08-04.15
+# Last modified: 2009-09-05.14
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -53,7 +53,8 @@ CRB_ARG_ENABLE_ASSERT
 # development tools
 CRB_ARG_WITH_CUM([development],
                  [pc_elisp reformat read_viennaparams ex_cmp_er2de_rnaeval
-                  opt_brot_design_terms brot_iterative eval_structure_file])
+                  opt_brot_design_terms brot_iterative eval_structure_file
+                  doctool])
 
 CRB_ARG_WITH_PC_ELISP
 CRB_ARG_WITH_PERL_PROG([reformat], [build reformat tool for source code])
@@ -66,6 +67,7 @@ CRB_ARG_WITH_PERL_PROG([opt_brot_design_terms],
 CRB_ARG_WITH_PERL_PROG([brot_iterative], [build tool to run brot iteratively])
 CRB_ARG_WITH_PERL_PROG([eval_structure_file],
                        [build tool to test brot on a set of structures])
+CRB_ARG_WITH_PERL_PROG([doctool], [build documentation tool])
 
 # Checks for header files
 CRB_CHECK_HEADERS([assert.h float.h limits.h stddef.h])
@@ -157,6 +159,7 @@ AC_MSG_NOTICE(
                        ex_cmp_er2de_rnaeval:   $with_ex_cmp_er2de_rnaeval
                        brot_iterative:         $with_brot_iterative
                        eval_structure_file:    $with_eval_structure_file
+                       doctool:                $with_doctool
                        emacs lisp byte code:   $with_pc_elisp
            
            Build settings:

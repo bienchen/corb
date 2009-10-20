@@ -23,20 +23,38 @@
 @item @erde{}
 @erdeexp{}
 
+@item @base{A}
+Adenine/ Adenosine/ Deoxyadenosine
+
 @item @ansi{}
 @ansiexp{}
 
 @item @bash{}
 @bashexp{}
 
+@item @base{C}
+Cytosine/ Cytidine/ Deoxycytidine
+
+@item @base{G}
+Guanine/ Guanosine/ Deoxyguanosine
+
 @item @gcc{}
 @gccexp{}
+
+@item MFE
+Minimum free energy
 
 @item @posix{}
 @posixexp{}
 
 @item RTFM
 Read the f@bullet{}@bullet{}@bullet{}@bullet{}@bullet{}@bullet{} Manual
+
+@item @base{T}
+Thymine/ -/ Thymidine
+
+@item @base{U}
+Uracil/ Uridine/ Deoxyuridine
 @end table
 
 
@@ -94,20 +112,18 @@ directory which ends in your local installation directory of @corb{}.
 @node Shell Examples,  , Directory Paths, Symbolism
 @subsection Shell Examples
 When referring to shell commands, we use a simple notation. Our shell prompt
-starts with a @samp{$} and is finished by @samp{>}. In between, the current path
-is placed, following the former explanations. Accordingly,
+starts with the current path enclosed in squared brackets and is finished by
+@samp{$}. Accordingly,
 @example
-$ ~ >
+[~] $
 @end example
 @noindent shows a prompt waiting for commands to be executed in your
 home directory.
 
-If a command exceeds line width, the line break is escaped by @samp{\}.
-Until the command is fully expanded, upcoming lines start with @samp{>} instead
-of a full prompt.
+If a command exceeds line width, the line break is escaped by @samp{\}:
 @example
-$ ~/@dots{}/corb/src > gcc -g -O2 -D_XOPEN_SOURCE=600 -o corb crb_cmdline.o \
-> corb.o libcrbapps/libcrbapps.a libcrbbrot/libcrbbrot.a \
-> libcrbrna/libcrbrna.a libcrbbasic/libcrbbasic.a \
-> libcrbfallback/libcrbfallback.a -lm
+[~/@dots{}/corb/src] $ gcc -g -O2 -D_XOPEN_SOURCE=600 -o corb crb_cmdline.o \
+corb.o libcrbapps/libcrbapps.a libcrbbrot/libcrbbrot.a \
+libcrbrna/libcrbrna.a libcrbbasic/libcrbbasic.a \
+libcrbfallback/libcrbfallback.a -lm
 @end example

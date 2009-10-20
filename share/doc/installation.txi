@@ -1,0 +1,629 @@
+@node Installation, Rummaging around the CoRB, Symbolism & Abbreviations, Top
+@chapter Installation
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2009 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+@cindex Installation
+Here, we describe how you could install @corb{} on your @unix{}-like system.
+But we only describe this procedure for our distribution, the source-code
+package. Therefore, you will learn a tiny bit of the so called
+@emph{build system} used by @corb{}, first. With this knowledge you will be
+ready for the setup of the build environment @i{en detail}. While minimal
+effort means setting up installation directories, the actual installation
+process is as easy as hitting @keyret{} twice, with two small commands in front
+of it.
+
+
+@menu
+* For the Impatient::           
+* Requirements::                
+* Unpacking the Sources::       
+* Configuring the Build Environment::  
+* Building CoRB::               
+* Installing CoRB::             
+@end menu
+
+
+@node For the Impatient, Requirements, Installation, Installation
+@section For the Impatient
+For those who think ``RTFM'' always means the others (please note: We also
+provide a special e-mail address for expert-support on the very last page of
+this manual for you.), here is the quick way to go:
+@example
+
+[~/@dots{}/corb] $ ./configure
+[~/@dots{}/corb] $ make
+[~/@dots{}/corb] $ make install
+
+@end example
+
+
+@node Requirements, Unpacking the Sources, For the Impatient, Installation
+@section Requirements to build @crbtool{CoRB}
+@cindex Requirements
+@cindex Required
+@cindex Dependencies
+We try to keep the requirements of @crbtool{CoRB} to a minimum. But there are
+at least three@footnote{Four, we just exclude the need for @crbtool{tar} and
+decompression tools to unwrap the package.} bits you need, so essential that
+most people will make fun of us because we name them. On the other hand, users
+from the non-@unix{}-side of the universe will feel a cold sweat on their back
+on hearing these three things: Since @corb{} is written in the C programming
+language, we need a C compiler and the @make{} utility to build it. Because the
+build system is a large shell script, a @posix{} compliant shell is needed.
+Where ``compliant'' means that many shells, claiming to adhere to the @posix{}
+standard, will also do.
+
+Further dependencies to external software are created by your special demands
+on @corb{}. But as long as you do not insist on something special,
+functionality you are not already using, the build system will automatically
+turn on and off features depending on what is available on your system. For
+more information on optional features, read the output of
+@example
+
+[~/@dots{}/corb] $ ./configure --help
+
+@end example
+@noindent External software is usually hiding behind
+@option{--with-@dots{}} and sometimes @option{--enable-@dots{}} options. 
+
+@pindex make
+While @make{} should also get along with the @posix{} specifications, the
+compiler must understand @ansi{} C89 and a tiny bit of C99@footnote{The only
+C99 feature not covered by a fallback implementation in @corb{} are
+@emph{variadic macros}, often stated as just ``forgotten'' by C89.}. Therefore,
+every compiler you can get your hands on should work here. To check whether you
+have a compiler installed say
+@example
+
+[~] $ cc
+
+@end example
+@noindent or
+@example
+
+[~] $ c99
+
+@end example
+@noindent or
+@example
+
+[~] $ c89
+
+@end example
+@pindex gcc
+@noindent to your shell. If you get a message about missing input files,
+everything is well. Instead, if you get a response like
+``@code{command not found}'', you probably do not have a C compiler installed.
+In the latter case, we highly recommend giving @uref{http://gcc.gnu.org/,
+@gcc{}} a chance. The @gccexp{} is a well maintained, good working piece of
+software and it is free! @gcc{} is also the weapon of choice for @corb{}
+development.
+
+Verifying the availability of the @make{} utility is as easy as for the C
+compiler. Just try
+@example
+
+[~] $ make
+
+@end example
+@pindex make
+@noindent in a shell and if you do not get a ``@code{command not found}''
+message, everything is fine. Otherwise, installing
+@uref{http://www.gnu.org/software/make/, GNU Make} is probably the simplest
+solution, if the tool is missing.
+
+To summaraise, the following are mandatory:
+@itemize @bullet
+  @item Shell, @posix{} compliant, e.g.@:
+        @uref{http://www.gnu.org/software/bash/, GNU @bash{}}
+
+  @item C compiler, @ansi{} C89/ C99 compliant, e.g.@:
+        @uref{http://gcc.gnu.org/, @gcc{}}
+
+  @item @make{} utility, @posix{} compliant, e,g,@:
+        @uref{http://www.gnu.org/software/make/, GNU Make}
+@end itemize
+
+
+@node Unpacking the Sources, Configuring the Build Environment, Requirements, Installation
+@section Unpacking the Sources
+This section is here for of completeness. You probably already know how
+to unravel a tar archive, either in the command line or with a tool on your
+desktop interface.
+
+Since all the action will take place in the shell, here is the usual way to
+unpack the @corb{} sources at the command line:
+@example
+
+[~] $ tar -xzf corb-xyz.tar.gz
+
+@end example
+@pindex tar
+@noindent
+where @samp{xyz} is the version number of your archive.
+
+This command will extract (@samp{tar -x}) the source code from the archive
+compressed in the @crbtool{gzip} format (@samp{tar -z}) into a directory
+@file{corb}
+@pindex gzip
+in the calling directory (in this particular case, your home directory).
+
+@node Configuring the Build Environment, Building CoRB, Unpacking the Sources, Installation
+@section Configuring the Build Environment
+@cindex GNU Autoconf
+@cindex Autoconf
+@pindex configure
+@cindex build environment
+@cindex configure script
+@cindex configure
+The first step of the real installation process is setting up the environment
+for the compilation and where to put everything built. Actually, this is less
+painful then you might think: Due to GNU Autoconf within @corb{},
+everything can be handled automatically without any interaction from you.
+
+Here, ``everything'' is to be understood as an abbreviation for ``everything,
+as long as you have root permissions''. Installing @corb{} from an ordinary user
+account requires at least information on alternative installation directories.
+These and other, manifold, options, are invoked with the @configure{}
+script in the top level directory of the source tree, as the central setup
+command.
+
+Therefore, next the @configure{} script will be introduced in a little
+bit more detail, followed by a rather exhaustive description of relevant
+options. In the end you should be able to run the script and set up your
+personal build environment.
+
+
+@menu
+* The configure Script::        
+* Options of the configure script::  
+* Running the configure script::  
+@end menu
+
+
+@node The configure Script, Options of the configure script, Configuring the Build Environment, Configuring the Build Environment
+@subsection The @crbtool{configure} Script
+@cindex configure script
+@cindex configure
+The @configure{} script is the central utility. It creates the makefiles used
+to compile @corb{}. To determine what goes into a makefile, several tests are
+run, some of them mandatory and some optional. If a mandatory test fails, the
+script will end with an error message. The results of testing are written to
+the shell in a one-line per test manner. Additionally our version of
+@configure{} reports a summary of its run after finishing.
+
+All the makefiles are created in the directory you call @configure{} from.
+Additionally, everything built will be created where the makefiles are.
+
+To learn more about the options of the @configure{} script, try
+@example
+
+[~/@dots{}/corb] $ ./configure --help
+
+@end example
+@noindent
+in a shell.
+
+@node Options of the configure script, Running the configure script, The configure Script, Configuring the Build Environment
+@subsection Options of the @crbtool{configure} Script
+@cindex configure script
+@cindex configure
+Calling the @configure{} script with option @option{--help}, will produce
+similar output to the following (we shortened the full output a little bit,
+indicated by @samp{@dots{}}):
+@example
+
+[~/@dots{}/corb] $ ./configure --help
+`configure' configures corb 0.1 to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+      --help=short        display options specific to this package
+      --help=recursive    display the short help of all the included
+                          packages
+  -V, --version           display version information and exit
+  -q, --quiet, --silent   do not print `checking...' messages
+      --cache-file=FILE   cache test results in FILE [disabled]
+  -C, --config-cache      alias for `--cache-file=config.cache'
+  -n, --no-create         do not create output files
+      --srcdir=DIR        find the sources in DIR [configure dir or `..']
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [PREFIX]
+
+By default, `make install' will install all the files in
+`/usr/local/bin', `/usr/local/lib' etc.  You can specify
+an installation prefix other than `/usr/local' using `--prefix',
+for instance `--prefix=$HOME'.
+
+For better control, use the options below.
+
+Fine tuning of the installation directories:
+  --bindir=DIR            user executables [EPREFIX/bin]
+@dots{}
+
+Program names:
+  --program-prefix=PREFIX            prepend PREFIX to installed program
+                                     names
+@dots{}
+
+System types:
+  --build=BUILD     configure for building on BUILD [guessed]
+  --host=HOST       cross-compile to build programs to run on HOST [BUILD]
+
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as
+                          --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --disable-dependency-tracking  speeds up one-time build
+  --enable-dependency-tracking   do not reject slow dependency extractors
+  --enable-development    invoke "--enable-cflags-warnings"
+                          "--enable-assert" "--enable-memcheck"
+@dots{}
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-lispdir          override the default lisp directory
+@dots{}
+
+Some influential environment variables:
+  EMACS       the Emacs editor command
+@dots{}
+
+Use these variables to override the choices made by `configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+@end example
+
+As you can see, the options of the script can be divided into several sections.
+Here, we only care about three of them:
+@itemize @bullet
+@item
+Installation directories
+
+@item
+Optional Features
+
+@item
+Optional Packages
+@end itemize
+@noindent
+Everything else is either to much for a basic installation or left to special
+cases.
+
+Now follows a list of important options, presented in a copy & paste manner
+from the help output. 
+
+
+@menu
+* --prefix=PREFIX::             
+* --disable-dependency-tracking::  
+* --enable-development::        
+* --enable-cflags-warnings::    
+* --enable-memcheck::           
+* --enable-assert::             
+* --enable-pthreads::           
+* --with-development::          
+* --with-pc-elisp::             
+* --with-reformat::             
+* --with-read-viennaparams::    
+* --with-ex-cmp-er2de-rnaeval::  
+* --with-opt-brot-design-terms::  
+* --with-brot-iterative::       
+* --with-eval-structure-file::  
+@end menu
+
+
+@node --prefix=PREFIX, --disable-dependency-tracking, Options of the configure script, Options of the configure script
+@unnumberedsubsubsec @option{--prefix=PREFIX}
+@cindex installation directories
+@cindex directories
+This option describes the prefix of the directory tree under which the complete
+@corb{} package will be installed. Be aware that only absolute names are
+allowed here, therefore @file{~/} does not work for your home directory. This
+means, shout
+@example
+
+[~/@dots{}/corb] $ ./configure --prefix=/home/user/corb
+
+@end example
+@noindent
+to your computer and @samp{@make{} @crbtarget{install}} will store @corb{}
+binaries in @file{/home/user/corb/bin/} and the documentation in
+@file{/home/user/corb/share/doc/corb/}. More is not installed by the @corb{}
+package.
+
+There are much more options available for the fine tuning of the installation
+directories. These are always generated for the @configure{} script when using
+GNU Autoconf, even if nothing is installed in a particular directory. If you
+plan to install everything into its own private place, here is the list of
+options really used by @corb{}:
+@itemize @w
+@option{--prefix=PREFIX}
+
+@option{--exec-prefix=EPREFIX}
+
+@option{--bindir=DIR}
+
+@option{--datarootdir=DIR}
+
+@option{--docdir=DIR}
+
+@option{--htmldir=DIR}
+
+@option{--pdfdir=DIR}
+@end itemize
+@noindent
+where everything behind @samp{=} is to be substituted with your directory.
+
+
+@node --disable-dependency-tracking, --enable-development, --prefix=PREFIX, Options of the configure script
+@unnumberedsubsubsec @option{--disable-dependency-tracking}
+@cindex Dependency tracking
+A hint at the start: This option is only relevant, if your computer seems to be
+to slow, most of the time. On modern systems you can not measure a difference
+in build time.
+
+What this option does is nearby completely explained by its name.
+@emph{Dependency tracking} is important to @make{}: For the first time build,
+nothing has to be tracked. On calling @make{} again, however, it compares the
+age of build products with the files needed to build them. If some of these
+files were modified after the last call to @make{}, the corresponding entities
+are rebuild.
+
+If you disable dependency tracking, you loose the ability to rebuild @corb{} on
+changes you apply to the code. But you gain the time needed to check the
+dependencies. Therefore, if you only want to build @corb{} and install it, this
+option is safe to use.
+
+
+@node --enable-development, --enable-cflags-warnings, --disable-dependency-tracking, Options of the configure script
+@unnumberedsubsubsec @option{--enable-development}
+Do not use this option until you plan to work on the @corb{} code.
+
+This is an cumulative option to enable development features in @corb{}. If invoked, it pulls in the following options:
+@itemize @w
+@option{--enable-cflags-warnings}
+
+@option{--enable-assert}
+
+@option{--enable-memcheck}
+@end itemize
+
+These options only have effects on C code. For more on development options see @ref{--with-development,@option{--with-development},@option{--with-development}}.
+
+
+@node --enable-cflags-warnings, --enable-memcheck, --enable-development, Options of the configure script
+@unnumberedsubsubsec @option{--enable-cflags-warnings}
+Forces supported compilers to be very restrictive concerning the @ansi{} C
+standard. Supported C compilers are automatically detected by the @configure{}
+script.
+
+This option is intended to be used by developers to assure a high quality of
+code. Everything drifting away from the C standard will lead to a failure
+during compilation.
+
+Enabling pedantic checking should not affect the running time of compiled
+binaries.
+
+
+@node --enable-memcheck, --enable-assert, --enable-cflags-warnings, Options of the configure script
+@unnumberedsubsubsec @option{--enable-memcheck}
+Do not use this option unless you plan to work on the @corb{} code.
+
+This option enables @corb{}'s own memory leak checker for C. Since this needs
+some active memory management functionality, binaries utilising the checker
+will run slower.
+
+
+@node --enable-assert, --enable-pthreads, --enable-memcheck, Options of the configure script
+@unnumberedsubsubsec @option{--enable-assert}
+Do not use this option unless you plan to work on the @corb{} code.
+
+This option enables the @crbmacro{assert} macro for C code. Since @corb{} makes
+extensive use of @crbmacro{assert}, it will run considerably slower (last time
+we checked, everything took longer at a factor of 1.@:3). 
+
+Additionally, the output of file and line number in messages is controlled by
+this option.
+
+
+@node --enable-pthreads, --with-development, --enable-assert, Options of the configure script
+@unnumberedsubsubsec @option{--enable-pthreads}
+Invoke this switch to make use of multi-processor environments.
+
+So far, nothing is parallelised in @corb{}. Hence, this option is for future
+features from the viewpoint of the user. For developers, this enables so called
+thread safety in @corb{}'s C libraries. 
+
+
+@node --with-development, --with-pc-elisp, --enable-pthreads, Options of the configure script
+@unnumberedsubsubsec @option{--with-development}
+This is an cumulative option to trigger the creation of tools used in @corb{}
+development. If invoked, it pulls in the following options:
+@itemize @w
+@option{--with-pc-elisp}
+
+@option{--with-reformat}
+
+@option{--with-read-viennaparams}
+
+@option{--with-ex-cmp-er2de-rnaeval}
+
+@option{--with-opt-brot-design-terms}
+@end itemize
+
+These options have no effects on C code. But they might create further
+dependencies to external software, causing the @configure{} script to fail. For
+more on development options see @ref{--enable-development,
+@option{--enable-development},@option{--enable-development}}.
+
+
+@node --with-pc-elisp, --with-reformat, --with-development, Options of the configure script
+@unnumberedsubsubsec @option{--with-pc-elisp}
+@cindex Lisp
+@cindex Emacs lisp
+@pindex emacs
+You should just ignore this option.
+
+This option enables the creation of a set of functions, making @emacs{} a
+little bit more IDE-like. While these functions are in a stable state, they are
+far away from being complete. Therefore, for non-developers this is useless and
+developers should only care, if they are @emacs{} experts.
+
+
+@node --with-reformat, --with-read-viennaparams, --with-pc-elisp, Options of the configure script
+@unnumberedsubsubsec @option{--with-reformat}
+You should just ignore this option.
+
+This option only deals with something which is not used by @corb{} anymore and
+will be removed in the future. We only describe this in the manual to keep you
+away from being curious.
+
+If invoked, the build-product stays in the @file{share/misc/bin} directory of
+the @corb{} package.
+
+@node --with-read-viennaparams, --with-ex-cmp-er2de-rnaeval, --with-reformat, Options of the configure script
+@unnumberedsubsubsec @option{--with-read-viennaparams}
+You should just ignore this option.
+
+This option enables the creation of the tool @crbtool{read_viennaparams} in the
+sub-directory @file{share/misc/bin/} of your build directory. This tool is used
+to copy the scoring function of the @uref{http://www.tbi.univie.ac.at/RNA/,
+Vienna RNA Package} into @corb{} code.
+
+If invoked, the tool is not installed but stays in the @file{share/misc/bin}
+directory of the @corb{} package.
+
+@node --with-ex-cmp-er2de-rnaeval, --with-opt-brot-design-terms, --with-read-viennaparams, Options of the configure script
+@unnumberedsubsubsec @option{--with-ex-cmp-er2de-rnaeval}
+You should just ignore this option.
+
+This option enables the creation of the tool @crbtool{ex_cmp_er2de_rnaeval} in
+the sub-directory @file{share/misc/bin/} of your build directory. This tool is
+used to compare the scoring function in @corb{} with the
+@uref{http://www.tbi.univie.ac.at/RNA/, Vienna RNA Package}. This means, after
+updating the scores using @crbtool{read_viennaparams}, we verify them using
+@crbtool{ex_cmp_er2de_rnaeval}.
+
+If invoked, the tool is not installed but stays in the @file{share/misc/bin}
+directory of the @corb{} package.
+
+@node --with-opt-brot-design-terms, --with-brot-iterative, --with-ex-cmp-er2de-rnaeval, Options of the configure script
+@unnumberedsubsubsec @option{--with-opt-brot-design-terms}
+You may just ignore this option.
+
+This option enables the creation of the tool @crbtool{opt_brot_design_terms} in
+the sub-directory @file{share/misc/bin/} of your build directory. This tool is
+used to optimise the default parameters in @brot{}.
+
+@crbtool{opt_brot_design_terms} utilises the @emph{simplex algorithm} to
+optimise parameters. For this task, we provide a generalised version of this
+algorithm in the Perl scripting language. You may use this code for your own
+needs under the terms of the GPL. With @crbtool{opt_brot_design_terms} you have
+an excellent example on how to use our simplex.
+
+If invoked, the tool is not installed but stays in the @file{share/misc/bin}
+directory of the @corb{} package.
+
+@node --with-brot-iterative, --with-eval-structure-file, --with-opt-brot-design-terms, Options of the configure script
+@unnumberedsubsubsec @option{--with-brot-iterative}
+If you are planning to use @brot{}, this option might come in handy. It enables
+the creation of the tool @crbtool{brot_iterative} in the sub-directory
+@file{share/misc/bin/} of your build directory. It iteratively utilises the
+@brot{} utility to design a sequence.
+
+@brot{} alone only designs a sequence for a given structure. This does not
+include folding the sequence and comparing its structure to its input. Using
+tools of the @uref{http://www.tbi.univie.ac.at/RNA/, Vienna RNA Package}, this
+is what @crbtool{brot_iterative} does for 2D, pseudoknot-free structures.
+
+If invoked, the tool is not installed but stays in the @file{share/misc/bin}
+directory of the @corb{} package.
+
+@node --with-eval-structure-file,  , --with-brot-iterative, Options of the configure script
+@unnumberedsubsubsec @option{--with-eval-structure-file}
+You may just ignore this option.
+
+This option enables the creation of the tool @crbtool{eval_structure_file} in
+the sub-directory @file{share/misc/bin/} of your build directory. It runs
+@brot{} on a file with several structures and calculates a quality score. This
+is used in @brot{} development for benchmarking.
+
+If invoked, the tool is not installed but stays in the @file{share/misc/bin}
+directory of the @corb{} package.
+
+
+@node Running the configure script,  , Options of the configure script, Configuring the Build Environment
+@subsection Running the @crbtool{configure} script
+@cindex configure script
+@cindex configure
+@cindex Running configure
+After reading everything on options of the @configure{} command, now it is time
+to run the script:
+@example
+
+[~/@dots{}/corb] $ ./configure [OPTIONS] --prefix=DIR
+
+@end example
+@noindent
+where @samp{[OPTIONS]} are the options you have chosen from above and
+@samp{DIR} is the directory where you want to install everything.
+
+
+@node Building CoRB, Installing CoRB, Configuring the Build Environment, Installation
+@section Building @crbtool{CoRB}
+Once you have configured the build system, building @corb{} is as easy as
+typing
+@example
+
+[~/@dots{}/corb] $ make
+
+@end example
+@noindent
+in the same directory you called @configure{} in. After this, you should fetch
+yourself a glass of beer, a cup of tea or coffee, since @make{} will take a
+while to finish its duties. During the build process, it might look like as if
+the system hangs. But do not worry, on slow computers, single objects need up
+to 5minutes to be built, while no messages are send to the shell.
+
+After building @corb{}, feel free to run automated checks on your system.
+@example
+
+[~/@dots{}/corb] $ make check
+
+@end example
+@noindent
+will start a bunch of tests which are delivered with @corb{}. If you get a
+message on failing @make{} while testing, you are in real trouble. In this
+case, contact us. In case you see several error messages swooshing by, do not
+worry: These are just the tests on the error recovery system.
+
+
+@node Installing CoRB,  , Building CoRB, Installation
+@section Installing @crbtool{CoRB}
+After configuring and building, installing @corb{} on your system is only one
+@make{} target away:
+@example
+
+[~/@dots{}/corb] $ make install
+
+@end example
+@noindent
+This command copies the binary and the documentation to the places set by the
+@configure{} script.

@@ -24,9 +24,13 @@ gmon.out
 Makefile
 Makefile.in
 share/misc/bin/reformat
+share/misc/bin/doctool
 share/misc/bin/read_viennaparams
 share/misc/bin/ex_cmp_er2de_rnaeval
 share/misc/bin/opt_brot_design_terms
+share/misc/bin/simplex_brot_params
+share/misc/bin/eval_structure_file
+share/misc/bin/brot_iterative
 share/misc/emacs/elc-stamp
 autom4te.cache
 *.bkp
@@ -59,7 +63,8 @@ src/libcrbrna/test_secstruct
 /src/corb
 share/misc/bin/ex_cmp_er2de_rnaeval
 share/doc/*.html
-share/doc/*.pdf
+corb-developer-handbook.pdf
+corb-user-manual.pdf
 
 # ignore cpowner file used by emacs helper
 /cpowner
@@ -72,6 +77,7 @@ share/doc/*.fn
 share/doc/*.ky
 share/doc/*.log
 share/doc/*.pg
+share/doc/*.pgs
 share/doc/*.toc
 share/doc/*.tp
 share/doc/*.vr

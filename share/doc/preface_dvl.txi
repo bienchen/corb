@@ -12,7 +12,7 @@ developer's guide, @emph{not} an user's manual.
 
 This handbook tries to be holistic in its description of the @corb{}
 development process. But it does not claim to be free of all errors. If you
-stumble upon some non-up-to-date information, spelling mistakes, errors in
+stumble upon some out of date information, spelling mistakes, errors in
 grammar or what ever might be wrong, please try to solve the issue. On
 conceptual problems you should contact the author, first. If you do not feel
 like helping us assuring a high quality of this manual, you should at least

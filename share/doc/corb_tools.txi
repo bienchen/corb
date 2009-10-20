@@ -1,0 +1,231 @@
+@node Rummaging around the CoRB, and Everything, Installation, Top
+@chapter Rummaging around the @crbtool{CoRB}
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2009 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+This chapter lists and explains all the tools coming with @corb{}. But first,
+you get a little introduction to the philosophy of our toolbox. Then the tools
+are presented each in its own section, with their options and working
+principles explained. Detailed information on input data, however, will be
+presented in another chapter. Here we only refer to it in a general way, e.g.@:
+we might state that a tool reads RNA from file, but explain nothing on the file
+format, here.
+
+
+@menu
+* Philosophy::                  
+* BROT::                        
+* ER2DE::                       
+@end menu
+
+
+@node Philosophy, BROT, Rummaging around the CoRB, Rummaging around the CoRB
+@section Philosophy
+``Philosophy'' is not the first tool in @corb{}, but something neat to think
+about (right after reading this manual). It started just a few thousand years
+ago by the smart people of Miletus. Here, however, it describes the working
+principle behind @corb{}.
+
+@pindex corb
+The idea of @corb{} is to encapsulate everything in one single program, the
+@crbtool{corb} binary. For you, this means that each tool is started as an
+argument of @crbtool{corb}:
+@example
+
+[~/@dots{}] $ corb "TOOL [OPTIONS] [DATA]"
+
+@end example
+@noindent
+where @samp{TOOL} is the @corb{} tool you want to use with @samp{[DATA]} as
+input data and @samp{[OPTIONS]} as its options.
+
+Some people might regard this scheme as anoying, but the benefits of this
+method are:
+@itemize @bullet
+
+@item
+You will always use tools from the same version, once you call them all from
+the same binary.
+
+@item
+@cindex configure
+@cindex configure script
+Having parallel installations of different @corb{} variants is more convenient:
+Just rename the binary, e.g.@: give it a descriptive suffix by running the
+@configure{} script with @option{--program-suffix=SUFFIX}. 
+
+@item
+If you need to copy @corb{}, e.g.@: to send it to a friend via e-mail, there is
+only one file to copy.
+
+@item
+If you find any more advantages, please let us know.
+
+@end itemize
+@c xxx if the handling is to anoying, use aliases
+
+@c tools...
+@node BROT, ER2DE, Philosophy, Rummaging around the CoRB
+@section @crbtool{BROT}
+@cindex @crbtool{BROT}
+@pindex brot
+
+@brot{} is our @emph{b}asic @emph{R}NA @emph{o}ptimisation @emph{t}ool. The
+goal is to estimate an RNA sequence which conserves a given 2D structure. With
+the possibility to predefine nucleotides for certain positions, you can
+optimise a given RNA molecule concerning its stability.
+
+@menu
+* Overview::                    
+* Input Data::                  
+* Output::                      
+* Options::                     
+@end menu
+
+@node Overview, Input Data, BROT, BROT
+@subsection Overview
+@float Figure,fig:brot-ex1
+@center @crbimage{brot-mission, 15cm,, Throw your structure into @crbtool{BROT} and recieve a sequence.}
+@caption{The @crbtool{BROT} mission.}
+@end float
+
+For its design task, @crbtool{BROT} uses a mean field approach, treating RNA
+not longer as a simple sequence, but as a system of 4-state sites. The goal is,
+to drive this system into corner points, where each site has a probability of 1
+of being a single base type. The alley leading to this goal adjusts
+probabilities using site-specific mean fields calculated on distinct
+interactions. The updates of the probability-populations are, in theory,
+repeated until the system stops changing. In practice, the termination of a
+simulation is controlled by
+@itemize @bullet
+
+@item
+an entropy like measure (later we will call this @emph{matrix-entropy}),
+
+@item
+an artificial temperature used to cool the system,
+
+@item
+a maximum number of iterations.
+
+@end itemize
+
+To calculate energies, @crbtool{BROT} utilises three ``energy'' terms. One
+to design intended interactions, another to avoid unwanted pairing and the
+last should produce more heterogeneous sequences. These terms are
+tunable, @pxref{Options} for detailed information.
+
+As input, @crbtool{BROT} takes everything, small and large structures. Larger
+structures need more time, but the composition of structural features also
+influences the running time. Basically, we scale linearly with structure size.
+With growing structures, if not all sites can be fixed in a single run,
+additional simulation cycles become necessary, probably raising the running
+time nonlinearly.
+
+Up to now you might be wondering that we say nothing on the evaluation of a
+designed sequence. This is due to the fact, that there is no such thing in
+@crbtool{BROT}, since there is no iterative refinement implemented in the tool
+itself. This has three major reasons. First, our evaluation of the software
+revealed, that it is usually enough to run @crbtool{BROT} once, to generate a
+good answer. The second point is just its complexity. Since the simulation
+method depends on more than 10 parameters, we decided against anything beyond
+the design task, avoiding adding even more options to the software. The last
+reason against a predefined checking routine is the availability of many
+folding methods. Nowadays, there are tools predicting the secondary structure
+of RNA following a @emph{minimum free energy} (MFE) approach, using the
+@emph{partition function} (PF) or with one of the numerous
+@emph{statistical models}. We believe it should be your choice which methods
+fits your needs, best. Furthermore, @crbtool{BROT} is able to design sequences
+for structures containing pseudoknots, which is still a hard task to predict
+using common prediction schemes. 
+
+Therefore it is up to you to verify the design. Since the results of
+@crbtool{BROT} do not depend on its algorithm but on the energy/ scoring
+function, it should be compatible with any structure prediction tool you can
+think of. If there is need for refinement, the idea is to rerun @crbtool{BROT}
+with certain sites fixed. Thereby you are in charge to define what is to be
+considered fixed and which sites are to be left variable. The @crbtool{CoRB}
+source-code package comes with a simple Perl script, usable as a template how
+to drive @crbtool{BROT} iteratively, called @crbtool{brot_iterative}
+(@pxref{--with-brot-iterative}).
+
+@c Considering the usage of a scoring function by @crbtool{BROT}, pseudoknots
+@c are especially to be named. In the current state of development, we treat
+@c knots in a 2D structure as additional secondary structure elements. This
+@c means, that there are no special contributions/ terms for pseudoknots in the
+@c scoring scheme.
+
+@brot{} can treat pseudoknots, but they are simply secondary structure. There
+are no special scoring parameters.
+
+The last item on our introductory-agenda is the robustness of @crbtool{BROT}.
+As for all sequence design tools we know of, there are cases where they do not
+find a valid result. Speaking of @crbtool{BROT} this shows by two sites which
+are intended to interact, but are inhabited by bases which can not form a
+canonical Watson-Crick base pair. Since the result-sequence is not checked by
+@crbtool{BROT}, it is always a good idea to run your result through 
+@pindex er2de
+@crbtool{ER2DE} (@pxref{ER2DE}).
+
+@node Input Data, Output, Overview, BROT
+@subsection Input Data
+As input for the  design task, we use RNA 2D structures. The simplest
+specification of this would be a list of base pairs. @crbtool{BROT} however,
+eats structures in Vienna notation immediately on the command line or wrapped
+in a file.
+@c (@strong{SEE OPTION -f},@strong{LINK TO SECTION ON CoRB FILE FORMATS}).
+
+Be aware that @crbtool{BROT} loves all kinds of twisted secondary structures,
+including pseudoknots, as long as they are formed by canonical base pairs.
+
+@node Output, Options, Input Data, BROT
+@subsection Output
+Since this is all about sequence design, the output is just a plain RNA
+sequence printed to the command line.
+
+If you need the stability of the sequence folded into the input structure, use 
+@pindex er2de
+@crbtool{ER2DE} (@pxref{ER2DE}).
+
+@c - to get energy use er2de
+
+
+@node Options,  , Output, BROT
+@subsection Options
+@c - options are unnumbered
+
+@c - something on energy function? Later with options!
+@c - something on nn -> own section in general chapter
+
+@node ER2DE,  , BROT, Rummaging around the CoRB
+@section @crbtool{ER2DE}
+@cindex @crbtool{ER2DE}
+@pindex er2de
+
+@c xxx Additional sections on energy models? Running time?
+
+
+@c xxx hints for the developer handbook
+@c section/ chapter Writing a manual for your tool
+@c - place your manual in the global user manual
+@c - chapter Rummaging around the CoRB
+@c - file corb_tools.txi
+@c - in own section
+@c - should contain...
+@c   - intro: info on tool
+@c   - overview: summary on input/ output/ options
+@c   - input:
+@c   - output: 
+@c   - list of options, each in its own section
+@c   - not a section ``options'' with the options as subsections, so that a
+@c     list of options is accesible via an early shortlist
+@c   - options probably have their own subsections -> keep tree small
+@c - images:
+@c   - White or transparent background, beside it needs a colorful bg by
+@c     intention
+@c   - Save img. scaled to right size: Scaling does not work for html
+@c   - store imgs im in doc dir, because pics are dep. of manual so its just
+@c     the easiests way
+

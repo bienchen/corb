@@ -1,4 +1,4 @@
-# Last modified: 2009-08-17.00
+# Last modified: 2009-10-20.19
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -19,6 +19,8 @@
 ## along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 
 @SET_MAKE@
+
+AUTOMAKE_OPTIONS = -Wno-override
 
 ACLOCAL_AMFLAGS = -I share/misc/m4
 
@@ -51,10 +53,21 @@ corb_user_manual_TEXINFOS = corb.txi                      \
                             abbreviations_wrapper_use.txi \
                             abbreviations.txi             \
                             installation.txi              \
+                            corb_tools.txi                \
+                            brot-mission-pdf.pdf          \
+                            brot-mission.png              \
+                            and_everything.txi            \
+                            vienna_notation-pdf.pdf       \
+                            vienna_notation.png           \
                             indices-cp-use.txi            \
                             indices-pg-use.txi            \
+                            indices-fig-use.txi           \
                             fdl_wrapper_use.txi           \
                             fdl-1.3.txi
+
+# disable the dvi rule, since we do not support it (would need all pictures of
+# the manuals in eps format)
+dvi:
 
 # create pdf and html docs along with `make all`
 all-local: pdf html

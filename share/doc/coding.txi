@@ -1,4 +1,4 @@
-@node Coding, Using Licenses, Using GIT, Top
+@node Coding
 @chapter Code --- Notes and Coding Rules
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -26,7 +26,7 @@ chapter a set of language specific rules is listed.
 @end menu
 
 
-@node General rules, C,, Coding
+@node General rules, C, Coding, Coding
 @section General rules
 @cindex General rules
 This is a set of rules applying to all programming languages used in @corb{}.
@@ -115,7 +115,7 @@ There should usually be a space after punctuation, for exactly the same reasons
 as in English (helping readability). Commas and semi-colons definitely want to
 be followed by a space.
 
-Do not write 
+Do not write
 @example
    for (a=0;a<lim;a++)
 @end example
@@ -137,6 +137,8 @@ trying to keep readability.
 This is a set of general rules for function naming. There might exist some
 extra rules for certain programming languages. These are placed in the
 corresponding sections.
+
+Function names use lower case letters only.
 
 Start your function name with the module or class it belongs to. Very long
 module/ class names may be consistently abbreviated.
@@ -168,13 +170,16 @@ good idea, here.
 
 There are exceptions to these rules in @corb{}. But these are always special
 cases, e.g.@: replacement functions for the @code{printf} family from a module
-@code{mprintf} are of course not called @code{mprintf_printf}. 
+@code{mprintf} are of course not called @code{mprintf_printf}.
 
 
 @node Variable naming,  , Function naming, General rules
 @subsection Variable naming
 @cindex Variable naming
 @cindex Names
+
+Variable names use lowercase letters only. For improved readability space your
+names with underscores.
 
 Use ``telling'' variable names. That is, do not use arbitrary character
 combinations. Also do not use names which tell you the whole live of a
@@ -210,7 +215,7 @@ For indices, single characters are allowed.
 * Boolean::                     
 * Assertions::                  
 * Macros::                      
-* Multidimensional arrays::     
+* Enumerations (enum)/ Multidimensional arrays::  
 * Visibility::                  
 * External Libraries::          
 * Testing::                     
@@ -319,7 +324,7 @@ already handled by @corb{} in library @libcrbbasic{}. Thus, a type
 
 @node Assertions, Macros, Boolean, C
 @subsection Assertions
-@cindex @code{assert}
+@cindex @crbmacro{assert}
 @cindex Input checking
 @cindex Check parameters
 @cindex Parameter checking
@@ -334,18 +339,34 @@ thus assertions are removed from the binary.
 By this we avoid the overhead of checking for the normal user. And since we
 know, that there is no such overhead, we can also use assertions at points
 where it is really expensive, e.g.@: recursive functions. Usually putting an
-@code{assert(SOMETHING)} only raises the constant of your running time so your
-code will run longer, not endlessly.
+@crbmacro{assert(SOMETHING)} only raises the constant of your running time so
+your code will run longer, not endlessly.
 
 Since assertions are not available by default, you must not do anything else
-beside checking for values in an @code{assert}-statement. Something like
+beside checking for values in an @crbmacro{assert}-statement. Something like
 @example
+
    assert(var = function());
 
    function_to_work_with_new_value_of(var);
+
 @end example
 @noindent
 is definitively @strong{NOT ALLOWED}.
+
+This also implies, that the use of @crbmacro{assert} for testing of results,
+e.g.@: like
+@example
+
+   char* sample = XMALLOC (4711 * sizeof (*string));
+
+   assert(sample);
+
+@end example
+@noindent
+is definitively @strong{NOT ALLOWED}. Once the @crbmacro{assert} macro is
+turned off, you might run into undefined behaviour. Use a charming
+@code{if}-statement instead.
 
 To turn on assertions while developing, just run the @configure{} script
 with @option{--enable-assert}. Usually you want all development features
@@ -353,29 +374,35 @@ enabled so it is a better idea to use @option{--enable-development} which
 invokes @option{--enable-assert} automatically.
 
 
-@node Macros, Multidimensional arrays, Assertions, C
+@node Macros, Enumerations (enum)/ Multidimensional arrays, Assertions, C
 @subsection Macros
 @cindex Macros
 @cindex @code{#define}
-@cindex @code{__FILE__}
-@cindex @code{__LINE__}
+@cindex @crbmacro{__FILE__}
+@cindex @crbmacro{__LINE__}
 We do not make extensive use of macros.
 
 We do @emph{not} use functional macros. The problem with functional macros is
 parameter evaluation. Each time a parameter is used in macro code, it is
 evaluated. Assume we have a macro to find the smaller of two values:
 @example
+
    #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
 @end example
 @noindent
 Now we use this macro with two variables:
 @example
+
    min = MIN(i++, j++);
+
 @end example
 @noindent
 Evaluates to:
 @example
+
    min = (i++) < (j++) ? (i++) : (j++);
+
 @end example
 @noindent
 Additionally macros of such type will increase the running time of your code
@@ -384,13 +411,17 @@ when used with function calls as parameters.
 We @emph{never} use variables names in macros. For example some people use
 macros for loops:
 @example
+
    #define FOR_LOOP(X) for (i = 0; i < (X); i++)
+
 @end example
 @noindent
 Such macros always assume that certain variables are in current scope. This
 makes code hard to understand/ debug. So the ``correct'' loop macro would be:
 @example
+
    #define FOR_LOOP(I, X) for ((I) = 0; (I) < (X); (I)++)
+
 @end example
 @noindent
 Since this is sort of a functional macro, we do not use this at all.
@@ -398,17 +429,19 @@ Since this is sort of a functional macro, we do not use this at all.
 Nevertheless, macros are allowed for constant values. But try to avoid them
 where possible, e.g.@: for some magic integer values you should use the
 @code{enum} construct. Or use global constants for values which are only seen
-by one module. Especially on character arrays the compiler benefits from this. 
+by one module. Especially on character arrays the compiler benefits from this.
 
 There is only one case where macros are recommended. In some situations you
 would like to see the file and the line number where a problem occurs in a
-message. For this, C provides the @code{__FILE__} and @code{__LINE__} macros.
-If you have a function, which takes the file and line number as arguments, wrap
-the function by a macro and hide these arguments. E.g.@: the @corb{} memory
-allocation functions use this:
+message. For this, C provides the @crbmacro{__FILE__} and @crbmacro{__LINE__}
+macros. If you have a function, which takes the file and line number as
+arguments, wrap the function by a macro and hide these arguments. E.g.@: the
+@corb{} memory allocation functions use this:
 @example
+
    #define XMALLOC(SIZE)                \
       xmalloc(SIZE, __FILE__, __LINE__)
+
 @end example
 @noindent
 This assures that we can immediately catch the point where a memory block was
@@ -417,8 +450,8 @@ allocated but never freed.
 Macro names are written in all upper case letters and use underscores as spaces.
 
 
-@node Multidimensional arrays, Visibility, Macros, C
-@subsection Multidimensional arrays
+@node Enumerations (enum)/ Multidimensional arrays, Visibility, Macros, C
+@subsection Enumerations (@code{enum})/ Multidimensional arrays
 @cindex Enumerations
 @cindex @code{enum}
 @cindex Multidimensional arrays
@@ -430,7 +463,7 @@ list of certain attributes. To improve readability/ make code more
 comprehendible, we use the attribute names as indices.
 
 For naming values, C provides the @code{enumeration} type. Beside giving us
-names for our attributes, it also tells us the size of a particular dimension. 
+names for our attributes, it also tells us the size of a particular dimension.
 This is achieved by adding an extra name at the end of the @code{enum} list.
 
 Here is a little example on how to use @code{enum}s and arrays:
@@ -448,39 +481,44 @@ everything goes. But how should anybody else figure out what is the 5' or the
 3' position? This would require code inspection or you just give names to the
 storage of the pairing partners:
 @example
-  enum 
+  enum
   @{
-    p5_base = 0,
-    p3_base,
-    n_bases
+    P5_BASE = 0, /* 5' base */
+    P3_BASE,     /* 3' base */
+    N_BASES
   @};
 @end example
 @noindent
-Additionally to @code{p5_base} and @code{p3_base} you have a value
-@code{n_bases}. This is automatically set to 2 and should be used for
+Additionally to @code{P5_BASE} and @code{P3_BASE} you have a value
+@code{N_BASES}. This is automatically set to 2 and should be used for
 allocating the array:
 @example
-  loops = (int**) XMALLOC_2D(n, n_bases, sizeof(**int));
+  loops = (int**) XMALLOC_2D(n, N_BASES, sizeof(**int));
 @end example
 @noindent
 Later you decide also to store the loop size together with the pairing partners.
 With @code{enum}s this only means adding an additional value:
 @example
-  enum 
+  enum
   @{
-    p5_base = 0,
-    p3_base,
-    size,
-    n_bases
+    P5_BASE = 0, /* 5' base */
+    P3_BASE,     /* 3' base */
+    SIZE,        /* No. of unpaired bases */
+    N_BASES
   @};
 @end example
 @noindent
-Now the size can be stored in @code{loops[i][size]}. Since you used
-@code{n_bases} for the allocation you do not have to change anything because
+Now the size can be stored in @code{loops[i][SIZE]}. Since you used
+@code{N_BASES} for the allocation you do not have to change anything because
 now it is magically set to 3.
 
+As you may have noticed, enumerators in @corb{} are written in all upper case
+with @samp{_} for nice alignment. Also consider using a common prefix
+throughout certain enumerations, e.g.@: use @code{ERR_@dots{}} for error codes.
+Each enumerator should immediately be followed by a short line of description.
+@c xxx what about unique prefixes for files/ modules/ libs?
 
-@node Visibility, External Libraries, Multidimensional arrays, C
+@node Visibility, External Libraries, Enumerations (enum)/ Multidimensional arrays, C
 @subsection Visibility
 @cindex Macros
 @cindex @code{enum}
@@ -531,12 +569,12 @@ Special @make{} Targets}, for more details on how @corb{}'s build system
 simplifies testing.
 
 With all functions of a module to be tested in the same @code{main} function,
-also use hardcoded data with the test code. 
+also use hardcoded data with the test code.
 
 Providing a short message of what is tested before a function call is a good
 idea to help finding problems. You should use the @crbmacro{THROW_WARN_MSG}
 macro to do so. Use the @crbmacro{THROW_ERROR_MSG} macro if a check fails and
-exit the @code{main} function with the @crbmacro{EXIT_FAILURE} macro. 
+exit the @code{main} function with the @crbmacro{EXIT_FAILURE} macro.
 
 
 @node Functions, Conventions and internal routines, Testing, C
@@ -570,13 +608,14 @@ separate definition files. @xref{Include files}, for details.
 
 
 The function type goes on its own line. If the parameter list exceeds one line,
-all but the first go on their own line. Opening and closing braces are on their
-own lines without indent:
+all but the first go on their own line. Unchanged parameters should be declared
+as @code{const}. Opening and closing braces are on their own lines without
+indent:
 @example
 int
-function_foo (int arg1,
+function_foo (const int arg1,
               @dots{},
-              int arg1098)
+              const int arg1098)
 @{
   @dots{}
 @}
@@ -596,16 +635,19 @@ it. Instead, you should define it once, before it is used.
 
 In other words, do
 @example
-static int s_function (int arg) @{ @dots{} @}
+static int
+s_function (int arg) @{ @dots{} @}
 @dots{}
 b = s_function (a);
 @end example
 @noindent
 Rather than
 @example
-static int s_function (int arg);
+static int
+s_function (int arg);
 @dots{}
-static int s_function (int arg) @{ @dots{} @}
+static int
+s_function (int arg) @{ @dots{} @}
 @dots{}
 b = s_function (a);
 @end example
@@ -627,7 +669,7 @@ a static function by the time it is used.
 
 Generally, C functions in @corb{} do not print out too much information in case
 of error. They must, however, return an error code. The C functions should use
-@code{THROW_ERROR_MSG()} to pass on the result of @code{strerror()}/
+@crbmacro{THROW_ERROR_MSG()} to pass on the result of @code{strerror()}/
 @code{perror()} as early as possible. Typically, this means the lower level C
 code will write something like @samp{no such file or directory}, but it is up
 to the calling function to decide whether or not to go on.
@@ -656,9 +698,9 @@ pointers. In the worst case, a function which can fail in several ways, you
 have to use a pointer to retrieve dedicated codes in its parameter list.
 
 Another mechanism for reporting problems is provided via
-@code{THROW_WARN_MSG()}. Instead of @samp{ERROR}, the message will be prefixed
-by @samp{WARNING}. Hence, this is to be used on non-fatal errors, e.g.@: format
-violations in input files which are fixed by @corb{}.
+@crbmacro{THROW_WARN_MSG()}. Instead of @samp{ERROR}, the message will be
+prefixed by @samp{WARNING}. Hence, this is to be used on non-fatal errors,
+e.g.@: format violations in input files which are fixed by @corb{}.
 
 The exact output of the message functions depends on the configuration of
 @corb{}. If the @configure{} script is invoked with
@@ -688,8 +730,8 @@ There are some general areas to think about:
 @item Printing
 
 Functions should not print to @file{stdout} or @file{stderr} directly.
-Everything should go via @code{THROW_ERROR_MSG()}, @code{THROW_WARN_MSG()} or
-@code{mprintf()}.
+Everything should go via @crbmacro{THROW_ERROR_MSG()},
+@crbmacro{THROW_WARN_MSG()} or @code{mprintf()}.
 
 @c xxx point to docu of libcrbbasic here, either divided hints for errormsg and
 @c xxx mprintf or a general pointer to libcrbbasic
@@ -698,14 +740,14 @@ Everything should go via @code{THROW_ERROR_MSG()}, @code{THROW_WARN_MSG()} or
 @cindex @code{malloc}
 
 
-Do not call @code{malloc()}. Instead, call the macro @code{XMALLOC()} or any
-other from @corb{}'s own memory manager in @libcrbbasic{}. @code{XMALLOC()}
+Do not call @code{malloc()}. Instead, call the macro @crbmacro{XMALLOC()} or any
+other from @corb{}'s own memory manager in @libcrbbasic{}. @crbmacro{XMALLOC()}
 takes exactly the same arguments as @code{malloc()}, but expands to print out
 the file and line number if @code{malloc()} fails, in case @corb{} was
 configured with @option{--enable-assert}. If the @configure{} script was
 invoked with @option{--enable-memcheck}, you also get a simple memory-leak
 checker build into @corb{}. Every time a block, allocated using the
-@code{XMALLOC()}-family, was not freed at the end of run-time, you will be
+@crbmacro{XMALLOC()}-family, was not freed at the end of run-time, you will be
 notified by a message like:
 @example
 WARNING:memmgr.c:366: Memory block of size 800000 not freed, allocated at "test_memmgr.c" line 131.
@@ -742,7 +784,7 @@ Therefore we provide our own simplified interface for file handling in @corb{}.
 With module @modcrbgfile{} from library @libcrbbasic{}, there should be no more
 need to invoke low-level functions.
 
-@modcrbgfile{} has wrappers for opening, reading and writing files. 
+@modcrbgfile{} has wrappers for opening, reading and writing files.
 @c xxx All functions are able to handle both, compressed and uncompressed files
 @c xxx via one interface.
 Additionally we catch all sorts of errors within the module. With this, you
@@ -765,7 +807,7 @@ comments.
 @cindex Conditional compilation
 @cindex @code{#ifdef}
 @cindex @code{#ifndef}
-@cindex @code{__GNUC__}
+@cindex @crbmacro{__GNUC__}
 @cindex @code{ptrhead}
 @cindex @posix{} Threads
 We do not make extensive use of conditional compilation.
@@ -805,7 +847,7 @@ compilers. This case is best explained by an example.
 The GNU Compiler Collection provides a set of certain attributes to
 declarations (see @uref{http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Function-Attributes.html#Function-Attributes, the @gcc{} manual}). To use such function
 attributes, you have to check which compiler is currently in use. The @gcc{}
-defines the @code{__GNUC__} macro to contain the version number if invoked. 
+defines the @crbmacro{__GNUC__} macro to contain the version number if invoked.
 This can easily be used to determine if it is safe to turn on @gcc{}s
 @code{malloc}
  attribute:
@@ -833,7 +875,7 @@ of one algorithm in one function, using macros as switches is
 segments it is regarded as impossible to read code without slipping something.
 Therefore we switch between different implementations of the same function.
 Thereby no preprocessor directive occurs in code but on the level of
-declaration. 
+declaration.
 
 Explicitly this means, that we duplicate a function to be optimised, leave the
 general version unchanged and optimise the copy. Both versions are then wrapped
@@ -859,7 +901,7 @@ Again, do not
      #ifdef FEATURE_FOO
         /* more foo code */
         @dots{}
-     #endif          
+     #endif
 
      #ifndef FEATURE_FOO
         /* exceptional bar code only to be used if FOO is not available */
@@ -909,21 +951,39 @@ you might do this within the generalised code. In @libcrbbasic{} this is
 already used at some points without obfuscating the code.
 
 The macro signalling whether @posix{} threads are enabled or not is called
-@code{HAVE_PTHREAD}.
+@crbmacro{HAVE_PTHREAD}.
 
 Last but not least a little hint: Conditional compilation is in fact used
 everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
 header. But lets just say this is OK.
 
-@c ab hier
 @c -------------------------
-
 @c - if possible: calc no. from other consts
 @c - one reason for memmegr: valgrind/ efence not available on all systems
 @c - exit states: EXIT_SUCCESS, EXIT_FAILURE
 @c - global vars?
+@c ab hier
 
 @c naming scheme
+@c - first check where to put this in existing text
+@c - second: make a summary in a table for each language
 @c - everything lc/ uc?
+@c   - Classes/ Datatypes: StudlyCaps, e.g. SecStruct
+@c     - components/ attributes: lower case, _
+@c   - constants: Start with upper, than lower case, _?
+@c   - globals: Upper case, _
+@c   - enum names: Upper case, _
+@c - never start anything with _
+@c - __ rule in all tables!
+@c - line of comment after components, etc
+@c - most vals not changeable written upper case, can't distinguish between e.g. macros and constants, but: if you want to change you have to find the definition, anyway.
+
+@c   - General section: - function names: Lower case, _
+@c                      - variables: Lower case, _
+
+@c   - C section: - macros: Upper case, _
+@c                - functions: add s_ stuff
+
+@c - params const
 @c - name for enums?
 @c - separete section naming or mentioned where it applies?

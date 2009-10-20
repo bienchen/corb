@@ -1,0 +1,41 @@
+@node and Everything
+@chapter ..., and Everything
+
+@c This file is part of `CoRB --- A Developers Handbook`
+@c Copyright (C) 2009 Stefan Bienert
+@c See the file fdl-1.3.txi for copying conditions.
+
+This is the place where we hide everything not mentioned so far. Mostly this is
+information, which all the tools have in common.
+
+
+@menu
+* Vienna Format::               
+@end menu
+
+
+@node Vienna Format,  , and Everything, and Everything
+@section Vienna Format
+@cindex Vienna Format
+@cindex Vienna String
+When dealing with RNA secondary structures, you will sooner or later stumble
+upon Vienna strings. Such strings represent the base pairs of a 2D structure as
+a concatenated collection of @samp{(}, @samp{)} and @samp{.}:
+@itemize @bullet
+@item
+@samp{(} marks the 5' base of a base pair
+
+@item
+@samp{)} marks the 3' base of a base pair
+
+@item
+@samp{.} describes an unpaired base
+@end itemize
+@float Figure,fig:vienna-string1
+@center @crbimage{vienna_notation, 15cm,, From base pair graph to Vienna notation.}
+@caption{Vienna string.}
+@end float
+
+@c file formats
+
+@c energy models/ scoring functions

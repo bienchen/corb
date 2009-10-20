@@ -1,8 +1,8 @@
-@node Program Index, List of Figures, Concept Index, Top
-@appendix Program Index
+@node List of Figures, GNU Free Documentation License, Program Index, Top
+@appendix List of Figures
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2009 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-@printindex pg
+@listoffloats Figure

@@ -8,6 +8,11 @@
 @c xxx like @libcrbbasic{} compiled points to docu of libcrbbasic?
 @c xxx also for functions?
 
+@c bases/ nucleotides
+@macro base{base}
+@w{@t{\base\}}
+@end macro
+
 @c keys
 @macro keyret{}
 @key{RET}
@@ -155,6 +160,20 @@ Bourne-again shell
 @c Make nameplate
 @macro make{}
 @crbtool{make}
+@end macro
+
+@c substitutional image include command
+@c Problem: Bitmaps are ok for html output. In pdf documents vector graphics
+@c          look better. But pdflatex likes to include bitmaps first.
+@c          Therefore, depending on output, we change the input name a little
+@c          bit.
+@macro crbimage{fileprefix, width, height, alttext}
+@iftex
+@image{\fileprefix\-pdf, \width\, \height\, \alttext\}
+@end iftex
+@ifnottex
+@image{\fileprefix\, \width\, \height\, \alttext\}
+@end ifnottex
 @end macro
 
 @c title of the CoRB development handbook

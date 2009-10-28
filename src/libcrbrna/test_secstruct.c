@@ -51,9 +51,11 @@
 int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
 {
    unsigned long i1, j1, i2, j2, size1, size2;
-
    Rna* rna;
    SecStruct* structure;
+   secstruct_elements type;
+   unsigned long idx;
+
    char test_string[] = 
      "..(((...(((...)))...(((...(((...)))...(((...((((((.....))).....))).....)))...(((...)))...)))...(((...)))...)))";
 
@@ -526,6 +528,70 @@ secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2, 0,
    secstruct_fprintf_external (stdout, structure);
    mprintf ("\nMulti loops:\n");
    secstruct_fprintf_multiloops (stdout, structure);
+   mprintf ("\n\nSequence position to structural feature map:\n");
+   secstruct_fprintf_seqpos_map (stdout, structure);
+
+   /* test seq pos -> feature technique */
+   type = secstruct_get_structure_at_pos (0, &idx, structure);
+   if (type != SCSTRCT_EXTERNAL)
+   {
+      THROW_ERROR_MSG("Sequence position 0 is not mapped to an external loop.");
+      return EXIT_FAILURE;
+   }
+   type = secstruct_get_structure_at_pos (3, &idx, structure);
+   if (type != SCSTRCT_STACK)
+   {
+      THROW_ERROR_MSG("Sequence position 3 is not mapped to a stacked base.");
+      return EXIT_FAILURE;
+   }
+   type = secstruct_get_structure_at_pos (7, &idx, structure);
+   if (type != SCSTRCT_MULTI)
+   {
+      THROW_ERROR_MSG("Sequence position 7 is not mapped to a multi loop.");
+      return EXIT_FAILURE;
+   }
+   type = secstruct_get_structure_at_pos (70, &idx, structure);
+   if (type != SCSTRCT_INTERNAL)
+   {
+      THROW_ERROR_MSG ("Sequence position 70 is not mapped to an internal "
+                       "loop.");
+      return EXIT_FAILURE;
+   }
+   type = secstruct_get_structure_at_pos (82, &idx, structure);
+   if (type != SCSTRCT_HAIRPIN)
+   {
+      THROW_ERROR_MSG ("Sequence position 82 is not mapped to a hairpin loop.");
+      return EXIT_FAILURE;
+   }
+   type = secstruct_get_structure_at_pos (62, &idx, structure);
+   if (type != SCSTRCT_BULGE)
+   {
+      THROW_ERROR_MSG ("Sequence position 62 is not mapped to a bulge loop.");
+      return EXIT_FAILURE;
+   }
+   type = secstruct_get_structure_at_pos (95, &idx, structure);
+   if (type != SCSTRCT_MTO)
+   {
+      THROW_ERROR_MSG ("Sequence position 95 is not mapped as multiple site.");
+      return EXIT_FAILURE;
+   }
+   else
+   {
+      type = secstruct_get_structure_multi_1st (95, &idx, structure);
+      if (type != SCSTRCT_MULTI && type != SCSTRCT_STACK)
+      {
+         THROW_ERROR_MSG ("Sequence position 95 is not mapped as multi loop "
+                          "or stacked base pair.");
+         return EXIT_FAILURE;
+      }
+      type = secstruct_get_structure_multi_2nd (95, &idx, structure);
+      if (type != SCSTRCT_MULTI && type != SCSTRCT_STACK)
+      {
+         THROW_ERROR_MSG ("Sequence position 95 is not mapped as multi loop "
+                          "or stacked base pair.");
+         return EXIT_FAILURE;
+      }
+   }
 
    secstruct_delete (structure);
    rna_delete (rna);

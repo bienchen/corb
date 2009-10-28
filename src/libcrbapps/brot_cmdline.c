@@ -35,16 +35,20 @@ const char *brot_args_info_detailed_help[] = {
   "      --detailed-help           Print help, including all details and hidden \n                                  options, and exit",
   "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
+  "  -v, --verbose                 Enable verbose mode",
+  "  If set, additional information will be provided during run.",
+  "  -f, --file                    Read structure from file",
+  "  If set, STRUCTURE has to be a path to a file carrying the                  \n  structure to be used.",
   "  -c, --scoring=NAME            Choose a different scoring scheme  (possible \n                                  values=\"NN\", \"nussinov\", \"simpleNN\" \n                                  default=`NN')",
   "  Use a certain energy model to score the RNA sequence.                  \n  Possible NAMEs are `NN', `nussinov' and `simpleNN'.                  \n  `nussinov' uses a Nussinov model, only counting Hbonds. `NN'                  \n  invokes the Nearest Neighbour model. `simpleNN' uses a very                  \n  coarse grained approximation of the Nearest Neighbour model,                  \n  scoring every base pair as a stack, averaging mismatches in                  \n  stacked pairs and without any loop parameters.",
   "  -n, --fixed-nuc=NUCLEOTIDE:INT\n                                Preset a nucleotide in a position",
-  "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE the whole 15 letter RNA                  \n  alphabet is allowed. The position INT has to be in the range                  \n  of the structure. Index starts at 0.",
+  "  Use a fixed nucleotide in a position in the sequence during                  \n  the simulation. As NUCLEOTIDE A, C, G and U are allowed. The                  \n  position INT has to be in the range of the structure. Index                  \n  starts at 0.",
   "  -s, --steps=INT               Number of iterations  (default=`1000')",
   "  Iteration steps for the update of site probabilities.",
   "  -t, --temp=FLOAT              Initial temperature  (default=`14.2')",
   "  Initial temperature of the system.",
-  "  -r, --seed=INT                Random seed  (default=`-791122')",
-  "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n   for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.                  \n  Only takes effect when using with `NN' as scoring scheme.",
+  "  -r, --seed=INT                Random seed",
+  "  Random seed used for adding thermal noise to the Nearest                  \n  Neighbour model. This is used for producing different answers                 \n   for the same structure. Adding thermal noise means adding                  \n  small random numbers to all parameters. The range of those                  \n  numbers is [0.005, -0.005] and should be beyond the level of                  \n  significance. Since we use a correlated random number                  \n  generator you can reproduce answers by using the same seed.                  \n  Only takes effect when using with `NN' as scoring scheme. If                  \n  seed is given as 0, adding noise is omitted. If option is not                 \n   set at all, system time is used for seeding.",
   "  -d, --negative-design-scaling=FLOAT\n                                Scale negative design term  (default=`0.414')",
   "  Scaling factor for the negative design term.",
   "  -h, --heterogenity-term-scaling=FLOAT\n                                Scale heterogenity term  (default=`14.5')",
@@ -89,11 +93,13 @@ init_full_help_array(void)
   brot_args_info_full_help[16] = brot_args_info_detailed_help[28];
   brot_args_info_full_help[17] = brot_args_info_detailed_help[30];
   brot_args_info_full_help[18] = brot_args_info_detailed_help[32];
-  brot_args_info_full_help[19] = 0; 
+  brot_args_info_full_help[19] = brot_args_info_detailed_help[34];
+  brot_args_info_full_help[20] = brot_args_info_detailed_help[36];
+  brot_args_info_full_help[21] = 0; 
   
 }
 
-const char *brot_args_info_full_help[20];
+const char *brot_args_info_full_help[22];
 
 static void
 init_help_array(void)
@@ -110,11 +116,13 @@ init_help_array(void)
   brot_args_info_help[9] = brot_args_info_detailed_help[14];
   brot_args_info_help[10] = brot_args_info_detailed_help[16];
   brot_args_info_help[11] = brot_args_info_detailed_help[18];
-  brot_args_info_help[12] = 0; 
+  brot_args_info_help[12] = brot_args_info_detailed_help[20];
+  brot_args_info_help[13] = brot_args_info_detailed_help[22];
+  brot_args_info_help[14] = 0; 
   
 }
 
-const char *brot_args_info_help[13];
+const char *brot_args_info_help[15];
 
 typedef enum {ARG_NO
   , ARG_STRING
@@ -129,7 +137,7 @@ static
 void clear_args (struct brot_args_info *args_info);
 
 static int
-brot_cmdline_parser_internal (int argc, char** argv, struct brot_args_info *args_info,
+brot_cmdline_parser_internal (int argc, char **argv, struct brot_args_info *args_info,
                         struct brot_cmdline_parser_params *params, const char *additional_error);
 
 static int
@@ -171,6 +179,8 @@ void clear_given (struct brot_args_info *args_info)
   args_info->detailed_help_given = 0 ;
   args_info->full_help_given = 0 ;
   args_info->version_given = 0 ;
+  args_info->verbose_given = 0 ;
+  args_info->file_given = 0 ;
   args_info->scoring_given = 0 ;
   args_info->fixed_nuc_given = 0 ;
   args_info->steps_given = 0 ;
@@ -200,7 +210,6 @@ void clear_args (struct brot_args_info *args_info)
   args_info->steps_orig = NULL;
   args_info->temp_arg = 14.2;
   args_info->temp_orig = NULL;
-  args_info->seed_arg = -791122;
   args_info->seed_orig = NULL;
   args_info->negative_design_scaling_arg = 0.414;
   args_info->negative_design_scaling_orig = NULL;
@@ -234,23 +243,25 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->detailed_help_help = brot_args_info_detailed_help[1] ;
   args_info->full_help_help = brot_args_info_detailed_help[2] ;
   args_info->version_help = brot_args_info_detailed_help[3] ;
-  args_info->scoring_help = brot_args_info_detailed_help[4] ;
-  args_info->fixed_nuc_help = brot_args_info_detailed_help[6] ;
+  args_info->verbose_help = brot_args_info_detailed_help[4] ;
+  args_info->file_help = brot_args_info_detailed_help[6] ;
+  args_info->scoring_help = brot_args_info_detailed_help[8] ;
+  args_info->fixed_nuc_help = brot_args_info_detailed_help[10] ;
   args_info->fixed_nuc_min = 0;
   args_info->fixed_nuc_max = 0;
-  args_info->steps_help = brot_args_info_detailed_help[8] ;
-  args_info->temp_help = brot_args_info_detailed_help[10] ;
-  args_info->seed_help = brot_args_info_detailed_help[12] ;
-  args_info->negative_design_scaling_help = brot_args_info_detailed_help[14] ;
-  args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[16] ;
-  args_info->entropy_output_help = brot_args_info_detailed_help[18] ;
-  args_info->window_size_help = brot_args_info_detailed_help[20] ;
-  args_info->sm_entropy_help = brot_args_info_detailed_help[22] ;
-  args_info->lambda_help = brot_args_info_detailed_help[24] ;
-  args_info->beta_long_help = brot_args_info_detailed_help[26] ;
-  args_info->beta_short_help = brot_args_info_detailed_help[28] ;
-  args_info->speedup_threshold_help = brot_args_info_detailed_help[30] ;
-  args_info->min_cool_help = brot_args_info_detailed_help[32] ;
+  args_info->steps_help = brot_args_info_detailed_help[12] ;
+  args_info->temp_help = brot_args_info_detailed_help[14] ;
+  args_info->seed_help = brot_args_info_detailed_help[16] ;
+  args_info->negative_design_scaling_help = brot_args_info_detailed_help[18] ;
+  args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[20] ;
+  args_info->entropy_output_help = brot_args_info_detailed_help[22] ;
+  args_info->window_size_help = brot_args_info_detailed_help[24] ;
+  args_info->sm_entropy_help = brot_args_info_detailed_help[26] ;
+  args_info->lambda_help = brot_args_info_detailed_help[28] ;
+  args_info->beta_long_help = brot_args_info_detailed_help[30] ;
+  args_info->beta_short_help = brot_args_info_detailed_help[32] ;
+  args_info->speedup_threshold_help = brot_args_info_detailed_help[34] ;
+  args_info->min_cool_help = brot_args_info_detailed_help[36] ;
   
 }
 
@@ -504,6 +515,10 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "full-help", 0, 0 );
   if (args_info->version_given)
     write_into_file(outfile, "version", 0, 0 );
+  if (args_info->verbose_given)
+    write_into_file(outfile, "verbose", 0, 0 );
+  if (args_info->file_given)
+    write_into_file(outfile, "file", 0, 0 );
   if (args_info->scoring_given)
     write_into_file(outfile, "scoring", args_info->scoring_orig, brot_cmdline_parser_scoring_values);
   write_multiple_into_file(outfile, args_info->fixed_nuc_given, "fixed-nuc", args_info->fixed_nuc_orig, 0);
@@ -715,13 +730,13 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
   return error;
 }
 int
-brot_cmdline_parser (int argc, char** argv, struct brot_args_info *args_info)
+brot_cmdline_parser (int argc, char **argv, struct brot_args_info *args_info)
 {
   return brot_cmdline_parser2 (argc, argv, args_info, 0, 1, 1);
 }
 
 int
-brot_cmdline_parser_ext (int argc, char** argv, struct brot_args_info *args_info,
+brot_cmdline_parser_ext (int argc, char **argv, struct brot_args_info *args_info,
                    struct brot_cmdline_parser_params *params)
 {
   int result;
@@ -731,7 +746,7 @@ brot_cmdline_parser_ext (int argc, char** argv, struct brot_args_info *args_info
 }
 
 int
-brot_cmdline_parser2 (int argc, char** argv, struct brot_args_info *args_info, int override, int initialize, int check_required)
+brot_cmdline_parser2 (int argc, char **argv, struct brot_args_info *args_info, int override, int initialize, int check_required)
 {
   int result;
   struct brot_cmdline_parser_params params;
@@ -1014,7 +1029,7 @@ static void custom_getopt_initialize(struct custom_getopt_data *d)
 #define NONOPTION_P (argv[d->custom_optind][0] != '-' || argv[d->custom_optind][1] == '\0')
 
 /* return: zero: continue, nonzero: return given value to user */
-static int shuffle_argv(int argc, char** argv,const struct option *longopts,
+static int shuffle_argv(int argc, char **argv,const struct option *longopts,
 	struct custom_getopt_data *d)
 {
 	/*
@@ -1095,7 +1110,7 @@ static int shuffle_argv(int argc, char** argv,const struct option *longopts,
  * This distinction seems to be the most useful approach.
  *
  */
-static int check_long_opt(int argc, char** argv, const char *optstring,
+static int check_long_opt(int argc, char **argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		int print_errors, struct custom_getopt_data *d)
 {
@@ -1213,7 +1228,7 @@ static int check_long_opt(int argc, char** argv, const char *optstring,
 	return '?';
 }
 
-static int check_short_opt(int argc, char** argv, const char *optstring,
+static int check_short_opt(int argc, char **argv, const char *optstring,
 		int print_errors, struct custom_getopt_data *d)
 {
 	char c = *d->nextchar++;
@@ -1342,7 +1357,7 @@ static int check_short_opt(int argc, char** argv, const char *optstring,
  * '\0'.  This behavior is specific to the GNU `getopt'.
  */
 
-static int getopt_internal_r(int argc, char** argv, const char *optstring,
+static int getopt_internal_r(int argc, char **argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		struct custom_getopt_data *d)
 {
@@ -1374,7 +1389,7 @@ static int getopt_internal_r(int argc, char** argv, const char *optstring,
 	return check_short_opt(argc, argv, optstring, print_errors, d);
 }
 
-static int custom_getopt_internal(int argc, char** argv, const char *optstring,
+static int custom_getopt_internal(int argc, char **argv, const char *optstring,
 	const struct option *longopts, int *longind)
 {
 	int result;
@@ -1391,7 +1406,7 @@ static int custom_getopt_internal(int argc, char** argv, const char *optstring,
 	return result;
 }
 
-static int custom_getopt_long (int argc, char** argv, const char *options,
+static int custom_getopt_long (int argc, char **argv, const char *options,
 	const struct option *long_options, int *opt_index)
 {
 	return custom_getopt_internal(argc, argv, options, long_options,
@@ -1681,7 +1696,7 @@ void update_multiple_arg(void *field, char ***orig_field,
 
 int
 brot_cmdline_parser_internal (
-  int argc, char** argv, struct brot_args_info *args_info,
+  int argc, char **argv, struct brot_args_info *args_info,
                         struct brot_cmdline_parser_params *params, const char *additional_error)
 {
   int c;	/* Character of the parsed option.  */
@@ -1721,6 +1736,8 @@ brot_cmdline_parser_internal (
         { "detailed-help",	0, NULL, 0 },
         { "full-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
+        { "verbose",	0, NULL, 'v' },
+        { "file",	0, NULL, 'f' },
         { "scoring",	1, NULL, 'c' },
         { "fixed-nuc",	1, NULL, 'n' },
         { "steps",	1, NULL, 's' },
@@ -1744,7 +1761,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "Vc:n:s:t:r:d:h:p:w:e:l:o:i:u:j:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vvfc:n:s:t:r:d:h:p:w:e:l:o:i:u:j:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1760,6 +1777,30 @@ brot_cmdline_parser_internal (
           brot_cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
+        case 'v':	/* Enable verbose mode.  */
+        
+        
+          if (update_arg( 0 , 
+               0 , &(args_info->verbose_given),
+              &(local_args_info.verbose_given), optarg, 0, 0, ARG_NO,
+              check_ambiguity, override, 0, 0,
+              "verbose", 'v',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'f':	/* Read structure from file.  */
+        
+        
+          if (update_arg( 0 , 
+               0 , &(args_info->file_given),
+              &(local_args_info.file_given), optarg, 0, 0, ARG_NO,
+              check_ambiguity, override, 0, 0,
+              "file", 'f',
+              additional_error))
+            goto failure;
+        
+          break;
         case 'c':	/* Choose a different scoring scheme.  */
         
         
@@ -1810,7 +1851,7 @@ brot_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->seed_arg), 
                &(args_info->seed_orig), &(args_info->seed_given),
-              &(local_args_info.seed_given), optarg, 0, "-791122", ARG_LONG,
+              &(local_args_info.seed_given), optarg, 0, 0, ARG_LONG,
               check_ambiguity, override, 0, 0,
               "seed", 'r',
               additional_error))

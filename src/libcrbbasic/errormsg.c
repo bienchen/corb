@@ -38,6 +38,7 @@
  *
  *  Revision History:
  *         - 2008Jan08 bienert: created
+ *         - 2009Oct18 bienert: Added verbose messaging system
  *
  */
 
@@ -71,6 +72,13 @@ __attribute__ ((format (printf, 3, 0)))
 #endif /* __GNUC__ */
 ;
 
+static void
+throw_verbose_msg_dummy (const char*, va_list)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 1, 0)))
+#endif /* __GNUC__ */
+;
+
 /** @brief Takes all components for error messaging
  *
  */
@@ -88,18 +96,25 @@ typedef struct
       __attribute__ ((format (printf, 3, 0)))
 #endif /* __GNUC__ */
       (*warn_msgr)(const char*, int, const char*, va_list);
+      /**< Verbose messenger */
+      void
+#if defined(__GNUC__) && (__GNUC__ > 2)
+      __attribute__ ((format (printf, 1, 0)))
+#endif /* __GNUC__ */
+      (*verbose_msgr)(const char*, va_list);
       /**< Program name used for the messages */
       char* prog_name;
 #ifdef HAVE_PTHREAD
       pthread_mutex_t err_mutex;  /**< thread safety */
-      pthread_mutex_t pn_mutex;  /**< thread safety */      
+      pthread_mutex_t pn_mutex;   /**< thread safety */      
 #endif
 } ErrorInfo;
 
 
 /* All information needed by the messaging functions */
 static ErrorInfo __error_info = {throw_error_msg_internal, /* error_msgr */
-                                 throw_warn_msg_internal, /* warn_msgr */
+                                 throw_warn_msg_internal,  /* warn_msgr */
+                                 throw_verbose_msg_dummy,  /* verbose_msgr */
                                  NULL,  /* prog_name */
 #ifdef HAVE_PTHREAD
                                  PTHREAD_MUTEX_INITIALIZER,
@@ -671,4 +686,75 @@ call_warn_msgr (const char* file, int line, const char* format, ...)
    va_end(ap);
 
    return retval;
+}
+
+
+/* verbose messages */
+/** @brief This is just a dummy function.
+ *
+ * This is the default function for verbose messaging. It just prints nothing.
+ * To enable printing, ...\n
+ *
+ * @param[in] format Format string.
+ * @param[in] ...   Parameter list.
+ */
+static void
+throw_verbose_msg_dummy (const char* format, va_list ap)
+{
+   assert (format);
+   assert (ap);
+}
+
+/** @brief This is the default function for verbose messages.
+ *
+ * This function just prints to stdout like @c mprintf.\n
+ *
+ * @param[in] format Format string.
+ * @param[in] ...   Parameter list.
+ */
+static void
+#ifdef __GNUC__
+__attribute__ ((format (printf, 1, 0)))
+#endif /* __GNUC__ */
+throw_verbose_msg_internal (const char* format, va_list ap)
+{
+   assert (format);
+   assert (ap);
+
+   mvprintf (format, ap);
+}
+
+/** @brief Enable verbose message function
+ *
+ * Enables @c ... to print to stdout. Since this sets a global variable, one
+ * call per program is enough.
+ */
+void
+enable_verbose_messaging (void)
+{
+#ifdef HAVE_PTHREAD
+   pthread_mutex_lock (&__error_info.err_mutex);
+#endif
+   __error_info.verbose_msgr = throw_verbose_msg_internal;
+#ifdef HAVE_PTHREAD
+   pthread_mutex_unlock (&__error_info.err_mutex);
+#endif
+}
+
+/** @brief Call the verbose message function
+ *
+ * This function calls the verbose message function. Your own message comes
+ * with the format string and its parameters.\n
+ * Returns nothing.\n
+ * @param[in] format Format string.
+ * @param[in] ...   Parameter list for the format string.
+ */
+void
+print_verbose (const char* format, ...)
+{
+   va_list ap;
+
+   va_start (ap, format);
+   __error_info.verbose_msgr (format, ap);
+   va_end(ap);
 }

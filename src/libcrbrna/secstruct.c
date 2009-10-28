@@ -38,6 +38,11 @@
  *
  *  Revision History:
  *         - 2008Sep16 bienert: created
+ *         - 2009Oct19 bienert: Added new mapping, sequence position ->
+ *                              secondary structure element, makes it possible
+ *                              to query the structural feature a certain
+ *                              position in the sequence belong to.
+ *                             
  *
  */
 
@@ -98,14 +103,38 @@ typedef struct {
 
 ARRAY_CREATE_CLASS(MultiLoop);
 
+typedef struct {
+   secstruct_elements type;
+   unsigned long idx;
+} StructElem;
+
+ARRAY_CREATE_CLASS(StructElem);
+
 /* data structure to store decomposed secondary structures */
 struct SecStruct {
-      ArrayHairpinLoop hairpin_loop;
-      ArrayStackLoop stack;
-      ArrayBulgeLoop bulge_loop;
-      ArrayIntLoop internal_loop;
-      ArrayMultiLoop multi_loop;
-      MultiLoop ext_loop;
+   ArrayHairpinLoop hairpin_loop;
+   ArrayStackLoop stack;
+   ArrayBulgeLoop bulge_loop;
+   ArrayIntLoop internal_loop;
+   ArrayMultiLoop multi_loop;
+   MultiLoop ext_loop;
+   /* bienert 19-10-09: sequence -> structure mapping */
+   StructElem* seq_struct_map;
+   ArrayStructElem multi_map;
+   unsigned long size;
+
+   /* operations: getter + delete?
+      get: Just take idx of seq, check fst array, ret. idx & type? */
+   /* multiple elems? -> extra signal, iterative func?
+      ret on get: type multi, start idx 
+      further get: noof elems 
+      further get: iteratively get real elems w. idx and type
+      Behaviour on changes: same possibly*/
+   /* multiple new considerations: only 2 possibilites at the same time 
+      idea: for multiple instead of idx just tell we have 2, give start idx, function to fetch a nad b store in pair data type */
+   /* del: take type & idx,  
+      set all seq.idxs to not in secstruct 
+      on multiples? */
 };
 
 
@@ -119,6 +148,7 @@ struct SecStruct {
  * macro @c SECSTRUCT_NEW.\n
  * Returns @c NULL on error.
  *
+ * @param[in] size No. of bases in the structure.
  * @param[in] file Fill with name of calling file.
  * @param[in] line Fill with calling line.
  */
@@ -126,7 +156,7 @@ SecStruct*
 secstruct_new (const char* file, const int line)
 {
    SecStruct* this = XOBJ_MALLOC(sizeof (*this), file, line);
-   
+
    if (this != NULL)
    {
       ARRAY_SET_VOID (this->hairpin_loop);
@@ -134,6 +164,7 @@ secstruct_new (const char* file, const int line)
       ARRAY_SET_VOID (this->bulge_loop);
       ARRAY_SET_VOID (this->internal_loop);
       ARRAY_SET_VOID (this->multi_loop);
+      ARRAY_SET_VOID (this->multi_map);
 
       ARRAY_INIT (this->hairpin_loop, 1, HairpinLoop);
       if (ARRAY_IS_NULL (this->hairpin_loop))
@@ -165,6 +196,16 @@ secstruct_new (const char* file, const int line)
 
       ARRAY_INIT (this->multi_loop, 1, MultiLoop);
       if (ARRAY_IS_NULL (this->multi_loop))
+      {
+         secstruct_delete (this);
+         return NULL;
+      }
+
+      this->seq_struct_map = NULL;
+      this->size = 0;
+
+      ARRAY_INIT (this->multi_map, 1, StructElem);
+      if (ARRAY_IS_NULL (this->multi_map))
       {
          secstruct_delete (this);
          return NULL;
@@ -233,6 +274,11 @@ secstruct_delete (SecStruct* this)
       ARRAY_DELETE (this->bulge_loop);
       ARRAY_DELETE (this->internal_loop);
 
+      XFREE(this->seq_struct_map);
+      this->size = 0;
+
+      ARRAY_DELETE (this->multi_map);
+
       for (i = 0; i < ARRAY_CURRENT (this->multi_loop); i++)
       {
          multiloop_delete(&(ARRAY_ACCESS(this->multi_loop, i)));
@@ -248,10 +294,109 @@ secstruct_delete (SecStruct* this)
 
 /********************************   Altering   ********************************/
 
-static void
-multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
-                unsigned long size, MultiLoop* ml)
+static int
+s_seq_struct_map_multi_pair (const unsigned long i, const unsigned long j,
+                             secstruct_elements type,
+                             SecStruct* this)
 {
+   StructElem loop;
+
+   if (this->seq_struct_map[i].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[i].type = type;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->multi_loop);
+   }
+   else if (   this->seq_struct_map[i].type != type 
+            || this->seq_struct_map[i].idx != ARRAY_CURRENT(this->multi_loop))
+   {
+      assert (this->seq_struct_map[i].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[i].type;
+      loop.idx = this->seq_struct_map[i].idx;
+      
+      this->seq_struct_map[i].type = SCSTRCT_MTO;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->multi_map);
+      
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = type;
+      loop.idx = ARRAY_CURRENT(this->multi_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   if (this->seq_struct_map[j].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[j].type = type;
+      this->seq_struct_map[j].idx = ARRAY_CURRENT(this->multi_loop);
+   }
+   else if (   this->seq_struct_map[j].type != type 
+            || this->seq_struct_map[j].idx != ARRAY_CURRENT(this->multi_loop))
+   {
+      assert (this->seq_struct_map[j].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[j].type;
+      loop.idx = this->seq_struct_map[j].idx;
+      
+      this->seq_struct_map[j].type = SCSTRCT_MTO;
+      this->seq_struct_map[j].idx = ARRAY_CURRENT(this->multi_map);
+      
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = type;
+      loop.idx = ARRAY_CURRENT(this->multi_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   return 0;
+}
+
+static int
+s_seq_struct_map_multi_dangle (unsigned long b, secstruct_elements type,
+                               SecStruct* this)
+{
+   StructElem loop;
+
+   if (this->seq_struct_map[b].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[b].type = type;
+      this->seq_struct_map[b].idx = ARRAY_CURRENT(this->multi_loop);
+   }
+   else if ( this->seq_struct_map[b].type != type 
+           ||this->seq_struct_map[b].idx != ARRAY_CURRENT(this->multi_loop))
+   {
+      assert (this->seq_struct_map[b].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[b].type;
+      loop.idx = this->seq_struct_map[b].idx;
+      
+      this->seq_struct_map[b].type = SCSTRCT_MTO;
+      this->seq_struct_map[b].idx = ARRAY_CURRENT(this->multi_map);
+      
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+      
+      loop.type = type;
+      loop.idx = ARRAY_CURRENT(this->multi_loop);
+      
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+   return 0;
+}
+
+static int
+multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
+                unsigned long size, MultiLoop* ml, secstruct_elements type,
+                SecStruct* strct)
+{
+   int error;
+
    assert (pairs);
    assert (ml);
 
@@ -270,6 +415,15 @@ multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
          ml->stems[ml->nstems][P3_Strand] = pairs[i];
          ml->nstems++;
 
+         strct->seq_struct_map[i].type = type;
+         strct->seq_struct_map[i].idx = ARRAY_CURRENT(strct->multi_loop);
+         strct->seq_struct_map[pairs[i]].type = type;
+         strct->seq_struct_map[pairs[i]].idx = ARRAY_CURRENT(strct->multi_loop);
+
+         error = s_seq_struct_map_multi_pair (i, pairs[i], type, strct);
+         if (error)
+            return error;
+
          if (i > 0)
          {
             /* add dangle5 */
@@ -277,6 +431,10 @@ multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
             ml->dangle5[ml->ndangle5][P3_Dangle] = pairs[i];
             ml->dangle5[ml->ndangle5][Ne_Dangle] = i - 1;
             ml->ndangle5++;
+
+            error = s_seq_struct_map_multi_dangle (i - 1, type, strct);
+            if (error)
+               return error;
          }
         
          if (pairs[i] < size - 1)
@@ -286,6 +444,10 @@ multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
             ml->dangle3[ml->ndangle3][P3_Dangle] = pairs[i];
             ml->dangle3[ml->ndangle3][Ne_Dangle] = pairs[i] + 1;
             ml->ndangle3++;
+
+            error = s_seq_struct_map_multi_dangle (pairs[i] + 1, type, strct);
+            if (error)
+               return error;
          }
 
          i = pairs[i];
@@ -298,33 +460,294 @@ multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
       i++;
    }
 
-   /*mfprintf (stderr, "UNPAIRED: %lu\n", ml->unpaired);
+   return 0;
+}
 
-   mfprintf (stderr, "NSTEMS: %lu\n", ml->nstems);
-   for (i = 0; i < ml->nstems; i++)
+static int
+s_seq_struct_map_multi (MultiLoop* ml, secstruct_elements type, SecStruct* this)
+{
+   unsigned long lp, k, l;
+
+   /* mark unpaired bases */
+   lp = ml->stems[ml->nstems - 1][P5_Strand] + 1;
+
+   for (k = 0; k < ml->nstems; k++)
    {
-      mfprintf (stderr, "  5': %2lu 3': %2lu\n",
-                ml->stems[i][P5_Strand],
-                ml->stems[i][P3_Strand]);
+      for (l = lp; l < ml->stems[k][P5_Strand]; l++)
+      {
+         if (this->seq_struct_map[l].type == SCSTRCT_VOID)
+         {
+            this->seq_struct_map[l].type = type;
+            this->seq_struct_map[l].idx = ARRAY_CURRENT(this->multi_loop);
+         }
+         assert (this->seq_struct_map[l].type == type
+             && this->seq_struct_map[l].idx == ARRAY_CURRENT(this->multi_loop));
+      }
+      lp = ml->stems[k][P3_Strand] + 1;
    }
 
-   mfprintf (stderr, "NDANGLE5: %lu\n", ml->ndangle5);
-   for (i = 0; i < ml->ndangle5; i++)
+   return 0;
+}
+
+/* i: seqpos, j: pairing partner */
+static int
+s_seq_struct_map_hairpin (unsigned long i, unsigned long j, SecStruct* this)
+{
+   unsigned long k;
+   StructElem loop;
+
+   if (this->seq_struct_map[i].type == SCSTRCT_VOID)
    {
-      mfprintf (stderr, "  5': %2lu 3': %2lu D: %2lu\n",
-                ml->dangle5[i][P5_Dangle],
-                ml->dangle5[i][P3_Dangle],
-                ml->dangle5[i][Ne_Dangle]);      
+      this->seq_struct_map[i].type = SCSTRCT_HAIRPIN;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->hairpin_loop);
+      this->seq_struct_map[j].type = SCSTRCT_HAIRPIN;
+      this->seq_struct_map[j].idx = ARRAY_CURRENT(this->hairpin_loop);
+   }
+   else
+   {
+      assert (this->seq_struct_map[i].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[i].type;
+      loop.idx = this->seq_struct_map[i].idx;
+
+      this->seq_struct_map[i].type = SCSTRCT_MTO;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->multi_map);
+      this->seq_struct_map[j].type = SCSTRCT_MTO;
+      this->seq_struct_map[j].idx = ARRAY_CURRENT(this->multi_map);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = SCSTRCT_HAIRPIN;
+      loop.idx = ARRAY_CURRENT(this->hairpin_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
    }
 
-   mfprintf (stderr, "Ndangle3: %lu\n", ml->ndangle3); 
-   for (i = 0; i < ml->ndangle3; i++)
+   /* set unpaired bases */
+   for (k = i + 1; k < j; k++)
    {
-      mfprintf (stderr, "  5': %2lu 3': %2lu D: %2lu\n",
-                ml->dangle3[i][P5_Dangle],
-                ml->dangle3[i][P3_Dangle],
-                ml->dangle3[i][Ne_Dangle]);      
-                }*/
+      assert (this->seq_struct_map[k].type == SCSTRCT_VOID);
+
+      this->seq_struct_map[k].type = SCSTRCT_HAIRPIN;
+      this->seq_struct_map[k].idx = ARRAY_CURRENT(this->hairpin_loop);
+   }
+
+   return 0;
+}
+
+static int
+s_seq_struct_map_stack (unsigned long i, unsigned long j, SecStruct* this)
+{
+   StructElem stack;
+
+   if (this->seq_struct_map[i].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[i].type = SCSTRCT_STACK;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->stack);
+      this->seq_struct_map[j].type = SCSTRCT_STACK;
+      this->seq_struct_map[j].idx = ARRAY_CURRENT(this->stack);
+   }
+   else
+   {
+      assert (this->seq_struct_map[i].type != SCSTRCT_MTO);
+
+      stack.type = this->seq_struct_map[i].type;
+      stack.idx = this->seq_struct_map[i].idx;
+
+      this->seq_struct_map[i].type = SCSTRCT_MTO;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->multi_map);
+      this->seq_struct_map[j].type = SCSTRCT_MTO;
+      this->seq_struct_map[j].idx = ARRAY_CURRENT(this->multi_map);
+
+      ARRAY_PUSH(this->multi_map, stack, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      stack.type = SCSTRCT_STACK;
+      stack.idx = ARRAY_CURRENT(this->stack);
+
+      ARRAY_PUSH(this->multi_map, stack, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   return 0;
+}
+
+static int
+s_seq_struct_map_bulge (unsigned long pi1, unsigned long pj1,
+                        unsigned long pi2, unsigned long pj2,
+                        unsigned long size1, unsigned long size2,
+                        SecStruct* this)
+{
+   unsigned long j;
+   StructElem loop;
+
+   /* fst base pair */
+   if (this->seq_struct_map[pi1].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[pi1].type = SCSTRCT_BULGE;
+      this->seq_struct_map[pi1].idx =
+         ARRAY_CURRENT(this->bulge_loop);
+      this->seq_struct_map[pj1].type = SCSTRCT_BULGE;
+      this->seq_struct_map[pj1].idx =
+         ARRAY_CURRENT(this->bulge_loop);
+   }
+   else
+   {
+      assert (this->seq_struct_map[pi1].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[pi1].type;
+      loop.idx = this->seq_struct_map[pi1].idx;
+
+      this->seq_struct_map[pi1].type = SCSTRCT_MTO;
+      this->seq_struct_map[pi1].idx = ARRAY_CURRENT(this->multi_map);
+      this->seq_struct_map[pj1].type = SCSTRCT_MTO;
+      this->seq_struct_map[pj1].idx = ARRAY_CURRENT(this->multi_map);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = SCSTRCT_BULGE;
+      loop.idx = ARRAY_CURRENT(this->bulge_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   /* snd base pair */
+   if (this->seq_struct_map[pi2].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[pi2].type = SCSTRCT_BULGE;
+      this->seq_struct_map[pi2].idx = ARRAY_CURRENT(this->bulge_loop);
+      this->seq_struct_map[pj2].type = SCSTRCT_BULGE;
+      this->seq_struct_map[pj2].idx = ARRAY_CURRENT(this->bulge_loop);
+   }
+   else
+   {
+      assert (this->seq_struct_map[pi2].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[pi2].type;
+      loop.idx = this->seq_struct_map[pi2].idx;
+
+      this->seq_struct_map[pi2].type = SCSTRCT_MTO;
+      this->seq_struct_map[pi2].idx = ARRAY_CURRENT(this->multi_map);
+      this->seq_struct_map[pj2].type = SCSTRCT_MTO;
+      this->seq_struct_map[pj2].idx = ARRAY_CURRENT(this->multi_map);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = SCSTRCT_BULGE;
+      loop.idx = ARRAY_CURRENT(this->bulge_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   if (size1 < size2)
+   {
+      pi1 = pj2;
+      pi2 = pj1;
+   }
+   
+   for (j = pi1 + 1; j < pi2; j++)
+   {
+      assert (this->seq_struct_map[j].type == SCSTRCT_VOID);
+
+      this->seq_struct_map[j].type = SCSTRCT_BULGE;
+      this->seq_struct_map[j].idx =
+         ARRAY_CURRENT(this->bulge_loop);
+   }
+
+   return 0;
+}
+
+static int
+s_seq_struct_map_internal (unsigned long pi1, unsigned long pj1,
+                           unsigned long pi2, unsigned long pj2,
+                           SecStruct* this)
+{
+   unsigned long i;
+   StructElem loop;
+
+   /* fst base pair */
+   if (this->seq_struct_map[pi1].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[pi1].type = SCSTRCT_INTERNAL;
+      this->seq_struct_map[pi1].idx = ARRAY_CURRENT(this->internal_loop);
+      this->seq_struct_map[pj1].type = SCSTRCT_INTERNAL;
+      this->seq_struct_map[pj1].idx = ARRAY_CURRENT(this->internal_loop);
+   }
+   else
+   {
+      assert (this->seq_struct_map[pi1].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[pi1].type;
+      loop.idx = this->seq_struct_map[pi1].idx;
+
+      this->seq_struct_map[pi1].type = SCSTRCT_MTO;
+      this->seq_struct_map[pi1].idx = ARRAY_CURRENT(this->multi_map);
+      this->seq_struct_map[pj1].type = SCSTRCT_MTO;
+      this->seq_struct_map[pj1].idx = ARRAY_CURRENT(this->multi_map);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = SCSTRCT_INTERNAL;
+      loop.idx = ARRAY_CURRENT(this->internal_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   /* snd base pair */
+   if (this->seq_struct_map[pi2].type == SCSTRCT_VOID)
+   {
+      this->seq_struct_map[pi2].type = SCSTRCT_INTERNAL;
+      this->seq_struct_map[pi2].idx = ARRAY_CURRENT(this->internal_loop);
+      this->seq_struct_map[pj2].type = SCSTRCT_INTERNAL;
+      this->seq_struct_map[pj2].idx = ARRAY_CURRENT(this->internal_loop);
+   }
+   else
+   {
+      assert (this->seq_struct_map[pi2].type != SCSTRCT_MTO);
+
+      loop.type = this->seq_struct_map[pi2].type;
+      loop.idx = this->seq_struct_map[pi2].idx;
+
+      this->seq_struct_map[pi2].type = SCSTRCT_MTO;
+      this->seq_struct_map[pi2].idx = ARRAY_CURRENT(this->multi_map);
+      this->seq_struct_map[pj2].type = SCSTRCT_MTO;
+      this->seq_struct_map[pj2].idx = ARRAY_CURRENT(this->multi_map);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+
+      loop.type = SCSTRCT_INTERNAL;
+      loop.idx = ARRAY_CURRENT(this->internal_loop);
+
+      ARRAY_PUSH(this->multi_map, loop, StructElem,
+                 { return ERR_SCSTRCT_ALLOC; });
+   }
+
+   for (i = pi1 + 1; i < pi2; i++)
+   {
+      assert (this->seq_struct_map[i].type == SCSTRCT_VOID);
+
+      this->seq_struct_map[i].type = SCSTRCT_INTERNAL;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->internal_loop);
+   }
+   
+   for (i = pj2 + 1; i < pj1; i++)
+   {
+      assert (this->seq_struct_map[i].type == SCSTRCT_VOID);
+
+      this->seq_struct_map[i].type = SCSTRCT_INTERNAL;
+      this->seq_struct_map[i].idx = ARRAY_CURRENT(this->internal_loop);
+   }
+
+   return 0;
 }
 
 /** @brief Decompose an RNA structure stored.
@@ -334,7 +757,7 @@ multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
  * Returns 0 on success, ... else.
  *
  * @param[in] pairs List of pairing partners, where i pairs pairs[i], an
-                    unpaired position k is indicated by pairs[k] = NOT_PAIRED
+ *                  unpaired position k is indicated by pairs[k] = NOT_PAIRED
  * @param[in] size Length of the structure
  * @param[in] this SecStruct data object.
  */
@@ -343,16 +766,63 @@ secstruct_find_interactions (const unsigned long* pairs,
                              const unsigned long size,
                              SecStruct* this)
 {
-   unsigned long i, p, q, size1, size2, pi1, pj1, pi2, pj2;
+   unsigned long i, j, k, p, q, size1, size2, pi1, pj1, pi2, pj2;
    unsigned long remains = size;
    int error = 0;
 
    assert (this);
+   assert (this->seq_struct_map == NULL);
+
+   /* allocate seq -> structure map */
+   this->size = size;
+   this->seq_struct_map =
+      XMALLOC(sizeof (this->seq_struct_map[0]) * this->size);
+   if (this->seq_struct_map == NULL)
+   {
+      return ERR_SCSTRCT_ALLOC;
+   }
+   memset (this->seq_struct_map, 0, /* needs SCSTRCT_VOID == 0 */
+           sizeof (this->seq_struct_map[0]) * this->size); 
+
    /* exterior loop */
    error = multiloop_allocate (remains, &this->ext_loop);
-   if (size > 0)
+   if ((size > 0) && (!error))
    {
-      multiloop_find (0, (size - 1), pairs, size, &this->ext_loop);
+      error = multiloop_find (0, (size - 1),
+                              pairs,
+                              size,
+                              &this->ext_loop,
+                              SCSTRCT_EXTERNAL, this);
+
+      if (this->ext_loop.nstems > 0)
+      {
+         for (j = 0; j < this->ext_loop.stems[0][P5_Strand]; j++)
+         {
+            this->seq_struct_map[j].type = SCSTRCT_EXTERNAL;
+            this->seq_struct_map[j].idx = 0;
+         }
+
+         pi1 = this->ext_loop.stems[0][P3_Strand] + 1;
+         for (k = 1; k < this->ext_loop.nstems; k++)
+         {
+            for (j = pi1; j < this->ext_loop.stems[k][P5_Strand]; j++)
+            {
+               if (this->seq_struct_map[j].type == SCSTRCT_VOID)
+               {
+                  this->seq_struct_map[j].type = SCSTRCT_EXTERNAL;
+                  this->seq_struct_map[j].idx = 0;
+               }
+               assert (this->seq_struct_map[j].type == SCSTRCT_EXTERNAL);
+            }
+            pi1 = this->ext_loop.stems[k][P3_Strand] + 1;
+         }
+
+         for (j = pi1; j < this->size; j++)
+         {
+            this->seq_struct_map[j].type = SCSTRCT_EXTERNAL;
+            this->seq_struct_map[j].idx = 0;
+         }
+      }
    }
 
    /* hairpins, interior loops (including stacking basepairs) and multiloops */
@@ -378,15 +848,21 @@ secstruct_find_interactions (const unsigned long* pairs,
             p++;
          while ((pairs[q] == NOT_PAIRED) && (q > i))
             q--;
-         
+
          /* now we can tell what loop type we have */
          if (q < p)
          {
             /* hairpin loop - pairs have run past each other */
             HairpinLoop hl = { .i = i, .j = pairs[i],
                                .size = pairs[i] - i - 1 };
-            ARRAY_PUSH(this->hairpin_loop, hl, HairpinLoop,
-                       { error = ERR_SCSTRCT_ALLOC; });
+
+            /* seq -> structure mapping */
+            error = s_seq_struct_map_hairpin (i, pairs[i], this);
+
+            /* store element */
+            if (!error)
+               ARRAY_PUSH(this->hairpin_loop, hl, HairpinLoop,
+                          { error = ERR_SCSTRCT_ALLOC; });
          }
          else
          {
@@ -407,29 +883,43 @@ secstruct_find_interactions (const unsigned long* pairs,
                {
                   /* stacking pair of base pairs */
                   StackLoop st = { .i = pi1, .j = pj1};
-                  ARRAY_PUSH(this->stack, st, StackLoop,
-                             { error = ERR_SCSTRCT_ALLOC; });
+
+                  /* seq -> structure mapping */
+                  error = s_seq_struct_map_stack (pi1, pj1, this);
+
+                  /* store element */
+                  if (!error)
+                     ARRAY_PUSH(this->stack, st, StackLoop,
+                                { error = ERR_SCSTRCT_ALLOC; });
                }
                else if ((size1 == 0) || (size2 == 0))
                {
                   /* bulge loop */
                   BulgeLoop bg = { .i1 = pi1, .j1 = pj1, .i2 = pi2, .j2 = pj2,
                                    .size = (size1 > size2 ? size1 : size2) };
-                  ARRAY_PUSH(this->bulge_loop, bg, BulgeLoop,
-                             { error = ERR_SCSTRCT_ALLOC; });
-                  /*mfprintf (stderr, "Found bulge: Start %lu, %lu, stop: "
-                    "%lu, %lu, size: %lu\n", pi1, pj1, pi2, pj2, bg.size);*/
+
+                  /* seq -> structure mapping */
+                  error = s_seq_struct_map_bulge (pi1, pj1, pi2, pj2,
+                                                  size1, size2, this);
+
+                  /* store element */
+                  if (!error)
+                     ARRAY_PUSH(this->bulge_loop, bg, BulgeLoop,
+                                { error = ERR_SCSTRCT_ALLOC; });
                }
                else
                {
                   /* generic internal loop */
                   IntLoop in = { .i1 = pi1, .j1 = pj1, .i2 = pi2, .j2 = pj2,
                                  .size1 = size1, .size2 = size2};
-                  ARRAY_PUSH(this->internal_loop, in, IntLoop,
-                             { error = ERR_SCSTRCT_ALLOC; });
-                  /*mfprintf (stderr, "Found internal: Start %lu, %lu, stop: "
-                            "%lu, %lu, size: %lu, %lu\n", pi1, pj1, pi2, pj2,
-                            size1, size2);*/
+
+                  /* seq -> structure mapping */
+                  error = s_seq_struct_map_internal (pi1, pj1, pi2, pj2, this);
+
+                  /* store element */
+                  if (!error)
+                     ARRAY_PUSH(this->internal_loop, in, IntLoop,
+                                { error = ERR_SCSTRCT_ALLOC; });
                }
             }
             else
@@ -440,7 +930,13 @@ secstruct_find_interactions (const unsigned long* pairs,
                if (!error)
                {
                   /* multiloop_find (p, q, pairs, size, &ml); */
-                  multiloop_find (i + 1, pairs[i] - 1, pairs, size, &ml);
+                  error = multiloop_find (i + 1,
+                                          pairs[i] - 1,
+                                          pairs,
+                                          size,
+                                          &ml,
+                                          SCSTRCT_MULTI, 
+                                          this);
 
                   /* TODO: perhaps move this into nn_multiloop_xfind
                      assumes there is enough space in arrays */
@@ -448,27 +944,46 @@ secstruct_find_interactions (const unsigned long* pairs,
                   ml.stems[ml.nstems][P5_Strand] = i;
                   ml.stems[ml.nstems][P3_Strand] = pairs[i];
                   ml.nstems++;
-                  
+
                   /* add extra dangles for outer basepair of multiloop
                      TODO: this is the way it is done in vienna rna, but is
                      this really right ??? */
                   ml.dangle5[ml.ndangle5][P5_Dangle] = pairs[i];
                   ml.dangle5[ml.ndangle5][P3_Dangle] = i;
                   ml.dangle5[ml.ndangle5][Ne_Dangle] = pairs[i] - 1;
-                  /* bienert: ml.dangle5[ml.ndangle5][P5_Dangle] = i;
-                     ml.dangle5[ml.ndangle5][P3_Dangle] = pairs[i];
-                     ml.dangle5[ml.ndangle5][Ne_Dangle] = i + 1;*/
                   ml.ndangle5++;
+
                   ml.dangle3[ml.ndangle3][P5_Dangle] = pairs[i];
                   ml.dangle3[ml.ndangle3][P3_Dangle] = i;
                   ml.dangle3[ml.ndangle3][Ne_Dangle] = i + 1;
-                     /* bienertml.dangle3[ml.ndangle3][P5_Dangle] = i;
-                        ml.dangle3[ml.ndangle3][P3_Dangle] = pairs[i];
-                        ml.dangle3[ml.ndangle3][Ne_Dangle] = pairs[i] - 1;*/
                   ml.ndangle3++;
-                  
-                  ARRAY_PUSH (this->multi_loop, ml, MultiLoop,
-                              { error = ERR_SCSTRCT_ALLOC; });
+
+                  if (!error)
+                  {
+                     error = s_seq_struct_map_multi_pair (i, pairs[i],
+                                                          SCSTRCT_MULTI, this);
+                  }
+                  if (!error)
+                  {
+                     error = s_seq_struct_map_multi_dangle (pairs[i] - 1,
+                                                            SCSTRCT_MULTI,
+                                                            this);
+                  }
+                  if (!error)
+                  {
+                     error = s_seq_struct_map_multi_dangle (i + 1,
+                                                            SCSTRCT_MULTI, 
+                                                            this);
+                  }
+                  if (!error)
+                  {
+                     error = s_seq_struct_map_multi (&ml, SCSTRCT_MULTI, this);
+                  }
+                  if (!error)
+                  { 
+                     ARRAY_PUSH (this->multi_loop, ml, MultiLoop,
+                                 { error = ERR_SCSTRCT_ALLOC; });
+                  }
                }
             }
          }
@@ -498,7 +1013,108 @@ secstruct_find_interactions (const unsigned long* pairs,
 
 /*********************************   Access   *********************************/
 
-/** @brief get the no. of hairpin loops of a 2D structure
+/** @brief Get the type of secondary structure for a certain sequence position
+ *
+ * Retrieve the sort of structural element, a certain sequence position belongs
+ * to. Additionally, an index usable with an appropriate @c get function is
+ * provided.\n
+ * Possible types are taken from the @c secstruct_elements @c enum.\n
+ * If @c SCSTRCT_MTO is returned, the complementary sequence position belongs
+ * to two distinct classes. The retrived index might then be used with
+ * @c secstruct_get_structure_multi_1st and
+ * @c secstruct_get_structure_multi_2nd to retrieve the true classes and
+ * indices.\n
+ * No errors are defined for return values. If a position in the sequence is not assigned to a structural feature, @c SCSTRCT_VOID is returned.
+ *
+ * @param[in]  i Sequence position.
+ * @param[out] index Address of the returned element.
+ * @param[in]  this Secondary structure.
+ */
+secstruct_elements
+secstruct_get_structure_at_pos (const unsigned long i,
+                                unsigned long* index,
+                                const SecStruct* this)
+{
+   assert (index);
+   assert (this);
+   assert (this->seq_struct_map);
+   assert (ARRAY_NOT_NULL (this->multi_map));
+   assert (i < this->size);
+
+   index[0] = this->seq_struct_map[i].idx;
+
+   return this->seq_struct_map[i].type;
+}
+
+/** @brief Get the sturcutral feature for a certain position classified as MTO.
+ *
+ * For the use after @c secstruct_get_structure_at_pos (), if @c SCSTRCT_MTO
+ * was returned. Delivers the first of possibly two sturctural features.
+ * Additionally, an index usable with an appropriate @c get function is
+ * provided.\n
+ * Possible types are taken from the @c secstruct_elements @c enum.
+ * @c SCSTRCT_MTO is is not a valid return value for this function.\n
+ * Please note: @c i is again the sequence position. This is for your
+ * convenience since it enables safe use of the same variable for @c index as
+ * for the call of @c secstruct_get_structure_at_pos () and you might just
+ * recycle @c i as well from a previous call.\n
+ * No errors are defined for return values.
+ *
+ * @param[in]  i Sequence position, already verified to be multi-classified.
+ * @param[out] index Address of the returned element.
+ * @param[in]  this Secondary structure.
+ */
+secstruct_elements
+secstruct_get_structure_multi_1st (const unsigned long i,
+                                   unsigned long* index,
+                                   const SecStruct* this)
+{
+   assert (index);
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->multi_map));
+   assert (i < this->size);
+   assert (this->seq_struct_map[i].type == SCSTRCT_MTO);
+
+   index[0] = ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx;
+
+   return ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type;
+}
+
+/** @brief Get the sturcutral feature for a certain position classified as MTO.
+ *
+ * For the use after @c secstruct_get_structure_at_pos (), if @c SCSTRCT_MTO
+ * was returned. Delivers the second of possibly two sturctural features.
+ * Additionally, an index usable with an appropriate @c get function is
+ * provided.\n
+ * Possible types are taken from the @c secstruct_elements @c enum.
+ * @c SCSTRCT_MTO is is not a valid return value for this function.\n
+ * Please note: @c i is again the sequence position. This is for your
+ * convenience since it enables safe use of the same variable for @c index as
+ * for the call of @c secstruct_get_structure_at_pos () and you might just
+ * recycle @c i as well from a previous call.\n
+ * No errors are defined for return values.
+ *
+ * @param[in]  i Sequence position, already verified to be multi-classified.
+ * @param[out] index Address of the returned element.
+ * @param[in]  this Secondary structure.
+ */
+secstruct_elements
+secstruct_get_structure_multi_2nd (const unsigned long i,
+                                   unsigned long* index,
+                                   const SecStruct* this)
+{
+   assert (index);
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->multi_map));
+   assert (i < this->size);
+   assert (this->seq_struct_map[i].type == SCSTRCT_MTO);
+
+   index[0] = ARRAY_ACCESS(this->multi_map,this->seq_struct_map[i].idx + 1).idx;
+
+   return ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).type;
+}
+
+/** @brief Get the no. of hairpin loops of a 2D structure
  *
  * @param[in] this Secondary structure.
  */
@@ -2443,6 +3059,207 @@ secstruct_fprintf_multiloops (FILE* stream, const SecStruct* this)
 
    string[0] = '\0';
    mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+}
+
+void
+secstruct_fprintf_seqpos_map (FILE* stream, const SecStruct* this)
+{
+   unsigned long i;
+   unsigned int seq_idx_prec, elem_idx_prec;
+   char hairpin[] = "Hairpin loop";
+   char stack[] = "Stacked base pair";
+   char bulge[] = "Bulge loop";
+   char internal[] = "Internal loop";
+   char multi[] = "Multi loop";
+   char external[] = "External loop";
+   char mto[] = "-> ";
+   char none[] = "Not assigned";
+   char panic[] = "(o.O)";
+   unsigned long panic_size = strlen (panic);
+   char* type_id[N_SCSTRCT];
+   int   type_sz[N_SCSTRCT];
+   char* string;
+   char* string_start;
+   unsigned long storage = 0;
+   unsigned long no_of_chars;
+
+   assert (stream);
+   assert (this);
+   assert ((this->seq_struct_map) || (this->size == 0));
+
+   type_id[SCSTRCT_HAIRPIN] = hairpin;
+   type_id[SCSTRCT_STACK] = stack;
+   type_id[SCSTRCT_BULGE] = bulge;
+   type_id[SCSTRCT_INTERNAL] = internal;
+   type_id[SCSTRCT_MULTI] = multi;
+   type_id[SCSTRCT_EXTERNAL] = external;
+   type_id[SCSTRCT_MTO] = mto;
+   type_id[SCSTRCT_VOID] = none;
+
+   for (i = 0; i < N_SCSTRCT; i++)
+   {
+      type_sz[i] = strlen(type_id[i]);
+   }
+
+   /* get largest no.s for field widths */
+   elem_idx_prec = 0;
+   for (i = 0; i < this->size; i++)
+   {
+      if (elem_idx_prec < this->seq_struct_map[i].idx)
+      {
+         elem_idx_prec = this->seq_struct_map[i].idx;
+      }
+
+      if (this->seq_struct_map[i].type < N_SCSTRCT)
+      {
+         storage += type_sz[this->seq_struct_map[i].type];
+
+         if (this->seq_struct_map[i].type == SCSTRCT_MTO)
+         {
+            storage += 7;
+            if ( ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx
+                 > 0)
+            {
+               storage += floor (log10 (
+                ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx)
+                                 + 1);
+            }
+            else
+            {
+               storage++;
+            }
+            storage +=
+   type_sz[ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type];
+
+            if (ARRAY_ACCESS(this->multi_map,this->seq_struct_map[i].idx+1).idx
+                 > 0)
+            {
+               storage += floor (log10 (
+             ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).idx)
+                                 + 1);
+            }
+            else
+            {
+               storage++;
+            }
+            storage +=
+   type_sz[ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).type];
+         }
+      }
+      else
+      {
+         THROW_WARN_MSG ("Unrecognised structure element type found at "
+                         "sequence position %lu.", i);
+         storage += panic_size;
+      }
+   }
+
+   /* calc field widths */ 
+   if (this->size > 0)
+   {
+      seq_idx_prec = floor (log10 (this->size - 1) + 1);
+   }
+   else
+   {
+      seq_idx_prec = 1;
+   }
+   if (elem_idx_prec > 0)
+   {
+      elem_idx_prec = floor (log10 (elem_idx_prec) + 1);
+   }
+   else
+   {
+      elem_idx_prec = 1;
+   }
+
+   /* 2b printed: list of seq pos, each on its own line
+      tupel idx with elemidx + type
+      align seqidx, elem idx and type
+      multi: write list in line */
+   /* alloc: seq_idx_prec + elem_idx_prec + type_prec + ":  " + "   " */
+   no_of_chars  = seq_idx_prec;
+   no_of_chars += 7;                /* ":  " + "   " + "\n" */
+   no_of_chars += elem_idx_prec;
+   no_of_chars *= this->size;
+   no_of_chars += storage;
+   string = (char*) XMALLOC (sizeof (*string) * (no_of_chars + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;
+
+   /*mprintf ("Allocated: %lu\n", sizeof (*string) * (no_of_chars + 1));*/
+
+   for (i = 0; i < this->size; i++)
+   {
+      msprintf (string, "%*lu:  ", seq_idx_prec, i);
+      string += seq_idx_prec + 3;
+
+      if (this->seq_struct_map[i].type < N_SCSTRCT)
+      {
+         msprintf(string,"%*lu   ",elem_idx_prec,this->seq_struct_map[i].idx);
+         string += elem_idx_prec + 3;
+         msprintf (string, "%s", type_id[this->seq_struct_map[i].type]);
+         string += type_sz[this->seq_struct_map[i].type];
+
+         if (this->seq_struct_map[i].type == SCSTRCT_MTO)
+         {
+           msprintf (string, "%lu  %s; ", 
+                 ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx,
+      type_id[ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type]);
+           string += 4 +
+       type_sz[ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type];
+           if ( ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx
+                > 0)
+           {
+              storage = floor (log10 (
+                 ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx)
+                                + 1);
+              string += storage;
+           }
+           else
+           {
+              string++;
+           }
+
+           msprintf (string, "%lu  %s;",
+             ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).idx,
+ type_id[ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).type]);
+                  string += 3 +
+   type_sz[ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).type];
+           if (ARRAY_ACCESS(this->multi_map,this->seq_struct_map[i].idx + 1).idx
+                > 0)
+           {
+              storage = floor (log10 (
+             ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).idx)
+                                + 1);
+              string += storage;
+           }
+           else
+           {
+              string++;
+           }
+         }
+      }
+      else
+      {
+         msprintf (string, "%*c   ", elem_idx_prec, '?');
+         string += elem_idx_prec + 3;
+         msprintf (string, "%s",  panic);
+         string += panic_size;
+      }
+
+      string[0] = '\n';
+      string++;
+   }
+
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   /*mprintf ("Written: %d\n", string - string_start);*/
 
    XFREE (string_start);
 }

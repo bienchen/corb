@@ -57,6 +57,19 @@ enum secstruct_retvals{
    ERR_SCSTRCT_ALLOC = 1,      /* (re)allocation problems */
 };
 
+/* structural elements */
+typedef enum {
+   SCSTRCT_VOID = 0,            /* base has no class assigned */
+   SCSTRCT_HAIRPIN,             /* hairpin loop */
+   SCSTRCT_STACK,               /* stacked basepair */
+   SCSTRCT_BULGE,               /* bulge loop */
+   SCSTRCT_INTERNAL,            /* internal loop */
+   SCSTRCT_MULTI,               /* multi loop */
+   SCSTRCT_EXTERNAL,            /* external loop */
+   SCSTRCT_MTO,                 /* base is in M ore T han O ne class */
+   N_SCSTRCT,                   /* No. of elements */
+} secstruct_elements;
+
 typedef struct SecStruct SecStruct;
 
 
@@ -77,6 +90,21 @@ secstruct_find_interactions (const unsigned long*,
 
 
 /*********************************   Access   *********************************/
+
+secstruct_elements
+secstruct_get_structure_at_pos (const unsigned long,
+                                unsigned long*,
+                                const SecStruct*);
+
+secstruct_elements
+secstruct_get_structure_multi_1st (const unsigned long,
+                                   unsigned long*,
+                                   const SecStruct*);
+
+secstruct_elements
+secstruct_get_structure_multi_2nd (const unsigned long,
+                                   unsigned long*,
+                                   const SecStruct*);
 
 /* hairpin loops */
 unsigned long
@@ -302,6 +330,9 @@ secstruct_fprintf_i_multiloop (FILE*, const unsigned long, const SecStruct*);
 
 void
 secstruct_fprintf_multiloops (FILE*, const SecStruct*);
+
+void
+secstruct_fprintf_seqpos_map (FILE*, const SecStruct*);
 
 #endif /* SECSTRUCT_H */
 

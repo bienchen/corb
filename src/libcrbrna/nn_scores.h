@@ -105,11 +105,14 @@ const char*
 nn_scores_get_tetra_loop (const unsigned long, const NN_scores*);
 
 void
-nn_scores_get_allowed_basepair (unsigned, char*, char*, const NN_scores*);
+nn_scores_get_allowed_basepair (unsigned long, char*, char*, const NN_scores*);
 
 float
 nn_scores_get_G_non_gc_penalty_for_bp (const int, const int,
                                        const NN_scores*);
+
+float
+nn_scores_get_nun_penalty (const int, const int, const NN_scores*);
 
 float
 nn_scores_get_G_dangle5 (const int, const int, const int, const NN_scores*);
@@ -228,6 +231,9 @@ void
 nn_scores_fprintf_bp_idx (FILE*, const NN_scores*, const Alphabet*);
 
 void
+nn_scores_fprintf_nun_penalties (FILE*, const NN_scores*, const Alphabet*);
+
+void
 nn_scores_fprintf_G_stack (FILE*, const NN_scores*, const Alphabet*);
 
 void
@@ -249,6 +255,11 @@ void
 nn_scores_fprintf_non_gc_penalty_for_bp(FILE*,
                                         const NN_scores*,
                                         const Alphabet*);
+
+void
+nn_scores_fprintf_tetra_loop_hashfunction(FILE*,
+                                          const NN_scores*,
+                                          const Alphabet*);
 
 void
 nn_scores_fprintf_tetra_loop(FILE*, const NN_scores*, const Alphabet*);

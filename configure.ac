@@ -1,4 +1,8 @@
+<<<<<<< HEAD:configure.ac
 # Last modified: 2009-09-05.14
+=======
+# Last modified: 2009-10-17.20
+>>>>>>> Finalising brot...:configure.ac
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 
@@ -41,6 +45,8 @@ AC_PROG_MAKE_SET
 # Checks for programs.
 AC_PROG_SED
 AC_PROG_GREP
+AC_PROG_AWK
+AC_PROG_MKDIR_P
 
 # development options
 # development features
@@ -70,7 +76,7 @@ CRB_ARG_WITH_PERL_PROG([eval_structure_file],
 CRB_ARG_WITH_PERL_PROG([doctool], [build documentation tool])
 
 # Checks for header files
-CRB_CHECK_HEADERS([assert.h float.h limits.h stddef.h])
+CRB_CHECK_HEADERS([assert.h float.h limits.h stddef.h stdlib.h time.h])
 AC_HEADER_STDBOOL
 gl_SIZE_MAX() # check for SIZE_MAX macro
 
@@ -100,6 +106,9 @@ AC_REPLACE_FUNCS([vprintf])
 AC_REPLACE_FUNCS([vfprintf])
 AC_REPLACE_FUNCS([strerror])
 AC_REPLACE_FUNCS([strtoul])
+AC_REPLACE_FUNCS([floor])
+AC_REPLACE_FUNCS([pow])
+AC_REPLACE_FUNCS([time])
 
 CRB_ARG_ENABLE_CFLAGS_WARNINGS_EVAL
 

@@ -1,7 +1,7 @@
 #!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-02-11.15
+# Last modified: 2009-08-27.16
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -997,6 +997,8 @@ my @TESTSEQS = (
 # CONSTANTS        - END
 
 # GLOBALS          - BEGIN
+our $CmdCorb    = 'corb';
+our $CmdRnaEval = 'RNAeval';   
 # GLOBALS          - END
 
 
@@ -1012,38 +1014,28 @@ sub parseargs(\%)
     my  $verbose;
 
     # wrap the signal handler for warnings to copy them to our message space
-    local $SIG{__WARN__} = sub
-                           {
-                               msg_error_and_die("@_");
-                           };
+    local $SIG{__WARN__} = sub { msg_error_and_die("@_"); };
 
     # set defaults
 
     # parse @ARGV
     $optcatchresult = GetOptions(
-        'stackssonly'           => \$argument_hashref->{stacksonly},
-        'exteriorsonly'         => \$argument_hashref->{extonly},
-        'bulgesonly'            => \$argument_hashref->{bulgeonly},
-        'interiorsonly'         => \$argument_hashref->{intonly},
-        'hairpinsonly'          => \$argument_hashref->{haironly},
-        'multionly'             => \$argument_hashref->{multionly},
-        'testsonly'             => \$argument_hashref->{testsonly},
-        'verbose!'           => \$verbose,
-        'help'               => \$help,
-        'man'                => \$man
+        'stackssonly'        => \$argument_hashref->{stacksonly},
+        'exteriorsonly'      => \$argument_hashref->{extonly},
+        'bulgesonly'         => \$argument_hashref->{bulgeonly},
+        'interiorsonly'      => \$argument_hashref->{intonly},
+        'hairpinsonly'       => \$argument_hashref->{haironly},
+        'multionly'          => \$argument_hashref->{multionly},
+        'testsonly'          => \$argument_hashref->{testsonly},
+        # script control
+        'corb-command=s'     => \$CmdCorb,
+        'RNAeval-command=s'  => \$CmdRnaEval,
+        # info
+        'verbose!'           => sub { enable_verbose; PBar::enable(); },
+        'help'               => sub { pod2usage(-exitval => 0, -verbose => 1) },
+        'man'                => sub { pod2usage(-exitval => 0, -verbose => 2) }
                                 );
 
-    if ($optcatchresult == 0) { return 0 }
-
-    if (defined($help)) { return 2 }
-
-    if (defined($man)) { return 3 }
-
-    if ($verbose)
-    {
-        PBar::enable();
-        enable_verbose;
-    }
     # postprocess
     if (   $argument_hashref->{intonly}
         || $argument_hashref->{haironly}
@@ -1603,9 +1595,9 @@ sub call_er2de ($ $)
 
     #print "$seq $struct\n";
 
-    unless(open(FH, "../../../src/corb \"er2de $seq $struct\" |"))
+    unless(open(FH, "$CmdCorb \"er2de $seq $struct\" |"))
     {
-        msg_error_and_die ("Could not start er2de\n");
+        msg_error_and_die ("Could not start $CmdCorb er2de\n");
     }
 
     foreach (<FH>)
@@ -1627,9 +1619,9 @@ sub call_rnaeval ($ $)
     my ($seq, $struct) = @_;
 
     #print "$seq $struct\n";
-    unless(open(FH, "echo \"$seq\n$struct\" | ./RNAeval -d2  2>&1 |"))
+    unless(open(FH, "echo \"$seq\n$struct\" | $CmdRnaEval -d2  2>&1 |"))
     {
-        msg_error_and_die ("Could not start RNAeval\n");
+        msg_error_and_die ("Could not start $CmdRnaEval\n");
     }
 
     foreach (<FH>)
@@ -1957,16 +1949,10 @@ sub test_bulgeloops(\%)
 my %arg_hash;
 my $pod_verbose = 1;
 my %param_hash;
-my $ret_val;
 my %test_nos;
 
 # parse commandline
-$ret_val = parseargs(%arg_hash);
-if ($ret_val > 1)
-{
-    if ($ret_val == 3) { $pod_verbose = 2 }
-    pod2usage(-exitval => 0, -verbose => $pod_verbose); 
-}
+parseargs(%arg_hash);
 
 # calculate overall no. of tests
 %test_nos = calculate_no_of_tests(%arg_hash);
@@ -2082,6 +2068,20 @@ Only test multiloops.
 =item B<-testsonly>  
 
 Only process set of test sequences.
+
+=item B<-corb-command>
+
+This defines the command to invoke B<CoRB>. By default the script just tries to
+call `corb`. If you have not installed B<CoRB> in your $PATH, just give the
+path and name of the binary here. The name is required to provide the
+possibility to invoke B<CoRB> binaries with differing names.
+
+=item B<-RNAeval-command>
+
+This defines the command to invoke B<RNAeval>. By default the script just tries
+to call `RNAeval`. If you have not installed B<RNAeval> in your $PATH, just
+give the path and name of the binary here. The name is required to provide the
+possibility to invoke B<RNAeval> binaries with differing names.
 
 =item B<-man>
 

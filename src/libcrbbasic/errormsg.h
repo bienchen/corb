@@ -116,6 +116,17 @@ __attribute__ ((format (printf, 3, 4)))
    call_warn_msgr(__FILE__, __LINE__, __VA_ARGS__)
 #endif
 
+/* verbose messaging */
+void
+enable_verbose_messaging (void);
+
+void
+print_verbose (const char*, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 1, 2)))
+#endif /* __GNUC__ */
+;
+
 #endif /* ERRORH_H */
 
 #ifdef __cplusplus

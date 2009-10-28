@@ -51,6 +51,7 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
+#include <time.h>
 #include <libcrbbasic/crbbasic.h>
 #include <libcrbbrot/crbbrot.h>
 #include <libcrbrna/crbrna.h>
@@ -65,7 +66,8 @@ static const char NN_2_SMALL_WARNING[] = "Nearest Neighbour model can only be us
    "given structure (\"%s\"): %lu";
 
 static int
-brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
+brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
+                                 const char* cmdline)
 {
    /* check input structure */
    if (args_info->inputs_num == 1)
@@ -81,6 +83,18 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
       return 1;
    }
 
+   if (args_info->verbose_given)
+   {
+      enable_verbose_messaging();
+      print_verbose ("# This is %s %s out of the %s\n# %s\n"
+                     "# Input structure: %s\n",
+                     BROT_CMDLINE_PARSER_PACKAGE,
+                     BROT_CMDLINE_PARSER_VERSION,
+                     PACKAGE_STRING,
+                     cmdline,
+                     args_info->inputs[1]);
+   }
+
    /* check steps */
    if (args_info->steps_given)
    {
@@ -91,6 +105,8 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
          return 1; 
       }
    }
+   print_verbose ("# Max. steps              (-s): %li\n",
+                  args_info->steps_arg);
  
    /* check temperature */
    if (args_info->temp_given)
@@ -103,6 +119,8 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
          return 1; 
       }
    }
+   print_verbose ("# Start-temp.             (-t): %.2f\n",
+                  args_info->temp_arg);
 
    if (args_info->window_size_given)
    {
@@ -122,6 +140,25 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info)
       }
    }
 
+   print_verbose ("# Neg. design term        (-d): %.2f\n",
+                  args_info->negative_design_scaling_arg);
+   print_verbose ("# Het. term               (-h): %.2f\n",
+                  args_info->heterogenity_term_scaling_arg);
+   print_verbose ("# Het. term window size   (-w): %ld\n",
+                  args_info->window_size_arg);
+   print_verbose ("# Entropy dropoff thresh. (-e): %.2f\n",
+                  args_info->sm_entropy_arg);
+   print_verbose ("# Lambda                  (-l): %.2f\n",
+                  args_info->lambda_arg);
+   print_verbose ("# B_long                  (-o): %.2f\n",
+                  args_info->beta_long_arg);
+   print_verbose ("# B_short                 (-i): %.2f\n",
+                  args_info->beta_short_arg);
+   print_verbose ("# Speedup thresh.         (-u): %.2f\n",
+                  args_info->speedup_threshold_arg);
+   print_verbose ("# Min. cool. factor       (-j): %.2f\n",
+                  args_info->min_cool_arg);
+
    return 0;
 }
 
@@ -139,6 +176,8 @@ adopt_site_presettings (const struct brot_args_info* args_info,
    assert (sm);
 
    struct_len = seqmatrix_get_width (sm);
+
+   print_verbose ("# Fixed sites             (-n): ");
 
    /* check presettings */
    for (i = 0; i < args_info->fixed_nuc_given; i++)
@@ -187,8 +226,11 @@ adopt_site_presettings (const struct brot_args_info* args_info,
          return 1;
       }
 
-      seqmatrix_fix_col (base, position, sm);      
+      seqmatrix_fix_col (base, position, sm);
+
+      print_verbose ("%s ", args_info->fixed_nuc_arg[i]);
    }
+   print_verbose ("\n");
 
    return 0;
 }
@@ -302,9 +344,8 @@ simulate_using_simplenn_scoring (struct brot_args_info* brot_args,
                                     brot_args->beta_short_arg,
                                     brot_args->speedup_threshold_arg,
                                     brot_args->min_cool_arg,
-                                    /*brot_args->scale_cool_arg,*/
                                     brot_args->lambda_arg,
-                                    brot_args->sm_entropy_arg,
+                                    /* brot_args->sm_entropy_arg, */
                                     sm,
                                     data);
       /*error = seqmatrix_collate_mv (sm, data);*/
@@ -329,11 +370,13 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    int error = 0;
    char** bp_allowed = NULL;
    char bi, bj;
+   long int seed;
    unsigned long i, j, k;
    unsigned long alpha_size
       = alphabet_size (scmf_rna_opt_data_get_alphabet(data));
    unsigned long allowed_bp = 0;
    NN_scores* scores =
+      /* SB: 10.08.09 50 140 looked like a good choice */
       NN_SCORES_NEW_INIT(50.0f, scmf_rna_opt_data_get_alphabet (data));
 
    if (scores == NULL)
@@ -345,8 +388,30 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    if (!error)
    {
       /* "randomise" scoring function */
-      mfprintf (stdout, "Using seed: %ld\n", brot_args->seed_arg);
-      nn_scores_add_thermal_noise (alpha_size, brot_args->seed_arg, scores);
+           print_verbose ("# Random seed             (-r): ");
+      if (brot_args->seed_given)
+      {
+         if (brot_args->seed_arg != 0)
+         {
+            print_verbose ("%ld\n", brot_args->seed_arg);
+            nn_scores_add_thermal_noise (alpha_size,
+                                         brot_args->seed_arg,
+                                         scores);
+         }
+         else
+         {
+            print_verbose ("disabled\n");
+         }
+      }
+      else
+      {
+         /* if no seed is given, use time */
+         seed = (long int) time(NULL);
+         print_verbose ("%ld\n", seed);
+         nn_scores_add_thermal_noise (alpha_size,
+                                      seed,
+                                      scores);
+      }
 
       bp_allowed = XMALLOC(alpha_size * sizeof (*bp_allowed));
       if (bp_allowed == NULL)
@@ -398,8 +463,8 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       error = scmf_rna_opt_data_secstruct_init (data);
    }
 
-   mfprintf (stdout, "TREATMENT of fixed sites: If both sites of a pair are "
-             "fixed, delete from list? Verbose info!!!\n");
+   /*mfprintf (stdout, "TREATMENT of fixed sites: If both sites of a pair are "
+     "fixed, delete from list? Verbose info!!!\n");*/
 
    /* set our special function for calc. cols.: Iterate over sec.struct., not
       sequence matrix! */
@@ -413,7 +478,11 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       scmf_rna_opt_data_set_het_window (brot_args->window_size_arg, data);
 
       seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
+<<<<<<< HEAD:src/libcrbapps/brot.c
       seqmatrix_set_gas_constant (GAS_CONST, sm);
+=======
+      seqmatrix_set_gas_constant (8.314472, sm); /* SB: 23.09.09 8.314472 */
+>>>>>>> Finalising brot...:src/libcrbapps/brot.c
 
       error = seqmatrix_simulate_scmf (brot_args->steps_arg,
                                        brot_args->temp_arg,
@@ -432,7 +501,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
    /* collate */
    if (!error)
    {
-     /*  seqmatrix_print_2_stdout (2, sm); */
+      /*seqmatrix_print_2_stdout (2, sm);*/
       seqmatrix_set_transform_row (scmf_rna_opt_data_transform_row_2_base, sm);
 
       error = seqmatrix_collate_is (COLLATE_THRESH,
@@ -442,9 +511,8 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
                                     brot_args->beta_short_arg,
                                     brot_args->speedup_threshold_arg,
                                     brot_args->min_cool_arg,
-                                    /*brot_args->scale_cool_arg,*/
                                     brot_args->lambda_arg,
-                                    brot_args->sm_entropy_arg,
+                                    /* brot_args->sm_entropy_arg, */
                                     sm,
                                     data);
       /*error = seqmatrix_collate_mv (sm, data);*/
@@ -508,9 +576,8 @@ simulate_using_nussinov_scoring (const struct brot_args_info* brot_args,
                                     brot_args->beta_short_arg,
                                     brot_args->speedup_threshold_arg,
                                     brot_args->min_cool_arg,
-                                    /*brot_args->scale_cool_arg,*/
                                     brot_args->lambda_arg,
-                                    brot_args->sm_entropy_arg,
+                                    /* brot_args->sm_entropy_arg, */
                                     sm,
                                     data);
       /* error = seqmatrix_collate_mv (sm, sigma); */
@@ -544,7 +611,7 @@ brot_main(const char *cmdline)
    /* postprocess arguments */
    if (retval == 0)
    {
-      retval = brot_cmdline_parser_postprocess (&brot_args);
+      retval = brot_cmdline_parser_postprocess (&brot_args, cmdline);
    }
 
    /* init simulation data */
@@ -554,7 +621,8 @@ brot_main(const char *cmdline)
                                             strlen (brot_args.inputs[1]),
                                             RNA_ALPHABET,
                                             strlen(RNA_ALPHABET)/2,
-            ((-1) * ((logf (1 / 0.000001f)) / (strlen (brot_args.inputs[1])))));
+             ((-1) * ((logf (1 / 0.000001f)) / (strlen (brot_args.inputs[1])))),
+                                            brot_args.file_given);
       if (sim_data == NULL)
       {
          retval = 1;
@@ -569,7 +637,8 @@ brot_main(const char *cmdline)
       {
          retval = SEQMATRIX_INIT (
             alphabet_size (scmf_rna_opt_data_get_alphabet (sim_data)),
-                                  strlen (brot_args.inputs[1]),
+                                      scmf_rna_opt_data_get_rna_size(sim_data),
+                                      /* strlen (brot_args.inputs[1]), */
                                   sm);
          /*seqmatrix_print_2_stdout (6, sm);*/
       }
@@ -588,8 +657,10 @@ brot_main(const char *cmdline)
    }
 
    /* open entropy file if name given */
+   print_verbose ("# Entropy file            (-p): ");
    if (brot_args.entropy_output_given)
    {
+      print_verbose ("%s", brot_args.entropy_output_arg);
       entropy_file = GFILE_OPEN (brot_args.entropy_output_arg,
                                  strlen (brot_args.entropy_output_arg),
                                  GFILE_VOID, "a");
@@ -603,7 +674,7 @@ brot_main(const char *cmdline)
          {
             retval = 1;
          }
-         else if (gfile_printf (entropy_file, "# steps: %lu\n",
+         else if (gfile_printf (entropy_file, "# steps:             %lu\n",
                                 brot_args.steps_arg) < 0)
          {
             retval = 1;
@@ -650,11 +721,13 @@ brot_main(const char *cmdline)
          }
       }
    }
+   print_verbose ("\n# Scoring scheme          (-c): ");
 
    if (retval == 0)
    {
       if (brot_args.scoring_arg == scoring_arg_simpleNN)
       {
+         print_verbose ("simpleNN\n");
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
@@ -673,6 +746,7 @@ brot_main(const char *cmdline)
       }
       else if (brot_args.scoring_arg == scoring_arg_nussinov)
       {
+         print_verbose ("nussinov\n");
          retval = simulate_using_nussinov_scoring (&brot_args,
                                                    sm,
                                                    sim_data,
@@ -680,6 +754,7 @@ brot_main(const char *cmdline)
       }
       else if (brot_args.scoring_arg == scoring_arg_NN)
       {
+         print_verbose ("NN\n");
          /* special to NN usage: structure has to be of size >= 2 */
          if (strlen (brot_args.inputs[1]) > 1)
          {
@@ -710,7 +785,7 @@ brot_main(const char *cmdline)
 
    if (retval == 0)
    {
-      /* seqmatrix_print_2_stdout (2, sm); */
+      /*seqmatrix_print_2_stdout (2, sm);*/
       mprintf ("%s\n", scmf_rna_opt_data_get_seq(sim_data));
    }   
 

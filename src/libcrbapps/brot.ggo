@@ -13,13 +13,22 @@
 # GNU General Public License for more details.
 
 package     "brot"
-version     "0.1"
+version     "1.0"
 purpose     "Designing RNA sequences using SCMF."
 usage       "brot [OPTIONS]... STRUCTURE"
 description "Basic RNAsequence Optimisation Tool"
 
 # arguments to gengetopt
 args "--string-parser --func-name=brot_cmdline_parser --file-name=brot_cmdline --include-getopt --unamed-opts=STRUCTURE --arg-struct-name=brot_args_info --no-handle-error"
+
+option "verbose" v "Enable verbose mode"
+       details="If set, additional information will be provided during run."
+       optional
+
+option "file" f "Read structure from file"
+       details="If set, STRUCTURE has to be a path to a file carrying the \
+                 structure to be used."
+       optional
 
 option "scoring" c "Choose a different scoring scheme"
        details="Use a certain energy model to score the RNA sequence. \
@@ -37,9 +46,9 @@ option "scoring" c "Choose a different scoring scheme"
 
 option "fixed-nuc" n "Preset a nucleotide in a position"
        details="Use a fixed nucleotide in a position in the sequence during \
-                 the simulation. As NUCLEOTIDE the whole 15 letter RNA \
-                 alphabet is allowed. The position INT has to be in the range \
-                 of the structure. Index starts at 0."
+                 the simulation. As NUCLEOTIDE A, C, G and U are allowed. The \
+                 position INT has to be in the range of the structure. Index \
+                 starts at 0."
        string
        typestr="NUCLEOTIDE:INT"
        optional
@@ -67,10 +76,12 @@ option "seed" r "Random seed"
                  numbers is [0.005, -0.005] and should be beyond the level of \
                  significance. Since we use a correlated random number \
                  generator you can reproduce answers by using the same seed. \
-                 Only takes effect when using with `NN' as scoring scheme."
+                 Only takes effect when using with `NN' as scoring scheme. If \
+                 seed is given as 0, adding noise is omitted. If option is not \
+                 set at all, system time is used for seeding."
        long
        typestr="INT"
-       default="-791122"
+#       default="-791122"
        optional
 
 option "negative-design-scaling" d "Scale negative design term"

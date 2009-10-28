@@ -216,7 +216,6 @@ seqmatrix_get_probability (const unsigned long row, const unsigned long col,
    assert (row < sm->rows);
    assert (col < sm->cols);
 
-/*    return sm->matrix[sm->curr_matrix][row][col];  */
    return sm->prob_m[row][col];
 }
 
@@ -687,13 +686,12 @@ seqmatrix_collate_is (const float fthresh,
                       const float b_short,
                       const float sc_thresh,
                       const float c_min,
-                      /*const float c_scale,*/
                       const float lambda,
-                      const float s_thresh,
+                      /* const float s_thresh, */
                       SeqMatrix* sm,
                       void* data)
 {
-   unsigned long i, j, largest_amb_col = 0, largest_amb_row = 0;
+   unsigned long /*i, j,*/ largest_amb_col = 0, largest_amb_row = 0;
    int retval = 0;
 
    assert (sm);
@@ -706,23 +704,24 @@ seqmatrix_collate_is (const float fthresh,
    while ((largest_amb_col != sm->cols + 1) && (! retval))
    {
       /* for all columns */
-      for (j = 0; j < sm->cols; j++)
+      /* SB: 16-10-09, fixing no happens during the simulation
+         for (j = 0; j < sm->cols; j++)
       {
          if (!seqmatrix_is_col_fixed (j, sm))
          {
-            /* for all rows */
+      *//* for all rows *//*
             for (i = 0; i < sm->rows; i++)
             {
                if (sm->prob_m[i][j] >= fthresh)
                {
-                  /* unambigouos site found, fixate it */
+                          *//* unambigouos site found, fixate it *//*
                   seqmatrix_fix_col (i, j, sm);
 
                   i = sm->rows + 1;
                }
             }
          }
-      }
+      }*/
       
       /* find largest ambigouos site */
       s_seqmatrix_find_lamb_site (sm, &largest_amb_row, &largest_amb_col);
@@ -733,6 +732,10 @@ seqmatrix_collate_is (const float fthresh,
          seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm);
 
          /* simulate */
+         /*seqmatrix_print_2_stdout (2, sm);*/
+         /* the simulation for collating uses an entropy dropoff of 0, because
+            if only a few sites are not fixed, the entropy is to low to trigger
+            a simulation step. */
          retval = seqmatrix_simulate_scmf (steps,
                                            temp,
                                            b_long,
@@ -741,7 +744,7 @@ seqmatrix_collate_is (const float fthresh,
                                            c_min,
                                            /*c_scale,*/
                                            lambda,
-                                           s_thresh,
+                                           0.0f, /* fixed dropoff */
                                            NULL,
                                            sm,
                                            data);
@@ -886,12 +889,12 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          SeqMatrix* sm,
                          void* sco)
 {
-   unsigned long t = 0;          /* time */
+   unsigned long t = 0;         /* time */
    int error= 0;
    unsigned long i, j;          /* iterator */
    float col_sum;
    float T = t_init;            /* current temperature */
-   float c_rate = 0.999999f;/* SB 090715 for testing 1.0f; */         /* cooling rate */
+   float c_rate = 0.999999f;/* SB 090715 for testing 1.0f; *//* cooling rate */
    float s_cur/* , s_last */;         /* matrix entropy */
    /* unsigned long s_count; */       /* count times s did not change */
    /* unsigned long s_dropout;  */    /* convergence criterion */
@@ -948,7 +951,8 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 /*    s_dropout = 100/\* steps * 0.005 *\/; */
 
    /* perform for a certain number of steps */
-   while ((!error) && (t < steps) && (T > 1.0f) && (s_cur >= s_thresh))
+   /* SB 16-09-09 T > 1.0f */
+   while ((!error) && (t < steps) && (T > 0.45f) && (s_cur >= s_thresh))
    {
       /* mfprintf (stderr, "Step: %lu\n", t); */
       error = sm->pre_col_iter_hook (sco, sm);
@@ -986,10 +990,16 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                   sm->prob_m[i][j] = 
                      (lambda * sm->calc_m[i][j])
                      + ((1 - lambda) * sm->prob_m[i][j]);
-              
-                  /* calculate "entropy", ignore fixed sites since ln(1) = 0 */
-                  if (sm->prob_m[i][j] > FLT_EPSILON)
+
+                  if (sm->prob_m[i][j] > 0.99f)
                   {
+                     seqmatrix_fix_col (i, j, sm);
+                     i = sm->rows;
+                     /* if this works, check if we can omit fixing in collate_is (we still need to search for the next one to fix but do not need to search for > 0.99!) */
+                  }
+                  else if (sm->prob_m[i][j] > FLT_EPSILON)
+                  {
+                     /* calculate "entropy", ignore fixed sites since ln(1)=0 */
                      s_cur += (sm->prob_m[i][j] * logf (sm->prob_m[i][j]));
                   }
                }
@@ -1150,7 +1160,14 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    }
    cprec += p + 1;
 
-   if (sm->rows > 1.0f)
+   /* SB 16-09-09 - Start */
+   if ((sm->cols > 1) && (floorf (log10f ((float) sm->cols) + 1.0f) >= cprec))
+   {
+      cprec = floorf (log10f ((float) sm->cols) + 1.0f) + 1;
+   }
+   /* SB 16-09-09 - End */
+
+   if (sm->rows > 1) /* SB 16-09-09 1.0f*/
    {
       rprec = floorf (log10f ((float) sm->rows) + 1.0f);
    }
@@ -1166,8 +1183,31 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
    line_width += 1;              /* + '\n' */
 
    /* alloc memory for the string */
-   string = XMALLOC (sizeof (*string) * (((line_width) * sm->rows) + 1));
+   /* SB 16-09-09 string = XMALLOC (sizeof (*string) * (((line_width) * sm->rows) + 1));*/
+   string = XMALLOC (sizeof (*string) * (((line_width) * (sm->rows + 1)) + 1)); /* SB 16-09-09*/
    string_start = string;
+
+   /* SB 16-09-09 - Start */
+   /* printing col. no.s: 
+      - allocate 1 line extra string-space
+      - skip to first '|'?
+      - width/2 as a spacer
+      - what about no. of digits? */
+   /* write col. no.s */
+   if (sm->cols > 0)
+   {
+      msprintf (string, "%*c", (rprec + 4), ' ');
+      string += rprec + 4;
+
+      for (j = 0; j < sm->cols; j++)
+      {
+         msprintf (string, " %*lu   ", (cprec - 1), j);
+         string += cprec + 3;
+      }
+      msprintf (string, "\n");
+      string++;
+   }
+   /* SB 16-09-09 - End */
 
    /* write matrix */
    for (i = 0; i < sm->rows; i++)
@@ -1186,7 +1226,7 @@ seqmatrix_fprintf (FILE* stream, const int p, const SeqMatrix* sm)
 
       string[0] = '\n';
       string++;
-   }   
+   }
    string[0] = '\0';
 
    string = string_start;

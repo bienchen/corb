@@ -120,6 +120,7 @@ scmf_rna_opt_data_new_init (const char* structure,
                             const char* alpha_string,
                             const unsigned long alpha_size,
                             float het_rate,
+                            const unsigned int file_given,
                             const char* file, const int line)
 {
    int error = 0;
@@ -129,8 +130,6 @@ scmf_rna_opt_data_new_init (const char* structure,
    if (this != NULL)
    {
       this->het_rate = het_rate;
-
-      /* mfprintf (stderr, "Het-Rate: %f %f\n", het_rate, (logf (0.01) / logf (expf(1)))/het_rate); */
 
       /* init alphabet */
       this->sigma = ALPHABET_NEW_SINGLE (alpha_string, alpha_size);
@@ -148,25 +147,60 @@ scmf_rna_opt_data_new_init (const char* structure,
          return NULL;
       }
 
-      error = RNA_ALLOC_SEQUENCE(seqlen, this->rna);
-      if (error)
+      if (!file_given)
+      {
+         error = RNA_ALLOC_SEQUENCE(seqlen, this->rna);
+         if (error)
+         {
+            scmf_rna_opt_data_delete (this);
+            return NULL;         
+         }
+         error = RNA_INIT_PAIRLIST_VIENNA(structure, seqlen, this->rna);
+         if (error)
+         {
+            scmf_rna_opt_data_delete (this);
+            return NULL;         
+         }
+      }
+      else
+      {
+         error = rna_read_from_file (this->rna,
+                                     structure,
+                                     seqlen,
+                                     NULL,
+                                     0,
+                                     GFILE_VOID);
+         if (error)
+         {
+            scmf_rna_opt_data_delete (this);
+            return NULL;         
+         }
+      }
+
+      /* init negative energies */
+      /*alpha_size = alphabet_size (this->sigma);*/
+      this->en_neg = XCALLOC (alpha_size, sizeof (*(this->en_neg)));
+      if (this->en_neg == NULL)
       {
          scmf_rna_opt_data_delete (this);
          return NULL;         
       }
-      
-      /* init negative energies */
-      this->en_neg = XCALLOC (alphabet_size (this->sigma),
-                              sizeof (*(this->en_neg)));
 
-      this->en_neg2 = (float**) XMALLOC_2D (alphabet_size (this->sigma),
-                                           alphabet_size (this->sigma),
+      this->en_neg2 = (float**) XMALLOC_2D (alpha_size, alpha_size,
                                             sizeof (**(this->en_neg2)));
-      this->en_neg_35 = (float**) XMALLOC_2D (alphabet_size (this->sigma),
-                                           alphabet_size (this->sigma),
-                                              sizeof (**(this->en_neg_35)));
+      if (this->en_neg2 == NULL)
+      {
+         scmf_rna_opt_data_delete (this);
+         return NULL;         
+      }
 
-      error = RNA_INIT_PAIRLIST_VIENNA(structure, seqlen, this->rna);
+      this->en_neg_35 = (float**) XMALLOC_2D (alpha_size, alpha_size,
+                                              sizeof (**(this->en_neg_35)));
+      if (this->en_neg_35 == NULL)
+      {
+         scmf_rna_opt_data_delete (this);
+         return NULL;         
+      }
    }
 
    if (error)
@@ -589,6 +623,12 @@ scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data* this)
    return rna_get_sequence (this->rna);
 }
 
+unsigned long
+scmf_rna_opt_data_get_rna_size (Scmf_Rna_Opt_data* this)
+{
+   return rna_get_size (this->rna);
+}
+
 /** @brief calculate energy using the Nearest Neighbour energy model.
  *
  * Calculate the energy for a cell of a sequence matrix using the Nearest
@@ -921,20 +961,18 @@ scmf_rna_opt_calc_simplenn (const unsigned long row,
 static void
 scmf_rna_opt_calc_hairpin (const unsigned long row,
                            const unsigned long hairpin,
+                           unsigned long alpha_size,
+                           unsigned long allowed_bp,
                            SeqMatrix* sm,
                            Scmf_Rna_Opt_data* this)
 {
    unsigned long start, end, size;
    char bpp, bi, bj; /* base pair partner */
    unsigned long k, l, m;
-   unsigned long alpha_size;
    unsigned long n_tetra_loops;
    float cell5p, cell3p;
    float update_prob5p, update_prob3p;
-   unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    const char* t_loop;
-
-   alpha_size = alphabet_size (this->sigma);
 
    secstruct_get_geometry_hairpin(&start, &end, &size, hairpin,
                                   rna_get_secstruct(this->rna));
@@ -1052,14 +1090,14 @@ scmf_rna_opt_calc_hairpin (const unsigned long row,
 
 static void
 scmf_rna_opt_calc_ext_loop (const unsigned long row,
+                            unsigned long alpha_size,
+                            unsigned long allowed_bp,
                             SeqMatrix* sm,
                             Scmf_Rna_Opt_data* this)
 {
    unsigned long n;                   /* general count */
    unsigned long k, l, m;
    unsigned long p5pos, p3pos, fbpos; /* pos of 5', 3' and free base */
-   unsigned long alpha_size = alphabet_size (this->sigma);
-   unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    char bpp, bi, bj;
    float cell5p, cell3p;
    float p5p, p3p;                    /* probability */
@@ -1198,6 +1236,8 @@ scmf_rna_opt_calc_ext_loop (const unsigned long row,
 static void
 scmf_rna_opt_calc_multi_loop (const unsigned long row,
                               const unsigned long loop,
+                              unsigned long alpha_size,
+                              unsigned long allowed_bp,
                               SeqMatrix* sm,
                               Scmf_Rna_Opt_data* this)
 {
@@ -1207,8 +1247,6 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
    unsigned long p5pos, p3pos, fbpos; /* pos of 5', 3' and free base */
    char bpp, bi, bj;
    float p5p, p3p;                    /* probabilities */
-   unsigned long alpha_size = alphabet_size (this->sigma);
-   unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    SecStruct* structure;
 
    /* penalty for non gc basepair initiating a stem */
@@ -1347,6 +1385,7 @@ scmf_rna_opt_calc_multi_loop (const unsigned long row,
 static void
 scmf_rna_opt_calc_bulge (const unsigned long row,
                          const unsigned long loop,
+                         unsigned long allowed_bp,
                          SeqMatrix* sm,
                          Scmf_Rna_Opt_data* this)
 {
@@ -1356,7 +1395,6 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
    unsigned long j2pos;
    unsigned long size;
    unsigned long k, l;           /* iterator */
-   unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    char bpp, bi, bj;
    float cell_i1, cell_j1, cell_i2, cell_j2;
    float p;                     /* probability */
@@ -1420,13 +1458,13 @@ scmf_rna_opt_calc_bulge (const unsigned long row,
 static void
 scmf_rna_opt_calc_stack (const unsigned long row,
                          const unsigned long stack,
+                         unsigned long allowed_bp,
                          SeqMatrix* sm,
                          Scmf_Rna_Opt_data* this)
 {
    unsigned long i, j;          /* base i and j of a pair */
    unsigned long k, l;          /* iterator */
    char bpp, bi, bj;
-   unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
    float cell_i, cell_j, cell_ip1, cell_jm1;
    float p;                     /* probability */
 
@@ -1869,6 +1907,7 @@ scmf_rna_opt_calc_int12 (const unsigned long row,
    float p, p_bp2, p_bp1, p_bb;
    float cell_i1, cell_j1, cell_i2, cell_j2;
 
+
    /* for all allowed pairs */
    cell_i1 = 0.0f;
    cell_j1 = 0.0f;
@@ -2142,6 +2181,14 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
    cell_j1 = cell_j1 / 6; /* SB 08-12-12 */
    cell_i2 = cell_i2 / 6; /* SB 08-12-12 */
    cell_j2 = cell_j2 / 6; /* SB 08-12-12 */
+/*   if (pj1 == 14)
+      mprintf("Q %lu,%lu: %f\n", row, pj1, cell_j1);
+   if (pi1 == 3)
+      mprintf("Q %lu,%lu: %f\n", row, pi1, cell_i1);
+   if (pj2 == 14)
+      mprintf("W %lu,%lu: %f\n", row, pj2, cell_j2);
+   if (pi2 == 3)
+   mprintf("W %lu,%lu: %f\n", row, pi2, cell_i2);*/
    seqmatrix_add_2_eeff (cell_i1, row, pi1, sm);
    seqmatrix_add_2_eeff (cell_j1, row, pj1, sm);
    seqmatrix_add_2_eeff (cell_i2, row, pi2, sm);
@@ -2194,13 +2241,13 @@ scmf_rna_opt_calc_int11 (const unsigned long row,
 static void
 scmf_rna_opt_calc_internals (const unsigned long row,
                              const unsigned long loop,
+                             unsigned long alpha_size,
+                             unsigned long allowed_bp,
                              SeqMatrix* sm,
                              Scmf_Rna_Opt_data* this)
 {
    unsigned long pi1, pj1, size1;
    unsigned long pi2, pj2, size2;
-   unsigned long allowed_bp = nn_scores_no_allowed_basepairs (this->scores);
-   unsigned long alpha_size = alphabet_size (this->sigma);
 
    /* fetch loop geometry */
    secstruct_get_geometry_internal (&pi1, &pj1, &pi2, &pj2, &size1, &size2,
@@ -2283,10 +2330,16 @@ scmf_rna_opt_get_interaction_energy (char state,
       {
          nn_scores_get_allowed_basepair (bp, &bjm, &bip, this->scores);
 
+/* SB 04-09-09
          pe += (nn_scores_get_G_stack (*p5, *p3, bjm, bip, this->scores)
-                * seqmatrix_get_probability (bj, partner/* pos_j */, sm)
+         * seqmatrix_get_probability (bj, partner*//* pos_j *//*, sm)
                 * seqmatrix_get_probability (bjm, pos_j - 1, sm)
                 * seqmatrix_get_probability (bip, pos_i + 1, sm));
+*/
+        pe += (nn_scores_get_G_stack (*p5, *p3, bjm, bip, this->scores) * 0.75f
+                * seqmatrix_get_probability (bj, partner/* pos_j */, sm)
+                * seqmatrix_get_probability (bjm, pos_j - 1, sm)
+               * seqmatrix_get_probability (bip, pos_i + 1, sm)); /* SB 04-09-09*/
       }
    }
    
@@ -2310,11 +2363,17 @@ scmf_rna_opt_calc_upstream_cont (const unsigned long state,
       for (bp = 0; bp < allowed_bp; bp++)
       {
          nn_scores_get_allowed_basepair (bp, &bjm, &bip, this->scores);
-         
+
+/* SB 04-09-09
          this->en_neg[(int)bip] -= (nn_scores_get_G_stack (state, bj, bjm, bip,
                                                            this->scores)
                                     * seqmatrix_get_probability (bjm, (j-1),sm)
                                     * seqmatrix_get_probability (bj, j, sm));
+*/
+         this->en_neg[(int)bip] -= (nn_scores_get_G_stack (state, bj, bjm, bip,
+                                                           this->scores) * 0.5f
+                                    * seqmatrix_get_probability (bjm, (j-1),sm)
+                                    * seqmatrix_get_probability (bj, j, sm)); /*SB 04-09-09 */
       }
    }
 }
@@ -2337,10 +2396,16 @@ scmf_rna_opt_calc_downstream_cont (const unsigned long state,
       {
          nn_scores_get_allowed_basepair (bp, &bip, &bjm, this->scores);
 
+/* SB 04-09-09
       this->en_neg_35[0][(int)bjm] += (nn_scores_get_G_stack (bi,state,bjm,bip,
                                                               this->scores)
                                        * seqmatrix_get_probability (bi, i, sm)
                                  * seqmatrix_get_probability (bip, i + 1, sm));
+*/
+      this->en_neg_35[0][(int)bjm] += (nn_scores_get_G_stack (bi,state,bjm,bip,
+                                                              this->scores) * 0.5f
+                                       * seqmatrix_get_probability (bi, i, sm)
+                                 * seqmatrix_get_probability (bip, i + 1, sm));  /*SB 04-09-09 */
       }
    }
 }
@@ -2386,9 +2451,12 @@ scmf_rna_opt_calc_neg_loop (const unsigned long state,
             prob += (seqmatrix_get_probability (bjm, (j - 1), sm)
                    * seqmatrix_get_probability (bj,   j,      sm));
          }
-
+/* SB - 04-09-09
          this->en_neg[(int)bip] += (nn_scores_get_G_stack (state, bj, bjm, bip,
                                                           this->scores) * prob);
+*/
+         this->en_neg[(int)bip] += (nn_scores_get_G_stack (state, bj, bjm, bip,
+                                                          this->scores) * 0.75f * prob); /* SB - 04-09-09 */
       }
    }
 
@@ -2488,13 +2556,13 @@ scmf_rna_opt_calc_neg_loop (const unsigned long state,
 static void
 scmf_rna_opt_calc_het_term (const unsigned long state,
                             const unsigned long n_sites,
-                            const Scmf_Rna_Opt_data* this __attribute__((unused)),
+                            const Scmf_Rna_Opt_data* this,
                             SeqMatrix* sm)
 {
    unsigned long s_c;
    float het;
 
-   assert (this->win < n_sites / 2);
+   assert (this->win < (n_sites / 2));
 
    het = 0.0f;
 
@@ -2552,6 +2620,39 @@ scmf_rna_opt_calc_het_term (const unsigned long state,
    }
 }
 
+static void
+scmf_rna_opt_calc_nun_term (const unsigned long state,
+                            const unsigned long n_sites,
+                            const unsigned long alpha_size,
+                            const Scmf_Rna_Opt_data* this,
+                            SeqMatrix* sm)
+{
+   unsigned long i;             /* iterates sites */
+   unsigned long n;             /* iterates the alphabet */
+   unsigned long mate;
+   float cell;
+
+   assert (this);
+   assert (this->scores);
+   assert (this->rna);
+
+   for (i = 0; i < n_sites; i++)
+   {
+      mate = rna_base_pairs_with (i, this->rna);
+      if (mate != NOT_PAIRED)
+      {
+         cell = 0.0f;
+         for (n = 0; n < alpha_size; n++)
+         {
+            cell += (seqmatrix_get_probability(n, mate, sm) 
+                     * nn_scores_get_nun_penalty (n, state, this->scores));
+         }
+         /* add to Eeff */
+         seqmatrix_add_2_eeff (cell, state, i, sm);
+      }
+   }
+}
+
 /** @brief SCMF simulation function.
  *
  * This is the substitute for the column iteration function of a SCMF
@@ -2567,7 +2668,6 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
                           const float t,
                           void* sco)
 {
-   /*unsigned long i;*/
    int error = 0;
    Scmf_Rna_Opt_data* this;
    unsigned long n;
@@ -2604,41 +2704,41 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       /*seqmatrix_print_2_stdout (2, sm);*/
       /* process structure components */
       /* external loop */
-      scmf_rna_opt_calc_ext_loop (r, sm, this);
+      scmf_rna_opt_calc_ext_loop (r, alpha_size, allowed_bp, sm, this);
 
       /* stacking pairs */
       n = secstruct_get_noof_stacks (structure);
       for (i = 0; i < n; i++)
       {
-         scmf_rna_opt_calc_stack (r, i, sm, this);
+         scmf_rna_opt_calc_stack (r, i, allowed_bp, sm, this);
       }
 
       /* bulge loops */
       n = secstruct_get_noof_bulges (structure);
       for (i = 0; i < n; i++)
       {
-         scmf_rna_opt_calc_bulge (r, i, sm, this);
+         scmf_rna_opt_calc_bulge (r, i, allowed_bp, sm, this);
       }
 
       /* internal loops */
       n = secstruct_get_noof_internals (structure);
       for (i = 0; i < n; i++)
       {
-         scmf_rna_opt_calc_internals (r, i, sm, this);
+         scmf_rna_opt_calc_internals (r, i, alpha_size, allowed_bp, sm, this);
       }      
 
       /* hairpin loops */
       n = secstruct_get_noof_hairpins (structure);
       for (i = 0; i < n; i++)
       {
-         scmf_rna_opt_calc_hairpin (r, i, sm, this);
+         scmf_rna_opt_calc_hairpin (r, i, alpha_size, allowed_bp, sm, this);
       }
 
       /* multiloops */
       n = secstruct_get_noof_multiloops (structure);
       for (i = 0; i < n; i++)
       {
-         scmf_rna_opt_calc_multi_loop (r, i, sm, this);
+         scmf_rna_opt_calc_multi_loop (r, i, alpha_size, allowed_bp, sm, this);
       }
 
       /* calc. neg. design term, iteratevily */
@@ -2647,81 +2747,25 @@ scmf_rna_opt_calc_col_nn (SeqMatrix* sm,
       /* heterogenity term */
       scmf_rna_opt_calc_het_term (r, n_sites, this, sm);
 
+      /* nun term */
+      scmf_rna_opt_calc_nun_term (r, n_sites, alpha_size, this, sm);
+
       for (c = 0; c < n_sites; c++)
       {
          if (!seqmatrix_is_col_fixed (c, sm))
          {
-            /*mprintf ("CM(%lu,%lu) = %.2f\n", r, c,
-              seqmatrix_get_eeff (r, c, sm));*/
+      /* mprintf ("CM(%lu,%lu) = %.2f ", r, c, seqmatrix_get_eeff (r, c, sm));*/
             cell = expf((-1.0f) * seqmatrix_get_eeff (r, c, sm)
                         / (t * seqmatrix_get_gas_constant(sm)));
             seqmatrix_set_eeff (cell, r, c, sm);
-            /*mprintf (" %.2f\n", seqmatrix_get_eeff (r, c, sm));*/
-         }         
+            /* mprintf ("%.2f\n", seqmatrix_get_eeff (r, c, sm));*/
+         }
       }
 
       r++;
    }
    /* mfprintf (stderr, "\n"); */
-
+   /*seqmatrix_print_2_stdout (2, sm);*/
 
    return error;
 }
-
-
-/* Tests nn:
---steps 100 -t10
-(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))....
-ACGUGGCAAGGGCAACAGAUAGCCCAGGGGCACAGAGAGCCCCAGAUAGGGGCAUAGAGAGCCCCGCCACGUAGAG
-
-Entropy dropout: 0.036480
-Entropy dropout: 0.018240
-Entropy dropout: -0.000000
-
-real    0m49.946s
-user    0m49.859s
-sys     0m0.056s
-================================================================================
-
---steps 100 -t10
-(((((....)))))..(...).((()))
-CAGGCAGAAGCCUGAAGACACAGGGCCC
-
-Entropy dropout: 0.049463
-Entropy dropout: -0.000000
-
-real    0m2.254s
-user    0m2.236s
-sys     0m0.000s
-================================================================================
-
---steps 100 -t10
-...(((...)))(((())))...(((...(...))))
-ACAGACACAGUCGGGGCCCCAGAGGCAGAGAGACGCC
-
-Entropy dropout: 0.037461
-Entropy dropout: -0.000000
-
-real    0m6.744s
-user    0m6.728s
-sys     0m0.008s
-================================================================================
-
---steps 100 -t10
-(((((...(((...)))(((())))...(((...(...))))(((((....)))))..(...).((()))...)))))
-GUGGCACAGACAUAGUCGGGGCCCCAUAGACAUAGAAACGUCGGGGCAAGAGCCCCAAGAGACAGGGCCCAGAGCCAC
-
-Entropy dropout: 0.035544
-Entropy dropout: 0.017773
-Entropy dropout: -0.000000
-
-real    0m39.088s
-user    0m38.926s
-sys     0m0.068s
-================================================================================
-
-*/
-
-/* Test nussi
-CGACGUUAAGUCGACAACAUACGACACGACGAUCACAACGUCGAACAAGCACGAUCACAACGUGCAACGUCGAAAC
-*/

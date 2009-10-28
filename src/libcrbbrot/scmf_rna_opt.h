@@ -69,10 +69,11 @@ scmf_rna_opt_data_new_init (const char*,
                             const char*,
                             const unsigned long,
                             float,
+                            unsigned int,
                             const char*, const int);
 
-#define SCMF_RNA_OPT_DATA_NEW_INIT(S, L, A, G, H)                 \
-   scmf_rna_opt_data_new_init (S, L, A, G, H, __FILE__, __LINE__)
+#define SCMF_RNA_OPT_DATA_NEW_INIT(S, L, A, G, H, I)                      \
+   scmf_rna_opt_data_new_init (S, L, A, G, H, I, __FILE__, __LINE__)
 
 /* int */
 /* scmf_rna_opt_data_init_negative_design_energies (void*, */
@@ -110,6 +111,9 @@ scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data*);
 
 char*
 scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data*);
+
+unsigned long
+scmf_rna_opt_data_get_rna_size (Scmf_Rna_Opt_data*);
 
 float
 scmf_rna_opt_calc_nussinov (const unsigned long, const unsigned long,

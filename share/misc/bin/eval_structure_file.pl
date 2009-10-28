@@ -1,7 +1,7 @@
 #!@PERL@
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-07-20.13
+# Last modified: 2009-10-16.10
 
 
 # Copyright (C) 2009 Stefan Bienert
@@ -71,11 +71,14 @@ sub parse_args(\%)
 
     # set defaults
     $argument_hashref->{brot_args} = '';
+    $argument_hashref->{outfile}   = '-';
 
     # parse @ARGV
     GetOptions(
         # brot
         'brot-args=s'           => \$argument_hashref->{brot_args},
+        # results
+        'outfile=s'             => \$argument_hashref->{outfile},
         # script control
         'corb-command=s'        => \$CmdCorb,
         'RNAfold-command=s'     => \$CmdRnaFold,
@@ -86,6 +89,12 @@ sub parse_args(\%)
         'help'               => sub { pod2usage(-exitval => 0, -verbose => 1) },
         'man'                => sub { pod2usage(-exitval => 0, -verbose => 2) }
               );
+
+    if ((is_verbose()) && ($argument_hashref->{outfile} eq '-'))
+    {
+        msg_error_and_die('Option verbose requires option outfile to be ',
+                          "set.\n");
+    }
 
     # get command line argument (an argument given without option)
     # fetch file name
@@ -105,9 +114,9 @@ sub parse_args(\%)
 # predict sequences for a bunch of structures given. The arrays
 # @structure_lengths and @structures have to be of same size.
 #   predict_sequence($arg_string, @structure_lengths, @structures)
-sub predict_sequence(\$ \@ @)
+sub predict_sequence(\$ \@ \@ @)
 {
-    my ($arg_ref, $lens_ary_ref, @structures) = @_;
+    my ($arg_ref, $info_ary_ref, $lens_ary_ref, @structures) = @_;
     my (@runs, $fh);
     my $i;
     my @res;
@@ -143,6 +152,7 @@ sub predict_sequence(\$ \@ @)
             {
                 close($fh);
                 $res[$i] = $1;
+                ${${$info_ary_ref}[$i]}{'seq'} = $res[$i];
                 next;
             }
         }
@@ -164,9 +174,9 @@ sub predict_sequence(\$ \@ @)
 # Calculate the 'energy' of a bunch of RNA 2D structures. Of course, the
 # sequence array must provide a sequence for each structure and vice versa.
 #   calc_en_structure(@sequences, @structures)
-sub calc_en_structure(\@ @)
+sub calc_en_structure(\@ \@ @)
 {
-    my ($seq_ary_ref, @structures) = @_;
+    my ($info_ary_ref, $seq_ary_ref, @structures) = @_;
     my $i;
     my (@runs, $fh);
     my @res;
@@ -196,6 +206,7 @@ sub calc_en_structure(\@ @)
             if ($_ =~ /G\s*\=\s*(\-?\d+\.?\d*)/)
             {
                 $res[$i] = $1;
+                ${${$info_ary_ref}[$i]}{'p_en'} = $res[$i];
                 next;
             }
             push(@err_run, $_);
@@ -216,9 +227,9 @@ sub calc_en_structure(\@ @)
 # Predict the minimum free energy structure for a bunch of sequences. Returns
 # an array of hashes, holding the structure and its energy.
 #   predict_mfe_structure (@sequences)
-sub predict_mfe_structure (\@ \@)
+sub predict_mfe_structure (\@ \@ \@)
 {
-    my ($seq_ary_ref, $lengths_ary_ref) = @_;
+    my ($info_ary_ref, $seq_ary_ref, $lengths_ary_ref) = @_;
     my $i;
     my (@runs, $fh);
     my @err_run;
@@ -254,12 +265,16 @@ sub predict_mfe_structure (\@ \@)
                 #$result_count++;
                 $result{structure} = $1;
                 $result{mfe_en} = $2;
+
+                ${${$info_ary_ref}[$i]}{'mfe_structure'} = $result{structure};
+                ${${$info_ary_ref}[$i]}{'mfe_en'} = $result{mfe_en};
             }
             elsif ($_ =~ /free\s+energy\s+of\s+ensemble\s+\=\s+(\-\d+\.\d+)/)
             {
                 #$result_count++;
                 
                 $result{ens_en} = $1;
+                ${${$info_ary_ref}[$i]}{'ens_en'} = $result{ens_en};
             }
 
             push(@err_run, $_);
@@ -283,9 +298,9 @@ sub predict_mfe_structure (\@ \@)
 # Compare two sets of structures. Only structures with the same index are
 # compared.
 #   compare_structures (@set1, @set2)
-sub compare_structures (\@ @)
+sub compare_structures (\@ \@ @)
 {
-    my ($pred_ary_ref, @ref) = @_;
+    my ($info_ary_ref, $pred_ary_ref, @ref) = @_;
     my $i;
     my (@runs, $fh);
     my @err_run;
@@ -317,6 +332,7 @@ sub compare_structures (\@ @)
             if ($_ =~ /P\:\s*(\d+)/)
             {
                 $res[$i] = $1;
+                ${${$info_ary_ref}[$i]}{'dist'} = $res[$i];
                 next;
             }
 
@@ -342,9 +358,8 @@ sub compare_structures (\@ @)
 # open input file
 my %arg_hash;
 my $fh;
+my $outfh;
 my ($i, $j);
-#my $mfe_en;
-#my $mfe_struct;
 my @en_diff;
 my $sum_en_diff = 0;
 my $length;
@@ -358,6 +373,7 @@ my @predicted_seqs;
 my @pseq_ens;
 my @mfe_predictions;
 my %progress;
+my @info;
 
 # fetch options/ arguments
 parse_args(%arg_hash);
@@ -388,28 +404,39 @@ for ($i = 0; $i <= $#structures; $i++)
               @structures;                   # take structures
 
 # run through all structures
+$outfh = open_or_die($arg_hash{outfile}, '>');
 PBar::start(%progress, $#structures); # do we need $#structures + 1?
-for ($i = 0; $i <= $#structures; $i += $jobs) # was foreach
+for ($i = 0; $i <= $#structures; $i += $jobs)
 {
     if (($i + $jobs) > $#structures) { $jobs = ($#structures - $i) + 1 }
 
     @struct_lens = ();
     @struct_lens = map { length($_) } @structures[$i..($i + $jobs - 1)];
 
+    # prepare output information
+    for ($j = 0; $j < $jobs; $j++)
+    {
+        ${$info[$j]}{'structure'} = $structures[$i + $j];
+    }
+
     # predict sequence
     @predicted_seqs = ();
     @predicted_seqs = predict_sequence($arg_hash{brot_args},
+                                       @info,
                                        @struct_lens,
                                        @structures[$i..($i + $jobs - 1)]);
 
     # calc. energy of pred.seq. in des.struct.
     @pseq_ens = ();
-    @pseq_ens = calc_en_structure(@predicted_seqs,
+    @pseq_ens = calc_en_structure(@info,
+                                  @predicted_seqs,
                                   @structures[$i..($i + $jobs - 1)]);
 
     # predict structure from pred.seq
     @mfe_predictions = ();
-    @mfe_predictions = predict_mfe_structure(@predicted_seqs, @struct_lens);
+    @mfe_predictions = predict_mfe_structure(@info,
+                                             @predicted_seqs,
+                                             @struct_lens);
 
     @en_diff = ();
     for ($j = 0; $j < $jobs; $j++)
@@ -419,7 +446,7 @@ for ($i = 0; $i <= $#structures; $i += $jobs) # was foreach
 
     # calc. distance between pred.seq.struct. and mfe.struct.
     @diff = ();
-    @diff = compare_structures (@mfe_predictions,
+    @diff = compare_structures (@info, @mfe_predictions,
                                 @structures[$i..($i + $jobs - 1)]);
 
     for ($j = 0; $j < $jobs; $j++)
@@ -433,13 +460,28 @@ for ($i = 0; $i <= $#structures; $i += $jobs) # was foreach
         }
 
         #print (($i+$j+1).": $sum_diff $correct $sum_en_diff \n");
+
+        print $outfh 'Structure ', ($i + $j), ": ${$info[$j]}{'structure'}\n";
+        print $outfh 'Pred. seq.:  ', "${$info[$j]}{'seq'}\n";
+        print $outfh 'G(Structure, Predicted seq): ', "${$info[$j]}{'p_en'}\n";
+        print $outfh 'MFE struct.: ', "${$info[$j]}{'mfe_structure'}\n";
+        print $outfh 'G(MFE Structure, Pred. seq): ',"${$info[$j]}{'mfe_en'}\n";
+        print $outfh 'G(Ensemble, Pred. seq):      ',"${$info[$j]}{'ens_en'}\n";
+        print $outfh 'Diff(G_MFE, G_sps): ', $en_diff[$j], "\n";
+        print $outfh 'Dist(Structure, Pred. struct.): ',
+                     "${$info[$j]}{'dist'}\n";
+        print $outfh '================================================', "\n";
+        print $outfh 'Globals update: Energy diff. = ',
+                     "$sum_en_diff BPD = $sum_diff Correct = $correct\n";
+        print $outfh '================================================', "\n\n";
     }
 
     PBar::update(%progress, $i);
 }
 PBar::finish(%progress);
+close($outfh);
 
-print "\nSums: Energy = $sum_en_diff BPD = $sum_diff Crrect = $correct\n"
+print "\nSums: Energy = $sum_en_diff BPD = $sum_diff Correct = $correct\n";
 # MAIN             - END
 
 
@@ -478,7 +520,14 @@ default values of the options are the same as for the B<brot> binary.
 
 Instead of reproducing all options of B<brot> here, with all the maintenance
 effort, we just provide you the possibility to pass a string full of parameters
-to B<brot>. 
+to B<brot>.
+
+=item B<-outfile <FILENAME>>
+
+Write the results of all the tests to <FILENAME> rather than to standard out.
+<FILENAME> must not exist before the script runs.
+
+This option is required if B<-verbose> is invoked.
 
 =item B<-verbose>
 

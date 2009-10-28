@@ -110,6 +110,8 @@ salat_main(const char *cmdline)
    if (retval == 0)
    {
       structure = rna_get_secstruct (rna);
+   mprintf ("\nSequence position to structural feature map:\n");
+   secstruct_fprintf_seqpos_map (stdout, structure);
       size = rna_get_size (rna);
       /* without positions, just output what we have */
       if (salat_args.position_given == 0)

@@ -26,7 +26,7 @@ extern "C" {
 
 #ifndef BROT_CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define BROT_CMDLINE_PARSER_VERSION "0.1"
+#define BROT_CMDLINE_PARSER_VERSION "1.0"
 #endif
 
 enum enum_scoring { scoring_arg_NN = 0 , scoring_arg_nussinov, scoring_arg_simpleNN };
@@ -38,6 +38,8 @@ struct brot_args_info
   const char *detailed_help_help; /**< @brief Print help, including all details and hidden options, and exit help description.  */
   const char *full_help_help; /**< @brief Print help, including hidden options, and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
+  const char *verbose_help; /**< @brief Enable verbose mode help description.  */
+  const char *file_help; /**< @brief Read structure from file help description.  */
   enum enum_scoring scoring_arg;	/**< @brief Choose a different scoring scheme (default='NN').  */
   char * scoring_orig;	/**< @brief Choose a different scoring scheme original value given at command line.  */
   const char *scoring_help; /**< @brief Choose a different scoring scheme help description.  */
@@ -52,7 +54,7 @@ struct brot_args_info
   float temp_arg;	/**< @brief Initial temperature (default='14.2').  */
   char * temp_orig;	/**< @brief Initial temperature original value given at command line.  */
   const char *temp_help; /**< @brief Initial temperature help description.  */
-  long seed_arg;	/**< @brief Random seed (default='-791122').  */
+  long seed_arg;	/**< @brief Random seed.  */
   char * seed_orig;	/**< @brief Random seed original value given at command line.  */
   const char *seed_help; /**< @brief Random seed help description.  */
   float negative_design_scaling_arg;	/**< @brief Scale negative design term (default='0.414').  */
@@ -90,6 +92,8 @@ struct brot_args_info
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
+  unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
+  unsigned int file_given ;	/**< @brief Whether file was given.  */
   unsigned int scoring_given ;	/**< @brief Whether scoring was given.  */
   unsigned int fixed_nuc_given ;	/**< @brief Whether fixed-nuc was given.  */
   unsigned int steps_given ;	/**< @brief Whether steps was given.  */
@@ -138,7 +142,7 @@ extern const char *brot_args_info_detailed_help[];
  * @param args_info the structure where option information will be stored
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser (int argc, char** argv,
+int brot_cmdline_parser (int argc, char **argv,
   struct brot_args_info *args_info);
 
 /**
@@ -152,7 +156,7 @@ int brot_cmdline_parser (int argc, char** argv,
  * @return 0 if everything went fine, NON 0 if an error took place
  * @deprecated use brot_cmdline_parser_ext() instead
  */
-int brot_cmdline_parser2 (int argc, char** argv,
+int brot_cmdline_parser2 (int argc, char **argv,
   struct brot_args_info *args_info,
   int override, int initialize, int check_required);
 
@@ -164,7 +168,7 @@ int brot_cmdline_parser2 (int argc, char** argv,
  * @param params additional parameters for the parser
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int brot_cmdline_parser_ext (int argc, char** argv,
+int brot_cmdline_parser_ext (int argc, char **argv,
   struct brot_args_info *args_info,
   struct brot_cmdline_parser_params *params);
 

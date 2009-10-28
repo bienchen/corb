@@ -643,7 +643,7 @@ s_rna_scan_line_ct (unsigned long cols[N_ct_nos],
    /* we do not check errors here because if(error) then read = 0 */
    while (read == 1)            /* only '\n' read */
    {
-      THROW_WARN_MSG (CT_FILE_ERR "Empty line.",
+      THROW_WARN_MSG (CT_FILE_ERR "Empty or comment line.",
                       str_get(gfile_get_path (gfile)),
                       *line_no);
       read = gfile_getline (error, buf, buf_size, gfile);
@@ -1015,7 +1015,7 @@ rna_secstruct_init (Rna* this, const char* file, const int line)
    }
    else
    {
-      error = secstruct_find_interactions (this->pairs, this->size,
+      error = secstruct_find_interactions (this->pairs, this->pairs_size,
                                            this->structure);
    }
 
@@ -1287,7 +1287,7 @@ rna_get_secstruct (const Rna* this)
 /** @brief Get the pairing partner of a base.
  *
  * Returns the position of a pairing partner of a position in the RNA sequence.
- * Counting starts at 1, @c NOT_PAIRED is returned for unpaired positions.
+ * Counting starts at 0, @c NOT_PAIRED is returned for unpaired positions.
  *
  * @params[in] pos Position to be evaluated.
  * @params[in] this Rna data object.

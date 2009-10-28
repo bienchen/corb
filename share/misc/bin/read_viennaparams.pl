@@ -1,7 +1,7 @@
 #!@PERL@
 # -*- perl -*-
 # @configure_input@
-# Last modified: 2009-07-02.11
+# Last modified: 2009-10-16.18
 
 
 # Copyright (C) 2008 Stefan Bienert
@@ -1836,7 +1836,10 @@ sub output_tetraloop_energies(\% \$ \$)
                             push @out, "   l[0] = $b1; l[1] = $b2; "
                                       ."l[2] = $b3; l[3] = $b4; l[4] = $b5; "
                                       ."l[5] = $b6; l[6] = \'\\0\';\n";
-                            push @out, sprintf("   this->G_tetra_loop[%*i] = ",
+# for tetra loop handling via binary search
+#                            push @out, sprintf("   this->G_tetra_loop[%*i] = ",
+# for tetra loop handling via hash
+                            push @out, sprintf("   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = ",
                                                $dig_idx, $no)
                                 .sprintf("%*i - offset;\n\n", $dig,
                                   $tl_hashref->{$b1}{$b2}{$b3}{$b4}{$b5}{$b6});
@@ -2107,9 +2110,14 @@ if (! defined($arg_hash{bulges}))
 
 if (defined ($arg_hash{sourcefile}))
 {
-    $filehandle = open_or_die(">$arg_hash{sourcefile}");
-    print $filehandle @file;
-    close($filehandle);
+#    $filehandle = open_or_die("$arg_hash{sourcefile}", '>');
+#    print $filehandle @file;
+#    close($filehandle);
+
+    open(FH, '>', "$arg_hash{sourcefile}") 
+    or msg_error_and_die("Could not open file \"$arg_hash{sourcefile}\": $!\n");
+    print FH @file;
+    close(FH);
 }
 
 msg_verbose ("Max. parameter value: $max_val\n");

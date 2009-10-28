@@ -184,8 +184,7 @@ seqmatrix_collate_is (const float,
                       const float,
                       const float,
                       const float,
-                      /*const float,*/
-                      const float,
+                      /* const float, */
                       SeqMatrix*,
                       void*);
 

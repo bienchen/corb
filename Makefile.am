@@ -1,4 +1,8 @@
+<<<<<<< HEAD:Makefile.am
 # Last modified: 2009-08-17.00
+=======
+# Last modified: 2009-10-16.22
+>>>>>>> Finalising brot...:Makefile.am
 
 ## Copyright (C) 2008 Stefan Bienert
 ##

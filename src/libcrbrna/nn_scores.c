@@ -38,6 +38,8 @@
  *
  *  Revision History:
  *         - 2008Jul03 bienert: created
+ *         - 2009Oct06 bienert: Switched tetraloop handling from binary search
+ *                              to hash
  *
  *  ToDo:
  *         - change scheme->bp_idx_size to be non quadratic
@@ -81,6 +83,7 @@ struct NN_scores {
       char** tetra_loop;               /* sorted list of possible loops */
       /*c*/float* G_tetra_loop;                     /* scores */
       unsigned long tetra_loop_size;
+      int** tetra_loop_hashfunction;   /* values for the hash for tetra loops */
       /*c*/float* G_bulge_loop;                     /* bulge loops */
       unsigned long G_bulge_loop_size;
       /* internal loops */
@@ -99,6 +102,8 @@ struct NN_scores {
       unsigned long G_dangle5_size;
       /*c*/float** G_dangle3;                 /* 3' dangling end, bp + base */
       unsigned long G_dangle3_size;
+      float** nun_penalty;                   /* non-unitable nuc. penalty  */
+      unsigned long nun_size;
       char** bp_allowed;                     /* WC base pairs + whobble GU */
       unsigned long bp_allowed_size;
       char** bp_idx;                     /* indices for base pairs */
@@ -140,6 +145,7 @@ nn_scores_new (const char* file, const int line)
       this->non_gc_penalty_for_bp    = NULL;
       this->tetra_loop               = NULL;
       this->G_tetra_loop             = NULL;
+      this->tetra_loop_hashfunction  = NULL;
       this->tetra_loop_size          = 0;
       this->G_internal_loop          = NULL;
       this->G_internal_loop_size     = 0;
@@ -155,6 +161,8 @@ nn_scores_new (const char* file, const int line)
       this->G_dangle5_size           = 0;
       this->G_dangle3                = NULL;
       this->G_dangle3_size           = 0;
+      this->nun_penalty              = NULL;
+      this->nun_size                 = 0;
       this->bp_idx                   = NULL;
       this->bp_allowed               = NULL;
       this->bp_allowed_size          = 0;
@@ -164,9 +172,9 @@ nn_scores_new (const char* file, const int line)
 }
 
 static int
-allocate_init_bp_allowed (char a, char u, char g, char c,
-                          NN_scores* this,
-                          const char* file, const int line)
+s_allocate_init_bp_allowed (char a, char u, char g, char c,
+                            NN_scores* this,
+                            const char* file, const int line)
 {
    this->bp_allowed_size = NO_ALLOWED_BP;
    this->bp_allowed = (char**) XOBJ_MALLOC_2D (this->bp_allowed_size, 2,
@@ -188,9 +196,9 @@ allocate_init_bp_allowed (char a, char u, char g, char c,
 }
 
 static int
-allocate_init_bp_idx (unsigned long size,
-                      char a, char u, char g, char c, NN_scores* this,
-                      const char* file, const int line)
+s_allocate_init_bp_idx (unsigned long size,
+                        char a, char u, char g, char c, NN_scores* this,
+                        const char* file, const int line)
 {
    char i;
 
@@ -233,10 +241,51 @@ allocate_init_bp_idx (unsigned long size,
 }
 
 static int
-allocate_init_G_stack (char a, char u, char g, char c,
-                       float offset,
-                       NN_scores* this,
-                       const char* file, const int line)
+s_allocate_init_nun_penalty (unsigned long size,
+                             char a, char u, char g, char c, float offset,
+                             NN_scores* this,
+                             const char* file, const int line)
+{
+   float penalty = 65.0f;
+   float nap = 0.0f;      /* not a penalty */
+
+   this->nun_penalty = (float**) XOBJ_MALLOC_2D (size, size,
+                                                 sizeof (**this->nun_penalty),
+                                                 file, line);
+   if (this->nun_penalty == NULL)
+   {
+      return 1;        
+   }
+   this->nun_size = size * size;
+
+   /* allowed base pairs */
+   this->nun_penalty[(int) a][(int) u] = nap /* - offset */;     /* AU */
+   this->nun_penalty[(int) c][(int) g] = nap /* - offset */;     /* CG */
+   this->nun_penalty[(int) g][(int) c] = nap /* - offset */;     /* GC */
+   this->nun_penalty[(int) g][(int) u] = nap /* - offset */;     /* GU */
+   this->nun_penalty[(int) u][(int) g] = nap /* - offset */;     /* UG */
+   this->nun_penalty[(int) u][(int) a] = nap /* - offset */;     /* UA */
+
+   /* not-allowed base pairs */
+   this->nun_penalty[(int) a][(int) a] = penalty - offset; /* AA */
+   this->nun_penalty[(int) a][(int) g] = penalty - offset; /* AG */
+   this->nun_penalty[(int) a][(int) c] = penalty - offset; /* AC */
+   this->nun_penalty[(int) u][(int) u] = penalty - offset; /* UU */
+   this->nun_penalty[(int) u][(int) c] = penalty - offset; /* UC */
+   this->nun_penalty[(int) g][(int) a] = penalty - offset; /* GA */
+   this->nun_penalty[(int) g][(int) g] = penalty - offset; /* GG */
+   this->nun_penalty[(int) c][(int) a] = penalty - offset; /* CA */
+   this->nun_penalty[(int) c][(int) u] = penalty - offset; /* CU */
+   this->nun_penalty[(int) c][(int) c] = penalty - offset; /* CC */
+
+   return 0;
+}
+
+static int
+s_allocate_init_G_stack (char a, char u, char g, char c,
+                         float offset,
+                         NN_scores* this,
+                         const char* file, const int line)
 {
    /*unsigned long i;*/
 
@@ -477,11 +526,11 @@ allocate_init_G_stack (char a, char u, char g, char c,
 }
 
 static int
-allocate_init_G_mm_stack_size (int a, int u, int g, int c,
-                               unsigned long size,
-                               float offset,
-                               NN_scores* this,
-                               const char* file, const int line)
+s_allocate_init_G_mm_stack_size (int a, int u, int g, int c,
+                                 unsigned long size,
+                                 float offset,
+                                 NN_scores* this,
+                                 const char* file, const int line)
 {
    unsigned long bp1;
 
@@ -832,8 +881,8 @@ allocate_init_G_mm_stack_size (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_hairpin_loop (float offset, NN_scores* this,
-                            const char* file, const int line)
+s_allocate_init_hairpin_loop (float offset, NN_scores* this,
+                              const char* file, const int line)
 {
 
    this->G_hairpin_loop_size = 31;
@@ -883,11 +932,11 @@ allocate_init_hairpin_loop (float offset, NN_scores* this,
 }
 
 static int
-allocate_init_mismatch_hairpin (int a, int u, int g, int c,
-                                const unsigned long no_of_b,
-                                float offset,
-                                NN_scores* this,
-                                const char* file, const int line)
+s_allocate_init_mismatch_hairpin (int a, int u, int g, int c,
+                                  const unsigned long no_of_b,
+                                  float offset,
+                                  NN_scores* this,
+                                  const char* file, const int line)
 {   
    unsigned long bp1;
 
@@ -1042,11 +1091,11 @@ allocate_init_mismatch_hairpin (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_mismatch_interior (int a, int u, int g, int c,
-                                 const unsigned long no_of_b,
-                                 float offset,
-                                 NN_scores* this,
-                                 const char* file, const int line)
+s_allocate_init_mismatch_interior (int a, int u, int g, int c,
+                                   const unsigned long no_of_b,
+                                   float offset,
+                                   NN_scores* this,
+                                   const char* file, const int line)
 {
    unsigned long bp1;
 
@@ -1201,8 +1250,8 @@ allocate_init_mismatch_interior (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_internal_loop (float offset, NN_scores* this,
-                             const char* file, const int line)
+s_allocate_init_internal_loop (float offset, NN_scores* this,
+                               const char* file, const int line)
 {
 
    this->G_internal_loop_size = 31;
@@ -1252,11 +1301,11 @@ allocate_init_internal_loop (float offset, NN_scores* this,
 }
 
 static int
-allocate_init_int11 (const int a, const int u, const int g, const int c,
-                     const unsigned long no_of_b,
-                     float offset,
-                     NN_scores* this,
-                     const char* file, const int line)
+s_allocate_init_int11 (const int a, const int u, const int g, const int c,
+                       const unsigned long no_of_b,
+                       float offset,
+                       NN_scores* this,
+                       const char* file, const int line)
 {
    unsigned long bp1, bp2;
 
@@ -1950,10 +1999,10 @@ allocate_init_int11 (const int a, const int u, const int g, const int c,
 }
 
 static int
-allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
-                                     float offset,
-                                     NN_scores* this,
-                                     const char* file, const int line)
+s_allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
+                                       float offset,
+                                       NN_scores* this,
+                                       const char* file, const int line)
 {
    this->non_gc_penalty_for_bp = /*(float*)*/ XOBJ_MALLOC (
       sizeof (*this->non_gc_penalty_for_bp)
@@ -1975,8 +2024,8 @@ allocate_init_non_gc_penalty_for_bp (int a, int u, int g, int c,
 }
 
 static int
-allocate_init_bulge_loop (float offset, NN_scores* this,
-                          const char* file, const int line)
+s_allocate_init_bulge_loop (float offset, NN_scores* this,
+                            const char* file, const int line)
 {
 
    this->G_bulge_loop_size = 31;
@@ -2026,11 +2075,11 @@ allocate_init_bulge_loop (float offset, NN_scores* this,
 }
 
 static int
-allocate_init_int21 (const int a, const int u, const int g, const int c,
-                     const unsigned long no_of_b,
-                     float offset,
-                     NN_scores* this,
-                     const char* file, const int line)
+s_allocate_init_int21 (const int a, const int u, const int g, const int c,
+                       const unsigned long no_of_b,
+                       float offset,
+                       NN_scores* this,
+                       const char* file, const int line)
 {
    unsigned long bp1, bp2;
 
@@ -4454,11 +4503,11 @@ allocate_init_int21 (const int a, const int u, const int g, const int c,
 }
 
 static int
-allocate_init_int22 (const int a, const int u, const int g, const int c,
-                     const unsigned long no_of_b,
-                     float offset,
-                     NN_scores* this,
-                     const char* file, const int line)
+s_allocate_init_int22 (const int a, const int u, const int g, const int c,
+                       const unsigned long no_of_b,
+                       float offset,
+                       NN_scores* this,
+                       const char* file, const int line)
 {
    unsigned long bp1, bp2;
 
@@ -13796,11 +13845,11 @@ allocate_init_int22 (const int a, const int u, const int g, const int c,
 }
 
 static int
-allocate_init_dangle5 (const int a, const int u, const int g, const int c, 
-                       const unsigned long size,
-                       float offset,
-                       NN_scores* this,
-                       const char* file, const int line)
+s_allocate_init_dangle5 (const int a, const int u, const int g, const int c, 
+                         const unsigned long size,
+                         float offset,
+                         NN_scores* this,
+                         const char* file, const int line)
 {
    this->G_dangle5 = (float**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
                                              sizeof (**this->G_dangle5),
@@ -13856,11 +13905,11 @@ allocate_init_dangle5 (const int a, const int u, const int g, const int c,
 }
 
 static int
-allocate_init_dangle3 (const int a, const int u, const int g, const int c, 
-                       const unsigned long size,
-                       float offset,
-                       NN_scores* this,
-                       const char* file, const int line)
+s_allocate_init_dangle3 (const int a, const int u, const int g, const int c, 
+                         const unsigned long size,
+                         float offset,
+                         NN_scores* this,
+                         const char* file, const int line)
 {
    this->G_dangle3 = (float**) XOBJ_MALLOC_2D (this->bp_allowed_size, size,
                                                sizeof (**this->G_dangle3),
@@ -13915,16 +13964,22 @@ allocate_init_dangle3 (const int a, const int u, const int g, const int c,
    return 0;
 }
 
-static void
-tetra_loop_swap_entries (unsigned long src, unsigned long dest,
-                         NN_scores* this)
+/* SB 09-10-08 - START 
+ * The following functions are needed for the handling of tetra loops by binary
+ * search. For utilising the hash function approach, they are not needed. But
+ * if the sequences of the tetra loops with bonus energies change, we probably
+ * have to use these again.
+ */
+/*static void
+s_tetra_loop_swap_entries (unsigned long src, unsigned long dest,
+                           NN_scores* this)
 {
    unsigned long i;
    char tmp[D_TL];
    float G_tmp;
    char* ctmp;
 
-   /* copy scores first */
+   *//* copy scores first *//*
    G_tmp = this->G_tetra_loop[dest];
    this->G_tetra_loop[dest] = this->G_tetra_loop[src];
    this->G_tetra_loop[src] = G_tmp;
@@ -13934,7 +13989,7 @@ tetra_loop_swap_entries (unsigned long src, unsigned long dest,
       for (i = 0; i < D_TL; i++)
       {
          tmp[i] = this->tetra_loop[dest][i];
-      }   
+      }
       for (i = 0; i < D_TL; i++)
       {
          this->tetra_loop[dest][i] = this->tetra_loop[src][i];
@@ -13946,20 +14001,19 @@ tetra_loop_swap_entries (unsigned long src, unsigned long dest,
    }
    else
    {
-      /* temp. cpy dest */
+      *//* temp. cpy dest *//*
       ctmp = this->tetra_loop[dest];
       
-      /* cpy src to dest */
+      *//* cpy src to dest *//*
       this->tetra_loop[dest] = this->tetra_loop[src];
 
-      /* restore dest in src */
+      *//* restore dest in src *//*
       this->tetra_loop[src] = ctmp;
    }
+}*/
 
-}
-
-static int
-tetra_loop_cmp (unsigned long idx1, unsigned long idx2, NN_scores* this)
+/*static int
+s_tetra_loop_cmp (unsigned long idx1, unsigned long idx2, NN_scores* this)
 {
    unsigned long i;
 
@@ -13972,11 +14026,11 @@ tetra_loop_cmp (unsigned long idx1, unsigned long idx2, NN_scores* this)
    }
 
    return 0;
-}
+}*/
 
-static void
-tetra_loop_qsort (const unsigned long left, const unsigned long right,
-                  NN_scores* this)
+/*static void
+s_tetra_loop_qsort (const unsigned long left, const unsigned long right,
+                    NN_scores* this)
 {
    unsigned long pivot = left;
    unsigned long i;
@@ -13989,15 +14043,15 @@ tetra_loop_qsort (const unsigned long left, const unsigned long right,
 
    r = right - 1;
 
-   /* mfprintf (stderr, "left: %lu right: %lu ", left, r); */
+    *//* mfprintf (stderr, "left: %lu right: %lu ", left, r); *//*
 
-   /* sort according to pivot */
+   *//* sort according to pivot *//*
    i = left + 1;
-   while (i <= r)   
+   while (i <= r)
    {
-      if (tetra_loop_cmp (pivot, i, this) < 0)
+      if (s_tetra_loop_cmp (pivot, i, this) < 0)
       {
-         tetra_loop_swap_entries (i, r, this);
+         s_tetra_loop_swap_entries (i, r, this);
          r--;
       }
       else
@@ -14006,22 +14060,28 @@ tetra_loop_qsort (const unsigned long left, const unsigned long right,
       }
    }
 
-   tetra_loop_swap_entries (pivot, r, this);   
+   s_tetra_loop_swap_entries (pivot, r, this);
 
-   /* mfprintf (stderr, "middle: %lu\n", r); */
+  *//* mfprintf (stderr, "middle: %lu\n", r); *//*
 
-   tetra_loop_qsort (left, r, this);
-   tetra_loop_qsort (r+1, right, this);
-}
+   s_tetra_loop_qsort (left, r, this);
+   s_tetra_loop_qsort (r+1, right, this);
+}*/
 
-static int
-allocate_init_tetra_loop (const char a,
-                          const char u,
-                          const char g,
-                          const char c,
-                          float offset,
-                          NN_scores* this,
-                          const char* file, const int line)
+/*
+ * Function for tetraloop handling via binary search
+ * This is allows more generic handling of tetraloops since we do not depend on
+ * a hash function especially desiged for a fixed set of tetraloops.
+ * If the tetraloop sequences change, you have to check if the hash function
+ * still works. If not, this is the function to use, again. */
+/*static int
+s_allocate_init_tetra_loop (const char a,
+                            const char u,
+                            const char g,
+                            const char c,
+                            float offset,
+                            NN_scores* this,
+                            const char* file, const int line)
 {
    char* l;
 
@@ -14038,169 +14098,465 @@ allocate_init_tetra_loop (const char a,
                                             * this->tetra_loop_size,
                                             file, line);
 
-   /* BEGIN_TETRA_LOOPS */
-   /* AGAAAU -200 */
+   *//* B E G I N _ T E T R A _ L O O P S *//*
+   *//* AGAAAU -200 *//*
    l = this->tetra_loop[ 0];
    l[0] = a; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[ 0] = -200 - offset;
 
-   /* AGCAAU -150 */
+   *//* AGCAAU -150 *//*
    l = this->tetra_loop[ 1];
    l[0] = a; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[ 1] = -150 - offset;
 
-   /* AGUAAU -150 */
+   *//* AGUAAU -150 *//*
    l = this->tetra_loop[ 2];
    l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[ 2] = -150 - offset;
 
-   /* AGUGAU -150 */
+   *//* AGUGAU -150 *//*
    l = this->tetra_loop[ 3];
    l[0] = a; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = u; l[6] = '\0';
    this->G_tetra_loop[ 3] = -150 - offset;
 
-   /* CGAAAG -300 */
+   *//* CGAAAG -300 *//*
    l = this->tetra_loop[ 4];
    l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[ 4] = -300 - offset;
 
-   /* CGAAGG -250 */
+   *//* CGAAGG -250 *//*
    l = this->tetra_loop[ 5];
    l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[ 5] = -250 - offset;
 
-   /* CGAGAG -200 */
+   *//* CGAGAG -200 *//*
    l = this->tetra_loop[ 6];
    l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[ 6] = -200 - offset;
 
-   /* CGCAAG -300 */
+   *//* CGCAAG -300 *//*
    l = this->tetra_loop[ 7];
    l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[ 7] = -300 - offset;
 
-   /* CGCGAG -250 */
+   *//* CGCGAG -250 *//*
    l = this->tetra_loop[ 8];
    l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[ 8] = -250 - offset;
 
-   /* CGGAAG -300 */
+   *//* CGGAAG -300 *//*
    l = this->tetra_loop[ 9];
    l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[ 9] = -300 - offset;
 
-   /* CGGGAG -150 */
+   *//* CGGGAG -150 *//*
    l = this->tetra_loop[10];
    l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[10] = -150 - offset;
 
-   /* CGUAAG -200 */
+   *//* CGUAAG -200 *//*
    l = this->tetra_loop[11];
    l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[11] = -200 - offset;
 
-   /* CGUGAG -300 */
+   *//* CGUGAG -300 *//*
    l = this->tetra_loop[12];
    l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[12] = -300 - offset;
 
-   /* CUAACG -200 */
+   *//* CUAACG -200 *//*
    l = this->tetra_loop[13];
    l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[13] = -200 - offset;
 
-   /* CUACGG -250 */
+   *//* CUACGG -250 *//*
    l = this->tetra_loop[14];
    l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[14] = -250 - offset;
 
-   /* CUUCGG -300 */
+   *//* CUUCGG -300 *//*
    l = this->tetra_loop[15];
    l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[15] = -300 - offset;
 
-   /* GGAAAC -300 */
+   *//* GGAAAC -300 *//*
    l = this->tetra_loop[16];
    l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[16] = -300 - offset;
 
-   /* GGAAGC -150 */
+   *//* GGAAGC -150 *//*
    l = this->tetra_loop[17];
    l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[17] = -150 - offset;
 
-   /* GGAGAC -300 */
+   *//* GGAGAC -300 *//*
    l = this->tetra_loop[18];
    l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[18] = -300 - offset;
 
-   /* GGCAAC -250 */
+   *//* GGCAAC -250 *//*
    l = this->tetra_loop[19];
    l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[19] = -250 - offset;
 
-   /* GGCGAC -150 */
+   *//* GGCGAC -150 *//*
    l = this->tetra_loop[20];
    l[0] = g; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[20] = -150 - offset;
 
-   /* GGGAAC -150 */
+   *//* GGGAAC -150 *//*
    l = this->tetra_loop[21];
    l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[21] = -150 - offset;
 
-   /* GGGAGC -150 */
+   *//* GGGAGC -150 *//*
    l = this->tetra_loop[22];
    l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[22] = -150 - offset;
 
-   /* GGGGAC -300 */
+   *//* GGGGAC -300 *//*
    l = this->tetra_loop[23];
    l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[23] = -300 - offset;
 
-   /* GGUGAC -300 */
+   *//* GGUGAC -300 *//*
    l = this->tetra_loop[24];
    l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[24] = -300 - offset;
 
-   /* GUGAAC -150 */
+   *//* GUGAAC -150 *//*
    l = this->tetra_loop[25];
    l[0] = g; l[1] = u; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
    this->G_tetra_loop[25] = -150 - offset;
 
-   /* UGAAAA -150 */
+   *//* UGAAAA -150 *//*
    l = this->tetra_loop[26];
    l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
    this->G_tetra_loop[26] = -150 - offset;
 
-   /* UGAAAG -200 */
+   *//* UGAAAG -200 *//*
    l = this->tetra_loop[27];
    l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[27] = -200 - offset;
 
-   /* UGAGAG -250 */
+   *//* UGAGAG -250 *//*
    l = this->tetra_loop[28];
    l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
    this->G_tetra_loop[28] = -250 - offset;
 
-   /* UGGAAA -150 */
+   *//* UGGAAA -150 *//*
    l = this->tetra_loop[29];
    l[0] = u; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
    this->G_tetra_loop[29] = -150 - offset;
 
+   *//* E N D _ T E T R A _ L O  O P S *//*
+
+   *//*nn_scores_fprintf_tetra_loop(stderr, this, sigma);
+       mfprintf (stderr, "\n\n");*//*
+
+   s_tetra_loop_qsort (0, this->tetra_loop_size, this);
+
+   *//*mfprintf (stderr, "\n\n");
+       nn_scores_fprintf_tetra_loop(stderr, this, sigma);*//*
+
+   return 0;
+}*/
+/* SB 09-10-08 - END */
+
+/* SB 09-10-06 - START */
+/* Handling of tetra loops via a hash function. The hash function is designed
+ * to work with certain tetraloop sequences. If the sequences change, check
+ * that the hash function still works. The idea is to avoid a binary seach to
+ * find the bonus energy for special tetraloops. We need a little bit more
+ * memory for the hash table since not all addresses map into values around 30.
+ * Our hash function works by position dependent codes, where pos. 0 and 5
+ * describe the closing base pair:
+ *  pos.       0     1     2     3     4     5
+ *  base. A     0  3000     0     0     0   72
+ *        C   144  3000     9     3     1    0
+ *        G   216     0    18     6     2    0
+ *        U     0    36    27  3000  3000  288
+ *
+ * For designing the hash function, the closing base pair was treated as single
+ * character and later split into simple sums, to fit everything in a simple
+ * key-value matrix.
+ * Alltogether the table for the tetraloops has to be of size 360:
+ *        5 different base pairs occur among the sequence
+ *      * 2 bases occur on the first loop pos.
+ *      * 4 bases on the second pos.
+ *      * 3 bases on the third pos.
+ *      * 3 bases on the last pos.
+ *     -----
+ *      360
+ * From calculating the max. pos. inhabitated from one of our sequences, we
+ * know that we only need 322 places.
+ */
+/* We use a few macros here, while we know this is a no-go.
+   But the whole hashfunction approach is completely tuned for, and will
+   only work with, a certain set of sequences. Hence, this special macros do
+   only appear in this context. If ANYTHING changes on the sequences, the whole
+   function and all its data becomes obsolete. */
+#define TL_TABLE_SIZE 322
+#define TL_HT_BASES 4
+
+static int
+s_calc_tetra_loop_hash (const char* seq,
+                        const unsigned long start,
+                        const NN_scores* this)
+{
+   int key = 0;
+   unsigned long i;
+
+   assert (this);
+   assert (this->tetra_loop_hashfunction);
+   assert (seq);
+   assert (seq[start] < sqrtf ((float) this->bp_idx_size));
+   assert (seq[start + D_TL - 1] < sqrtf ((float) this->bp_idx_size));
+   assert (this->bp_idx);
+   assert ((unsigned) this->bp_idx[(int)seq[start]][(int)seq[start + D_TL - 1]] 
+           < this->bp_allowed_size);
+
+   for (i = 0; i < D_TL; i++)
+   {
+      key += this->tetra_loop_hashfunction[(int)seq[start + i]][i];
+   }
+
+   return key;
+}
+
+static int
+s_allocate_init_tetra_loop (const char a,
+                            const char u,
+                            const char g,
+                            const char c,
+                            float offset,
+                            NN_scores* this,
+                            const char* file, const int line)
+{
+   char* l;
+
+   /* allocate sequence space */
+   this->tetra_loop_size = 30;
+   this->tetra_loop = (char**) XOBJ_MALLOC_2D (this->tetra_loop_size,(D_TL + 1),
+                                               sizeof (**this->tetra_loop),
+                                               file, line);
+   if (this->tetra_loop == NULL)
+   {
+      return 1;
+   }
+
+   /* allocate score space */
+   this->G_tetra_loop = (float*) XOBJ_MALLOC (sizeof (*this->G_tetra_loop)
+                                            * TL_TABLE_SIZE,
+                                            file, line);
+
+   if (this->G_tetra_loop == NULL)
+   {
+      return 1;
+   }
+
+   /* allocate hash table */
+   this->tetra_loop_hashfunction = (int**) XOBJ_MALLOC_2D (TL_HT_BASES, D_TL,
+                                       sizeof (**this->tetra_loop_hashfunction),
+                                                           file, line);
+   if (this->tetra_loop_hashfunction == NULL)
+   {
+      return 1;
+   }
+
+   /* fill hash table */
+   /*
+           0     1     2     3     4     5
+      A     0  3000     0     0     0   72
+      C   144  3000     9     3     1    0
+      G   216     0    18     6     2    0
+      U     0    36    27  3000  3000  288
+ */
+   this->tetra_loop_hashfunction[(int)a][0] =    0;
+   this->tetra_loop_hashfunction[(int)a][1] = 3000;
+   this->tetra_loop_hashfunction[(int)a][2] =    0;
+   this->tetra_loop_hashfunction[(int)a][3] =    0;
+   this->tetra_loop_hashfunction[(int)a][4] =    0;
+   this->tetra_loop_hashfunction[(int)a][5] =   72;
+   this->tetra_loop_hashfunction[(int)c][0] =  144;
+   this->tetra_loop_hashfunction[(int)c][1] = 3000;
+   this->tetra_loop_hashfunction[(int)c][2] =    9;
+   this->tetra_loop_hashfunction[(int)c][3] =    3;
+   this->tetra_loop_hashfunction[(int)c][4] =    1;
+   this->tetra_loop_hashfunction[(int)c][5] =    0;
+   this->tetra_loop_hashfunction[(int)g][0] =  216;
+   this->tetra_loop_hashfunction[(int)g][1] =    0;
+   this->tetra_loop_hashfunction[(int)g][2] =   18;
+   this->tetra_loop_hashfunction[(int)g][3] =    6;
+   this->tetra_loop_hashfunction[(int)g][4] =    2;
+   this->tetra_loop_hashfunction[(int)g][5] =    0;
+   this->tetra_loop_hashfunction[(int)u][0] =    0;
+   this->tetra_loop_hashfunction[(int)u][1] =   36;
+   this->tetra_loop_hashfunction[(int)u][2] =   27;
+   this->tetra_loop_hashfunction[(int)u][3] = 3000;
+   this->tetra_loop_hashfunction[(int)u][4] = 3000;
+   this->tetra_loop_hashfunction[(int)u][5] =  288;
+
+/* make test case for tetraloops -> verify hash function */
+   /* fill sequence and score lists */
+   memset(this->G_tetra_loop, 0, sizeof (*this->G_tetra_loop) * TL_TABLE_SIZE);
+
+   /* BEGIN_TETRA_LOOPS */
+   /* AGAAAU -200 */
+   l = this->tetra_loop[ 0];
+   l[0] = a; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -200 - offset;
+
+   /* AGCAAU -150 */
+   l = this->tetra_loop[ 1];
+   l[0] = a; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* AGUAAU -150 */
+   l = this->tetra_loop[ 2];
+   l[0] = a; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = u; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* AGUGAU -150 */
+   l = this->tetra_loop[ 3];
+   l[0] = a; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = u; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* CGAAAG -300 */
+   l = this->tetra_loop[ 4];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* CGAAGG -250 */
+   l = this->tetra_loop[ 5];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -250 - offset;
+
+   /* CGAGAG -200 */
+   l = this->tetra_loop[ 6];
+   l[0] = c; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -200 - offset;
+
+   /* CGCAAG -300 */
+   l = this->tetra_loop[ 7];
+   l[0] = c; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* CGCGAG -250 */
+   l = this->tetra_loop[ 8];
+   l[0] = c; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -250 - offset;
+
+   /* CGGAAG -300 */
+   l = this->tetra_loop[ 9];
+   l[0] = c; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* CGGGAG -150 */
+   l = this->tetra_loop[10];
+   l[0] = c; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* CGUAAG -200 */
+   l = this->tetra_loop[11];
+   l[0] = c; l[1] = g; l[2] = u; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -200 - offset;
+
+   /* CGUGAG -300 */
+   l = this->tetra_loop[12];
+   l[0] = c; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* CUAACG -200 */
+   l = this->tetra_loop[13];
+   l[0] = c; l[1] = u; l[2] = a; l[3] = a; l[4] = c; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -200 - offset;
+
+   /* CUACGG -250 */
+   l = this->tetra_loop[14];
+   l[0] = c; l[1] = u; l[2] = a; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -250 - offset;
+
+   /* CUUCGG -300 */
+   l = this->tetra_loop[15];
+   l[0] = c; l[1] = u; l[2] = u; l[3] = c; l[4] = g; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* GGAAAC -300 */
+   l = this->tetra_loop[16];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* GGAAGC -150 */
+   l = this->tetra_loop[17];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* GGAGAC -300 */
+   l = this->tetra_loop[18];
+   l[0] = g; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* GGCAAC -250 */
+   l = this->tetra_loop[19];
+   l[0] = g; l[1] = g; l[2] = c; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -250 - offset;
+
+   /* GGCGAC -150 */
+   l = this->tetra_loop[20];
+   l[0] = g; l[1] = g; l[2] = c; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* GGGAAC -150 */
+   l = this->tetra_loop[21];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* GGGAGC -150 */
+   l = this->tetra_loop[22];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = a; l[4] = g; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* GGGGAC -300 */
+   l = this->tetra_loop[23];
+   l[0] = g; l[1] = g; l[2] = g; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* GGUGAC -300 */
+   l = this->tetra_loop[24];
+   l[0] = g; l[1] = g; l[2] = u; l[3] = g; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -300 - offset;
+
+   /* GUGAAC -150 */
+   l = this->tetra_loop[25];
+   l[0] = g; l[1] = u; l[2] = g; l[3] = a; l[4] = a; l[5] = c; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* UGAAAA -150 */
+   l = this->tetra_loop[26];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
+   /* UGAAAG -200 */
+   l = this->tetra_loop[27];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = a; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -200 - offset;
+
+   /* UGAGAG -250 */
+   l = this->tetra_loop[28];
+   l[0] = u; l[1] = g; l[2] = a; l[3] = g; l[4] = a; l[5] = g; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -250 - offset;
+
+   /* UGGAAA -150 */
+   l = this->tetra_loop[29];
+   l[0] = u; l[1] = g; l[2] = g; l[3] = a; l[4] = a; l[5] = a; l[6] = '\0';
+   this->G_tetra_loop[s_calc_tetra_loop_hash (l, 0, this)] = -150 - offset;
+
    /* END_TETRA_LOOPS */
-
-   /*nn_scores_fprintf_tetra_loop(stderr, this, sigma);
-     mfprintf (stderr, "\n\n");*/
-
-   tetra_loop_qsort (0, this->tetra_loop_size, this);
-
-   /*mfprintf (stderr, "\n\n");
-   nn_scores_fprintf_tetra_loop(stderr, this, sigma);*/
 
    return 0;
 }
+/* SB 09-10-06 - END */
 
 /** @brief Create a new Nearest Neighbour scoring scheme with standard values.
  *
@@ -14252,63 +14608,72 @@ nn_scores_new_init (float offset, Alphabet* sigma,
    c = alphabet_base_2_no('C', sigma);
    
    /* create table of allowed base pairs */
-   if (allocate_init_bp_allowed (a, u, g, c, this, file, line))
+   if (s_allocate_init_bp_allowed (a, u, g, c, this, file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
 
-   /* create table of base pair indices */
-   if (allocate_init_bp_idx (alphabet_size (sigma), a, u, g, c, this,
-                             file, line))
+   /* create table of base pair indeces */
+   if (s_allocate_init_bp_idx (alphabet_size (sigma), a, u, g, c, this,
+                               file, line))
+   {
+      nn_scores_delete (this);
+      return NULL;
+   }
+
+   /* create table of penalties for non-WC base pairs */
+   if (s_allocate_init_nun_penalty (alphabet_size (sigma), a, u, g, c, offset,
+                                    this,
+                                    file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
    
    /* create table of stacking energies */
-   if (allocate_init_G_stack (a, u, g, c, offset, this, file, line))
+   if (s_allocate_init_G_stack (a, u, g, c, offset, this, file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
 
    /* create table for mismatch stacking energies */
-   if(allocate_init_G_mm_stack_size (a, u, g, c, alphabet_size (sigma),
-                                     offset, this,
-                                     file, line))
+   if(s_allocate_init_G_mm_stack_size (a, u, g, c, alphabet_size (sigma),
+                                       offset, this,
+                                       file, line))
    {
       nn_scores_delete (this);
       return NULL;       
    }
 
    /* init hairpin loops */
-   if (allocate_init_hairpin_loop (offset, this, file, line))
+   if (s_allocate_init_hairpin_loop (offset, this, file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
    
    /* init hairpin closing base pair energies */
-   if (allocate_init_mismatch_hairpin (a, u, g, c,
-                                       alphabet_size (sigma),
-                                       offset,
-                                       this,
-                                       file, line))
+   if (s_allocate_init_mismatch_hairpin (a, u, g, c,
+                                         alphabet_size (sigma),
+                                         offset,
+                                         this,
+                                         file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
 
    /* init bulge loops */
-   if (allocate_init_bulge_loop (offset, this, file, line))
+   if (s_allocate_init_bulge_loop (offset, this, file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
 
    /* init penalties for non-GC closing base pairs of loops */
-   if (allocate_init_non_gc_penalty_for_bp (a, u, g, c, offset, this,
+   if (s_allocate_init_non_gc_penalty_for_bp (a, u, g, c, offset, this,
                                             file, line))
    {
       nn_scores_delete (this);
@@ -14316,58 +14681,58 @@ nn_scores_new_init (float offset, Alphabet* sigma,
    }
 
    /* init tetra loop index and score values */
-   if (allocate_init_tetra_loop (a, u, g, c, offset, this, file, line))
+   if (s_allocate_init_tetra_loop (a, u, g, c, offset, this, file, line))
    {
       nn_scores_delete (this);
       return NULL;      
    }
 
-   if (allocate_init_dangle5 (a, u, g, c, alphabet_size (sigma), offset, this,
-                              file, line))
+   if (s_allocate_init_dangle5 (a, u, g, c, alphabet_size (sigma), offset, this,
+                                file, line))
    {
       nn_scores_delete (this);
       return NULL; 
    }
 
-   if (allocate_init_dangle3 (a, u, g, c, alphabet_size (sigma), offset, this,
-                              file, line))
+   if (s_allocate_init_dangle3 (a, u, g, c, alphabet_size (sigma), offset, this,
+                                file, line))
    {
       nn_scores_delete (this);
       return NULL; 
    }
 
-   if (allocate_init_internal_loop (offset, this, file, line))
+   if (s_allocate_init_internal_loop (offset, this, file, line))
    {
       nn_scores_delete (this);
       return NULL;
    }
 
-   if (allocate_init_int11 (a, u, g, c, alphabet_size (sigma), offset, this,
-                     file, line))
+   if (s_allocate_init_int11 (a, u, g, c, alphabet_size (sigma), offset, this,
+                              file, line))
    {
       nn_scores_delete (this);
       return NULL; 
    }
 
-   if (allocate_init_int21 (a, u, g, c, alphabet_size (sigma), offset, this,
-                     file, line))
+   if (s_allocate_init_int21 (a, u, g, c, alphabet_size (sigma), offset, this,
+                              file, line))
    {
       nn_scores_delete (this);
       return NULL; 
    }
 
-   if (allocate_init_int22 (a, u, g, c, alphabet_size (sigma), offset, this,
-                     file, line))
+   if (s_allocate_init_int22 (a, u, g, c, alphabet_size (sigma), offset, this,
+                              file, line))
    {
       nn_scores_delete (this);
       return NULL; 
    }
 
-   if (allocate_init_mismatch_interior (a, u, g, c,
-                                        alphabet_size (sigma),
-                                        offset,
-                                        this,
-                                        file, line))
+   if (s_allocate_init_mismatch_interior (a, u, g, c,
+                                          alphabet_size (sigma),
+                                          offset,
+                                          this,
+                                          file, line))
    {
       nn_scores_delete (this);
       return NULL;
@@ -14396,6 +14761,7 @@ nn_scores_delete (NN_scores* this)
      XFREE_2D ((void**)this->tetra_loop);
      XFREE (this->G_tetra_loop);
      XFREE (this->G_internal_loop);
+     XFREE_2D ((void**)this->tetra_loop_hashfunction);
      XFREE_ND (D_INT11, (void**) this->G_int11);
      XFREE_ND (D_INT21, (void**) this->G_int21);
      XFREE_ND (D_INT22, (void**) this->G_int22);
@@ -14403,6 +14769,7 @@ nn_scores_delete (NN_scores* this)
      XFREE_2D ((void**)this->G_dangle5);
      XFREE_2D ((void**)this->G_dangle3);
      XFREE_2D ((void**)this->bp_idx);
+     XFREE_2D ((void**)this->nun_penalty);
      XFREE_2D ((void**)this->bp_allowed);
      XFREE (this);
    }
@@ -14436,6 +14803,15 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
    assert (this->non_gc_penalty_for_bp);
    assert (this->G_dangle5);
    assert (this->G_stack);
+   assert (this->G_int11);
+   assert (this->G_int21);
+   assert (this->G_int22);
+   assert (this->G_mismatch_interior);
+   assert (this->G_mismatch_hairpin);
+   assert (this->G_tetra_loop);
+   assert (this->G_hairpin_loop);
+   assert (this->G_bulge_loop);
+   assert (this->G_internal_loop);
 
    /* init random number generator */
    srand48 (seedval);
@@ -14444,30 +14820,30 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
    {
       /* non_gc_penalty_for_bp */
       rval = (float) drand48 ();
-      this->non_gc_penalty_for_bp[i] += (rval - 0.5f) / 100;
+      this->non_gc_penalty_for_bp[i] += (rval - 0.5f) /* / 100 */;
 
       /* G_dangle5, G_dangle3 */
       for (j = 0; j < alpha_size; j++)
       {
          rval = (float) drand48 ();
-         this->G_dangle5[i][j] += (rval - 0.5f) / 100;
+         this->G_dangle5[i][j] += (rval - 0.5f) /* / 100 */;
 
          rval = (float) drand48 ();
-         this->G_dangle3[i][j] += (rval - 0.5f) / 100;
+         this->G_dangle3[i][j] += (rval - 0.5f) /* / 100 */;
       }
 
       /* G_stack */
       for (j = 0; j < this->bp_allowed_size; j++)
       {
          rval = (float) drand48 ();
-         this->G_stack[i][j] += (rval - 0.5f) / 100;
+         this->G_stack[i][j] += (rval - 0.5f) /* / 100 */;
       }
 
       /* G_mm_stack */
       for (j = 0; j < this->bp_idx_size; j++)
       {
          rval = (float) drand48 ();
-         this->G_mm_stack[i][j] += (rval - 0.5f) / 100;         
+         this->G_mm_stack[i][j] += (rval - 0.5f) /* / 100 */;         
       }
 
       /* G_int11, G_int21 G_int22 */
@@ -14478,17 +14854,17 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
             for (l = 0; l < alpha_size; l++)
             {
                rval = (float) drand48 ();
-               this->G_int11[i][j][k][l] += (rval - 0.5f) / 100;
+               this->G_int11[i][j][k][l] += (rval - 0.5f) /* / 100 */;
 
                for (m = 0; m < alpha_size; m++)
                {
                   rval = (float) drand48 ();
-                  this->G_int21[i][j][k][l][m] += (rval - 0.5f) / 100;
+                  this->G_int21[i][j][k][l][m] += (rval - 0.5f) /* / 100 */;
 
                   for (n = 0; n < alpha_size; n++)
                   {
                      rval = (float) drand48 ();
-                     this->G_int22[i][j][k][l][m][n] += (rval - 0.5f) / 100;
+                     this->G_int22[i][j][k][l][m][n] += (rval - 0.5f) /*/ 100*/;
                   }
                }
             }
@@ -14501,10 +14877,10 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
          for (k = 0; k < alpha_size; k++)
          {
             rval = (float) drand48 ();
-            this->G_mismatch_interior[i][j][k] += (rval - 0.5f) / 100;
+            this->G_mismatch_interior[i][j][k] += (rval - 0.5f) /* / 100 */;
 
             rval = (float) drand48 ();
-            this->G_mismatch_hairpin[i][j][k] += (rval - 0.5f) / 100;
+            this->G_mismatch_hairpin[i][j][k] += (rval - 0.5f) /* / 100 */;
          }
       }
    }
@@ -14513,7 +14889,9 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
    for (i = 0; i < this->tetra_loop_size; i++)
    {
       rval = (float) drand48 ();
-      this->G_tetra_loop[i] += (rval - 0.5f) / 100;   
+/*this->G_tetra_loop[i]+=(rval-0.5f)*//*/ 100*//*;SB 09-10-08:non-hash version*/
+      this->G_tetra_loop[s_calc_tetra_loop_hash(this->tetra_loop[i],0,this)]
+         += (rval - 0.5f) /* / 100 */;
    }
 
    /* G_hairpin_loop */
@@ -14522,7 +14900,7 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
       if (this->G_hairpin_loop[i] < FLOAT_UNDEF)
       {
          rval = (float) drand48 ();
-         this->G_hairpin_loop[i] += (rval - 0.5f) / 100;  
+         this->G_hairpin_loop[i] += (rval - 0.5f) /* / 100 */;  
       } 
    }
 
@@ -14532,7 +14910,7 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
       if (this->G_bulge_loop[i] < FLOAT_UNDEF)
       {
          rval = (float) drand48 ();
-         this->G_bulge_loop[i] += (rval - 0.5f) / 100;
+         this->G_bulge_loop[i] += (rval - 0.5f) /* / 100 */;
       }   
    }
 
@@ -14542,7 +14920,7 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
       if (this->G_internal_loop[i] < FLOAT_UNDEF)
       {
          rval = (float) drand48 ();
-         this->G_internal_loop[i] += (rval - 0.5f) / 100;
+         this->G_internal_loop[i] += (rval - 0.5f) /* / 100 */;
       }
    }
 }
@@ -14620,7 +14998,7 @@ nn_scores_get_tetra_loop (const unsigned long i, const NN_scores* this)
  * @params[in] scheme The scoring scheme.
  */
 void
-nn_scores_get_allowed_basepair (const unsigned i,
+nn_scores_get_allowed_basepair (const unsigned long i,
                                 char* b5,
                                 char* b3,
                                 const NN_scores* scheme)
@@ -14649,6 +15027,26 @@ nn_scores_get_G_non_gc_penalty_for_bp (const int i, const int j,
    assert (j < sqrtf ((float) this->bp_idx_size));
 
    return this->non_gc_penalty_for_bp[(int)this->bp_idx[i][j]];
+}
+
+/** @brief Get penalty for non-Watson Crick base pairs 
+ *
+ * For non-unitanle nucleotides according to the Watson Crick rules this
+ * function returns a penalty, and 0 for base pairs. 
+ *
+ * @param[in] i 5' pairing partner.
+ * @param[in] j 3' pairing partner.
+ * @param[in] this Scoring scheme
+ */
+float
+nn_scores_get_nun_penalty (const int i, const int j, const NN_scores* this)
+{
+   assert (this);
+   assert (this->nun_penalty);
+   assert (i < sqrtf ((float) this->nun_size));
+   assert (j < sqrtf ((float) this->nun_size));
+
+   return this->nun_penalty[i][j];
 }
 
 float
@@ -14808,11 +15206,15 @@ nn_scores_get_G_mm_stack (const char i, const char j,
                             [(int) scheme->bp_idx[(int)k][(int)l]];
 }
 
-static __inline__ int
-tetra_loop_cmp_seq (const char* seq,
-                    const unsigned long i,
-                    unsigned long loop,
-                    const NN_scores* this)
+/* SB 09-10-08 START */
+/* The functions below is for the handling of tetra loops via binary search.
+ * What follows is the hashed version. If the hash function stops working due
+ * to a change of the tetra loop sequences, uncomment this. */
+/*static __inline__ int
+s_tetra_loop_cmp_seq (const char* seq,
+                      const unsigned long i,
+                      unsigned long loop,
+                      const NN_scores* this)
 {
    unsigned long k;
 
@@ -14825,7 +15227,7 @@ tetra_loop_cmp_seq (const char* seq,
    }
 
    return 0;
-}
+}*/
 
 /** @brief Return the bonus score for a tetra loop.
  *
@@ -14833,12 +15235,12 @@ tetra_loop_cmp_seq (const char* seq,
  * @param[in] i i component of the closing base pair.
  * @param[in] this scoring sceme.
  */
-float
+ /*float
 nn_scores_get_G_tetra_loop (const char* seq,
                             const unsigned long i,
                             const NN_scores* this)
 {
-   unsigned long l, r, m; /* search interval */
+   unsigned long l, r, m; *//* search interval *//*
    int cmp;
 
    assert (seq);
@@ -14853,9 +15255,9 @@ nn_scores_get_G_tetra_loop (const char* seq,
    {
       m = (l + r) / 2;
 
-      /* mfprintf (stderr, "Search l:%lu r:%lu m:%lu\n", l, r, m); */
+      *//* mfprintf (stderr, "Search l:%lu r:%lu m:%lu\n", l, r, m); *//*
 
-      cmp = tetra_loop_cmp_seq (seq, i, m, this);
+      cmp = s_tetra_loop_cmp_seq (seq, i, m, this);
       if (cmp < 0)
       {
          l = m + 1;
@@ -14867,16 +15269,41 @@ nn_scores_get_G_tetra_loop (const char* seq,
 
    }
 
-   /* mfprintf (stderr, "Search l:%lu r:%lu m:%lu\n", l, r, m); */
+   *//* mfprintf (stderr, "Search l:%lu r:%lu m:%lu\n", l, r, m); *//*
 
-   if ((l < this->tetra_loop_size)&&(tetra_loop_cmp_seq (seq, i, l, this) == 0))
+   if (  (l < this->tetra_loop_size)
+       &&(s_tetra_loop_cmp_seq (seq, i, l, this) == 0))
    {
-     /*  mfprintf (stderr, "FOUND\n"); */
+     *//*  mfprintf (stderr, "FOUND\n"); *//*
       return this->G_tetra_loop[l];
    }
 
    return 0;
+}*/
+
+/** @brief Return the bonus score for a tetra loop.
+ *
+ * @param[in] seq transformed RNA sequence.
+ * @param[in] i i component of the closing base pair (start of the loop).
+ * @param[in] this scoring sceme.
+ */
+float
+nn_scores_get_G_tetra_loop (const char* seq,
+                            const unsigned long i,
+                            const NN_scores* this)
+{
+   int key;
+
+   key = s_calc_tetra_loop_hash (seq, i, this);
+
+   if (key < TL_TABLE_SIZE)
+   {
+      return this->G_tetra_loop[key];
+   }
+
+   return 0;
 }
+/* SB 09-10-08 END */
 
 /** @brief Returns the penalty for the closing basepair of a hairpin.
  *
@@ -14942,7 +15369,7 @@ nn_scores_get_G_hairpin_loop (const char* seq,
                                           this);
 
    /* tetraloop bonus */
-   if (size == nn_scores_get_size_tetra_loop(this))
+   if (size == (D_TL - 2) /*nn_scores_get_size_tetra_loop(this)*/)
    {
       G += nn_scores_get_G_tetra_loop (seq, i, this);
    }
@@ -15331,6 +15758,111 @@ nn_scores_fprintf_bp_idx (FILE* stream,
       for (j = 0; j < alpha_size; j++)
       {
          msprintf (string, " | %*d", rprec, scheme->bp_idx[i][j]);
+         string += (rprec + 3);         
+      }
+
+      string[0] = '\n';
+      string++;
+   }
+
+   /* print matrix */
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);
+
+   XFREE (string_start);
+}
+
+/** @brief Print the nun penalties of a scoring scheme to a stream.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma Alphabet of the scheme.
+ */
+void
+nn_scores_fprintf_nun_penalties (FILE* stream,
+                                 const NN_scores* scheme,
+                                 const Alphabet* sigma)
+{
+   unsigned long pline_width = 0;
+   char* string;
+   char* string_start;
+   unsigned long alpha_size = alphabet_size (sigma);
+   unsigned long i, j;
+   int rprec;
+   float tmp;
+
+   assert (scheme != NULL);
+   assert (scheme->nun_penalty != NULL);
+   assert (sigma != NULL);
+
+   /* widest cell */
+   /* check for largest penalty */
+   for (i = 0; i < alpha_size; i++)
+   {
+      for (j = 0; j < alpha_size; j++)
+      {
+         /* mprintf ("%lu %lu: %.2f\n", i, j, scheme->nun_penalty[i][j]); */
+         rprec = 0;
+         tmp = scheme->nun_penalty[i][j];
+         if (tmp < 0)
+         {
+            tmp *= (-1);
+            rprec++;
+         }
+         
+         if (tmp > 0)
+         {
+            rprec += floorf (log10f ((float) tmp) + 1);
+         }
+         else
+         {
+            rprec += 1;
+         }
+
+         if ((unsigned) rprec > pline_width) 
+         {
+            pline_width = rprec;
+         } 
+      }
+   }
+   rprec = pline_width;
+   
+   /* calculate linewidth */
+   pline_width = rprec;
+   pline_width += 3;            /* \s|\s */
+   pline_width *= alpha_size;
+   pline_width += 2;            /* N\n */
+
+   string = XMALLOC (sizeof (*string) *
+                     ((pline_width * (alpha_size + 1)) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+
+   string_start = string;
+
+   /* print bases horizontally */
+   msprintf (string, " "); /*skip first "N"*/
+   string += 1;
+
+   for (i = 0; i < alpha_size; i++)
+   {
+      msprintf (string, " | %*c", rprec, alphabet_no_2_base ((char) i, sigma));
+      string += (rprec + 3);      
+   }
+   string[0] = '\n';
+   string++;
+
+   /* print index lines */
+   for (i = 0; i < alpha_size; i++)
+   {
+      msprintf (string, "%c", alphabet_no_2_base ((char) i, sigma));
+      string++;
+      
+      for (j = 0; j < alpha_size; j++)
+      {
+         msprintf (string, " | %*.0f", rprec, scheme->nun_penalty[i][j]);
          string += (rprec + 3);         
       }
 
@@ -16047,6 +16579,141 @@ nn_scores_fprintf_non_gc_penalty_for_bp(FILE* stream,
    XFREE (string_start);
 }
 
+/** @brief Print the hash function for tetra loop sequences.
+ *
+ * @params[in] stream Output stream to write to. FILE *stream
+ * @params[in] scheme The scoring scheme.
+ * @params[in] sigma The alphabet.
+ */
+void
+nn_scores_fprintf_tetra_loop_hashfunction(FILE* stream,
+                                          const NN_scores* scheme,
+                                          const Alphabet* sigma)
+{
+   unsigned long i, j;
+   int tmp;
+   unsigned long pline_width = 0;
+   int rprec;
+   char* string;
+   char* string_start;
+
+   assert (scheme != NULL);
+   assert (scheme->tetra_loop_hashfunction != NULL);
+   assert (sigma != NULL);
+
+   /* calc. storage needed */
+   /* find largest cell */
+   tmp = D_TL;
+   if (tmp < 0)
+   {
+      tmp *= (-1);
+      pline_width++;
+   }
+   if (tmp > 0)
+   {
+      pline_width += floorf (log10f ((float) tmp) + 1);
+   }
+   else
+   {
+      pline_width += 1;
+   }
+
+   for (i = 0; i < TL_HT_BASES; i++)
+   {
+      for (j = 0; j < D_TL; j++)
+      {
+         rprec = 0;
+         tmp = scheme->tetra_loop_hashfunction[i][j];
+         
+         /* fetch '-' symbol */
+         if (tmp < 0)
+         {
+            tmp *= (-1);
+            rprec++;
+         }
+
+         /* get no. of digits */
+         if (tmp > 0)
+         {
+            rprec += floorf (log10f ((float) tmp) + 1);
+         }
+         else
+         {
+            rprec += 1;
+         }
+         
+         if ((unsigned) rprec > pline_width) 
+         {
+            pline_width = rprec;
+         }
+      }
+   }
+   rprec = pline_width;
+
+   /* add up components of a line */
+   pline_width += 3;            /* | */
+   pline_width *= D_TL;
+   pline_width += 2;            /*N\n*/
+
+   /* allocate buffer */
+   string = (char*) XMALLOC (sizeof (*string)
+                             * ((pline_width * (TL_HT_BASES + 1)) + 1));
+   if (string == NULL)
+   {
+      return;
+   }
+   string_start = string;  
+
+   /* mprintf("Size: %lu\n", (pline_width * (TL_HT_BASES + 1)) + 1); */
+
+   /* print matrix to memory */
+   /* print header */
+   if (rprec > 1)
+   {
+      rprec--;
+   }
+
+   for (i = 0; i < D_TL; i++)
+   {
+      msprintf (string, "  | %*lu", rprec, i);
+      string += rprec;
+      string += 4;
+   }
+   string[0] = '\n';
+   string++;
+
+   if ((rprec + 1) > 1)
+   {
+      rprec++;
+   }
+
+   /* print values */
+   for (i = 0; i < TL_HT_BASES; i++)
+   {
+      msprintf (string, "%c", alphabet_no_2_base (i, sigma));
+      string += 1;
+
+      for (j = 0; j < D_TL; j++)
+      {
+         msprintf (string, " | %*d", rprec,
+                   scheme->tetra_loop_hashfunction[i][j]);
+         string += rprec;
+         string += 3;
+      }
+
+      string[0] = '\n';
+      string++;
+   }
+
+   /* output matrix */
+   string[0] = '\0';
+   mfprintf (stream, "%s", string_start);  
+
+   /* mprintf("Written: %d\n", string - string_start); */
+
+   XFREE (string_start);
+}
+
 /** @brief Print the bonus scores for tetra loops.
  *
  * @params[in] stream Output stream to write to. FILE *stream
@@ -16096,7 +16763,7 @@ nn_scores_fprintf_tetra_loop(FILE* stream,
       if ((unsigned) rprec > pline_width) 
       {
          pline_width = rprec;
-      } 
+      }
    }
    rprec = pline_width;   
 
@@ -16119,20 +16786,24 @@ nn_scores_fprintf_tetra_loop(FILE* stream,
       msprintf (string, "%c-", alphabet_no_2_base (scheme->tetra_loop[i][0],
         sigma));
       /*msprintf (string, "%i-", scheme->tetra_loop[i][0]);*/
-      string += 2;      
+      string += 2;
       for (j = 1; j < (D_TL - 1); j++)
       {
          msprintf (string, "%c", alphabet_no_2_base (scheme->tetra_loop[i][j],
            sigma));
          /*msprintf (string, "%i", scheme->tetra_loop[i][j]);*/
-         string ++;
+         string++;
       }
       msprintf (string, "-%c", alphabet_no_2_base (scheme->tetra_loop[i][j],
         sigma));
       /*msprintf (string, "-%i", scheme->tetra_loop[i][j]);*/
       string += 2; 
 
-      msprintf (string, ": %*.0f", rprec, scheme->G_tetra_loop[i]);
+      /* SB 14-10-09 handling of tetra loops via hash function - START */
+      /*msprintf (string, ": %*.0f", rprec, scheme->G_tetra_loop[i]);*/
+      msprintf (string, ": %*.0f", rprec,
+scheme->G_tetra_loop[s_calc_tetra_loop_hash(scheme->tetra_loop[i], 0, scheme)]);
+      /* SB 14-10-09 handling of tetra loops via hash function - END */
       string += rprec;
       string += 2;
 
@@ -16377,9 +17048,9 @@ nn_scores_fprintf_G_dangle3(FILE* stream,
 }
 
 static int
-get_ndigits_matrix (const unsigned long cols,
-                     const unsigned long rows,
-                     float** matrix)
+s_get_ndigits_matrix (const unsigned long cols,
+                      const unsigned long rows,
+                      float** matrix)
 {
    int tmp = 0;
    int cval;
@@ -16551,7 +17222,7 @@ nn_scores_fprintf_G_int11 (FILE* stream,
    {
       for (j = 0; j < scheme->bp_allowed_size; j++)
       {
-         tmp = get_ndigits_matrix (asize, asize, scheme->G_int11[i][j]);
+         tmp = s_get_ndigits_matrix (asize, asize, scheme->G_int11[i][j]);
          if (tmp > rprec)
          {
             rprec = tmp;
@@ -16681,7 +17352,7 @@ nn_scores_fprintf_G_int21 (FILE* stream,
       {
          for (k = 0; k < asize; k++)
          {
-            tmp = get_ndigits_matrix (asize, asize, scheme->G_int21[i][j][k]);
+            tmp = s_get_ndigits_matrix (asize, asize, scheme->G_int21[i][j][k]);
             if (tmp > rprec)
             {
                rprec = tmp;
@@ -16819,9 +17490,9 @@ nn_scores_fprintf_G_int22 (FILE* stream,
          {
             for (l = 0; l < asize; l++)
             {
-               tmp = get_ndigits_matrix (asize,
-                                          asize,
-                                          scheme->G_int22[i][j][k][l]);
+               tmp = s_get_ndigits_matrix (asize,
+                                           asize,
+                                           scheme->G_int22[i][j][k][l]);
                if (tmp > rprec)
                {
                   rprec = tmp;

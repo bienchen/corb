@@ -1,7 +1,7 @@
-# Last modified: 2009-03-25.12
+# Last modified: 2009-08-27.14
 #
 #
-# Copyright (C) 2008 Stefan Bienert
+# Copyright (C) 2009 Stefan Bienert
 #
 # This file is part of CoRB.
 #
@@ -451,7 +451,8 @@ sub msg_error_and_die(@)
 =head2 open_or_die
 
 Returns a file handle to a file opened in a given mode. If opening fails, the
-script dies.
+script dies. If mode is omitted, we assume that the file should be opened for
+reading.
 
 =over 4
 
@@ -475,8 +476,8 @@ Valid modes are:
     the file already exists, the script will C<die>. This is not usual B<Perl>
     behaviour and could be a little bit annoying while developing new scripts.
     On the other hand you will name your first-born after us, the first time
-    this prevents loss of data from an overnight run...
-    Just believe us, we have learned our lessons...
+    this prevents loss of data from an overnight run. Just believe us, we have
+    learned our lessons...
 
     ...several times.
 
@@ -523,30 +524,35 @@ Valid modes are:
 
 =cut
 
-sub open_or_die($ $)
+sub open_or_die
 {
     my ($filename, $mode) = @_;
     local *FH;
 
-    if ((! defined($filename)) || (! defined($mode)))
+    if (! defined($filename))
     {
-        msg_error_and_die ("Filename or mode missing in attempt to open "
-                          ."file.\n");        
+        msg_error_and_die ("Filename missing in attempt to open file.\n");        
+    }
+
+    if (! defined($mode))
+    {
+        $mode = '<';
     }
 
     # check if we are trying to open an existing file in write/ write-read mode
-    if ((($mode eq ">") || ($mode eq "+>"))&& (-e $filename))
+    if ((($mode eq '>') || ($mode eq '+>')) && (-e $filename))
     {
         msg_error_and_die ("Unable to create file \"$filename\": File "
                           ."already exists\n");
     }
 
-    open(FH, $mode, $filename) or
+# SB: 18.08.09 changed from open(FH, $mode, $filename) to be able to open
+#     STDOUT as a filehandle
+    open(FH, $mode.$filename) or
         msg_error_and_die("Unable to open file \"$filename\": $!\n");
 
     return *FH;
 }
-
 
 =head2 file_2_array_or_die
 
@@ -575,11 +581,9 @@ The file to be opened.
 
 =cut
 
-sub file_2_array_or_die($)
+sub file_2_array_or_die
 {
-    my ($filename) = @_;
-
-    my $filehandle = open_or_die($filename, '<');
+    my $filehandle = open_or_die("@_", '<');
 
     my @lines = <$filehandle>;
 

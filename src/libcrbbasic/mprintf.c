@@ -146,6 +146,8 @@ mprintf (const char *format, ...)
    int retval;
    va_list ap;
 
+   assert (format);
+
    va_start (ap, format);
    retval = mvprintf (format, ap);
    va_end (ap);

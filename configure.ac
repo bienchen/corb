@@ -1,8 +1,4 @@
-<<<<<<< HEAD:configure.ac
-# Last modified: 2009-09-05.14
-=======
-# Last modified: 2009-10-17.20
->>>>>>> Finalising brot...:configure.ac
+# Last modified: 2009-10-28.15
 #
 dnl Copyright (C) 2008 Stefan Bienert
 dnl 

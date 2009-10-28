@@ -478,11 +478,7 @@ simulate_using_nn_scoring (struct brot_args_info* brot_args,
       scmf_rna_opt_data_set_het_window (brot_args->window_size_arg, data);
 
       seqmatrix_set_func_calc_eeff_col (scmf_rna_opt_calc_col_nn, sm);
-<<<<<<< HEAD:src/libcrbapps/brot.c
-      seqmatrix_set_gas_constant (GAS_CONST, sm);
-=======
       seqmatrix_set_gas_constant (8.314472, sm); /* SB: 23.09.09 8.314472 */
->>>>>>> Finalising brot...:src/libcrbapps/brot.c
 
       error = seqmatrix_simulate_scmf (brot_args->steps_arg,
                                        brot_args->temp_arg,

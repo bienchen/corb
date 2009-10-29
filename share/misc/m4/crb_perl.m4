@@ -1,4 +1,4 @@
-# Last modified: 2009-06-30.08
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -40,10 +40,12 @@ AC_DEFUN([CRB_CHECK_MATCHINGPERL],
   AS_IF([test -z $PERL],
         AC_MSG_ERROR([perl not found])dnl# run-if-true
        )dnl# AS_IF
+
   AS_IF([$PERL -e 'require 5.006;'],
         [],dnl# run-if-true
         [AC_MSG_ERROR([Perl v5.6 or better is required; Perl v5.8.2 or better is recommended. If you have several perl versions installed, select the one Automake should use using ./configure PERL=/path/to/perl])]dnl# run-if-false
        )dnl# AS_IF
+
 ]dnl# macro-body 
         )
 
@@ -62,6 +64,7 @@ AC_DEFUN([CRB_PERL_CHECK_MODULE],
        AC_MSG_RESULT(no)
        m4_ifvaln([$3],[$3])dnl # run-if-false
       )dnl# AS_IF
+
 ]dnl# macro-body 
         )
 

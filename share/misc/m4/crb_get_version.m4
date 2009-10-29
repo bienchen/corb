@@ -1,4 +1,4 @@
-# Last modified: 2009-07-01.15
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -50,18 +50,21 @@ AC_DEFUN([CRB_GET_VERSION],
                    AS_TR_SH($2)=$_crb_ver
                    break
                   ]dnl# run-if-true
-                 )dnl# AS_IF   
+                 )dnl# AS_IF
+
           done
        ],dnl# run-if-true
        [dnl# run-if-not-true
         AC_MSG_ERROR([program "$1" not found in PATH])
        ]dnl# run-if-not-true
       )dnl# AS_IF
+
  AS_IF([test -z "$AS_TR_SH($2)"],
        [dnl# run-if-true
         AC_MSG_ERROR([no version number found for program "$1"])        
        ]dnl# run-if-true
       )dnl# AS_IF
+
 ]dnl# macro-body
         )
  

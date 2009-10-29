@@ -1,4 +1,4 @@
-# Last modified: 2009-03-30.22
+# Last modified: 2009-10-29.23
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -108,6 +108,7 @@ AC_DEFUN([CRB_CFLAGS_SET_WARNINGS],
          [cc],  [_CRB_CFLAGS_SET_WARNINGS_SUNCC([$CC], [_crb_ver])],
          [_crb_ver="${CC} unknown, no automatic development flag setting"]
         )dnl# AS_CASE
+
  dnl# _XOPEN_SOURCE is not a compiler option but a macro to be defined for all
  dnl# compilers
  _CRB_CFLAGS_INVOKE_POSIX

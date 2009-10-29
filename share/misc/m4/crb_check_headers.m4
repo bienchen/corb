@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-10-29.20
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -21,14 +21,14 @@ dnl along with CoRB.  If not, see <http://www.gnu.org/licenses/>.
 # -------------------------
 # Check the presence of a set of headers. If a header is not found, an error
 # message is thrown and the confgure script is forced to exit imedeately. For
-# each header found, a macro will be created in the confgurational header. he
+# each header found, a macro will be created in the confgurational header. The
 # name of such a macro is HAVE_HEADER.
 # This macro is just a rough rewrite of the original AC_CHECK_HEADERS macro,
 # which does not provide the name of a header in an action-if-found or
 # action-if-not-found statement.
+#  formerly started with AH_CHECK_HEADERS([$1]) # not needed in autoconf 2.64 anymore
 AC_DEFUN([CRB_CHECK_HEADERS],
 [dnl# macro-body
- AH_CHECK_HEADERS([$1])dnl
  for __crb_header in $1
  do
  AC_CHECK_HEADER($__crb_header,

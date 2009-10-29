@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -40,6 +40,7 @@ AC_DEFUN([CRB_CHECK_LIBMATH],
           AC_CHECK_LIB(m, log10, __crb_LIBMATH="-lm")
          ]
         )dnl# AS_CASE
+
  LIBS="$LIBS $__crb_LIBMATH"
 ]dnl# macro body
          )

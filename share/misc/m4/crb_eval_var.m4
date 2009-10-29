@@ -1,4 +1,4 @@
-# Last modified: 2009-07-13.15
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2009 Stefan Bienert
 dnl 
@@ -34,6 +34,7 @@ AC_DEFUN([CRB_EVAL_VAR],
    AS_CASE([@S|@$1],
            [*\@S|@*], [eval "$1=`eval "echo @S|@$1"`"],dnl#pattern1, if-matched1
            [break])dnl#default
+
  done
 ]dnl# macro-body
         )

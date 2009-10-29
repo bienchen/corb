@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2009-01-20.23
+scriptversion=2009-10-29.14
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 
@@ -57,7 +57,7 @@ MAKEFILES=`awk '{
                   } 
                   else 
                   {
-                    if (/])/) 
+                    if (/\]\)/) 
                     {
                       p = 0
                     }

@@ -1,4 +1,4 @@
-# Last modified: 2009-06-30.08
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -44,6 +44,7 @@ AC_DEFUN([_CRB_ARG],
         AC_MSG_ERROR([bad value "${m4_tolower($2)val}" for --$2-$3])
                         ]dnl
                        )dnl# AS_CASE
+
                ],
                [dnl# action-if-not-given
                 m4_tolower($2)_[]m4_translit([$3],[-.],[__])=no
@@ -83,8 +84,9 @@ AC_DEFUN([_CRB_ARG_CHECKED_LOOP_SET],
                      [],dnl# run-if-true
                      [dnl# run-if-false
                       $1_[]crb_item=$3
-                     ]
+                     ]dnl
                     )dnl# AS_IF
+
               ]dnl# expression
              )dnl# m4_foreach_w
 ]dnl# macro-body
@@ -216,6 +218,7 @@ AC_DEFUN([CRB_ARG_WITH_PERL_PROG],
  AS_IF([test x$with_[]m4_translit([$1],[-.],[__]) = xyes],
        [CRB_CHECK_MATCHINGPERL]
       )dnl# AS_IF
+
  AM_CONDITIONAL([CRB_]m4_translit(m4_toupper([$1]),[-.],[__]),
                 [test x$with_[]m4_translit([$1],[-.],[__]) = xyes])
 ]dnl# macro-body
@@ -249,7 +252,8 @@ AC_DEFUN([CRB_ARG_ENABLE_ASSERT],
                   [1],
                   [Define to 1 if assertions should be disabled.])
        ]
-      )dnl# AS_IF         
+      )dnl# AS_IF
+        
 ]dnl# macro-body
         )
 
@@ -311,7 +315,8 @@ AC_DEFUN([CRB_ARG_ENABLE_CHECK_PTHREADS],
                     ]
                    )
        ]
-      )dnl# AS_IF        
+      )dnl# AS_IF
+       
 ]dnl# macro-body
         )
 
@@ -335,7 +340,8 @@ AC_DEFUN([CRB_ARG_ENABLE_MEMCHECK],
                   [1],
                   [Define to 1 to enable memory checking.])
        ]
-      )dnl# AS_IF1  
+      )dnl# AS_IF1
+  
 ]dnl# macro-body1
         )
 

@@ -1,4 +1,4 @@
-# Last modified: 2009-05-13.14
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -29,6 +29,7 @@ AC_DEFUN([CRB_PROG],
  AS_IF([test x$CRB_[]m4_toupper(m4_translit([$1],[-.],[__])) = xno],
        [AC_MSG_ERROR([Unable to find the $1 command])]
       )dnl# AS_IF
+
 ]dnl# macro-body
         )
 

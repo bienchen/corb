@@ -1,4 +1,4 @@
-# Last modified: 2008-10-03.22
+# Last modified: 2009-10-29.21
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -53,8 +53,10 @@ AC_DEFUN([CRB_CHECK_LIBCAIRO],
                                     crb_cairo_fnc=__crb_cairo_fnc
                                    ]
                                   )dnl# AS_IF
+
                              ]
                                   )dnl# AS_IF
+
                             ]
                            )dnl# m4_foreach
                  LIBS=$ac_check_lib_save_LIBS
@@ -70,8 +72,10 @@ AC_DEFUN([CRB_CHECK_LIBCAIRO],
                echo "         installed version of libcairo is missing function \`${crb_cairo_fnc}\`, recommended version: $1" >&AS_MESSAGE_FD
               ]
              )dnl# AS_IF
+
        ]
       )dnl# AS_IF
+
  AM_CONDITIONAL([CRB_WITH_CAIRO], [test AS_VAR_GET(ac_Lib) = yes])
  AS_VAR_POPDEF([ac_Lib])
 ]dnl# macro body

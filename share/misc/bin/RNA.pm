@@ -1,4 +1,4 @@
-# Last modified: 2009-11-05.11
+# Last modified: 2009-11-06.15
 #
 #
 # Copyright (C) 2009 Stefan Bienert
@@ -52,7 +52,8 @@ Following tags are defined:
     L<C<@BASES>|"@BASES">,
     L<C<$N_BASES>|"$N_BASES">)
 
-=item * tests - everything related to testing
+=item * ViennaRNA - all the wrappers for functions from the Vienna RNA Package
+    (L<C<RNAfold()>|"RNAfold">)
     (L<C<%TESTS>|"%TESTS">)
 
 =item * all - everything above
@@ -71,6 +72,19 @@ package RNA;
 use strict;
 use warnings;
 
+# no idea if this is the recommended way to do it, but since Perl < 5.10 does
+# not come with Module::Load::Conditional, it seems to be the simplest
+our $DB_ON = 0;
+eval { require DBI };
+if ( !$@ )
+{
+    eval { require DBD::SQLite };
+    if ( !$@ ) 
+    {
+        $DB_ON = 1;
+    }
+}
+
 BEGIN {
     use Exporter();
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -84,7 +98,7 @@ BEGIN {
                                  @ALPHA
                                  @BASEPAIRS $N_BPAIRS
                                  @BASES $N_BASES)],
-                    tests => [qw(%TESTS)]
+                    ViennaRNA => [qw(&RNAfold)]
                    );
 
     # add all the other tags to the ":all" tag, deleting duplicates
@@ -177,6 +191,113 @@ our $N_BASES;
 # PRIVATE GLOBALS      - BEGIN <- no access from outside
 # PRIVATE GLOBALS      - END
 
+=pod
+
+=head1 FUNCTIONS
+
+=head2 RNAfold
+
+Folds an RNA sequence into a 2D structure using RNAfold of the Vienna RNA
+Package. The return value is a hash with C<structure> and C<mfe> as keys,
+pointing to the structure and the "minimum free energy" of it.
+
+Since folding can take some time, we provide a databse mechanism, which is able
+to store all your results for reuse. The idea is to store each call to RNAfold
+with its parameters and on recurring calls just send back the answer from the
+database instead of calculating it again. An entry in the database contains the
+sequence, a unified parameterstring, ...path... and the results of the call. 
+
+The database will be stored in a single file.... The database system we use is
+SQLite, therefore it should be shareable among different operating systems.
+
+Recording may be turned of by calling ... but cannot be re-enabled.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item sequence
+
+The sequence to be folded. Has to be a scalar.
+
+=item parameters
+
+Parameters to be passed to RNAfold. All options have to be passed in a single
+string in the same way they would be used in a command line call to RNAfold.
+May be omitted if not used.
+
+=item command
+
+As default, this functions just sends "RNAfold" as command to a shell. This
+option can be used to change the call to whatever you want. Just omit it to get
+the default behaviour.
+
+=back
+
+=item EXAMPLE
+
+    my $verbose
+    my $optcatchresult = GetOptions('verbose!' => \$verbose);
+
+    if ($optcatchresult == 0) { return 0 }
+
+    enable_verbose() if $verbose;
+
+=back
+
+=cut
+
+sub RNAfold
+{
+    my ($seq, $params, $cmd) = @_;
+    my $len = length($seq);
+    my $i;
+    my @err_run;
+    my %result;
+
+    if (!defined($cmd))
+    {
+        $cmd = 'RNAfold';
+    }
+
+    if (!defined($params))
+    {
+        $params = '';
+    }
+
+    # start folding
+    unless(open(FH, "echo \"$seq\" | $cmd $params 2>&1 |"))
+    {
+        msg_error_and_die ("Could not start $cmd $params: $!\n");
+    }
+
+    @err_run = ();
+    
+    foreach (<FH>)
+    {
+        if ($_ =~ /([\(\.\)]{$len})\s+\(\s*(\-?\d+\.\d+)\)/)
+        {
+            $result{structure} = $1;
+            $result{mfe} = $2;
+        }
+        
+        push(@err_run, $_);
+    }
+
+    close(FH);
+
+    if (! defined ($result{structure}))
+    {
+        msg_error_and_die("Running RNAfold failed, output of\n"
+                          ."\`echo \"$seq\" | $cmd $params\"\`: ",
+                          @err_run);
+    }
+        
+
+    return %result;
+}
 
 1;
 

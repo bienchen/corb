@@ -136,6 +136,16 @@ extern "C" {
    A.current = 0; \
    A.size = 0
 
+/** @brief Decrement the no. of elements in an array.
+ *
+ * Basically decrement the current index of an array by 1.
+ *
+ * @param[in] A array.
+ */
+#define ARRAY_CURRENT_DECREMENT(A) \
+   assert (A.current > 0);         \
+   A.current--
+
 /** @brief Add an element to the end of an array.
  *
  * Stores an element in the data component of an array at the current index

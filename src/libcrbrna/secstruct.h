@@ -53,11 +53,12 @@ extern "C" {
 #include "nn_scores.h"
 
 /* error numbers */
-enum secstruct_retvals{
+enum {
    ERR_SCSTRCT_ALLOC = 1,      /* (re)allocation problems */
+   /* ERR_SCSTRCT_UKWN_FEAT, */      /* unknwon structural feature */
 };
 
-/* structural elements */
+/* structural features */
 typedef enum {
    SCSTRCT_VOID = 0,            /* base has no class assigned */
    SCSTRCT_HAIRPIN,             /* hairpin loop */
@@ -67,8 +68,8 @@ typedef enum {
    SCSTRCT_MULTI,               /* multi loop */
    SCSTRCT_EXTERNAL,            /* external loop */
    SCSTRCT_MTO,                 /* base is in M ore T han O ne class */
-   N_SCSTRCT,                   /* No. of elements */
-} secstruct_elements;
+   N_FEATURES                   /* No. of elements */
+} SecStructFtrs;
 
 typedef struct SecStruct SecStruct;
 
@@ -88,21 +89,28 @@ secstruct_find_interactions (const unsigned long*,
                              const unsigned long,
                              SecStruct*);
 
+void
+secstruct_delete_stack (const unsigned long, SecStruct*);
+
+void
+secstruct_delete_element (const unsigned long,
+                          const SecStructFtrs,
+                          SecStruct*);
 
 /*********************************   Access   *********************************/
 
-secstruct_elements
-secstruct_get_structure_at_pos (const unsigned long,
+SecStructFtrs
+secstruct_get_feature_at_pos (const unsigned long,
                                 unsigned long*,
                                 const SecStruct*);
 
-secstruct_elements
-secstruct_get_structure_multi_1st (const unsigned long,
+SecStructFtrs
+secstruct_get_feature_multi_1st (const unsigned long,
                                    unsigned long*,
                                    const SecStruct*);
 
-secstruct_elements
-secstruct_get_structure_multi_2nd (const unsigned long,
+SecStructFtrs
+secstruct_get_feature_multi_2nd (const unsigned long,
                                    unsigned long*,
                                    const SecStruct*);
 

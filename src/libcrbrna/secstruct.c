@@ -42,7 +42,6 @@
  *                              secondary structure element, makes it possible
  *                              to query the structural feature a certain
  *                              position in the sequence belong to.
- *                             
  *
  */
 
@@ -104,7 +103,7 @@ typedef struct {
 ARRAY_CREATE_CLASS(MultiLoop);
 
 typedef struct {
-   secstruct_elements type;
+   SecStructFtrs type;
    unsigned long idx;
 } StructElem;
 
@@ -123,18 +122,10 @@ struct SecStruct {
    ArrayStructElem multi_map;
    unsigned long size;
 
-   /* operations: getter + delete?
-      get: Just take idx of seq, check fst array, ret. idx & type? */
-   /* multiple elems? -> extra signal, iterative func?
-      ret on get: type multi, start idx 
-      further get: noof elems 
-      further get: iteratively get real elems w. idx and type
-      Behaviour on changes: same possibly*/
-   /* multiple new considerations: only 2 possibilites at the same time 
-      idea: for multiple instead of idx just tell we have 2, give start idx, function to fetch a nad b store in pair data type */
-   /* del: take type & idx,  
-      set all seq.idxs to not in secstruct 
-      on multiples? */
+   /* operations: delete?
+      del: take type & idx, set all seq.idxs to not in secstruct on multiples?
+      del: just take idx, individual delete functions
+      two del funcs: fst uses 2nd */
 };
 
 
@@ -296,7 +287,7 @@ secstruct_delete (SecStruct* this)
 
 static int
 s_seq_struct_map_multi_pair (const unsigned long i, const unsigned long j,
-                             secstruct_elements type,
+                             SecStructFtrs type,
                              SecStruct* this)
 {
    StructElem loop;
@@ -357,7 +348,7 @@ s_seq_struct_map_multi_pair (const unsigned long i, const unsigned long j,
 }
 
 static int
-s_seq_struct_map_multi_dangle (unsigned long b, secstruct_elements type,
+s_seq_struct_map_multi_dangle (unsigned long b, SecStructFtrs type,
                                SecStruct* this)
 {
    StructElem loop;
@@ -392,7 +383,7 @@ s_seq_struct_map_multi_dangle (unsigned long b, secstruct_elements type,
 
 static int
 multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
-                unsigned long size, MultiLoop* ml, secstruct_elements type,
+                unsigned long size, MultiLoop* ml, SecStructFtrs type,
                 SecStruct* strct)
 {
    int error;
@@ -464,7 +455,7 @@ multiloop_find (unsigned long i, unsigned long j, const unsigned long* pairs,
 }
 
 static int
-s_seq_struct_map_multi (MultiLoop* ml, secstruct_elements type, SecStruct* this)
+s_seq_struct_map_multi (MultiLoop* ml, SecStructFtrs type, SecStruct* this)
 {
    unsigned long lp, k, l;
 
@@ -1009,7 +1000,172 @@ secstruct_find_interactions (const unsigned long* pairs,
    return error;
 }
 
+/** @brief Delete a stacked base pair of a secondary structure
+ *
+ * Removes a base pair from a structure. Please note that we do not check for a
+ * valid @c index, here.
+   - needs ...
+   - returns ...
+ */
+void
+secstruct_delete_stack (const unsigned long index, SecStruct* this)
+{
+   unsigned long i, j; /* seq.pos. of i and j component */
 
+   assert (this);
+   assert (ARRAY_NOT_NULL (this->stack));
+   assert (ARRAY_CURRENT (this->stack) > index);
+   assert (this->seq_struct_map);
+
+   /* update seq.map for item to be deleted */
+   i = ARRAY_ACCESS (this->stack, index).i;
+   j = ARRAY_ACCESS (this->stack, index).j;
+
+   if (this->seq_struct_map[i].type == SCSTRCT_STACK)
+   {
+      this->seq_struct_map[i].type = SCSTRCT_VOID;
+   }
+   else
+   {
+      if (   ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type ==
+             SCSTRCT_STACK
+          && ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx ==
+             index)
+      {
+         this->seq_struct_map[i].type =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).type;
+         this->seq_struct_map[i].idx =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).idx;
+      }
+      else
+      {
+         this->seq_struct_map[i].type =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type;
+         this->seq_struct_map[i].idx =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx;
+      }
+   }
+
+   if (this->seq_struct_map[j].type == SCSTRCT_STACK)
+   {
+      this->seq_struct_map[j].type = SCSTRCT_VOID;
+   }
+   else
+   {
+      if (   ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).type ==
+             SCSTRCT_STACK
+          && ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).idx ==
+             index)
+      {
+         this->seq_struct_map[j].type =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx + 1).type;
+         this->seq_struct_map[j].idx =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx + 1).idx;
+      }
+      else
+      {
+         this->seq_struct_map[j].type =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).type;
+         this->seq_struct_map[j].idx =
+            ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).idx;
+      }
+   }
+
+   /* swap entries & shrink array */
+   ARRAY_CURRENT_DECREMENT(this->stack);
+   ARRAY_SET(this->stack,
+             ARRAY_ACCESS(this->stack, ARRAY_CURRENT (this->stack)),
+             index);
+
+   /* update seq.map for swaped entry */
+   i = ARRAY_ACCESS (this->stack, index).i;
+   j = ARRAY_ACCESS (this->stack, index).j;
+
+   /* we have moved the last entry of the stack-array to the pos.2b.deleted.
+      Now we have to update the seq.pos map:
+      - if the pos. is only bound to a single feature, it must be a stack so we
+        just set the new pos. in the array
+      - if pos. points to a MTO site, we have to find the stack element and
+        update the index, there*/
+   if (this->seq_struct_map[i].type == SCSTRCT_STACK)
+   {
+      this->seq_struct_map[i].idx = index;
+   }
+   else
+   {
+      if (   ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).type ==
+             SCSTRCT_STACK
+          && ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx ==
+             ARRAY_CURRENT (this->stack))
+      {
+         ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx).idx = index;
+      }
+      else
+      {
+         ARRAY_ACCESS(this->multi_map, this->seq_struct_map[i].idx + 1).idx =
+            index;
+      }
+   }
+
+   if (this->seq_struct_map[j].type == SCSTRCT_STACK)
+   {
+      this->seq_struct_map[j].idx = index;
+   }
+   else
+   {
+      if (   ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).type ==
+             SCSTRCT_STACK
+          && ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).idx ==
+             ARRAY_CURRENT (this->stack))
+      {
+         ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx).idx = index;
+      }
+      else
+      {
+         ARRAY_ACCESS(this->multi_map, this->seq_struct_map[j].idx + 1).idx =
+            index;
+      }
+   }
+}
+
+/** @brief Delete a structural feature of a secondary structure 
+ *
+ * If the type and the index of a feature in a structure is known, this
+ * function may be used for deletion. Index and type can be queried using
+ * @c secstruct_get_feature_at_pos(). Please note that this function does not
+ * check whether a valid @c index or @c feature is provided.
+ * - needs ...
+ * - returns ...
+ */
+void
+secstruct_delete_element (const unsigned long index,
+                          const SecStructFtrs feature,
+                          SecStruct* this)
+{
+   assert (this);
+   assert (feature < N_FEATURES);
+
+   switch (feature)
+   {
+      case SCSTRCT_VOID:
+         /* nothing to be done for non-classified position */
+         return;
+         break;
+         /* SCSTRCT_HAIRPIN */
+      case SCSTRCT_STACK:
+         secstruct_delete_stack (index, this);
+         break;
+         /*  SCSTRCT_BULGE  
+           SCSTRCT_INTERNAL
+           SCSTRCT_MULTI  
+           SCSTRCT_EXTERNAL
+           SCSTRCT_MTO    
+           N_FEATURES*/   
+      default:
+         THROW_ERROR_MSG ("Error not supposed");
+         exit (EXIT_FAILURE);
+   }
+}
 
 /*********************************   Access   *********************************/
 
@@ -1018,11 +1174,11 @@ secstruct_find_interactions (const unsigned long* pairs,
  * Retrieve the sort of structural element, a certain sequence position belongs
  * to. Additionally, an index usable with an appropriate @c get function is
  * provided.\n
- * Possible types are taken from the @c secstruct_elements @c enum.\n
+ * Possible types are taken from the @c SecStructFtrs @c enum.\n
  * If @c SCSTRCT_MTO is returned, the complementary sequence position belongs
  * to two distinct classes. The retrived index might then be used with
- * @c secstruct_get_structure_multi_1st and
- * @c secstruct_get_structure_multi_2nd to retrieve the true classes and
+ * @c secstruct_get_feature_multi_1st and
+ * @c secstruct_get_feature_multi_2nd to retrieve the true classes and
  * indices.\n
  * No errors are defined for return values. If a position in the sequence is not assigned to a structural feature, @c SCSTRCT_VOID is returned.
  *
@@ -1030,8 +1186,8 @@ secstruct_find_interactions (const unsigned long* pairs,
  * @param[out] index Address of the returned element.
  * @param[in]  this Secondary structure.
  */
-secstruct_elements
-secstruct_get_structure_at_pos (const unsigned long i,
+SecStructFtrs
+secstruct_get_feature_at_pos (const unsigned long i,
                                 unsigned long* index,
                                 const SecStruct* this)
 {
@@ -1048,15 +1204,15 @@ secstruct_get_structure_at_pos (const unsigned long i,
 
 /** @brief Get the sturcutral feature for a certain position classified as MTO.
  *
- * For the use after @c secstruct_get_structure_at_pos (), if @c SCSTRCT_MTO
+ * For the use after @c secstruct_get_feature_at_pos (), if @c SCSTRCT_MTO
  * was returned. Delivers the first of possibly two sturctural features.
  * Additionally, an index usable with an appropriate @c get function is
  * provided.\n
- * Possible types are taken from the @c secstruct_elements @c enum.
- * @c SCSTRCT_MTO is is not a valid return value for this function.\n
+ * Possible types are taken from the @c SecStructFtrs @c enum.
+ * @c SCSTRCT_MTO is not a valid return value for this function.\n
  * Please note: @c i is again the sequence position. This is for your
  * convenience since it enables safe use of the same variable for @c index as
- * for the call of @c secstruct_get_structure_at_pos () and you might just
+ * for the call of @c secstruct_get_feature_at_pos () and you might just
  * recycle @c i as well from a previous call.\n
  * No errors are defined for return values.
  *
@@ -1064,8 +1220,8 @@ secstruct_get_structure_at_pos (const unsigned long i,
  * @param[out] index Address of the returned element.
  * @param[in]  this Secondary structure.
  */
-secstruct_elements
-secstruct_get_structure_multi_1st (const unsigned long i,
+SecStructFtrs
+secstruct_get_feature_multi_1st (const unsigned long i,
                                    unsigned long* index,
                                    const SecStruct* this)
 {
@@ -1082,15 +1238,15 @@ secstruct_get_structure_multi_1st (const unsigned long i,
 
 /** @brief Get the sturcutral feature for a certain position classified as MTO.
  *
- * For the use after @c secstruct_get_structure_at_pos (), if @c SCSTRCT_MTO
+ * For the use after @c secstruct_get_feature_at_pos (), if @c SCSTRCT_MTO
  * was returned. Delivers the second of possibly two sturctural features.
  * Additionally, an index usable with an appropriate @c get function is
  * provided.\n
- * Possible types are taken from the @c secstruct_elements @c enum.
+ * Possible types are taken from the @c SecStructFtrs @c enum.
  * @c SCSTRCT_MTO is is not a valid return value for this function.\n
  * Please note: @c i is again the sequence position. This is for your
  * convenience since it enables safe use of the same variable for @c index as
- * for the call of @c secstruct_get_structure_at_pos () and you might just
+ * for the call of @c secstruct_get_feature_at_pos () and you might just
  * recycle @c i as well from a previous call.\n
  * No errors are defined for return values.
  *
@@ -1098,8 +1254,8 @@ secstruct_get_structure_multi_1st (const unsigned long i,
  * @param[out] index Address of the returned element.
  * @param[in]  this Secondary structure.
  */
-secstruct_elements
-secstruct_get_structure_multi_2nd (const unsigned long i,
+SecStructFtrs
+secstruct_get_feature_multi_2nd (const unsigned long i,
                                    unsigned long* index,
                                    const SecStruct* this)
 {
@@ -3078,8 +3234,8 @@ secstruct_fprintf_seqpos_map (FILE* stream, const SecStruct* this)
    char none[] = "Not assigned";
    char panic[] = "(o.O)";
    unsigned long panic_size = strlen (panic);
-   char* type_id[N_SCSTRCT];
-   int   type_sz[N_SCSTRCT];
+   char* type_id[N_FEATURES];
+   int   type_sz[N_FEATURES];
    char* string;
    char* string_start;
    unsigned long storage = 0;
@@ -3098,7 +3254,7 @@ secstruct_fprintf_seqpos_map (FILE* stream, const SecStruct* this)
    type_id[SCSTRCT_MTO] = mto;
    type_id[SCSTRCT_VOID] = none;
 
-   for (i = 0; i < N_SCSTRCT; i++)
+   for (i = 0; i < N_FEATURES; i++)
    {
       type_sz[i] = strlen(type_id[i]);
    }
@@ -3112,7 +3268,7 @@ secstruct_fprintf_seqpos_map (FILE* stream, const SecStruct* this)
          elem_idx_prec = this->seq_struct_map[i].idx;
       }
 
-      if (this->seq_struct_map[i].type < N_SCSTRCT)
+      if (this->seq_struct_map[i].type < N_FEATURES)
       {
          storage += type_sz[this->seq_struct_map[i].type];
 
@@ -3198,7 +3354,7 @@ secstruct_fprintf_seqpos_map (FILE* stream, const SecStruct* this)
       msprintf (string, "%*lu:  ", seq_idx_prec, i);
       string += seq_idx_prec + 3;
 
-      if (this->seq_struct_map[i].type < N_SCSTRCT)
+      if (this->seq_struct_map[i].type < N_FEATURES)
       {
          msprintf(string,"%*lu   ",elem_idx_prec,this->seq_struct_map[i].idx);
          string += elem_idx_prec + 3;

@@ -53,7 +53,7 @@ int main(int argc __attribute__((unused)),char *argv[] __attribute__((unused)))
    unsigned long i1, j1, i2, j2, size1, size2;
    Rna* rna;
    SecStruct* structure;
-   secstruct_elements type;
+   SecStructFtrs type;
    unsigned long idx;
 
    char test_string[] = 
@@ -529,47 +529,54 @@ secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2, 0,
    mprintf ("\nMulti loops:\n");
    secstruct_fprintf_multiloops (stdout, structure);
    mprintf ("\n\nSequence position to structural feature map:\n");
+   /*secstruct_delete_element (13,
+                             SCSTRCT_STACK,
+                             structure);*/
+   /*secstruct_delete_stack (2, structure);
+     secstruct_delete_stack (4, structure);*/
+   /*secstruct_delete_stack (12, structure);
+     secstruct_delete_stack (13, structure);*/
    secstruct_fprintf_seqpos_map (stdout, structure);
 
    /* test seq pos -> feature technique */
-   type = secstruct_get_structure_at_pos (0, &idx, structure);
+   type = secstruct_get_feature_at_pos (0, &idx, structure);
    if (type != SCSTRCT_EXTERNAL)
    {
       THROW_ERROR_MSG("Sequence position 0 is not mapped to an external loop.");
       return EXIT_FAILURE;
    }
-   type = secstruct_get_structure_at_pos (3, &idx, structure);
+   type = secstruct_get_feature_at_pos (3, &idx, structure);
    if (type != SCSTRCT_STACK)
    {
       THROW_ERROR_MSG("Sequence position 3 is not mapped to a stacked base.");
       return EXIT_FAILURE;
    }
-   type = secstruct_get_structure_at_pos (7, &idx, structure);
+   type = secstruct_get_feature_at_pos (7, &idx, structure);
    if (type != SCSTRCT_MULTI)
    {
       THROW_ERROR_MSG("Sequence position 7 is not mapped to a multi loop.");
       return EXIT_FAILURE;
    }
-   type = secstruct_get_structure_at_pos (70, &idx, structure);
+   type = secstruct_get_feature_at_pos (70, &idx, structure);
    if (type != SCSTRCT_INTERNAL)
    {
       THROW_ERROR_MSG ("Sequence position 70 is not mapped to an internal "
                        "loop.");
       return EXIT_FAILURE;
    }
-   type = secstruct_get_structure_at_pos (82, &idx, structure);
+   type = secstruct_get_feature_at_pos (82, &idx, structure);
    if (type != SCSTRCT_HAIRPIN)
    {
       THROW_ERROR_MSG ("Sequence position 82 is not mapped to a hairpin loop.");
       return EXIT_FAILURE;
    }
-   type = secstruct_get_structure_at_pos (62, &idx, structure);
+   type = secstruct_get_feature_at_pos (62, &idx, structure);
    if (type != SCSTRCT_BULGE)
    {
       THROW_ERROR_MSG ("Sequence position 62 is not mapped to a bulge loop.");
       return EXIT_FAILURE;
    }
-   type = secstruct_get_structure_at_pos (95, &idx, structure);
+   type = secstruct_get_feature_at_pos (95, &idx, structure);
    if (type != SCSTRCT_MTO)
    {
       THROW_ERROR_MSG ("Sequence position 95 is not mapped as multiple site.");
@@ -577,14 +584,14 @@ secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2, 0,
    }
    else
    {
-      type = secstruct_get_structure_multi_1st (95, &idx, structure);
+      type = secstruct_get_feature_multi_1st (95, &idx, structure);
       if (type != SCSTRCT_MULTI && type != SCSTRCT_STACK)
       {
          THROW_ERROR_MSG ("Sequence position 95 is not mapped as multi loop "
                           "or stacked base pair.");
          return EXIT_FAILURE;
       }
-      type = secstruct_get_structure_multi_2nd (95, &idx, structure);
+      type = secstruct_get_feature_multi_2nd (95, &idx, structure);
       if (type != SCSTRCT_MULTI && type != SCSTRCT_STACK)
       {
          THROW_ERROR_MSG ("Sequence position 95 is not mapped as multi loop "
@@ -592,6 +599,9 @@ secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2, 0,
          return EXIT_FAILURE;
       }
    }
+
+   /* now we try to delete some elements */
+   /*error = secstruct_delete_element (0, 0, structure);*/
 
    secstruct_delete (structure);
    rna_delete (rna);
@@ -600,3 +610,115 @@ secstruct_get_geometry_internal (&i1, &j1, &i2, &j2, &size1, &size2, 0,
 
    return EXIT_SUCCESS;
 }
+/*
+  0:   0   External loop
+  1:   0   External loop
+  2:   0   -> 0  External loop; 0  Stacked base pair;
+  3:   1   Stacked base pair
+  4:   0   Multi loop
+  5:   0   Multi loop
+  6:   0   Multi loop
+  7:   0   Multi loop
+  8:   2   -> 0  Multi loop; 2  Stacked base pair;
+  9:   3   Stacked base pair
+ 10:   0   Hairpin loop
+ 11:   0   Hairpin loop
+ 12:   0   Hairpin loop
+ 13:   0   Hairpin loop
+ 14:   0   Hairpin loop
+ 15:   3   Stacked base pair
+ 16:   2   -> 0  Multi loop; 2  Stacked base pair;
+ 17:   0   Multi loop
+ 18:   0   Multi loop
+ 19:   0   Multi loop
+ 20:   4   -> 0  Multi loop; 4  Stacked base pair;
+ 21:   5   Stacked base pair
+ 22:   1   Multi loop
+ 23:   1   Multi loop
+ 24:   1   Multi loop
+ 25:   1   Multi loop
+ 26:   6   -> 1  Multi loop; 6  Stacked base pair;
+ 27:   7   Stacked base pair
+ 28:   1   Hairpin loop
+ 29:   1   Hairpin loop
+ 30:   1   Hairpin loop
+ 31:   1   Hairpin loop
+ 32:   1   Hairpin loop
+ 33:   7   Stacked base pair
+ 34:   6   -> 1  Multi loop; 6  Stacked base pair;
+ 35:   1   Multi loop
+ 36:   1   Multi loop
+ 37:   1   Multi loop
+ 38:   8   -> 1  Multi loop; 8  Stacked base pair;
+ 39:   9   Stacked base pair
+ 40:   0   Internal loop
+ 41:   0   Internal loop
+ 42:   0   Internal loop
+ 43:   0   Internal loop
+ 44:  10   -> 0  Internal loop; 10  Stacked base pair;
+ 45:  11   Stacked base pair
+ 46:   0   Bulge loop
+ 47:  12   -> 0  Bulge loop; 12  Stacked base pair;
+ 48:  13   Stacked base pair
+ 49:   2   Hairpin loop
+ 50:   2   Hairpin loop
+ 51:   2   Hairpin loop
+ 52:   2   Hairpin loop
+ 53:   2   Hairpin loop
+ 54:   2   Hairpin loop
+ 55:   2   Hairpin loop
+ 56:  13   Stacked base pair
+ 57:  12   -> 0  Bulge loop; 12  Stacked base pair;
+ 58:   0   Bulge loop
+ 59:   0   Bulge loop
+ 60:   0   Bulge loop
+ 61:   0   Bulge loop
+ 62:   0   Bulge loop
+ 63:   0   Bulge loop
+ 64:  11   Stacked base pair
+ 65:  10   -> 0  Internal loop; 10  Stacked base pair;
+ 66:   0   Internal loop
+ 67:   0   Internal loop
+ 68:   0   Internal loop
+ 69:   0   Internal loop
+ 70:   0   Internal loop
+ 71:   0   Internal loop
+ 72:   9   Stacked base pair
+ 73:   8   -> 1  Multi loop; 8  Stacked base pair;
+ 74:   1   Multi loop
+ 75:   1   Multi loop
+ 76:   1   Multi loop
+ 77:  14   -> 1  Multi loop; 14  Stacked base pair;
+ 78:  15   Stacked base pair
+ 79:   3   Hairpin loop
+ 80:   3   Hairpin loop
+ 81:   3   Hairpin loop
+ 82:   3   Hairpin loop
+ 83:   3   Hairpin loop
+ 84:  15   Stacked base pair
+ 85:  14   -> 1  Multi loop; 14  Stacked base pair;
+ 86:   1   Multi loop
+ 87:   0   Not assigned
+ 88:   1   Multi loop
+ 89:   1   Multi loop
+ 90:   5   Stacked base pair
+ 91:   4   -> 0  Multi loop; 4  Stacked base pair;
+ 92:   0   Multi loop
+ 93:   0   Multi loop
+ 94:   0   Multi loop
+ 95:  16   -> 0  Multi loop; 16  Stacked base pair;
+ 96:  17   Stacked base pair
+ 97:   4   Hairpin loop
+ 98:   4   Hairpin loop
+ 99:   4   Hairpin loop
+100:   4   Hairpin loop
+101:   4   Hairpin loop
+102:  17   Stacked base pair
+103:  16   -> 0  Multi loop; 16  Stacked base pair;
+104:   0   Multi loop
+105:   0   Not assigned
+106:   0   Multi loop
+107:   0   Multi loop
+108:   1   Stacked base pair
+109:   0   -> 0  External loop; 0  Stacked base pair;
+ */

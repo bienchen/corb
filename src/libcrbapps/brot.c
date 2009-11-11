@@ -165,6 +165,7 @@ brot_cmdline_parser_postprocess (const struct brot_args_info* args_info,
 static int
 adopt_site_presettings (const struct brot_args_info* args_info,
                         Alphabet* sigma,
+                        Scmf_Rna_Opt_data* data,
                         SeqMatrix* sm)
 {
    unsigned long i;
@@ -226,7 +227,7 @@ adopt_site_presettings (const struct brot_args_info* args_info,
          return 1;
       }
 
-      seqmatrix_fix_col (base, position, sm);
+      seqmatrix_fix_col (base, position, data, sm);
 
       print_verbose ("%s ", args_info->fixed_nuc_arg[i]);
    }
@@ -649,6 +650,7 @@ brot_main(const char *cmdline)
    {
       retval = adopt_site_presettings (&brot_args,
                                       scmf_rna_opt_data_get_alphabet (sim_data),
+                                       sim_data,
                                        sm);
    }
 

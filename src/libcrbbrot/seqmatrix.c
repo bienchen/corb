@@ -38,9 +38,10 @@
  *
  *  Revision History:
  *         - 2008Mar05 bienert: created
+ *         - 2009Nov bienert: Added new hook for seqmatrix_fix_col() 
  *
  *  ToDo:
- *      - remove pairlist from data structure
+ *
  */
 
 
@@ -80,7 +81,11 @@ struct SeqMatrix {
                                  SeqMatrix*);
       int (*transform_row) (const unsigned long, const unsigned long, void*);
       int (*pre_col_iter_hook) (void*, SeqMatrix*);
+      /* hook for fixed sites during seqmatrix_calc_eeff_col_scmf(), e.g. to
+         jump over fixed sites if your energy function is evaluated linearly */
       int (*fixed_site_hook) (void*, unsigned long, SeqMatrix*);
+      /* hook to act upon sites during seqmatrix_fix_col() */
+      int (*fixing_site_hook) (void*, unsigned long, SeqMatrix*);
 };
 
 /**********************   Constructors and destructors   **********************/
@@ -111,6 +116,7 @@ seqmatrix_new (const char* file, const int line)
       sm->transform_row     = NULL;
       sm->pre_col_iter_hook = NULL;
       sm->fixed_site_hook   = NULL;
+      sm->fixing_site_hook  = NULL;
       sm->prob_m            = NULL;
       sm->calc_m            = NULL;
       sm->gas_constant  = 1;
@@ -287,9 +293,9 @@ seqmatrix_switch_current_matrix (SeqMatrix* sm)
  * @param[in] col column to be fixed.
  * @param[in] sm sequence matrix.
  */
-void
+int
 seqmatrix_fix_col (const unsigned long row, const unsigned long col,
-                   SeqMatrix* sm)
+                   void* data, SeqMatrix* sm)
 {
    unsigned long i;
 
@@ -315,6 +321,8 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
    /* set demand to 1 */
    sm->prob_m[row][col] = 1.0f;
    sm->calc_m[row][col] = 1.0f;
+
+   return sm->fixing_site_hook (data, i, sm);
 }
 
 static __inline__ int
@@ -335,6 +343,17 @@ seqmatrix_fixed_site_hook (void* data, unsigned long i,SeqMatrix* sm)
 
    return 0;
 }
+
+static __inline__ int 
+seqmatrix_fixing_site_hook (void* data, unsigned long i, SeqMatrix* sm)
+{
+   assert (data || !data);
+   assert (sm);
+   assert (i < sm->cols);
+
+   return 0;
+}
+
 
 /** @brief Update the columns of a sequence matrix
  *
@@ -444,6 +463,7 @@ seqmatrix_init (const unsigned long rows,
    sm->calc_eeff_row     = seqmatrix_calc_eeff_row_scmf;
    sm->pre_col_iter_hook = seqmatrix_pre_col_iter_hook;
    sm->fixed_site_hook   = seqmatrix_fixed_site_hook;
+   sm->fixing_site_hook  = seqmatrix_fixing_site_hook;
 
    /* allocate matrix */
    sm->rows = rows;
@@ -640,6 +660,15 @@ seqmatrix_set_fixed_site_hook (int (*fixed_site_hook) (void*, unsigned long,
    sm->fixed_site_hook = fixed_site_hook;
 }
 
+void
+seqmatrix_set_fixing_site_hook (int (*fixing_site_hook) (void*, unsigned long,
+                                                         SeqMatrix*),
+                                SeqMatrix* sm)
+{
+   assert (sm);
+   sm->fixing_site_hook = fixing_site_hook;
+}
+
 static __inline__ void
 s_seqmatrix_find_lamb_site (SeqMatrix* sm,
                             unsigned long* row,
@@ -729,7 +758,7 @@ seqmatrix_collate_is (const float fthresh,
       /* set site to 1/0 and fixate it */
       if (largest_amb_col < sm->cols + 1)
       {
-         seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm);
+         seqmatrix_fix_col (largest_amb_row, largest_amb_col, data, sm);
 
          /* simulate */
          /*seqmatrix_print_2_stdout (2, sm);*/
@@ -993,7 +1022,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
 
                   if (sm->prob_m[i][j] > 0.99f)
                   {
-                     seqmatrix_fix_col (i, j, sm);
+                     seqmatrix_fix_col (i, j, sco, sm);
                      i = sm->rows;
                      /* if this works, check if we can omit fixing in collate_is (we still need to search for the next one to fix but do not need to search for > 0.99!) */
                   }

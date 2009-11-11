@@ -1002,10 +1002,13 @@ secstruct_find_interactions (const unsigned long* pairs,
 
 /** @brief Delete a stacked base pair of a secondary structure
  *
- * Removes a base pair from a structure. Please note that we do not check for a
+ * Removes a base pair from a structure. @c index points to the stack as stored
+ * in @c this, not to a sequence position. It may be obtained using
+ * @c secstruct_get_feature_at_pos(). Please note that we do not check for a
  * valid @c index, here.
-   - needs ...
-   - returns ...
+ *
+ * @param[in] index Internal index of stack to be deleted.
+ * @param[in] this SecStruct data object.
  */
 void
 secstruct_delete_stack (const unsigned long index, SecStruct* this)

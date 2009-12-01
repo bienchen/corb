@@ -45,6 +45,7 @@ language please notify the author of the manual.
 * Punctuation::                 
 * Function naming::             
 * Variable naming::             
+* General naming conventions (summary)::  
 @end menu
 
 
@@ -173,7 +174,7 @@ cases, e.g.@: replacement functions for the @code{printf} family from a module
 @code{mprintf} are of course not called @code{mprintf_printf}.
 
 
-@node Variable naming,  , Function naming, General rules
+@node Variable naming, General naming conventions (summary), Function naming, General rules
 @subsection Variable naming
 @cindex Variable naming
 @cindex Names
@@ -199,6 +200,27 @@ or
 @end example
 @noindent
 For indices, single characters are allowed.
+
+
+@node General naming conventions (summary),  , Variable naming, General rules
+@subsection General naming conventions (summary)
+@cindex Names
+@cindex Variable naming
+@cindex Function naming
+@multitable @columnfractions .1 .45
+@headitem Entity @tab Convention
+@item Everything @tab @strong{Never} start with ``_''
+@item Variables @tab All lower case, align naturally using ``_'' instead of
+      whitespaces
+@item Constant values @tab All upper case, align naturally using ``_'' instead
+      of whitespaces
+@item Functions @tab All lower case, align naturally using ``_'' instead of
+      whitespaces
+@item Classes/ Datatypes @tab CamelCase, compound of words without
+      whitespaces/ ``_''
+@item Components/ Attributes @tab All lower case, align naturally using ``_''
+      instead of whitespaces
+@end multitable
 
 
 @node C,  , General rules, Coding
@@ -240,7 +262,9 @@ The flags used for developing are very restrictive and pedantic. This should
 ensure a very high level of compatibility among different systems.
 
 Several compilers are supported beside @gcc{}. It is definitively a good idea to
-check your code with all supported and freely available compilers. @xref{Special Targets, Special @make{} Targets, Special @make{} Targets}, for more details on how @corb{}'s build system simplifies testing.
+check your code with all supported and freely available compilers.
+@xref{Special Targets, Special @make{} Targets, Special @make{} Targets}, for
+more details on how @corb{}'s build system simplifies testing.
 
 
 @node typedef, Ordering, CFLAGS, C
@@ -264,9 +288,9 @@ objects from largest to smallest. This avoids padding to get best alignment.
 @cindex @code{#ifdef}
 @cindex @code{#ifndef}
 @cindex @code{__cplusplus}
-@emph{All} source files must include @file{config.h} as topmost header before any other --- even system --- headers. This is
-the configuration header of the GNU build system and is created by the
-@configure{} script.
+@emph{All} source files must include @file{config.h} as topmost header before
+any other --- even system --- headers. This is the configuration header of the
+GNU build system and is created by the @configure{} script.
 
 Standard headers should follow the configuration header immediately. After
 this come the @corb{} headers and then your own.
@@ -516,6 +540,11 @@ As you may have noticed, enumerators in @corb{} are written in all upper case
 with @samp{_} for nice alignment. Also consider using a common prefix
 throughout certain enumerations, e.g.@: use @code{ERR_@dots{}} for error codes.
 Each enumerator should immediately be followed by a short line of description.
+
+If you have to give a name to your enumeration, e.g.@: because you use it in a
+prototype, use the same naming scheme as for data structures.
+@c xxx link to structs
+@c xxx should we mention how to handle switch-statements with harsh cflags?
 @c xxx what about unique prefixes for files/ modules/ libs?
 
 @node Visibility, External Libraries, Enumerations (enum)/ Multidimensional arrays, C
@@ -970,9 +999,9 @@ header. But lets just say this is OK.
 @c - everything lc/ uc?
 @c   - Classes/ Datatypes: StudlyCaps, e.g. SecStruct
 @c     - components/ attributes: lower case, _
-@c   - constants: Start with upper, than lower case, _?
+@c     - own section for structs?
+@c   - constants: Start with upper, then lower case, _?
 @c   - globals: Upper case, _
-@c   - enum names: Upper case, _
 @c - never start anything with _
 @c - __ rule in all tables!
 @c - line of comment after components, etc
@@ -983,6 +1012,7 @@ header. But lets just say this is OK.
 
 @c   - C section: - macros: Upper case, _
 @c                - functions: add s_ stuff
+@c                - enums
 
 @c - params const
 @c - name for enums?

@@ -207,7 +207,7 @@ For indices, single characters are allowed.
 @cindex Names
 @cindex Variable naming
 @cindex Function naming
-@multitable @columnfractions .1 .45
+@multitable @columnfractions .25 .75
 @headitem Entity @tab Convention
 @item Everything @tab @strong{Never} start with ``_''
 @item Variables @tab All lower case, align naturally using ``_'' instead of
@@ -246,6 +246,7 @@ For indices, single characters are allowed.
 * Memory allocation philosophy and responsibility::  
 * File handling::               
 * Conditional compilation::     
+* C naming conventions (summary)::  
 @end menu
 
 
@@ -831,7 +832,7 @@ comments.
 
 @c xxx Note: can one do fseek/ fpos with the interface?
 
-@node Conditional compilation,  , File handling, C
+@node Conditional compilation, C naming conventions (summary), File handling, C
 @subsection Conditional compilation
 @cindex Conditional compilation
 @cindex @code{#ifdef}
@@ -986,34 +987,39 @@ Last but not least a little hint: Conditional compilation is in fact used
 everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
 header. But lets just say this is OK.
 
+@node C naming conventions (summary),  , Conditional compilation, C
+@subsection C naming conventions (summary)
+@cindex Names (C)
+@cindex Variable naming (C)
+@cindex Function naming (C)
+@cindex @code{enum} naming
+@cindex @code{struct} naming
+@multitable @columnfractions .25 .75
+@headitem Entity @tab Convention
+@item Everything @tab @strong{Never} start with ``_''
+@item Variables @tab All lower case, align naturally using ``_'' instead of
+      whitespaces
+@item Global constants @tab All upper case, align naturally using ``_''
+      instead of whitespaces
+@item Functions @tab All lower case, align naturally using ``_'' instead of
+     whitespaces, begin with modul name, begin with ``s_'' for
+     @code{static}'s
+@item Function parameters @tab Common module-prefix, all lower case, align
+      naturally using ``_'' instead of whitespaces
+@item @code{struct} @tab CamelCase, compound of words without whitespaces/
+      ``_''
+@item @code{struct} field-names @tab All lower case, align naturally using 
+      ``_'' instead of whitespaces
+@item @code{enum} @tab CamelCase, compound of words without whitespaces/
+      ``_''
+@item @code{enum} members @tab Common prefix, all upper case, align
+      naturally using ``_'' instead of whitespaces
+@item Macros @tab All upper case, align naturally using ``_'' instead of
+      whitespaces
+@end multitable
+
 @c -------------------------
 @c - if possible: calc no. from other consts
 @c - one reason for memmegr: valgrind/ efence not available on all systems
 @c - exit states: EXIT_SUCCESS, EXIT_FAILURE
 @c - global vars?
-@c ab hier
-
-@c naming scheme
-@c - first check where to put this in existing text
-@c - second: make a summary in a table for each language
-@c - everything lc/ uc?
-@c   - Classes/ Datatypes: StudlyCaps, e.g. SecStruct
-@c     - components/ attributes: lower case, _
-@c     - own section for structs?
-@c   - constants: Start with upper, then lower case, _?
-@c   - globals: Upper case, _
-@c - never start anything with _
-@c - __ rule in all tables!
-@c - line of comment after components, etc
-@c - most vals not changeable written upper case, can't distinguish between e.g. macros and constants, but: if you want to change you have to find the definition, anyway.
-
-@c   - General section: - function names: Lower case, _
-@c                      - variables: Lower case, _
-
-@c   - C section: - macros: Upper case, _
-@c                - functions: add s_ stuff
-@c                - enums
-
-@c - params const
-@c - name for enums?
-@c - separete section naming or mentioned where it applies?

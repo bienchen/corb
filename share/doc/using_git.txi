@@ -2,8 +2,35 @@
 @chapter Using @git{}
 
 @c This file is part of `CoRB --- A Developers Handbook`
-@c Copyright (C) 2008 Stefan Bienert
+@c Copyright (C) 2010 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
 @cindex GIT
 @cindex Versioning system
+
+@c Setup
+@c short preface
+@c - description of how git is used by corb developers
+@c - since we are no experts, might be not as intended (humble attempt...)
+@c - if you know exactly how stuff should go, teach other devs
+@c - change here
+@c - beside git usage, description of git hook interface
+ 
+@c usage of git by corb
+@c - cloning
+@c - branching
+@c - switching branches
+@c - comitting
+@c - rebasing
+@c - merging
+@c - updating (pulling/ pushing)
+@c - status
+@c - aliases?
+@c - colors?
+@c - failed updates
+
+@c git hooks
+@c - possibility to carry out commands on certain git events
+@c - we use it to verify corb coding conventions in your commits
+@c - not enabled automatically --> you have to enable it
+@c - describe how to enable it

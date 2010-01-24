@@ -41,12 +41,12 @@ this manual for you.), here is the quick way to go:
 
 
 @node Requirements, Unpacking the Sources, For the Impatient, Installation
-@section Requirements to build @crbtool{CoRB}
+@section Requirements to build @corb{}
 @cindex Requirements
 @cindex Required
 @cindex Dependencies
-We try to keep the requirements of @crbtool{CoRB} to a minimum. But there are
-at least three@footnote{Four, we just exclude the need for @crbtool{tar} and
+We try to keep the requirements of @corb{} to a minimum. But there are
+at least three@footnote{Four, we just exclude the need for @tar{} and
 decompression tools to unwrap the package.} bits you need, so essential that
 most people will make fun of us because we name them. On the other hand, users
 from the non-@unix{}-side of the universe will feel a cold sweat on their back
@@ -146,7 +146,7 @@ unpack the @corb{} sources at the command line:
 where @samp{xyz} is the version number of your archive.
 
 This command will extract (@samp{tar -x}) the source code from the archive
-compressed in the @crbtool{gzip} format (@samp{tar -z}) into a directory
+compressed in the @gzip{} format (@samp{tar -z}) into a directory
 @file{corb}
 @pindex gzip
 in the calling directory (in this particular case, your home directory).
@@ -185,7 +185,7 @@ personal build environment.
 
 
 @node The configure Script, Options of the configure script, Configuring the Build Environment, Configuring the Build Environment
-@subsection The @crbtool{configure} Script
+@subsection The @configure{} Script
 @cindex configure script
 @cindex configure
 The @configure{} script is the central utility. It creates the makefiles used
@@ -208,7 +208,7 @@ To learn more about the options of the @configure{} script, try
 in a shell.
 
 @node Options of the configure script, Running the configure script, The configure Script, Configuring the Build Environment
-@subsection Options of the @crbtool{configure} Script
+@subsection Options of the @configure{} Script
 @cindex configure script
 @cindex configure
 Calling the @configure{} script with option @option{--help}, will produce
@@ -502,7 +502,7 @@ the @corb{} package.
 @unnumberedsubsubsec @option{--with-read-viennaparams}
 You should just ignore this option.
 
-This option enables the creation of the tool @crbtool{read_viennaparams} in the
+This option enables the creation of the tool @readviennaparams{} in the
 sub-directory @file{share/misc/bin/} of your build directory. This tool is used
 to copy the scoring function of the @uref{http://www.tbi.univie.ac.at/RNA/,
 Vienna RNA Package} into @corb{} code.
@@ -514,12 +514,12 @@ directory of the @corb{} package.
 @unnumberedsubsubsec @option{--with-ex-cmp-er2de-rnaeval}
 You should just ignore this option.
 
-This option enables the creation of the tool @crbtool{ex_cmp_er2de_rnaeval} in
+This option enables the creation of the tool @excmperdernaeval{} in
 the sub-directory @file{share/misc/bin/} of your build directory. This tool is
 used to compare the scoring function in @corb{} with the
 @uref{http://www.tbi.univie.ac.at/RNA/, Vienna RNA Package}. This means, after
-updating the scores using @crbtool{read_viennaparams}, we verify them using
-@crbtool{ex_cmp_er2de_rnaeval}.
+updating the scores using @readviennaparams{}, we verify them using
+@excmperdernaeval{}.
 
 If invoked, the tool is not installed but stays in the @file{share/misc/bin}
 directory of the @corb{} package.
@@ -528,14 +528,14 @@ directory of the @corb{} package.
 @unnumberedsubsubsec @option{--with-opt-brot-design-terms}
 You may just ignore this option.
 
-This option enables the creation of the tool @crbtool{opt_brot_design_terms} in
+This option enables the creation of the tool @optbrotdesignterms{} in
 the sub-directory @file{share/misc/bin/} of your build directory. This tool is
 used to optimise the default parameters in @brot{}.
 
-@crbtool{opt_brot_design_terms} utilises the @emph{simplex algorithm} to
+@optbrotdesignterms{} utilises the @emph{simplex algorithm} to
 optimise parameters. For this task, we provide a generalised version of this
 algorithm in the Perl scripting language. You may use this code for your own
-needs under the terms of the GPL. With @crbtool{opt_brot_design_terms} you have
+needs under the terms of the GPL. With @optbrotdesignterms{} you have
 an excellent example on how to use our simplex.
 
 If invoked, the tool is not installed but stays in the @file{share/misc/bin}
@@ -544,14 +544,14 @@ directory of the @corb{} package.
 @node --with-brot-iterative, --with-eval-structure-file, --with-opt-brot-design-terms, Options of the configure script
 @unnumberedsubsubsec @option{--with-brot-iterative}
 If you are planning to use @brot{}, this option might come in handy. It enables
-the creation of the tool @crbtool{brot_iterative} in the sub-directory
+the creation of the tool @brotiterative{} in the sub-directory
 @file{share/misc/bin/} of your build directory. It iteratively utilises the
 @brot{} utility to design a sequence.
 
 @brot{} alone only designs a sequence for a given structure. This does not
 include folding the sequence and comparing its structure to its input. Using
 tools of the @uref{http://www.tbi.univie.ac.at/RNA/, Vienna RNA Package}, this
-is what @crbtool{brot_iterative} does for 2D, pseudoknot-free structures.
+is what @brotiterative{} does for 2D, pseudoknot-free structures.
 
 If invoked, the tool is not installed but stays in the @file{share/misc/bin}
 directory of the @corb{} package.
@@ -560,7 +560,7 @@ directory of the @corb{} package.
 @unnumberedsubsubsec @option{--with-eval-structure-file}
 You may just ignore this option.
 
-This option enables the creation of the tool @crbtool{eval_structure_file} in
+This option enables the creation of the tool @evalstructurefile{} in
 the sub-directory @file{share/misc/bin/} of your build directory. It runs
 @brot{} on a file with several structures and calculates a quality score. This
 is used in @brot{} development for benchmarking.
@@ -570,7 +570,7 @@ directory of the @corb{} package.
 
 
 @node Running the configure script,  , Options of the configure script, Configuring the Build Environment
-@subsection Running the @crbtool{configure} script
+@subsection Running the @configure{} script
 @cindex configure script
 @cindex configure
 @cindex Running configure
@@ -587,7 +587,7 @@ where @samp{[OPTIONS]} are the options you have chosen from above and
 
 
 @node Building CoRB, Installing CoRB, Configuring the Build Environment, Installation
-@section Building @crbtool{CoRB}
+@section Building @corb{}
 Once you have configured the build system, building @corb{} is as easy as
 typing
 @example
@@ -616,7 +616,7 @@ worry: These are just the tests on the error recovery system.
 
 
 @node Installing CoRB,  , Building CoRB, Installation
-@section Installing @crbtool{CoRB}
+@section Installing @corb{}
 After configuring and building, installing @corb{} on your system is only one
 @make{} target away:
 @example

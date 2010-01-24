@@ -1,4 +1,4 @@
-@node For the impatient, Preface, corb Copying Conditions, Top
+@node For the impatient, Preface, CoRB Copying Conditions, Top
 @unnumbered Quickstart
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -14,6 +14,7 @@ However, this is not the short version of what to consider while developing
 @corb{}. Before you really start programming, you should at least glance at
 @ref{Coding}. If you never used @git{} before, you should definitively skim
 through ref git.
+@c xxx set ref to git chapter here
 
 Now for the steps necessary to getting started. Please note that we start at
 the very beginning. You probably have already encountered some of these steps

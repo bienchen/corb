@@ -54,13 +54,13 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @c  IV: `Top' Node and Master Menu
 @ifnottex
-@node Top, corb Copying Conditions, (dir), (dir)
+@node Top, CoRB Copying Conditions, (dir), (dir)
 @top @crbtitleuse{}
 @insertcopying
 @end ifnottex
 
 @menu
-* corb Copying Conditions::     
+* CoRB Copying Conditions::     
 * Preface::                     
 * Symbolism & Abbreviations::   
 * Installation::                

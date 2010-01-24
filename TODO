@@ -2,7 +2,7 @@ Copyright (C) 2008 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2010-01-29.14
+Last modified: 2010-04-03.01
 
 Build system
 ------------
@@ -98,6 +98,11 @@ libcrbalpha ->  alphabets
               - also for compression?
 array stuff: Create internal array class via macros, void* array class/
              array class with unions for base types?
+
+Manuals
+-------
+- Check which txi files need "A Dev.Handbook" or "A Users Manual" in the
+  copyright note in the header
 
 Files
 -----

@@ -1,5 +1,5 @@
 @node Rummaging around the CoRB, and Everything, Installation, Top
-@chapter Rummaging around the @crbtool{CoRB}
+@chapter Rummaging around the @corb{}
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2009 Stefan Bienert
@@ -30,8 +30,8 @@ principle behind @corb{}.
 
 @pindex corb
 The idea of @corb{} is to encapsulate everything in one single program, the
-@crbtool{corb} binary. For you, this means that each tool is started as an
-argument of @crbtool{corb}:
+@corb{} binary. For you, this means that each tool is started as an
+argument of @corb{}:
 @example
 
 [~/@dots{}] $ corb "TOOL [OPTIONS] [DATA]"
@@ -64,12 +64,13 @@ only one file to copy.
 If you find any more advantages, please let us know.
 
 @end itemize
-@c xxx if the handling is to anoying, use aliases
+@c xxx if the handling is to anoying, use aliases (describe, once " has
+@c     vanished from the CLI)
 
 @c tools...
 @node BROT, ER2DE, Philosophy, Rummaging around the CoRB
-@section @crbtool{BROT}
-@cindex @crbtool{BROT}
+@section @brot{}
+@cindex @brot{}
 @pindex brot
 
 @brot{} is our @emph{b}asic @emph{R}NA @emph{o}ptimisation @emph{t}ool. The
@@ -87,11 +88,11 @@ optimise a given RNA molecule concerning its stability.
 @node Overview, Input Data, BROT, BROT
 @subsection Overview
 @float Figure,fig:brot-ex1
-@center @crbimage{brot-mission, 15cm,, Throw your structure into @crbtool{BROT} and recieve a sequence.}
-@caption{The @crbtool{BROT} mission.}
+@center @crbimage{brot-mission, 15cm,, Throw your structure into @brot{} and recieve a sequence.}
+@caption{The @brot{} mission.}
 @end float
 
-For its design task, @crbtool{BROT} uses a mean field approach, treating RNA
+For its design task, @brot{} uses a mean field approach, treating RNA
 not longer as a simple sequence, but as a system of 4-state sites. The goal is,
 to drive this system into corner points, where each site has a probability of 1
 of being a single base type. The alley leading to this goal adjusts
@@ -112,12 +113,22 @@ a maximum number of iterations.
 
 @end itemize
 
-To calculate energies, @crbtool{BROT} utilises three ``energy'' terms. One
-to design intended interactions, another to avoid unwanted pairing and the
-last should produce more heterogeneous sequences. These terms are
-tunable, @pxref{Options} for detailed information.
+@c One term to pair the sites, one term to divorce them,
+@c one term to mix them up and in a heterogenous sequence fix them.
 
-As input, @crbtool{BROT} takes everything, small and large structures. Larger
+@c xxx options for energy terms
+@c xxx red cape for usual options, wolfs ass for detailed ones
+
+To calculate energies, @brot{} utilises four ``energy'' terms. One
+to design intended interactions, another to avoid unwanted pairing and one
+should produce more heterogeneous sequences. These terms are
+tunable, @pxref{Options} for detailed information. The last energy  
+contribution, however, only exists, because the literature scoring scheme
+lacks parameters for non-canonical base pairs. Therefore we apply a sharp
+penalty to avoid pairing of non-unitable (according to the literature model)
+nucleotides.
+
+As input, @brot{} takes everything, small and large structures. Larger
 structures need more time, but the composition of structural features also
 influences the running time. Basically, we scale linearly with structure size.
 With growing structures, if not all sites can be fixed in a single run,
@@ -126,9 +137,9 @@ time nonlinearly.
 
 Up to now you might be wondering that we say nothing on the evaluation of a
 designed sequence. This is due to the fact, that there is no such thing in
-@crbtool{BROT}, since there is no iterative refinement implemented in the tool
+@brot{}, since there is no iterative refinement implemented in the tool
 itself. This has three major reasons. First, our evaluation of the software
-revealed, that it is usually enough to run @crbtool{BROT} once, to generate a
+revealed, that it is usually enough to run @brot{} once, to generate a
 good answer. The second point is just its complexity. Since the simulation
 method depends on more than 10 parameters, we decided against anything beyond
 the design task, avoiding adding even more options to the software. The last
@@ -137,49 +148,53 @@ folding methods. Nowadays, there are tools predicting the secondary structure
 of RNA following a @emph{minimum free energy} (MFE) approach, using the
 @emph{partition function} (PF) or with one of the numerous
 @emph{statistical models}. We believe it should be your choice which methods
-fits your needs, best. Furthermore, @crbtool{BROT} is able to design sequences
+fits your needs, best. Furthermore, @brot{} is able to design sequences
 for structures containing pseudoknots, which is still a hard task to predict
 using common prediction schemes. 
 
 Therefore it is up to you to verify the design. Since the results of
-@crbtool{BROT} do not depend on its algorithm but on the energy/ scoring
+@brot{} do not depend on its algorithm but on the energy/ scoring
 function, it should be compatible with any structure prediction tool you can
-think of. If there is need for refinement, the idea is to rerun @crbtool{BROT}
+think of. If there is need for refinement, the idea is to rerun @brot{}
 with certain sites fixed. Thereby you are in charge to define what is to be
-considered fixed and which sites are to be left variable. The @crbtool{CoRB}
+considered fixed and which sites are to be left variable. The @corb{}
 source-code package comes with a simple Perl script, usable as a template how
-to drive @crbtool{BROT} iteratively, called @crbtool{brot_iterative}
-(@pxref{--with-brot-iterative}).
+to drive @brot{} iteratively, called @brotiterative{}
+(@pxref{--with-brot-iterative, @option{--with-brot-iterative}, @option{--with-brot-iterative}}).
 
-@c Considering the usage of a scoring function by @crbtool{BROT}, pseudoknots
+@c Considering the usage of a scoring function by @brot{}, pseudoknots
 @c are especially to be named. In the current state of development, we treat
 @c knots in a 2D structure as additional secondary structure elements. This
 @c means, that there are no special contributions/ terms for pseudoknots in the
 @c scoring scheme.
 
+@c xxx is this true for new way to partition sec.struct?
 @brot{} can treat pseudoknots, but they are simply secondary structure. There
 are no special scoring parameters.
 
-The last item on our introductory-agenda is the robustness of @crbtool{BROT}.
-As for all sequence design tools we know of, there are cases where they do not
-find a valid result. Speaking of @crbtool{BROT} this shows by two sites which
-are intended to interact, but are inhabited by bases which can not form a
-canonical Watson-Crick base pair. Since the result-sequence is not checked by
-@crbtool{BROT}, it is always a good idea to run your result through 
+@c xxx needs description of er2de
+The last item on our introductory-agenda is the robustness of @brot{}.
+As for all sequence design tools we know of, there are cases (input structures/
+parameter settings) where they do not find a valid result. Speaking of
+@brot{} this shows by two sites which are intended to interact, but are
+inhabited by bases which can not form a canonical Watson-Crick base pair. Since
+the result-sequence is not checked by @brot{}, it is always a good idea
+to run your result through 
 @pindex er2de
-@crbtool{ER2DE} (@pxref{ER2DE}).
+@erde{} (@pxref{ER2DE}).
 
 @node Input Data, Output, Overview, BROT
 @subsection Input Data
 As input for the  design task, we use RNA 2D structures. The simplest
-specification of this would be a list of base pairs. @crbtool{BROT} however,
+specification of this would be a list of base pairs. @brot{} however,
 eats structures in Vienna notation immediately on the command line or wrapped
 in a file.
-@c (@strong{SEE OPTION -f},@strong{LINK TO SECTION ON CoRB FILE FORMATS}).
+@c xxx (@strong{SEE OPTION -f},@strong{LINK TO SECTION ON CoRB FILE FORMATS}).
 
-Be aware that @crbtool{BROT} loves all kinds of twisted secondary structures,
+Be aware that @brot{} loves all kinds of twisted secondary structures,
 including pseudoknots, as long as they are formed by canonical base pairs.
 
+@c xxx needs description of er2de
 @node Output, Options, Input Data, BROT
 @subsection Output
 Since this is all about sequence design, the output is just a plain RNA
@@ -187,21 +202,120 @@ sequence printed to the command line.
 
 If you need the stability of the sequence folded into the input structure, use 
 @pindex er2de
-@crbtool{ER2DE} (@pxref{ER2DE}).
-
-@c - to get energy use er2de
+@erde{} (@pxref{ER2DE}).
 
 
 @node Options,  , Output, BROT
 @subsection Options
-@c - options are unnumbered
 
+@menu
+* --scoring=NAME::              
+@end menu
+
+@c - we should put somewhere, how to get to help/ detailed help output
+@c - options are unnumbered
+@c - fst options: energy functions to please link
 @c - something on energy function? Later with options!
 @c - something on nn -> own section in general chapter
 
+@c      --help                    Print help and exit
+@c      --detailed-help           Print help, including all details and hidden 
+@c                                  options, and exit
+@c      --full-help               Print help, including hidden options, and exit
+@c  -V, --version                 Print version and exit
+@c  -v, --verbose                 Enable verbose mode
+@c  If set, additional information will be provided during run.
+@c  -f, --file                    Read structure from file
+@c  If set, STRUCTURE has to be a path to a file carrying the                  
+@c  structure to be used.
+@node --scoring=NAME,  , Options, Options
+@unnumberedsubsubsec @option{--scoring=NAME}, @option{-c}
+@cindex Scoring
+@c xxx option index
+@c xxx -c, --scoring=NAME    Choose a different scoring scheme  (possible 
+@c xxx                       values="NN", "nussinov", "simpleNN" 
+@c xxx                       default=`NN')
+@c xxx Use a certain energy model to score the RNA sequence. Possible NAMEs are
+@c xxx `NN', `nussinov' and `simpleNN'.                  
+@c xxx `nussinov' uses a Nussinov model, only counting Hbonds. `NN' invokes the
+@c xxx Nearest Neighbour model. `simpleNN' uses a very coarse grained
+@c xxx approximation of the Nearest Neighbour model, scoring every base pair as
+@c xxx a stack, averaging mismatches in stacked pairs and without any loop
+@c xxx parameters.
+@c  -n, --fixed-nuc=NUCLEOTIDE:INT
+@c                                Preset a nucleotide in a position
+@c  Use a fixed nucleotide in a position in the sequence during              
+@c  the simulation. As NUCLEOTIDE A, C, G and U are allowed. The               
+@c  position INT has to be in the range of the structure. Index              
+@c  starts at 0.
+@c  -s, --steps=INT               Number of iterations  (default=`1000')
+@c  Iteration steps for the update of site probabilities.
+@c  -t, --temp=FLOAT              Initial temperature  (default=`2')
+@c  Initial temperature of the system.
+@c  -r, --seed=INT                Random seed
+@c  Random seed used for adding thermal noise to the Nearest                  
+@c  Neighbour model. This is used for producing different answers              
+@c   for the same structure. Adding thermal noise means adding                  
+@c  small random numbers to all parameters. The range of those                  
+@c  numbers is [0.005, -0.005] and should be beyond the level of               
+@c  significance. Since we use a correlated random number                  
+@c  generator you can reproduce answers by using the same seed.                
+@c  Only takes effect when using with `NN' as scoring scheme. If                
+@c  seed is given as 0, adding noise is omitted. If option is not              
+@c   set at all, system time is used for seeding.
+@c xxx -d, --negative-design-scaling=FLOAT
+@c xxx                           Scale negative design term  (default=`0.42')
+@c xxx Scaling factor for the negative design term.
+@c xxx -h, --heterogenity-term-scaling=FLOAT
+@c xxx                               Scale heterogenity term  (default=`9.73')
+@c xxx Scaling factor for the sequence heterogenity term.
+@c  -p, --entropy-output=FILENAME Write down entropy and temperature changes
+@c  Write the changes of the sequence matrix entropy, short and                
+@c  long term avg.'s and temperature to given file. Only values                
+@c  from the simulation of interest are written.
+@c  -m, --simulation-output=FILENAME
+@c                                Write down the matrix of each step
+@c  Write the sequence matrix after each step of the simulation to              
+@c    a file. Each matrix is preceeded by its sequence of most                  
+@c  probable bases, each row makes up a site and the columns
+@c                   denote the states. Only the first simulation is observed.
+@c xxx -w, --window-size=INT         Window size for the heterogeneity term  
+@c xxx                                 (default=`1')
+@c xxx Size of the window to the left and right of a base to be                 
+@c xxx considered for calculating the heterogeneity term when using           
+@c xxx the `NN' scoring scheme. Please note that this is always only           
+@c xxx one half of the window. Only takes effect when using with `NN'         
+@c xxx as scoring scheme.
+@c  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  
+@c                                  (default=`0.337')
+@c  If the entropy of the sequence matrix drops below this value,              
+@c   the simulation will stop.
+@c  -l, --lambda=FLOAT            Portion of a new step to be accepted  
+@c                                  (default=`0.627')
+@c  Describes the portion of an old probability to be mixed with               
+@c  the new one. The old probability gets l a share of l, the new              
+@c   (1 - l). Used to avoid oscillation in the system.
+@c  -o, --beta-long=FLOAT         Define the long term entropy contribution  
+@c                                  (default=`0.949')
+@c  Share of the current long term avg. entropy to be used for the              
+@c    next step. New value calculates from   o * S_long + (1-o) *  S_current.
+@c  -i, --beta-short=FLOAT        Define the short term entropy contribution  
+@c                                  (default=`0.5')
+@c  Share of the current short term avg. entropy to be used for                 
+@c  the next step. New value calculates from               o * S_short + (1-o) 
+@c  * S_current.
+@c  -u, --speedup-threshold=FLOAT Speedup/ slow down cooling threshold  
+@c                                  (default=`0.816')
+@c  If the ratio of current short- and long term entropy drops                  
+@c  below this value, we slow down cooling, above we speed up.
+@c  -j, --min-cool=FLOAT          Minimal cooling factor  (default=`0.866')
+@c  If the cooling factor drops below this value we do no further               
+@c   speedups.
+
+
 @node ER2DE,  , BROT, Rummaging around the CoRB
-@section @crbtool{ER2DE}
-@cindex @crbtool{ER2DE}
+@section @erde{}
+@cindex @erde{}
 @pindex er2de
 
 @c xxx Additional sections on energy models? Running time?
@@ -228,4 +342,5 @@ If you need the stability of the sequence folded into the input structure, use
 @c   - Save img. scaled to right size: Scaling does not work for html
 @c   - store imgs im in doc dir, because pics are dep. of manual so its just
 @c     the easiests way
-
+@c - GNU manual convention: cindex entries start with lower case beside for
+@c   names and acronyms

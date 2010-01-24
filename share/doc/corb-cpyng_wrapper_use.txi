@@ -1,4 +1,4 @@
-@node corb Copying Conditions, Preface, Top, Top
+@node CoRB Copying Conditions, Preface, Top, Top
 @unnumbered @corb{} Copying Conditions
 
 @c This file is part of `CoRB --- A Developers Handbook`

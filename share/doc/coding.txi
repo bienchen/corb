@@ -13,8 +13,8 @@
 @cindex Style of code
 Since @corb{} is a cooperative software project, a common layout is regarded
 indispensable. This starts at code layout --- blocks, use of whitespaces,
-indentation, @dots{} ---, comes across function names, documentation and goes
-on with how to write manuals.
+indentation, @dots{} ---, goes to function names, documentation and how to
+write manuals.
 
 Here we describe general notes and rules, first. In the second part of this
 chapter a set of language specific rules is listed.
@@ -31,7 +31,7 @@ chapter a set of language specific rules is listed.
 @cindex General rules
 This is a set of rules applying to all programming languages used in @corb{}.
 If you find one of these general rules not to be applicable to a certain
-language please notify the author of the manual.
+language, please notify the author of the manual.
 
 
 @menu
@@ -87,8 +87,7 @@ Use a British English dictionary for spell checking.
 @cindex Tabs
 There are @emph{no} tab characters. Use spaces.
 
-The only exception are @file{Makefiles}. If you have to write your own targets
-(e.g.@: to extend an Automake target) you still need tabs to precede rules.
+The only exception are @file{Makefiles}.
 
 
 @node  Indentation, Line size, Tabs, General rules
@@ -97,8 +96,8 @@ The only exception are @file{Makefiles}. If you have to write your own targets
 @cindex Parenthesis
 @cindex Block layout
 Indentation is almost pure Kernighan and Ritchie with three spaces. Block
-parenthesis line up with the introducing statement.
-In @emacs{} this can be achieved by setting @code{c-default-style}
+parentheses line up with the introducing statement.
+In @emacs{} this can be achieved by setting @code{c-default-style} to
 @code{ellemtel}.
 
 
@@ -113,7 +112,7 @@ makes it more readable for others.
 @subsection Punctuation
 @cindex Punctuation
 There should usually be a space after punctuation, for exactly the same reasons
-as in English (helping readability). Commas and semi-colons definitely want to
+as in English (readability). Commas and semi-colons definitely want to
 be followed by a space.
 
 Do not write
@@ -171,7 +170,7 @@ good idea, here.
 
 There are exceptions to these rules in @corb{}. But these are always special
 cases, e.g.@: replacement functions for the @code{printf} family from a module
-@code{mprintf} are of course not called @code{mprintf_printf}.
+@code{mprintf} are, of course, not called @code{mprintf_printf}.
 
 
 @node Variable naming, General naming conventions (summary), Function naming, General rules
@@ -183,13 +182,13 @@ Variable names use lowercase letters only. For improved readability space your
 names with underscores.
 
 Use ``telling'' variable names. That is, do not use arbitrary character
-combinations. Also do not use names which tell you the whole live of a
-variable, significant abbreviations are allowed. Use
+combinations. Also do not use names which tell you the whole life of a
+variable. Significant abbreviations are allowed. Use
 @example
   curr_atom
 @end example
 @noindent
-above
+rather than
 @example
   currently_visited_atom_of_molecule
 @end example
@@ -272,14 +271,15 @@ more details on how @corb{}'s build system simplifies testing.
 @subsection @code{typedef}
 @cindex @code{typedef} rules
 With its information-hiding approach, @code{typedef}s are allowed in @corb{}.
-Structures which are hidden from public should be @code{typedef}ed by default.
+Public structures, with a private definition, should be @code{typedef}ed by
+default.
 
 
 @node Ordering, Include files, typedef, C
 @subsection Ordering
-The order in which you declare variables should make no difference. On the
-Compaq, at least within structures, the compiler makes noise unless you order
-objects from largest to smallest. This avoids padding to get best alignment.
+The order in which you declare variables should make no difference. On some
+machines, structure elements should be ordered from largest to smallest, to
+avoid padding.
 
 
 @node Include files, Boolean, Ordering, C
@@ -367,8 +367,8 @@ where it is really expensive, e.g.@: recursive functions. Usually putting an
 @crbmacro{assert(SOMETHING)} only raises the constant of your running time so
 your code will run longer, not endlessly.
 
-Since assertions are not available by default, you must not do anything else
-beside checking for values in an @crbmacro{assert}-statement. Something like
+Since assertions are not turned on by default, you must not do anything other
+than check for values in an @crbmacro{assert}-statement. Something like
 @example
 
    assert(var = function());
@@ -408,53 +408,49 @@ invokes @option{--enable-assert} automatically.
 We do not make extensive use of macros.
 
 We do @emph{not} use functional macros. The problem with functional macros is
-parameter evaluation. Each time a parameter is used in macro code, it is
-evaluated. Assume we have a macro to find the smaller of two values:
-@example
+recurring parameter evaluation. This may lead to unwanted side effects. 
+@c Assume we have a macro to find the smaller of two values:
+@c @example
+@c    #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+@c @end example
+@c @noindent
+@c Now we use this macro with two variables:
+@c @example
+@c
+@c    min = MIN(i++, j++);
+@c @end example
+@c @noindent
+@c Evaluates to:
+@c @example
+@c   min = (i++) < (j++) ? (i++) : (j++);
+@c @end example
+@c @noindent
+@c Additionally macros of such type will increase the running time of your code
+@c when used with function calls as parameters.
 
-   #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+@c We @emph{never} use variables names in macros. For example some people use
+@c macros for loops:
+@c @example
+@c   #define FOR_LOOP(X) for (i = 0; i < (X); i++)
+@c @end example
+@c @noindent
+@c Such macros always assume that certain variables are in current scope. This
+@c makes code hard to understand/ debug. So the ``correct'' loop macro would be:
+@c @example
+@c    #define FOR_LOOP(I, X) for ((I) = 0; (I) < (X); (I)++)
+@c @end example
+@c @noindent
+@c Since this is sort of a functional macro, we do not use this at all.
 
-@end example
-@noindent
-Now we use this macro with two variables:
-@example
-
-   min = MIN(i++, j++);
-
-@end example
-@noindent
-Evaluates to:
-@example
-
-   min = (i++) < (j++) ? (i++) : (j++);
-
-@end example
-@noindent
-Additionally macros of such type will increase the running time of your code
-when used with function calls as parameters.
-
-We @emph{never} use variables names in macros. For example some people use
-macros for loops:
-@example
-
-   #define FOR_LOOP(X) for (i = 0; i < (X); i++)
-
-@end example
-@noindent
-Such macros always assume that certain variables are in current scope. This
-makes code hard to understand/ debug. So the ``correct'' loop macro would be:
-@example
-
-   #define FOR_LOOP(I, X) for ((I) = 0; (I) < (X); (I)++)
-
-@end example
-@noindent
-Since this is sort of a functional macro, we do not use this at all.
+We @emph{never} use variables names in macro definitions. Such macros always
+assume certain variable names to be in scope. This complicates their usage and
+makes code hard to understand/ debug. Therefore variables have to be given as
+parameter to a macro.
 
 Nevertheless, macros are allowed for constant values. But try to avoid them
 where possible, e.g.@: for some magic integer values you should use the
 @code{enum} construct. Or use global constants for values which are only seen
-by one module. Especially on character arrays the compiler benefits from this.
+by one module. This saves space and makes the values visible to debuggers.
 
 There is only one case where macros are recommended. In some situations you
 would like to see the file and the line number where a problem occurs in a
@@ -470,7 +466,7 @@ arguments, wrap the function by a macro and hide these arguments. E.g.@: the
 @end example
 @noindent
 This assures that we can immediately catch the point where a memory block was
-allocated but never freed.
+allocated.
 
 Macro names are written in all upper case letters and use underscores as spaces.
 
@@ -481,7 +477,7 @@ Macro names are written in all upper case letters and use underscores as spaces.
 @cindex @code{enum}
 @cindex Multidimensional arrays
 @cindex Multivalue lists
-Most of the time we use different values than 0 or 1 in our code, these values
+Most of the time we use values other than 0 or 1 in our code. These values
 have a special meaning and thus we give them special names. The same holds for
 multidimensional arrays. If we have more than 1 dimension, we probably have a
 list of certain attributes. To improve readability/ make code more
@@ -556,8 +552,8 @@ We try to keep other people's namespaces as unpolluted as possible.
 
 This means, that macros, enumerations and other constants should only be
 declared in header files if they are needed externally. E.g.@: error codes have
-to be visible with their returning function. Everything else should go with its
-utilising source.
+to be visible with their returning function. Everything else should go with the
+source that uses it.
 
 
 @node External Libraries, Testing, Visibility, C
@@ -566,8 +562,8 @@ The Prime Directive of @corb{} is that @emph{it has to work everywhere}.
 
 This allows external libraries as long as @corb{} still compiles and works
 properly if the library is not available. Therefore the use of libraries is
-restricted to additional functionality. As an example scenario consider file
-handling: ANSI C provides everything needed for usual ASCII files. But with
+restricted to additional functionality. As an example, consider file handling:
+ANSI C provides everything needed for usual ASCII files. But with
 additional libraries, compressed text files can also be treated like ASCII
 files. Hence the strategy should be to always provide standard C file handling
 and if suitable libraries are found, also handling of different compression
@@ -577,12 +573,11 @@ features as described in @ref{Conditional compilation}.
 It should be needless to say that you should avoid using libraries which are
 only available on single architectures.
 
-Another thing to consider when you are planning to use an external library is
-its license. @corb{} utilises the GPL, therefore you only may use libraries
-which go along with it. This is not an issue of ``open source vs. proprietary
-software''-annoyance but a serious law issue. To put it simple: If you use a
-library with an incompatible license, this could cost you a large heap of
-@emph{your} money.
+Another consideration is the license of a library. @corb{} utilises the GPL,
+therefore you only may use libraries which go along with it. This is not an
+issue of ``open source vs. proprietary software''-annoyance but a serious law
+issue. To put it simply: If you use a library with an incompatible license,
+this could cost you a large heap of @emph{your} money.
 
 
 @node Testing, Functions, External Libraries, C
@@ -796,11 +791,11 @@ in @corb{} requires constructors wrapped around object allocation. You also must
 declare an appropriate routine like @code{foo_delete()}. This routine must clean
 up any occupied memory.
 
-To help you avoiding memory leaks, @corb{} comes with its own leak-checker
-built into @libcrbbasic{} (module @modcrbmemmgr{}). It only provides basic
-functionality and is by far no match for professional memory managers, like
-e.g.@: @crbtool{Valgrind}. On integrating your tool into the @corb{} binary, the
-leak checker is already invoked and controlling your @code{malloc}s.
+To help avoid memory leaks, @corb{} comes with its own leak-checker built into 
+@libcrbbasic{} (module @modcrbmemmgr{}). It only provides basic functionality
+and is by far no match for professional memory managers, like e.g.@:
+@valgrind{}. On integrating your tool into the @corb{} binary, the leak
+checker is already invoked and controlling your @code{malloc}s.
 
 @c xxx For more information on memory handling please refer to @dots{} doc of
 @c xxx @libcrbbasic{}
@@ -818,7 +813,7 @@ need to invoke low-level functions.
 @c xxx All functions are able to handle both, compressed and uncompressed files
 @c xxx via one interface.
 Additionally we catch all sorts of errors within the module. With this, you
-only have to catch an error value and we care for retrieving and reporting
+only have to catch an error value and we care for the retrieval and reporting of
 error messages.
 
 But, instead of using wrappers for low-level functions, you should use our
@@ -859,7 +854,7 @@ used too often. Anyway, there are only rare cases where it is needed.
 Here are three scenarios, where conditional compilation seems to be unavoidable:
 @itemize @bullet
   @item Additional library functions
-  @item Making use of special compiler features
+  @item Special compiler features
   @item Optimisation techniques
 @end itemize
 
@@ -875,7 +870,7 @@ enabling @emph{additional} checking/ optimisation techniques of certain
 compilers. This case is best explained by an example.
 
 The GNU Compiler Collection provides a set of certain attributes to
-declarations (see @uref{http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Function-Attributes.html#Function-Attributes, the @gcc{} manual}). To use such function
+declarations (see @uref{http://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Function-Attributes.html#Function-Attributes, the @gcc{} manual}). To use such function
 attributes, you have to check which compiler is currently in use. The @gcc{}
 defines the @crbmacro{__GNUC__} macro to contain the version number if invoked.
 This can easily be used to determine if it is safe to turn on @gcc{}s
@@ -902,7 +897,7 @@ In principle, there are two ways to switch between two versions of an
 algorithm: In code and via separate declarations. Mixing two different versions
 of one algorithm in one function, using macros as switches is
 @strong{DEFINITIVELY UNWANTED}. This is not only hard to debug, for larger code
-segments it is regarded as impossible to read code without slipping something.
+segments it is regarded as impossible to read code without something slipping.
 Therefore we switch between different implementations of the same function.
 Thereby no preprocessor directive occurs in code but on the level of
 declaration.
@@ -983,9 +978,9 @@ already used at some points without obfuscating the code.
 The macro signalling whether @posix{} threads are enabled or not is called
 @crbmacro{HAVE_PTHREAD}.
 
-Last but not least a little hint: Conditional compilation is in fact used
+Last, but not least, a little hint: Conditional compilation is in fact used
 everywhere in the @corb{} code --- in the @code{__cplusplus} check in each
-header. But lets just say this is OK.
+header. But let's just say this is OK.
 
 @node C naming conventions (summary),  , Conditional compilation, C
 @subsection C naming conventions (summary)

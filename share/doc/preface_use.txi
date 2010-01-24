@@ -1,4 +1,4 @@
-@node Preface, Symbolism & Abbreviations, corb Copying Conditions, Top
+@node Preface, Symbolism & Abbreviations, CoRB Copying Conditions, Top
 @unnumbered Preface
 
 @c This file is part of `CoRB --- A Developers Handbook`

@@ -39,3 +39,10 @@ a concatenated collection of @samp{(}, @samp{)} and @samp{.}:
 @c file formats
 
 @c energy models/ scoring functions
+@c explain for nn: 
+@c             - (nun-term-explaination) Model incomplete, usually you have 
+@c               energy values to push you away from non-existing base pairs
+@c             - standard usage of nn contains this implicitly by not
+@c               considering not allowed bp
+@c             - usually iterating over possible pairing partners, not allowed
+@c               bp are not iterated

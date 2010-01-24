@@ -45,10 +45,7 @@ American National Standards Institute
 Unix
 @end macro
 
-@c Format of CoRB tools and CoRB nameplate itself
-@macro crbtool{tool}
-@sansserif{\tool\}
-@end macro
+@c xxx note in dev.handbook: tools as own macro in @sansserif{}
 
 @c Format a library name
 @macro crblib{lib}
@@ -94,7 +91,7 @@ Unix
 
 @c CoRB nameplate
 @macro corb{}
-@crbtool{CoRB}
+@sansserif{CoRB}
 @end macro
 
 @c CoRB expanded
@@ -104,7 +101,7 @@ Collection of RNAanalysis Binaries
 
 @c BROT nameplate
 @macro brot{}
-@crbtool{BROT}
+@sansserif{BROT}
 @end macro
 
 @c BROT expanded
@@ -112,9 +109,14 @@ Collection of RNAanalysis Binaries
 Basic RNA Optimisation Tool
 @end macro
 
+@c additional BROT tools
+@macro brotiterative{}
+@sansserif{brot_iterative}
+@end macro
+
 @c ER2DE nameplate
 @macro erde{}
-@crbtool{ER2DE}
+@sansserif{ER2DE}
 @end macro
 
 @c ER2DE expanded
@@ -122,9 +124,27 @@ Basic RNA Optimisation Tool
 Evaluating RNA 2D energy
 @end macro
 
+@c additional ER2DE tools
+@macro excmperdernaeval{}
+@sansserif{ex_cmp_er2de_rnaeval}
+@end macro
+
+@c additional CoRB tools
+@macro evalstructurefile{}
+@sansserif{eval_structure_file}
+@end macro
+
+@macro optbrotdesignterms{}
+@sansserif{opt_brot_design_terms}
+@end macro
+
+@macro readviennaparams{}
+@sansserif{read_viennaparams}
+@end macro
+
 @c GCC nameplate
 @macro gcc{}
-@crbtool{GCC}
+@sansserif{GCC}
 @end macro
 
 @c GCC expanded
@@ -134,7 +154,7 @@ GNU Compiler Collection
 
 @c BASH nameplate
 @macro bash{}
-@crbtool{BASH}
+@sansserif{BASH}
 @end macro
 
 @c BASH expanded
@@ -144,23 +164,39 @@ Bourne-again shell
 
 @c configure script nameplate
 @macro configure{}
-@crbtool{configure}
+@sansserif{configure}
 @end macro
 
 @c Emacs nameplate
 @macro emacs{}
-@crbtool{Emacs}
+@sansserif{Emacs}
 @end macro
 
-@c git name
+@c git nameplate
 @macro git{}
-@crbtool{GIT}
+@sansserif{GIT}
 @end macro
 
 @c Make nameplate
 @macro make{}
-@crbtool{make}
+@sansserif{make}
 @end macro
+
+@c gzip nameplate
+@macro gzip{}
+@sansserif{gzip}
+@end macro
+
+@c tar nameplate
+@macro tar{}
+@sansserif{tar}
+@end macro
+
+@c Valgrind nameplate
+@macro valgrind{}
+@sansserif{Valgrind}
+@end macro
+
 
 @c substitutional image include command
 @c Problem: Bitmaps are ok for html output. In pdf documents vector graphics

@@ -13,6 +13,7 @@
 @c @afivepaper
 @c @afourlatex
 @c @afourwide
+@defindex op
 @c %**end of header
 
 
@@ -68,9 +69,10 @@ Copyright @copyright{} 2009 Stefan Bienert.
 * Using GIT::                   
 * Coding::                      
 * Using Licenses::              
-* The Build system::             
+* The Build system::            
 * Writing Documentation::       
 * Concept Index::               
+* Option Index::                
 * GNU Free Documentation License::  
 @end menu
 
@@ -96,7 +98,9 @@ Copyright @copyright{} 2009 Stefan Bienert.
 @include documenting.txi
 
 @c VI: End
-@include indices-dvl.txi
+@include indices-cp-dvl.txi
+
+@include indices-op-dvl.txi
 
 @include fdl_wrapper_dvl.txi
 

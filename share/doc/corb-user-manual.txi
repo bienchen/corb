@@ -13,6 +13,7 @@
 @c @afivepaper
 @c @afourlatex
 @c @afourwide
+@defindex op
 @c %**end of header
 
 
@@ -67,6 +68,7 @@ Copyright @copyright{} 2009 Stefan Bienert.
 * Rummaging around the CoRB::   
 * and Everything::              
 * Concept Index::               
+* Option Index::                
 * Program Index::               
 * List of Figures::             
 * GNU Free Documentation License::  
@@ -89,6 +91,8 @@ Copyright @copyright{} 2009 Stefan Bienert.
 
 @c VI: End
 @include indices-cp-use.txi
+
+@include indices-op-use.txi
 
 @include indices-pg-use.txi
 

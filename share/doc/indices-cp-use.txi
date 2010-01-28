@@ -1,4 +1,4 @@
-@node Concept Index, Program Index, and Everything, Top
+@node Concept Index, Option Index, and Everything, Top
 @appendix Concept Index
 
 @c This file is part of `CoRB --- A Developers Handbook`

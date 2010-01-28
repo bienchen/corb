@@ -1,4 +1,4 @@
-@node and Everything
+@node and Everything, Concept Index, Rummaging around the CoRB, Top
 @chapter ..., and Everything
 
 @c This file is part of `CoRB --- A Developers Handbook`

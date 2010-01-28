@@ -1,8 +1,9 @@
-@node Program Index, List of Figures, Option Index, Top
-@appendix Program Index
+@node Option Index, Program Index, Concept Index, Top
+@appendix Option Index
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2009 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-@printindex pg
+@printindex op
+

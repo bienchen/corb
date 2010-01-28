@@ -5,16 +5,21 @@
 @c Copyright (C) 2010 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-@cindex GIT
+@cindex @git{ }
 @cindex Versioning system
+This is a short introduction of @git{}, the revision control/ code management
+system used by the @corb{} project. For more general information on @git{},
+please refer to the net. We only describe the usage by @corb{} developers, here.
+
 
 @c Setup
 @c short preface
-@c - description of how git is used by corb developers
 @c - since we are no experts, might be not as intended (humble attempt...)
 @c - if you know exactly how stuff should go, teach other devs
 @c - change here
 @c - beside git usage, description of git hook interface
+
+@c menu
  
 @c usage of git by corb
 @c - cloning

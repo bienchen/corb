@@ -72,6 +72,7 @@ corb-user-manual.pdf
 # ignore documentation intermediates
 share/doc/*.aux
 share/doc/*.cp
+share/doc/*.op
 share/doc/*.cps
 share/doc/*.fn
 share/doc/*.ky

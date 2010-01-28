@@ -70,7 +70,7 @@ If you find any more advantages, please let us know.
 @c tools...
 @node BROT, ER2DE, Philosophy, Rummaging around the CoRB
 @section @brot{}
-@cindex @brot{}
+@cindex @brot{ }
 @pindex brot
 
 @brot{} is our @emph{b}asic @emph{R}NA @emph{o}ptimisation @emph{t}ool. The
@@ -116,6 +116,7 @@ a maximum number of iterations.
 @c One term to pair the sites, one term to divorce them,
 @c one term to mix them up and in a heterogenous sequence fix them.
 
+@c xxx push all existing options (installation?) into new index
 @c xxx options for energy terms
 @c xxx red cape for usual options, wolfs ass for detailed ones
 
@@ -315,7 +316,7 @@ If you need the stability of the sequence folded into the input structure, use
 
 @node ER2DE,  , BROT, Rummaging around the CoRB
 @section @erde{}
-@cindex @erde{}
+@cindex @erde{ }
 @pindex er2de
 
 @c xxx Additional sections on energy models? Running time?

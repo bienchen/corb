@@ -1,4 +1,4 @@
-# Last modified: 2009-10-20.19
+# Last modified: 2010-01-28.20
 
 
 ## Copyright (C) 2008 Stefan Bienert
@@ -42,7 +42,8 @@ corb_developer_handbook_TEXINFOS = corb.txi                      \
                                    licensing.txi                 \
                                    documenting.txi               \
                                    buildsystem.txi               \
-                                   indices-dvl.txi               \
+                                   indices-cp-dvl.txi            \
+                                   indices-op-dvl.txi            \
                                    fdl_wrapper_dvl.txi           \
                                    fdl-1.3.txi
 
@@ -61,6 +62,7 @@ corb_user_manual_TEXINFOS = corb.txi                      \
                             vienna_notation.png           \
                             indices-cp-use.txi            \
                             indices-pg-use.txi            \
+                            indices-op-use.txi            \
                             indices-fig-use.txi           \
                             fdl_wrapper_use.txi           \
                             fdl-1.3.txi

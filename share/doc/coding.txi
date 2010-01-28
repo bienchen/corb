@@ -1,4 +1,4 @@
-@node Coding
+@node Coding, Using Licenses, Using GIT, Top
 @chapter Code --- Notes and Coding Rules
 
 @c This file is part of `CoRB --- A Developers Handbook`

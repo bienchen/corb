@@ -103,6 +103,7 @@ Manuals
 -------
 - Check which txi files need "A Dev.Handbook" or "A Users Manual" in the
   copyright note in the header
+- How can we include images in the Makefile?
 
 Files
 -----

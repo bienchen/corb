@@ -34,8 +34,10 @@ const char *salat_args_info_detailed_help[] = {
   "  -h, --help           Print help and exit",
   "      --detailed-help  Print help, including all details and hidden options, \n                         and exit",
   "  -V, --version        Print version and exit",
+  "  -f, --file           Read structure from file",
+  "  If set, STRUCTURE has to be a path to a file carrying the                  \n  structure to be used.",
   "  -p, --position=INT   Only get information for a certain position",
-  "  Name a certain position in the structure to investigate. This                 \n   means, you get information on the loop type and pairing                  \n  partner of a named position. The position INT has to be in                  \n  the range of the structure. Index starts at 0. May be                  \n  invoked several times.",
+  "  Name a certain position in the structure to investigate. This                 \n  means, you get information on the loop type and pairing                  \n  partner of a named position. The position INT has to be in                  \n  the range of the structure. Index starts at 0. May be                  \n  invoked several times.",
     0
 };
 
@@ -46,11 +48,12 @@ init_help_array(void)
   salat_args_info_help[1] = salat_args_info_detailed_help[1];
   salat_args_info_help[2] = salat_args_info_detailed_help[2];
   salat_args_info_help[3] = salat_args_info_detailed_help[3];
-  salat_args_info_help[4] = 0; 
+  salat_args_info_help[4] = salat_args_info_detailed_help[5];
+  salat_args_info_help[5] = 0; 
   
 }
 
-const char *salat_args_info_help[5];
+const char *salat_args_info_help[6];
 
 typedef enum {ARG_NO
   , ARG_LONG
@@ -62,7 +65,7 @@ static
 void clear_args (struct salat_args_info *args_info);
 
 static int
-salat_cmdline_parser_internal (int argc, char** argv, struct salat_args_info *args_info,
+salat_cmdline_parser_internal (int argc, char **argv, struct salat_args_info *args_info,
                         struct salat_cmdline_parser_params *params, const char *additional_error);
 
 static int
@@ -101,6 +104,7 @@ void clear_given (struct salat_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->detailed_help_given = 0 ;
   args_info->version_given = 0 ;
+  args_info->file_given = 0 ;
   args_info->position_given = 0 ;
 }
 
@@ -121,7 +125,8 @@ void init_args_info(struct salat_args_info *args_info)
   args_info->help_help = salat_args_info_detailed_help[0] ;
   args_info->detailed_help_help = salat_args_info_detailed_help[1] ;
   args_info->version_help = salat_args_info_detailed_help[2] ;
-  args_info->position_help = salat_args_info_detailed_help[3] ;
+  args_info->file_help = salat_args_info_detailed_help[3] ;
+  args_info->position_help = salat_args_info_detailed_help[5] ;
   args_info->position_min = 0;
   args_info->position_max = 0;
   
@@ -309,6 +314,8 @@ salat_cmdline_parser_dump(FILE *outfile, struct salat_args_info *args_info)
     write_into_file(outfile, "detailed-help", 0, 0 );
   if (args_info->version_given)
     write_into_file(outfile, "version", 0, 0 );
+  if (args_info->file_given)
+    write_into_file(outfile, "file", 0, 0 );
   write_multiple_into_file(outfile, args_info->position_given, "position", args_info->position_orig, 0);
   
 
@@ -453,7 +460,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
               /* specific occurrences */
               if (option_given != (unsigned int) min)
                 {
-                  fprintf (stderr, "%s: %s option occurrences must be %u\n",
+                  fprintf (stderr, "%s: %s option occurrences must be %d\n",
                     prog_name, option_desc, min);
                   error = 1;
                 }
@@ -462,7 +469,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
                 || option_given > (unsigned int) max)
             {
               /* range occurrences */
-              fprintf (stderr, "%s: %s option occurrences must be between %u and %u\n",
+              fprintf (stderr, "%s: %s option occurrences must be between %d and %d\n",
                 prog_name, option_desc, min, max);
               error = 1;
             }
@@ -472,7 +479,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at least check */
           if (option_given < min)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at least %u\n",
+              fprintf (stderr, "%s: %s option occurrences must be at least %d\n",
                 prog_name, option_desc, min);
               error = 1;
             }
@@ -482,7 +489,7 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
           /* at most check */
           if (option_given > max)
             {
-              fprintf (stderr, "%s: %s option occurrences must be at most %u\n",
+              fprintf (stderr, "%s: %s option occurrences must be at most %d\n",
                 prog_name, option_desc, max);
               error = 1;
             }
@@ -492,13 +499,13 @@ check_multiple_option_occurrences(const char *prog_name, unsigned int option_giv
   return error;
 }
 int
-salat_cmdline_parser (int argc, char** argv, struct salat_args_info *args_info)
+salat_cmdline_parser (int argc, char **argv, struct salat_args_info *args_info)
 {
   return salat_cmdline_parser2 (argc, argv, args_info, 0, 1, 1);
 }
 
 int
-salat_cmdline_parser_ext (int argc, char** argv, struct salat_args_info *args_info,
+salat_cmdline_parser_ext (int argc, char **argv, struct salat_args_info *args_info,
                    struct salat_cmdline_parser_params *params)
 {
   int result;
@@ -508,7 +515,7 @@ salat_cmdline_parser_ext (int argc, char** argv, struct salat_args_info *args_in
 }
 
 int
-salat_cmdline_parser2 (int argc, char** argv, struct salat_args_info *args_info, int override, int initialize, int check_required)
+salat_cmdline_parser2 (int argc, char **argv, struct salat_args_info *args_info, int override, int initialize, int check_required)
 {
   int result;
   struct salat_cmdline_parser_params params;
@@ -791,7 +798,7 @@ static void custom_getopt_initialize(struct custom_getopt_data *d)
 #define NONOPTION_P (argv[d->custom_optind][0] != '-' || argv[d->custom_optind][1] == '\0')
 
 /* return: zero: continue, nonzero: return given value to user */
-static int shuffle_argv(int argc, char** argv,const struct option *longopts,
+static int shuffle_argv(int argc, char **argv,const struct option *longopts,
 	struct custom_getopt_data *d)
 {
 	/*
@@ -872,7 +879,7 @@ static int shuffle_argv(int argc, char** argv,const struct option *longopts,
  * This distinction seems to be the most useful approach.
  *
  */
-static int check_long_opt(int argc, char** argv, const char *optstring,
+static int check_long_opt(int argc, char **argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		int print_errors, struct custom_getopt_data *d)
 {
@@ -990,7 +997,7 @@ static int check_long_opt(int argc, char** argv, const char *optstring,
 	return '?';
 }
 
-static int check_short_opt(int argc, char** argv, const char *optstring,
+static int check_short_opt(int argc, char **argv, const char *optstring,
 		int print_errors, struct custom_getopt_data *d)
 {
 	char c = *d->nextchar++;
@@ -1119,7 +1126,7 @@ static int check_short_opt(int argc, char** argv, const char *optstring,
  * '\0'.  This behavior is specific to the GNU `getopt'.
  */
 
-static int getopt_internal_r(int argc, char** argv, const char *optstring,
+static int getopt_internal_r(int argc, char **argv, const char *optstring,
 		const struct option *longopts, int *longind,
 		struct custom_getopt_data *d)
 {
@@ -1151,7 +1158,7 @@ static int getopt_internal_r(int argc, char** argv, const char *optstring,
 	return check_short_opt(argc, argv, optstring, print_errors, d);
 }
 
-static int custom_getopt_internal(int argc, char** argv, const char *optstring,
+static int custom_getopt_internal(int argc, char **argv, const char *optstring,
 	const struct option *longopts, int *longind)
 {
 	int result;
@@ -1168,7 +1175,7 @@ static int custom_getopt_internal(int argc, char** argv, const char *optstring,
 	return result;
 }
 
-static int custom_getopt_long (int argc, char** argv, const char *options,
+static int custom_getopt_long (int argc, char **argv, const char *options,
 	const struct option *long_options, int *opt_index)
 {
 	return custom_getopt_internal(argc, argv, options, long_options,
@@ -1401,7 +1408,7 @@ void update_multiple_arg(void *field, char ***orig_field,
 
 int
 salat_cmdline_parser_internal (
-  int argc, char** argv, struct salat_args_info *args_info,
+  int argc, char **argv, struct salat_args_info *args_info,
                         struct salat_cmdline_parser_params *params, const char *additional_error)
 {
   int c;	/* Character of the parsed option.  */
@@ -1410,13 +1417,17 @@ salat_cmdline_parser_internal (
   int error = 0;
   struct salat_args_info local_args_info;
   
+  int override;
   int initialize;
   int check_required;
-
+  int check_ambiguity;
+  
   package_name = argv[0];
-
+  
+  override = params->override;
   initialize = params->initialize;
   check_required = params->check_required;
+  check_ambiguity = params->check_ambiguity;
 
   if (initialize)
     salat_cmdline_parser_init (args_info);
@@ -1436,6 +1447,7 @@ salat_cmdline_parser_internal (
         { "help",	0, NULL, 'h' },
         { "detailed-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
+        { "file",	0, NULL, 'f' },
         { "position",	1, NULL, 'p' },
         { 0,  0, 0, 0 }
       };
@@ -1445,7 +1457,7 @@ salat_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVp:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVfp:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1466,6 +1478,18 @@ salat_cmdline_parser_internal (
           salat_cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
+        case 'f':	/* Read structure from file.  */
+        
+        
+          if (update_arg( 0 , 
+               0 , &(args_info->file_given),
+              &(local_args_info.file_given), optarg, 0, 0, ARG_NO,
+              check_ambiguity, override, 0, 0,
+              "file", 'f',
+              additional_error))
+            goto failure;
+        
+          break;
         case 'p':	/* Only get information for a certain position.  */
         
           if (update_multiple_arg_temp(&position_list, 

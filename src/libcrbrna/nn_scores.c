@@ -14864,7 +14864,7 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
                   for (n = 0; n < alpha_size; n++)
                   {
                      rval = (float) drand48 ();
-                     this->G_int22[i][j][k][l][m][n] += (rval - 0.5f) /*/ 100*/;
+                     this->G_int22[i][j][k][l][m][n] += (rval - 0.5f) /* / 100 */;
                   }
                }
             }

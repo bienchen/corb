@@ -101,7 +101,18 @@ option "heterogenity-term-scaling" h "Scale heterogenity term"
 option "entropy-output" p "Write down entropy and temperature changes"
        details="Write the changes of the sequence matrix entropy, short and \
                  long term avg.'s and temperature to given file. Only values \
-                 from the simulation of interest are written."
+                 from the simulation of interest are written. If file exist, \
+                 new simulations will be appended."
+       string
+       typestr="FILENAME"
+       optional
+
+option "simulation-output" m "Write down the matrix of each step"
+       details="Write the sequence matrix after each step of the simulation to \
+                 a file. Each matrix is preceeded by its sequence of most \
+                 probable bases, each row makes up a site and the columns
+                 denote the states. Only the first simulation is observed. If \
+                 file exist, new simulations will be appended."
        string
        typestr="FILENAME"
        optional

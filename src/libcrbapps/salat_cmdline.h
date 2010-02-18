@@ -35,6 +35,7 @@ struct salat_args_info
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *detailed_help_help; /**< @brief Print help, including all details and hidden options, and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
+  const char *file_help; /**< @brief Read structure from file help description.  */
   long* position_arg;	/**< @brief Only get information for a certain position.  */
   char ** position_orig;	/**< @brief Only get information for a certain position original value given at command line.  */
   unsigned int position_min; /**< @brief Only get information for a certain position's minimum occurreces */
@@ -44,6 +45,7 @@ struct salat_args_info
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int detailed_help_given ;	/**< @brief Whether detailed-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
+  unsigned int file_given ;	/**< @brief Whether file was given.  */
   unsigned int position_given ;	/**< @brief Whether position was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
@@ -76,7 +78,7 @@ extern const char *salat_args_info_detailed_help[];
  * @param args_info the structure where option information will be stored
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int salat_cmdline_parser (int argc, char** argv,
+int salat_cmdline_parser (int argc, char **argv,
   struct salat_args_info *args_info);
 
 /**
@@ -90,7 +92,7 @@ int salat_cmdline_parser (int argc, char** argv,
  * @return 0 if everything went fine, NON 0 if an error took place
  * @deprecated use salat_cmdline_parser_ext() instead
  */
-int salat_cmdline_parser2 (int argc, char** argv,
+int salat_cmdline_parser2 (int argc, char **argv,
   struct salat_args_info *args_info,
   int override, int initialize, int check_required);
 
@@ -102,7 +104,7 @@ int salat_cmdline_parser2 (int argc, char** argv,
  * @param params additional parameters for the parser
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int salat_cmdline_parser_ext (int argc, char** argv,
+int salat_cmdline_parser_ext (int argc, char **argv,
   struct salat_args_info *args_info,
   struct salat_cmdline_parser_params *params);
 

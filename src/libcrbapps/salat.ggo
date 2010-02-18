@@ -1,3 +1,4 @@
+#
 # Copyright (C) 2009 Stefan Bienert
 #
 # This file is part of CoRB.
@@ -23,6 +24,11 @@ description "Enumerate loops of an RNA secondary structure"
 
 # arguments to gengetopt
 args "--string-parser --func-name=salat_cmdline_parser --file-name=salat_cmdline --include-getopt --unamed-opts=STRUCTURE --arg-struct-name=salat_args_info --no-handle-error"
+
+option "file" f "Read structure from file"
+       details="If set, STRUCTURE has to be a path to a file carrying the \
+                 structure to be used."
+       optional
 
 option "position" p "Only get information for a certain position"
        details="Name a certain position in the structure to investigate. This \

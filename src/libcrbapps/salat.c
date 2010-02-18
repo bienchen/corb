@@ -24,6 +24,7 @@
  *
  *  Revision History:
  *         - 2009Jul21 bienert: created
+ *         - 2009Dec14 bienert: mod. to read structure from file
  *
  */
 
@@ -94,11 +95,53 @@ salat_main(const char *cmdline)
       retval = 1;
    }
 
+   /*if (!file_given)
+      {
+         error = RNA_ALLOC_SEQUENCE(seqlen, this->rna);
+         if (error)
+         {
+            scmf_rna_opt_data_delete (this);
+            return NULL;         
+         }
+         error = RNA_INIT_PAIRLIST_VIENNA(structure, seqlen, this->rna);
+         if (error)
+         {
+            scmf_rna_opt_data_delete (this);
+            return NULL;         
+         }
+      }
+      else
+      {
+         error = rna_read_from_file (this->rna,
+                                     structure,
+                                     seqlen,
+                                     NULL,
+                                     0,
+                                     GFILE_VOID);
+         if (error)
+         {
+            scmf_rna_opt_data_delete (this);
+            return NULL;         
+         }
+      }*/
+
    if (retval == 0)
    {
-      retval = RNA_INIT_PAIRLIST_VIENNA (salat_args.inputs[1],
-                                         strlen (salat_args.inputs[1]),
-                                         rna);
+      if (!salat_args.file_given)
+      {
+         retval = RNA_INIT_PAIRLIST_VIENNA (salat_args.inputs[1],
+                                            strlen (salat_args.inputs[1]),
+                                            rna);
+      }
+      else
+      {
+         retval = rna_read_from_file (rna,
+                                      salat_args.inputs[1],
+                                      strlen (salat_args.inputs[1]),
+                                      NULL,
+                                      0,
+                                      GFILE_VOID);
+      }
    }
 
    /* explore secondary structure */
@@ -110,8 +153,8 @@ salat_main(const char *cmdline)
    if (retval == 0)
    {
       structure = rna_get_secstruct (rna);
-   mprintf ("\nSequence position to structural feature map:\n");
-   secstruct_fprintf_seqpos_map (stdout, structure);
+      /*mprintf ("\nSequence position to structural feature map:\n");
+        secstruct_fprintf_seqpos_map (stdout, structure);*/
       size = rna_get_size (rna);
       /* without positions, just output what we have */
       if (salat_args.position_given == 0)

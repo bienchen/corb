@@ -55,6 +55,8 @@ const char *brot_args_info_detailed_help[] = {
   "  Scaling factor for the sequence heterogenity term.",
   "  -p, --entropy-output=FILENAME Write down entropy and temperature changes",
   "  Write the changes of the sequence matrix entropy, short and                  \n  long term avg.'s and temperature to given file. Only values                  \n  from the simulation of interest are written.",
+  "  -m, --simulation-output=FILENAME\n                                Write down the matrix of each step",
+  "  Write the sequence matrix after each step of the simulation to                \n    a file. Each matrix is preceeded by its sequence of most                  \n  probable bases, each row makes up a site and the columns\n                   denote the states. Only the first simulation is observed.",
   "  -w, --window-size=INT         Window size for the heterogeneity term  \n                                  (default=`1')",
   "  Size of the window to the left and right of a base to be                 \n  considered for calculating the heterogeneity term when using                 \n  the `NN' scoring scheme. Please note that this is always only                 \n  one half of the window. Only takes effect when using with `NN'                \n   as scoring scheme.",
   "  -e, --sm-entropy=FLOAT        Sequence matrix entropy threshold  \n                                  (default=`0.337')",
@@ -95,11 +97,12 @@ init_full_help_array(void)
   brot_args_info_full_help[18] = brot_args_info_detailed_help[32];
   brot_args_info_full_help[19] = brot_args_info_detailed_help[34];
   brot_args_info_full_help[20] = brot_args_info_detailed_help[36];
-  brot_args_info_full_help[21] = 0; 
+  brot_args_info_full_help[21] = brot_args_info_detailed_help[38];
+  brot_args_info_full_help[22] = 0; 
   
 }
 
-const char *brot_args_info_full_help[22];
+const char *brot_args_info_full_help[23];
 
 static void
 init_help_array(void)
@@ -118,11 +121,12 @@ init_help_array(void)
   brot_args_info_help[11] = brot_args_info_detailed_help[18];
   brot_args_info_help[12] = brot_args_info_detailed_help[20];
   brot_args_info_help[13] = brot_args_info_detailed_help[22];
-  brot_args_info_help[14] = 0; 
+  brot_args_info_help[14] = brot_args_info_detailed_help[24];
+  brot_args_info_help[15] = 0; 
   
 }
 
-const char *brot_args_info_help[15];
+const char *brot_args_info_help[16];
 
 typedef enum {ARG_NO
   , ARG_STRING
@@ -189,6 +193,7 @@ void clear_given (struct brot_args_info *args_info)
   args_info->negative_design_scaling_given = 0 ;
   args_info->heterogenity_term_scaling_given = 0 ;
   args_info->entropy_output_given = 0 ;
+  args_info->simulation_output_given = 0 ;
   args_info->window_size_given = 0 ;
   args_info->sm_entropy_given = 0 ;
   args_info->lambda_given = 0 ;
@@ -217,6 +222,8 @@ void clear_args (struct brot_args_info *args_info)
   args_info->heterogenity_term_scaling_orig = NULL;
   args_info->entropy_output_arg = NULL;
   args_info->entropy_output_orig = NULL;
+  args_info->simulation_output_arg = NULL;
+  args_info->simulation_output_orig = NULL;
   args_info->window_size_arg = 1;
   args_info->window_size_orig = NULL;
   args_info->sm_entropy_arg = 0.337;
@@ -255,13 +262,14 @@ void init_args_info(struct brot_args_info *args_info)
   args_info->negative_design_scaling_help = brot_args_info_detailed_help[18] ;
   args_info->heterogenity_term_scaling_help = brot_args_info_detailed_help[20] ;
   args_info->entropy_output_help = brot_args_info_detailed_help[22] ;
-  args_info->window_size_help = brot_args_info_detailed_help[24] ;
-  args_info->sm_entropy_help = brot_args_info_detailed_help[26] ;
-  args_info->lambda_help = brot_args_info_detailed_help[28] ;
-  args_info->beta_long_help = brot_args_info_detailed_help[30] ;
-  args_info->beta_short_help = brot_args_info_detailed_help[32] ;
-  args_info->speedup_threshold_help = brot_args_info_detailed_help[34] ;
-  args_info->min_cool_help = brot_args_info_detailed_help[36] ;
+  args_info->simulation_output_help = brot_args_info_detailed_help[24] ;
+  args_info->window_size_help = brot_args_info_detailed_help[26] ;
+  args_info->sm_entropy_help = brot_args_info_detailed_help[28] ;
+  args_info->lambda_help = brot_args_info_detailed_help[30] ;
+  args_info->beta_long_help = brot_args_info_detailed_help[32] ;
+  args_info->beta_short_help = brot_args_info_detailed_help[34] ;
+  args_info->speedup_threshold_help = brot_args_info_detailed_help[36] ;
+  args_info->min_cool_help = brot_args_info_detailed_help[38] ;
   
 }
 
@@ -416,6 +424,8 @@ brot_cmdline_parser_release (struct brot_args_info *args_info)
   free_string_field (&(args_info->heterogenity_term_scaling_orig));
   free_string_field (&(args_info->entropy_output_arg));
   free_string_field (&(args_info->entropy_output_orig));
+  free_string_field (&(args_info->simulation_output_arg));
+  free_string_field (&(args_info->simulation_output_orig));
   free_string_field (&(args_info->window_size_orig));
   free_string_field (&(args_info->sm_entropy_orig));
   free_string_field (&(args_info->lambda_orig));
@@ -534,6 +544,8 @@ brot_cmdline_parser_dump(FILE *outfile, struct brot_args_info *args_info)
     write_into_file(outfile, "heterogenity-term-scaling", args_info->heterogenity_term_scaling_orig, 0);
   if (args_info->entropy_output_given)
     write_into_file(outfile, "entropy-output", args_info->entropy_output_orig, 0);
+  if (args_info->simulation_output_given)
+    write_into_file(outfile, "simulation-output", args_info->simulation_output_orig, 0);
   if (args_info->window_size_given)
     write_into_file(outfile, "window-size", args_info->window_size_orig, 0);
   if (args_info->sm_entropy_given)
@@ -1746,6 +1758,7 @@ brot_cmdline_parser_internal (
         { "negative-design-scaling",	1, NULL, 'd' },
         { "heterogenity-term-scaling",	1, NULL, 'h' },
         { "entropy-output",	1, NULL, 'p' },
+        { "simulation-output",	1, NULL, 'm' },
         { "window-size",	1, NULL, 'w' },
         { "sm-entropy",	1, NULL, 'e' },
         { "lambda",	1, NULL, 'l' },
@@ -1761,7 +1774,7 @@ brot_cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "Vvfc:n:s:t:r:d:h:p:w:e:l:o:i:u:j:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "Vvfc:n:s:t:r:d:h:p:m:w:e:l:o:i:u:j:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1890,6 +1903,18 @@ brot_cmdline_parser_internal (
               &(local_args_info.entropy_output_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
               "entropy-output", 'p',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'm':	/* Write down the matrix of each step.  */
+        
+        
+          if (update_arg( (void *)&(args_info->simulation_output_arg), 
+               &(args_info->simulation_output_orig), &(args_info->simulation_output_given),
+              &(local_args_info.simulation_output_given), optarg, 0, 0, ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "simulation-output", 'm',
               additional_error))
             goto failure;
         

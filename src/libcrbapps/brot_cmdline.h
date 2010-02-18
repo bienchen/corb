@@ -66,6 +66,9 @@ struct brot_args_info
   char * entropy_output_arg;	/**< @brief Write down entropy and temperature changes.  */
   char * entropy_output_orig;	/**< @brief Write down entropy and temperature changes original value given at command line.  */
   const char *entropy_output_help; /**< @brief Write down entropy and temperature changes help description.  */
+  char * simulation_output_arg;	/**< @brief Write down the matrix of each step.  */
+  char * simulation_output_orig;	/**< @brief Write down the matrix of each step original value given at command line.  */
+  const char *simulation_output_help; /**< @brief Write down the matrix of each step help description.  */
   long window_size_arg;	/**< @brief Window size for the heterogeneity term (default='1').  */
   char * window_size_orig;	/**< @brief Window size for the heterogeneity term original value given at command line.  */
   const char *window_size_help; /**< @brief Window size for the heterogeneity term help description.  */
@@ -102,6 +105,7 @@ struct brot_args_info
   unsigned int negative_design_scaling_given ;	/**< @brief Whether negative-design-scaling was given.  */
   unsigned int heterogenity_term_scaling_given ;	/**< @brief Whether heterogenity-term-scaling was given.  */
   unsigned int entropy_output_given ;	/**< @brief Whether entropy-output was given.  */
+  unsigned int simulation_output_given ;	/**< @brief Whether simulation-output was given.  */
   unsigned int window_size_given ;	/**< @brief Whether window-size was given.  */
   unsigned int sm_entropy_given ;	/**< @brief Whether sm-entropy was given.  */
   unsigned int lambda_given ;	/**< @brief Whether lambda was given.  */

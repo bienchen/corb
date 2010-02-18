@@ -63,29 +63,30 @@
 /* }; */
 
 struct SeqMatrix {
-      char* fixed_sites;          /* list of fixed sites in the matrix */
-      float** prob_m;             /* probability matrix */
-      float** calc_m;             /* matrix for calculation of new prob. */
-      size_t rows;
-      size_t cols;
-      float gas_constant;
-      int (*calc_eeff_col) (SeqMatrix*,
-                            const float,
+   char* fixed_sites;          /* list of fixed sites in the matrix */
+   float** prob_m;             /* probability matrix */
+   float** calc_m;             /* matrix for calculation of new prob. */
+   size_t rows;
+   size_t cols;
+   float gas_constant;
+   int (*calc_eeff_col) (SeqMatrix*,
+                         const float,
+                         void*);
+   int (*calc_eeff_row) (const unsigned long,
+                         SeqMatrix*,
+                         const float,
                             void*);
-      int (*calc_eeff_row) (const unsigned long,
-                            SeqMatrix*,
-                            const float,
-                            void*);
-      float (*calc_cell_energy) (const unsigned long, const unsigned long,
-                                 void*,
-                                 SeqMatrix*);
-      int (*transform_row) (const unsigned long, const unsigned long, void*);
-      int (*pre_col_iter_hook) (void*, SeqMatrix*);
-      /* hook for fixed sites during seqmatrix_calc_eeff_col_scmf(), e.g. to
-         jump over fixed sites if your energy function is evaluated linearly */
-      int (*fixed_site_hook) (void*, unsigned long, SeqMatrix*);
-      /* hook to act upon sites during seqmatrix_fix_col() */
-      int (*fixing_site_hook) (void*, unsigned long, SeqMatrix*);
+   float (*calc_cell_energy) (const unsigned long, const unsigned long,
+                              void*,
+                              SeqMatrix*);
+   int (*transform_row) (const unsigned long, const unsigned long, void*);
+   int (*pre_col_iter_hook) (void*, SeqMatrix*);
+   /* hook for fixed sites during seqmatrix_calc_eeff_col_scmf(), e.g. to
+      jump over fixed sites if your energy function is evaluated linearly */
+   int (*fixed_site_hook) (void*, unsigned long, SeqMatrix*);
+   /* hook to act upon sites during seqmatrix_fix_col() */
+   int (*fixing_site_hook) (void*, unsigned long, SeqMatrix*);
+   char* (*get_seq_string) (void*);
 };
 
 /**********************   Constructors and destructors   **********************/
@@ -117,6 +118,7 @@ seqmatrix_new (const char* file, const int line)
       sm->pre_col_iter_hook = NULL;
       sm->fixed_site_hook   = NULL;
       sm->fixing_site_hook  = NULL;
+      sm->get_seq_string    = NULL;
       sm->prob_m            = NULL;
       sm->calc_m            = NULL;
       sm->gas_constant  = 1;
@@ -354,6 +356,13 @@ seqmatrix_fixing_site_hook (void* data, unsigned long i, SeqMatrix* sm)
    return 0;
 }
 
+static __inline__ char* 
+seqmatrix_get_seq_string (void* data)
+{
+   assert (data);
+
+   return NULL;
+}
 
 /** @brief Update the columns of a sequence matrix
  *
@@ -464,6 +473,7 @@ seqmatrix_init (const unsigned long rows,
    sm->pre_col_iter_hook = seqmatrix_pre_col_iter_hook;
    sm->fixed_site_hook   = seqmatrix_fixed_site_hook;
    sm->fixing_site_hook  = seqmatrix_fixing_site_hook;
+   sm->get_seq_string    = seqmatrix_get_seq_string;
 
    /* allocate matrix */
    sm->rows = rows;
@@ -669,6 +679,13 @@ seqmatrix_set_fixing_site_hook (int (*fixing_site_hook) (void*, unsigned long,
    sm->fixing_site_hook = fixing_site_hook;
 }
 
+void
+seqmatrix_set_get_seq_string (char* (*get_seq_string) (void*), SeqMatrix* sm)
+{
+   assert (sm);
+   sm->get_seq_string = get_seq_string;
+}
+
 static __inline__ void
 s_seqmatrix_find_lamb_site (SeqMatrix* sm,
                             unsigned long* row,
@@ -775,6 +792,7 @@ seqmatrix_collate_is (const float fthresh,
                                            lambda,
                                            0.0f, /* fixed dropoff */
                                            NULL,
+                                           NULL,
                                            sm,
                                            data);
       }
@@ -799,12 +817,11 @@ seqmatrix_collate_is (const float fthresh,
  * @params[in] sm The sequence matrix.
  */
 int
-seqmatrix_collate_mv (SeqMatrix* sm, void* data)
+seqmatrix_collate_mv (const SeqMatrix* sm, void* data)
 {
    unsigned long i,j;
    float curr_max_prob;
    unsigned long max_row = 0;
-   /* Alphabet* sigma = (Alphabet*) data; */
 
    assert (sm);
    assert (sm->transform_row);
@@ -868,7 +885,7 @@ int write_entropy (GFile* file, unsigned long step,
                      (s_short / s_long),
                      k) < 0)
    {
-      return 1;
+      return ERR_SM_WRITE;
    }
 
    return 0;
@@ -876,11 +893,11 @@ int write_entropy (GFile* file, unsigned long step,
 
 static __inline__
 int dummy_write_entropy (GFile* file, unsigned long step,
-                   float t,
-                   float s,
-                   float s_short,
-                   float s_long,
-                   float k)
+                         float t,
+                         float s,
+                         float s_short,
+                         float s_long,
+                         float k)
 {
    assert ((file) || (!file));
    assert ((step) || (!step));
@@ -889,6 +906,71 @@ int dummy_write_entropy (GFile* file, unsigned long step,
    assert ((s_short >= 0.0f) || (s_short < 0.0f));
    assert ((s_long >= 0.0f) || (s_long < 0.0f));
    assert ((k >= 0.0f) || (k < 0.0f));
+
+   return 0;
+}
+
+static __inline__
+int write_matrix (GFile* file, void* data, const SeqMatrix* sm)
+{
+   unsigned long i, j; /* row and column indices */
+   float max_prob;
+   unsigned long max_row = 0;
+
+   assert (file);
+   assert (data);
+   assert (sm);
+   assert (sm->transform_row);
+
+   /* collate seq */
+   for (j = 0; j < sm->cols; j++)
+   {
+      max_prob = -1.0f;
+
+      for (i = 0; i < sm->rows; i++)
+      {
+         if (max_prob < sm->prob_m[i][j])
+         {
+            max_prob = sm->prob_m[i][j];
+            max_row = i;
+         }
+      }
+      sm->transform_row (max_row, j, data);
+   }
+
+   /* write seq as letters */
+   if (gfile_printf (file, "%s\n", sm->get_seq_string (data)) < 0)
+   {
+      return ERR_SM_WRITE;
+   }
+
+   /* write matrix */
+   for (j = 0; j < sm->cols; j++)
+   {
+      for (i = 0; i < sm->rows; i++)
+      {
+         if (gfile_printf (file, " % .6f", sm->prob_m[i][j]) < 0)
+         {
+            return ERR_SM_WRITE;
+         }
+      }
+      if (gfile_printf (file, "\n") < 0)
+      {
+         return ERR_SM_WRITE;
+      }
+   }
+
+   return 0;
+}
+
+static __inline__
+int dummy_write_matrix (GFile* file,
+                        void* data,
+                        const SeqMatrix* sm)
+{
+   assert ((file) || (!file));
+   assert ((data) || (!data));
+   assert ((sm) || (!sm));
 
    return 0;
 }
@@ -915,6 +997,7 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                          const float lambda,
                          const float s_thresh,
                          GFile* entropy_file,
+                         GFile* matrix_file,
                          SeqMatrix* sm,
                          void* sco)
 {
@@ -936,13 +1019,17 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                           float,
                           float,
                           float) = dummy_write_entropy;
+   int (*output_matrix) (GFile*,
+                         void*,
+                         const SeqMatrix*) = dummy_write_matrix;
 
    assert (sm);
    assert (sm->calc_eeff_col);
    assert (sco);
 
    /* init. long and short term avg. entropies */
-   s_cur = s_long = s_short = s_seqmatrix_calc_init_entropy (sm);
+   s_cur = s_short = s_seqmatrix_calc_init_entropy (sm);
+   s_long = s_short * 2;     /* SB 25-11-09, was s_long = s_short */
 
    /* calculate initial cooling rate */
 /*  SB for testing, 2009-03-30  if (steps > 0) */
@@ -973,6 +1060,11 @@ seqmatrix_simulate_scmf (const unsigned long steps,
       {
          error = 1;
       }
+   }
+
+   if (matrix_file != NULL)
+   {
+      output_matrix = write_matrix;
    }
 
 /*    s_last = FLT_MAX * (-1.0f); */
@@ -1024,7 +1116,9 @@ seqmatrix_simulate_scmf (const unsigned long steps,
                   {
                      seqmatrix_fix_col (i, j, sco, sm);
                      i = sm->rows;
-                     /* if this works, check if we can omit fixing in collate_is (we still need to search for the next one to fix but do not need to search for > 0.99!) */
+                     /* if this works, check if we can omit fixing in
+                        collate_is (we still need to search for the next one to
+                        fix but do not need to search for > 0.99!) */
                   }
                   else if (sm->prob_m[i][j] > FLT_EPSILON)
                   {
@@ -1044,86 +1138,34 @@ seqmatrix_simulate_scmf (const unsigned long steps,
          s_short = (b_short * s_short) + ((1 - b_short) * s_cur);
 
          if ((s_short / s_long) < sc_thresh)
-         /*if ((s_short + 0.1) < s_long)*/
          {
             /* entropy changes to fast, slow down */
-            /*mfprintf (stderr, "SLOWDOWN: %.6f -> ", c_rate);*/
             c_rate = sqrtf (c_rate);
             if (c_rate >= 1.000000f)
             {
                c_rate = 0.999999f;
             }
-            /*mfprintf (stderr, "%.6f (%.6f; %.6f; %.6f; %.6f)\n", c_rate, T,
-              s_cur, s_short, s_long);*/
          }
          else
          {
             /* small changes, speed up */
-            /*mfprintf (stderr, "SPEEDUP:  %.6f -> ", c_rate);*/
             if (c_rate > c_min)
             {
                /* SB 090714 for testing c_rate = c_rate * (c_rate * c_scale);*/
                c_rate = c_rate * c_rate; /* SB 090714 for testing */
+               /* c_rate = c_rate * 0.95f; working for 192 */
             }
-            /*mfprintf (stderr, "%.6f (%.6f; %.6f; %.6f; %.6f)\n", c_rate, T,
-              s_cur, s_short, s_long);*/
          }
 
-         /* entropy strategies: when converged/ only small changes,
-          a) fix a site
-          b) drop temperature */
-/*          if (fabsf (s_cur - s_last) <= FLT_EPSILON) */
-/*          { */
-/*             s_count++; */
-
-/*             /\* check counter *\/ */
-/*             if (s_count >= s_dropout) */
-/*             { */
-/*                /\* instead of stopping the simulation, we just fix a site in the */
-/*                   matrix. This should disturb entropy so the counter is */
-/*                   reseted. If not, this rule is applied again and again... *\/ */
-/*                /\*s_seqmatrix_find_lamb_site (sm,  */
-/*                                            &largest_amb_row, */
-/*                                            &largest_amb_col); */
-
-/*                if (largest_amb_col < sm->cols + 1) */
-/*                { */
-/*                   seqmatrix_fix_col (largest_amb_row, largest_amb_col, sm); */
-/*                   mfprintf (stderr, "Site fixed: %lu, %lu %lu %f %f)\n", */
-/*                             largest_amb_col, t, s_dropout, s_cur, s_last);      */
-/*                } */
-/*                else */
-/*                { */
-/*                   mfprintf (stderr, "Everything is fixed (%lu, %f)\n", */
-/*                             t, s_cur); */
-/*                   return error; */
-/*                   }*\/ */
-
-/*                /\* cool faster *\/ */
-/*                mfprintf (stderr, "%lu Drop temp: %f -> ", t, T); */
-/*                if (fabs (c_rate) > (0.0f + FLT_EPSILON)) */
-/*                { */
-/*                   T = (T * powf(c_rate, 10));   */
-/*                } */
-/*                else */
-/*                { */
-/*                   T = (T * (c_port * 10));                     */
-/*                } */
-/*                steps -= 10; */
-/*                mfprintf (stderr, "%f %lu\n", T, steps); */
-/*             } */
-/*          } */
-/*          else */
-/*          { */
-/*             /\* mfprintf (stderr, "%lu: %f : %f\n", t, s_cur, s_last); *\/ */
-/*             s_count = 0; */
-/*          } */
-         
          T = T * c_rate;
          t++;
 
          error = output_entropy (entropy_file, t, T, s_cur, s_short, s_long,
                                  c_rate);
+         if (!error)
+         {
+            error = output_matrix (matrix_file, sco, sm);
+         }
       }
    }
 
@@ -1287,50 +1329,3 @@ seqmatrix_print_2_stderr (const int p, const SeqMatrix* sm)
 {
    seqmatrix_fprintf (stderr, p, sm);
 }
-
-/*3110002002222000000003333022222000000033333000002222200000003333331110020000*/
-/*1000222002222000000003333022222000000033333000002222200000003333333311100000*/
-/*1002222002222000000003333022222000000033333000002222200000003333333331100000*/
-/*1133333330000333333331111300000333333311111333330000033333331111122222003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111133330003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111133330003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*1113333330000333333331111300000333333311111333330000033333331111122220003333*/
-/*0022222002222000000003333022222000000033333000002222200000003333333333110000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*2222222002222000000003333022222000000033333000002222200000003333333333330000*/
-/*3311111002222000000003333022222000000033333000002222200000003333300000220000*/
-/*CCUUUUUAAGGGGAAAAAAAACCCCAGGGGGAAAAAAACCCCCAAAAAGGGGGAAAAAAACCCCCAAAAAGGAAAA*/
-/*(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))....*/
-/*UGCGCACUAGGACAAUACACAGUCCAGGGGCAAAUAGAGCCCCAGAUAGGGGCAUAGAAAGCCCCGUGCGCAAAGA*/
-
-/*3203211002132030030103203032032001030032132003002303201303003212300321320003*/
-/*1133220001332300001133220001332100013332201033012213300031132203313322000133*/
-/*3102233002233000133002233002233002130022331000331022300331002331022331020330*/
-/*0320312002312003003003023023023003003023123003001320330033002132030213210300*/
-
-
-
-/*GCGGAUUUAGCUCAGUUGGGAGAGCGCCAGACUGAAGAUCUGGAGGUCCUGUGUUCGAUCCACAGAAUUCGCACCA*/
-/*3102233002233001233002233002231002331002331002331022310302102331022331020310*/
-
-/*100k steps: 3102233002233000133002233002233002130022331000331022300331002331022331020330*/
-
-/*
-
-match with blastn, refseq_rna
-UGCGCACUAGGACAAUACACAGUCCAGGGGCAAAUAGAGCCCCAGATAGGGGCATAGAAAGCCCCGTGCGCAAAGA
-
-ACGCGTGATCCTGTTATGTGTCAGGTCCCCGTTTATCTCGGGGTCTATCCCCGTATCTTTCGGGGCACGCGTTTCT
-
-
-Ref seq
-GCGGAUUUAGCUCAGUUGGGAGAGCGCCAGACUGAAGAUCUGGAGGUCCUGUGUUCGAUCCACAGAAUUCGCACCA
-
-*/

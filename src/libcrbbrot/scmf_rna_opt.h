@@ -112,6 +112,9 @@ scmf_rna_opt_data_get_alphabet (Scmf_Rna_Opt_data*);
 char*
 scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data*);
 
+char*
+scmf_rna_opt_data_get_seq_sm (void* data);
+
 unsigned long
 scmf_rna_opt_data_get_rna_size (Scmf_Rna_Opt_data*);
 

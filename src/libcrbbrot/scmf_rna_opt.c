@@ -623,6 +623,18 @@ scmf_rna_opt_data_get_seq (Scmf_Rna_Opt_data* this)
    return rna_get_sequence (this->rna);
 }
 
+char*
+scmf_rna_opt_data_get_seq_sm (void* data)
+{
+   Scmf_Rna_Opt_data* this;
+
+   assert (data);
+
+   this = (Scmf_Rna_Opt_data*) data;
+
+   return rna_get_sequence (this->rna);
+}
+
 unsigned long
 scmf_rna_opt_data_get_rna_size (Scmf_Rna_Opt_data* this)
 {
@@ -2342,7 +2354,7 @@ scmf_rna_opt_get_interaction_energy (char state,
                * seqmatrix_get_probability (bip, pos_i + 1, sm)); /* SB 04-09-09*/
       }
    }
-   
+
    return pe;
 }
 
@@ -2451,12 +2463,9 @@ scmf_rna_opt_calc_neg_loop (const unsigned long state,
             prob += (seqmatrix_get_probability (bjm, (j - 1), sm)
                    * seqmatrix_get_probability (bj,   j,      sm));
          }
-/* SB - 04-09-09
          this->en_neg[(int)bip] += (nn_scores_get_G_stack (state, bj, bjm, bip,
-                                                          this->scores) * prob);
-*/
-         this->en_neg[(int)bip] += (nn_scores_get_G_stack (state, bj, bjm, bip,
-                                                          this->scores) * 0.75f * prob); /* SB - 04-09-09 */
+                                                           this->scores)
+                                    * 0.75f * prob);
       }
    }
 
@@ -2476,9 +2485,8 @@ scmf_rna_opt_calc_neg_loop (const unsigned long state,
                                                       allowed_bp,
                                                       this, sm);
       }
-   
-      /*mfprintf (stdout, "%lu,%lu: %f\n", state, 0L, prob);*/
-      seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale,state, 0,
+
+      seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale, state, 0,
                             sm);
    }
 
@@ -2547,8 +2555,7 @@ scmf_rna_opt_calc_neg_loop (const unsigned long state,
                                                       this, sm);
       }
       
-      /*mfprintf (stdout, "%lu,%lu: %f\n", state, j, prob);*/
-      seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale,state, j,
+      seqmatrix_add_2_eeff ((prob/n_sites) * -1.0f * this->neg_scale, state, j,
                             sm);
    }
 }
@@ -2595,27 +2602,33 @@ scmf_rna_opt_calc_het_term (const unsigned long state,
    for (s_c = 0; (s_c < this->win) && ((s_c + this->win) < n_sites); s_c++)
    {
       het += seqmatrix_get_probability (state, (s_c + this->win), sm);
+      if (s_c % 2 == 0) {/* SBhet 30-12-09 */
       seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
                              / (s_c + this->win)) 
                             * this->het_scale, state, s_c, sm);
+      }/* SBhet 30-12-09 */
    }
 
    /* slide until window reaches last pos */
    for (; (s_c + this->win) < n_sites; s_c++)
    {
       het += seqmatrix_get_probability (state, (s_c + this->win), sm);
+      if (s_c % 2 == 0) {/* SBhet 30-12-09 */
       seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
                              / (this->win + this->win)) 
                             * this->het_scale, state, s_c, sm);
+      }/* SBhet 30-12-09 */
       het -= seqmatrix_get_probability (state, (s_c - this->win), sm);
    }
 
    /* shrink window until last pos */
    for (; s_c < n_sites; s_c++)
    {
+      if (s_c % 2 == 0) {/* SBhet 30-12-09 */
       seqmatrix_add_2_eeff (((het - seqmatrix_get_probability (state, s_c, sm))
                              / ((n_sites - s_c) + this->win - 1)) 
                             * this->het_scale, state, s_c, sm);
+      }/* SBhet 30-12-09 */
       het -= seqmatrix_get_probability (state, (s_c - this->win), sm);
    }
 }

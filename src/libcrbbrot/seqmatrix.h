@@ -52,6 +52,7 @@ extern "C" {
 enum seqmatrix_retvals{
    ERR_SM_ALLOC = 1,      /* (re)allocation problems */
    ERR_SM_PRINT,          /* problems on proper printing */
+   ERR_SM_WRITE,          /* problems on proper writing to a file */
 };
 
 typedef struct SeqMatrix SeqMatrix;
@@ -159,7 +160,10 @@ seqmatrix_set_fixing_site_hook (int (*fixing_site_hook) (void*, unsigned long,
                                                          SeqMatrix*),
                                 SeqMatrix* sm);
 
-int
+void
+seqmatrix_set_get_seq_string (char* (*get_seq_string) (void*), SeqMatrix* sm);
+
+void
 seqmatrix_fix_col (const unsigned long,
                    const unsigned long,
                    void*,
@@ -175,6 +179,7 @@ seqmatrix_simulate_scmf (unsigned long,
                          const float,
                          /*const float,*/
                          const float,
+                         GFile*,
                          GFile*,
                          SeqMatrix*,
                          void*);
@@ -195,7 +200,7 @@ seqmatrix_collate_is (const float,
                       void*);
 
 int
-seqmatrix_collate_mv (SeqMatrix*, void*);
+seqmatrix_collate_mv (const SeqMatrix*, void*);
 
 void
 seqmatrix_fprintf (FILE*, const int, const SeqMatrix*);

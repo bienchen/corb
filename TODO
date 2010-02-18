@@ -2,7 +2,7 @@ Copyright (C) 2008 Stefan Bienert
 
 See the end of the file for license conditions.
 
-Last modified: 2009-06-06.01
+Last modified: 2010-01-29.14
 
 Build system
 ------------
@@ -10,12 +10,12 @@ Build system
   - a) all m4files 2lines start, 2 lines end, 2 lines inbetween?
   - b) m4 style: first line macro name -> ---- -> macro name + params,
      gap between name and paren
-  - c) all unterstriche bei m4 same length as function name + params?
+  - c) all underscores in m4 same length as function name + params?
   - d) params quoted/ unqouted? --> look up in Doku
   - indentation
   - spellcheck
   - optional args to macros: in []
-  - emacs stuff: put to authors & versioning
+- emacs stuff: put to authors & versioning
   - space inbetween macros: 2 lines
   - paramnames in text quoted (interactive mode?)
   - ad mode: only report possibles changes/ recommentdations
@@ -26,7 +26,6 @@ Build system
     werror/ werror-file
   - check for required packages during configure
 
-- make distclean in share/misc/bin doesn't work properly
 - add conditonal compilate to cleanfiles? Just to clean them on every make
   clean? --> if var given {everything OK} else {add to cleanfiles}
 - spellcheck on m4 files, bootstrap, makefile.ams, configure.ac, config.h.in

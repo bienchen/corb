@@ -163,7 +163,7 @@ seqmatrix_set_fixing_site_hook (int (*fixing_site_hook) (void*, unsigned long,
 void
 seqmatrix_set_get_seq_string (char* (*get_seq_string) (void*), SeqMatrix* sm);
 
-void
+int
 seqmatrix_fix_col (const unsigned long,
                    const unsigned long,
                    void*,

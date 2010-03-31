@@ -1,7 +1,7 @@
-# Last modified: 2009-08-27.14
+# Last modified: 2010-03-12.15
 #
 #
-# Copyright (C) 2009 Stefan Bienert
+# Copyright (C) 2010 Stefan Bienert
 #
 # This file is part of CoRB.
 #
@@ -48,9 +48,13 @@ CorbIO - Simple input and output routines.
       print $_;
     }
 
+    close($fh);
+
     my @lines = file_2_array_or_die("/file/to.read");
 
-    msg_warning("This exits the script");
+    msg_warning("This prints a warning to STDERR");
+
+    my ($header, $sequence) = read_single_fasta_or_die("sequence.fasta");
 
 =head1 DESCRIPTION
 
@@ -79,7 +83,8 @@ Following tags are defined:
 
 =item * file - File handling
     (L<C<open_or_die()>|"open_or_die">,
-    L<C<file_2_array_or_die()>|"file_2_array_or_die">)
+    L<C<file_2_array_or_die()>|"file_2_array_or_die">,
+    L<C<read_single_fasta_or_die()>|"read_single_fasta_or_die">)
 
 =item * all - all functions from the tags above
 
@@ -113,7 +118,8 @@ BEGIN {
                                    &msg_error_and_die
                                    &disable_msg_caller)],
                     file    => [qw(&open_or_die
-                                   &file_2_array_or_die)]
+                                   &file_2_array_or_die
+                                   &read_single_fasta_or_die)]
                    );
 
     # add all the other tags to the ":all" tag, deleting duplicates
@@ -520,6 +526,9 @@ Valid modes are:
        print $file_2_write $_;
      }
 
+     close($file_2_read);
+     close($file_2_write);
+
 =back
 
 =cut
@@ -592,6 +601,60 @@ sub file_2_array_or_die
     return @lines;
 }
 
+=head2 read_single_fasta_or_die
+
+Read a FASTA file carrying a single sequence and return the sequence with its
+header.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item filename
+
+The FASTA file. The file given is assumed to be in FASTA format, hence its
+extension is arbitrary.
+
+=back
+
+=item EXAMPLE
+
+     my ($header, $sequence) = read_single_fasta_or_die("sequence.fas");
+
+=back
+
+=cut
+
+sub read_single_fasta_or_die
+{
+    my $filehandle = open_or_die("@_", '<');
+    my $header;
+    my $sequence = '';
+
+    foreach(<$filehandle>)
+    {
+	if($_ =~ />(.*)/)
+	{   
+            $header = $1;
+	}
+	elsif($_ =~ /(.*)/)
+	{
+            $sequence .= $1;
+	}
+    }
+
+    close($filehandle);
+
+    if (!defined($header))
+    {
+        msg_error_and_die ("FASTA file \"@_\" is missing a header ",
+                           "line.\n");
+    }
+
+    return ($header, $sequence);
+}
 
 =pod
 

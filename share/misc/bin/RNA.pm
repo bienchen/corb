@@ -1,7 +1,7 @@
-# Last modified: 2010-02-24.09
+# Last modified: 2010-03-31.14
 #
 #
-# Copyright (C) 2009 Stefan Bienert
+# Copyright (C) 2010 Stefan Bienert
 #
 # This file is part of CoRB.
 #
@@ -22,7 +22,7 @@
 
 =head1 NAME
 
-RNA - Everything RNA. Alphabets, base pairs, test sequences...
+RNA - Everything RNA. Alphabets, base pairs...
 
 =head1 SYNOPSIS
 
@@ -32,8 +32,7 @@ RNA - Everything RNA. Alphabets, base pairs, test sequences...
 
 This module should provide everything you need to work with RNA in Perl. This
 includes the standard alphabet, Watson-Crick base pairs, base to number codings
-and many more. For testing we also include a set of sequence and structure
-tupels, here.
+and many more.
  
 To avoid the pollution of a scripts namespace nothing is exported by default.
 Therefore everything has to be imported individually or via tags.
@@ -54,7 +53,8 @@ Following tags are defined:
 
 =item * ViennaRNA - all the wrappers for functions from the Vienna RNA Package
     (L<C<RNAfold()>|"RNAfold">,
-     L<C<RNAdistance()>|"RNAdistance">)
+     L<C<RNAdistance()>|"RNAdistance">,
+     L<C<set_vienna_path()>|"set_vienna_path">)
 
 =item * DB - all functions dealing with DB functionality
     (L<C<set_db_name()>|"set_db_name">,
@@ -75,6 +75,7 @@ package RNA;
 
 use strict;
 use warnings;
+use Fcntl ':flock';
 
 # PRIVATE packages - BEGIN
 use CorbIO qw(:all);
@@ -111,7 +112,8 @@ BEGIN {
                                  @BASEPAIRS $N_BPAIRS
                                  @BASES $N_BASES)],
                     ViennaRNA => [qw(&RNAfold
-                                     &RNAdistance)],
+                                     &RNAdistance
+                                     &set_vienna_path)],
                     DB => [qw(&set_db_name
                               &disable_db_cache)]
                    );
@@ -133,7 +135,7 @@ BEGIN {
 # EXPORTED GLOBALS     - BEGIN <- automatically exported
 # EXPORTED GLOBALS     - END
 
-# NON-EXPORTED GLOBALS - BEGIN <- not automatically but still exportABLE!
+# NON-EXPORTED GLOBALS - BEGIN <- not automatically but still exportable!
 
 =pod
 
@@ -165,7 +167,7 @@ our @ALPHA = ($A, $C, $G, $U);
 
 =head2 @BASEPAIRS
 
-The list of canonical base pairs including whobble C<GU>. Each entry is a string
+The list of canonical base pairs including wobble C<GU>. Each entry is a string
 of 2 characters. All pairs are written in lower case.
 
 =cut
@@ -175,7 +177,7 @@ our @BASEPAIRS = ('cg', 'gc', 'gu', 'ug', 'au', 'ua');
 =head2 $N_BPAIRS
 
 Size of list L<C<@BASEPAIRS>|"@BASEPAIRS">. That is the number of canonical
-base pairs including whobble C<GU>.
+base pairs including wobble C<GU>.
 
 =cut
 
@@ -204,11 +206,15 @@ our $N_BASES;
 # NON-EXPORTED GLOBALS - END
 
 # PRIVATE GLOBALS      - BEGIN <- no access from outside
-my $Private_func_RNAfold     = sub {};
-my $Private_func_RNAdistance = sub {};
 my $Private_db_file          = 'corb-calls.sdb';
 my $Private_dbh;
-# PRIVATE GLOBALS      - END
+my $Private_func_RNAfold     = sub {};
+my $Private_func_RNAdistance = sub {};
+my %Private_vienna = (
+    'RNAfold' => 'RNAfold',
+    'RNAdistance' => 'RNAdistance',
+    );
+# PRIVATE GLOBALS      - END/home/bienert/projects/wetlabdesign.git/bin
 
 # INTERNAL ROUTINES    - BEGIN
 # internal routine for starting the database and creating ALL tables
@@ -219,8 +225,15 @@ sub s_start_db
         my $sth;
         my $ref;
         my %tables;
-        my $found = 3;
-        
+        my $found = 4;
+        my $lock_handle;
+
+        # locking the database file
+        $lock_handle = open_or_die($Private_db_file);
+        flock($lock_handle, LOCK_EX) or
+            msg_error_and_die('Unable to acquire exclusive lock on database ',
+                              "file \"$Private_db_file\": $!");
+
         $Private_dbh = DBI->connect("dbi:SQLite:dbname=$Private_db_file",
                                     '', '' , { PrintError => 0 ,
                                                AutoCommit => 1,
@@ -304,6 +317,7 @@ sub s_start_db
                             'parameters TEXT, '.
                             'mfe REAL, '.
                             'eoe REAL, '.
+                            'pomfe REAL, '.
                             'FOREIGN KEY(seq_id) REFERENCES sequence(id), '.
                             'FOREIGN KEY(struct_id) REFERENCES structure(id), '.
                              'UNIQUE(seq_id, struct_id, parameters)'.
@@ -326,6 +340,8 @@ sub s_start_db
 
    $Private_dbh->do('CREATE INDEX RNAdistanceindex ON RNAdistance(struct1_id)');
         }
+
+        close($lock_handle);
     }
 }
 # INTERNAL ROUTINES    - END
@@ -409,12 +425,63 @@ sub disable_db_cache
     $DB_ON = 0;
 }
 
+=head2 set_vienna_path
+
+Set a path to the binaries of the Vienna package.
+
+If all binaries of the Vienna package are in the same place, can be used to
+omit individual commands in calls of the wrapper functions.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item path
+
+The path to the binaries. Trailing backslash may be omitted.
+
+=back
+
+=item EXAMPLE
+
+set_vienna_path(/home/user/vienna);
+
+=back
+
+=cut
+
+sub set_vienna_path($)
+{
+    my ($path) = @_;
+
+    if (substr($path, -1, 1) ne '/') { $path .='/' }
+
+    foreach (keys(%Private_vienna))
+    {
+        $Private_vienna{$_} = $path.$Private_vienna{$_};
+    }
+}
+
 =head2 RNAfold
 
 Folds an RNA sequence into a 2D structure using RNAfold of the Vienna RNA
-Package. The return value is a hash with C<structure>, C<mfe> and C<eoe> as
-keys, pointing to the structure, the "minimum free energy" and "free energy of
-ensemble" of it.
+Package. The return value is a hash with C<structure>, C<mfe>, C<eoe> and 
+C<pomfe> as keys, pointing to the structure, its "minimum free energy", the
+"free energy of ensemble" and the "frequency of mfe structure in ensemble".
+
+Here is a list of abbreviations, used as keys:
+
+=over 4
+
+=item * mfe = "Minimum free energy"
+
+=item * eoe = "Energy of ensemble"
+
+=item * pomfe = "Probability of mfe structure"
+
+=back
 
 Since folding can take some time, we provide a databse mechanism, which is able
 to store all your results for reuse. The idea is to store each call to RNAfold
@@ -472,7 +539,7 @@ sub default_RNAfold
     
     if (!defined($cmd))
     {
-        $cmd = 'RNAfold';
+        $cmd = $Private_vienna{'RNAfold'};
     }
     
     if (!defined($params))
@@ -503,10 +570,14 @@ sub default_RNAfold
         {
             $result{eoe} = $1;
         }
-        
+        elsif ($_ =~ /frequency\s+of\s+mfe\s+structure\s+in\s+ensemble\s+(\-?\d+\.\d+(?:e\-?\d+)?);/)
+        {
+            $result{pomfe} = $1;
+        }
+
         push(@err_run, $_);
     }
-    
+
     close(FH);
 
     if (! defined ($result{structure}))
@@ -586,7 +657,7 @@ sub db_RNAfold
         $seq_id = $ref->{'id'};
 
         $sth = $Private_dbh->prepare(q{
-        SELECT struct_id, mfe, eoe FROM RNAfold WHERE seq_id=? AND parameters=?;
+        SELECT struct_id, mfe, eoe, pomfe FROM RNAfold WHERE seq_id=? AND parameters=?;
                                       });
         $sth->execute($seq_id, $cparams);
 
@@ -595,6 +666,7 @@ sub db_RNAfold
             $struct_id = $ref->{'struct_id'};
             $result{mfe} = $ref->{'mfe'};
             $result{eoe} = $ref->{'eoe'};
+            $result{pomfe} = $ref->{'pomfe'};
         }
     }
     else
@@ -681,10 +753,10 @@ sub db_RNAfold
 
         # store RNAfold experiment
         $sth = $Private_dbh->prepare(
-            "INSERT INTO RNAfold(seq_id, struct_id, parameters, mfe, eoe) "
-            ."VALUES (?,?,?,?,?)");
+            "INSERT INTO RNAfold(seq_id, struct_id, parameters, mfe, eoe, pomfe) "
+            ."VALUES (?,?,?,?,?,?)");
         $sth->execute($seq_id, $struct_id, $cparams, $result{mfe},
-                      $result{eoe});
+                      $result{eoe},$result{pomfe});
     }
 
     return %result;
@@ -774,14 +846,14 @@ my %comparison = RNAdistance('(((...)))', '(((......)))', '-DP');
 sub default_RNAdistance
 {
     my ($struct1, $struct2, $params, $cmd) = @_;
-    my $len1 = length($struct1);
-    my $len2 = length($struct2);
+    #my $len1 = length($struct1);
+    #my $len2 = length($struct2);
     my @err_run;
     my %result;
     
     if (!defined($cmd))
     {
-        $cmd = 'RNAdistance';
+        $cmd = $Private_vienna{'RNAdistance'};
     }
     
     if (!defined($params))

@@ -26,7 +26,7 @@ because you are already reading this manual.
 Clone the repository:
 @example
 
-$ ~ > git clone ssh://[user@@]host_of_reposito.ry/path/to/corb.git/
+[~] $ git clone git://github.com/bienchen/corb.git
 
 @end example
 
@@ -34,7 +34,7 @@ $ ~ > git clone ssh://[user@@]host_of_reposito.ry/path/to/corb.git/
 Create the build system:
 @example
 
-$ ~/@dots{}/corb.git > ./bootstrap
+[~/@dots{}/corb.git] $ ./bootstrap
 
 @end example
 
@@ -42,7 +42,7 @@ $ ~/@dots{}/corb.git > ./bootstrap
 Configure the build system:
 @example
 
-$ ~/@dots{}/corb.git > ./configure --with-development --enable-development
+[~/@dots{}/corb.git] $ ./configure --with-development --enable-development
 
 @end example
 
@@ -50,7 +50,7 @@ $ ~/@dots{}/corb.git > ./configure --with-development --enable-development
 Build:
 @example
 
-$ ~/@dots{}/corb.git > make
+[~/@dots{}/corb.git] $ make
 
 @end example
 

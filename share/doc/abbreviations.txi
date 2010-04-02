@@ -117,7 +117,9 @@ starts with the current path enclosed in squared brackets and is finished by
 @example
 [~] $
 @end example
-@noindent shows a prompt waiting for commands to be executed in your
+
+@noindent
+shows a prompt waiting for commands to be executed in your
 home directory.
 
 If a command exceeds line width, the line break is escaped by @samp{\}:

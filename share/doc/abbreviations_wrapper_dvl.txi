@@ -1,4 +1,4 @@
-@node Symbolism & Abbreviations, Using GIT, Onomastics, Top
+@node Symbolism & Abbreviations, Using Git, Onomastics, Top
 @unnumbered Symbolism & Abbreviations 
 
 

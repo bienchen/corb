@@ -1,5 +1,5 @@
-@node Using GIT, Coding, Symbolism & Abbreviations, Top
-@chapter Using @git{}
+@node Using Git
+@chapter Using Git
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2010 Stefan Bienert
@@ -10,30 +10,190 @@
 This is a short introduction of @git{}, the revision control/ code management
 system used by the @corb{} project. For more general information on @git{},
 please refer to the net. We only describe the usage by @corb{} developers, here.
+Since we are no experts on @git{}, this is only a humble attempt to use it the
+right way. Therefore, if you are a @git{}-pro and find something queer about
+our usage, please notify other developers and contribute to this section of the
+handbook.
+
+Beside the very basics, also the @git{}-hooks used by @corb{} are described in
+this chapter.
 
 
-@c Setup
-@c short preface
-@c - since we are no experts, might be not as intended (humble attempt...)
-@c - if you know exactly how stuff should go, teach other devs
-@c - change here
-@c - beside git usage, description of git hook interface
+@menu
+* Usage of Git by CoRB::        
+* Git Hooks in CoRB::           
+@end menu
 
-@c menu
- 
-@c usage of git by corb
-@c - cloning
-@c - branching
-@c - switching branches
-@c - comitting
+
+@node Usage of Git by CoRB, Git Hooks in CoRB, Using Git, Using Git
+@section Usage of Git by CoRB
+@corb{} philosophy is inspired by @git{}: a single binary, many tools buried
+in there. While the user manual describes the content of @corb{}, here we list
+the common commands used from @git{}. In the end, you get a few hints how to
+make @git{} feel a bit more home.
+
+
+@menu
+* clone::                       
+* branch::                      
+* checkout::                    
+* commit::                      
+* rebase::                      
+* merge::                       
+* pull::                        
+* push::                        
+* status::                      
+@end menu
+
+
+@node clone, branch, Usage of Git by CoRB, Usage of Git by CoRB
+@subsection clone
+@cindex @git{} @clone{}
+@cindex clone
+The @clone{} tool is used to retrive a local copy of a @git{} repository.
+
+If you throw
+@example
+
+[~/@dots{}] $ git clone git://github.com/bienchen/corb.git
+
+@end example
+
+@noindent
+at your shell, you get a local copy of our central repository, called
+@file{corb}. To spawn off a copy from this repository, just execute
+@example
+
+[~/@dots{}] $ git clone ~/corb corb.new
+
+@end example
+
+@noindent
+and you get an additional clone called @file{corb.new}.
+
+Beside @file{git} and the local file system, @git{} supports a whole bunch of
+protocols to transport a cloning process.
+
+
+@node branch, checkout, clone, Usage of Git by CoRB
+@subsection branch
+@cindex @git{} @branch{}
+@cindex branch
+Since there are more convenient ways dealing with branches in @git{}, we use
+the @branch{} tool mostly to check on the context we are working on. Execute
+@example
+
+[~/@dots{}/corb.git] $ git branch
+
+@end example
+
+@noindent
+to get a list and the current branch. The output should be similar to the
+following example, where the asterisk marks the current branch:
+@example
+
+[~/@dots{}/corb.git] $ git branch
+* documentation
+  brot
+  master
+[~/@dots{}/corb.git] $
+
+@end example
+
+@xref{checkout, @git{}, @git{} @checkout{}}, for creating and switching
+branches. Deletion can be achieved by the @branch{} tool via the @option{-d} or
+@option{-D} switches:
+@example
+
+[~/@dots{}/corb.git] $ git branch -d documentation
+
+@end example
+
+@noindent
+deletes branch @file{documentation} only if it was merged into an other branch
+before.
+@example
+
+[~/@dots{}/corb.git] $ git branch -D documentation
+
+@end example
+
+@noindent
+deletes branch @file{documentation} without asking any questions.
+
+we do not develop in master
+
+idea of branches
+
+@c - git branch tool enables you to create parallel development strains
+@c - e.g. if you just want to try something, create a new branch
+@c - make changes in the branch, if no good, just delete branch
+@c - master branch stays unattended (attended right phrase, here?)
+@c - since we never know if a change will be integratable into master branch,
+@c   we always develop in separate branches
+@c - if good, we merge into master, later
+
+@c - used to list branches
+@c - could be used to create new branches
+@c - branch: parallel devel. twig in a repo
+@c - you should not devel on master branch
+@c - master branch should always be a working copy of the master repo
+
+@node checkout, commit, branch, Usage of Git by CoRB
+@subsection checkout
+@cindex @git{} @checkout{}
+@cindex checkout
+
+
+@node commit, rebase, checkout, Usage of Git by CoRB
+@subsection commit
+@cindex @git{} @commit{}
+@cindex commit
+@c - comitting -> check commit
+
+
+@node rebase, merge, commit, Usage of Git by CoRB
+@subsection rebase
+@cindex @git{} @rebase{}
+@cindex rebase
 @c - rebasing
-@c - merging
-@c - updating (pulling/ pushing)
-@c - status
-@c - aliases?
-@c - colors?
-@c - failed updates
 
+
+@node merge, pull, rebase, Usage of Git by CoRB
+@subsection merge
+@cindex @git{} @merge{}
+@cindex merge
+@c - merging
+
+
+@node pull, push, merge, Usage of Git by CoRB
+@subsection pull
+@cindex @git{} @pull{}
+@cindex pull
+@c - updating (pulling)
+
+
+@node push, status, pull, Usage of Git by CoRB
+@subsection push
+@cindex @git{} @push{}
+@cindex pull
+@c - updating (pushing)
+
+
+@node status,  , push, Usage of Git by CoRB
+@subsection status
+@cindex @git{} @status{}
+@cindex status
+@c - status
+
+
+@c xxx - more on git
+@c   - aliases?
+@c   - colors?
+@c   - failed updates
+
+@node Git Hooks in CoRB,  , Usage of Git by CoRB, Using Git
+@section Git Hooks in CoRB
 @c git hooks
 @c - possibility to carry out commands on certain git events
 @c - we use it to verify corb coding conventions in your commits

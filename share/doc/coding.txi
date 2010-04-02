@@ -1,4 +1,4 @@
-@node Coding, Using Licenses, Using GIT, Top
+@node Coding, Using Licenses, Using Git, Top
 @chapter Code --- Notes and Coding Rules
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -263,7 +263,7 @@ ensure a very high level of compatibility among different systems.
 
 Several compilers are supported beside @gcc{}. It is definitively a good idea to
 check your code with all supported and freely available compilers.
-@xref{Special Targets, Special @make{} Targets, Special @make{} Targets}, for
+@xref{Special make Targets}, for
 more details on how @corb{}'s build system simplifies testing.
 
 
@@ -589,9 +589,8 @@ You should test your code while writing.
 For unit tests, the functions of a module should be tested by a separate
 program, instead of placing test code in the module itself. With this, tests
 can be compiled on demand. Automake supports lightweight testing via the
-@crbtarget{check} target. @xref{Special Targets, Special @make{} Targets,
-Special @make{} Targets}, for more details on how @corb{}'s build system
-simplifies testing.
+@crbtarget{check} target. @xref{Special make Targets}, for more details on how
+@corb{}'s build system simplifies testing.
 
 With all functions of a module to be tested in the same @code{main} function,
 also use hardcoded data with the test code.

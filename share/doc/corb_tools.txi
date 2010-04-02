@@ -1,5 +1,5 @@
 @node Rummaging around the CoRB, and Everything, Installation, Top
-@chapter Rummaging around the @corb{}
+@chapter Rummaging around the CoRB
 
 @c This file is part of `CoRB --- A Developers Handbook`
 @c Copyright (C) 2009 Stefan Bienert
@@ -37,6 +37,7 @@ argument of @corb{}:
 [~/@dots{}] $ corb "TOOL [OPTIONS] [DATA]"
 
 @end example
+
 @noindent
 where @samp{TOOL} is the @corb{} tool you want to use with @samp{[DATA]} as
 input data and @samp{[OPTIONS]} as its options.
@@ -55,6 +56,7 @@ the same binary.
 Having parallel installations of different @corb{} variants is more convenient:
 Just rename the binary, e.g.@: give it a descriptive suffix by running the
 @configure{} script with @option{--program-suffix=SUFFIX}. 
+@opindex @option{--program-suffix=SUFFIX}
 
 @item
 If you need to copy @corb{}, e.g.@: to send it to a friend via e-mail, there is
@@ -69,7 +71,7 @@ If you find any more advantages, please let us know.
 
 @c tools...
 @node BROT, ER2DE, Philosophy, Rummaging around the CoRB
-@section @brot{}
+@section BROT
 @cindex @brot{ }
 @pindex brot
 
@@ -116,9 +118,7 @@ a maximum number of iterations.
 @c One term to pair the sites, one term to divorce them,
 @c one term to mix them up and in a heterogenous sequence fix them.
 
-@c xxx push all existing options (installation?) into new index
 @c xxx options for energy terms
-@c xxx red cape for usual options, wolfs ass for detailed ones
 
 To calculate energies, @brot{} utilises four ``energy'' terms. One
 to design intended interactions, another to avoid unwanted pairing and one
@@ -161,6 +161,7 @@ with certain sites fixed. Thereby you are in charge to define what is to be
 considered fixed and which sites are to be left variable. The @corb{}
 source-code package comes with a simple Perl script, usable as a template how
 to drive @brot{} iteratively, called @brotiterative{}
+@opindex @option{--with-brot-iterative}
 (@pxref{--with-brot-iterative, @option{--with-brot-iterative}, @option{--with-brot-iterative}}).
 
 @c Considering the usage of a scoring function by @brot{}, pseudoknots
@@ -230,19 +231,40 @@ If you need the stability of the sequence folded into the input structure, use
 @c  If set, STRUCTURE has to be a path to a file carrying the                  
 @c  structure to be used.
 @node --scoring=NAME,  , Options, Options
-@unnumberedsubsubsec @option{--scoring=NAME}, @option{-c}
+@unnumberedsubsubsec @option{-c}, @option{--scoring=NAME}
+@opindex @option{--scoring=NAME}
+@opindex @option{-c}
 @cindex Scoring
-@c xxx option index
+
+Chooses the quasi-energy function to be used during force-field computation.
+For positive design, it is used to score constrained interactions of partial
+nucleotides. In the negative design term, values from the scoring scheme are
+used with their sign changed.
+
+Schemes to choose from areAvailable models are
+@itemize @bullet
+@item
+``@t{NN}'': Chooses the Nearest Neighbour model (@b{default}).
+
+@item
+``@t{simpleNN}'': A simplified variant of the Nearest Neighbour model.
+
+@item
+``@t{nussinov}'': A Nussinov-like scoring scheme only counting Hydrogen bonds.
+@end itemize
+
+@noindent
+For more info refer to...
+
+@c hier
+@c - example how to be used
+@c - for an idea of the differences/ what are these scoring schemes, refer to...
 @c xxx -c, --scoring=NAME    Choose a different scoring scheme  (possible 
 @c xxx                       values="NN", "nussinov", "simpleNN" 
 @c xxx                       default=`NN')
-@c xxx Use a certain energy model to score the RNA sequence. Possible NAMEs are
-@c xxx `NN', `nussinov' and `simpleNN'.                  
-@c xxx `nussinov' uses a Nussinov model, only counting Hbonds. `NN' invokes the
-@c xxx Nearest Neighbour model. `simpleNN' uses a very coarse grained
-@c xxx approximation of the Nearest Neighbour model, scoring every base pair as
-@c xxx a stack, averaging mismatches in stacked pairs and without any loop
-@c xxx parameters.
+@c xxx - we need a description of energy models
+
+
 @c  -n, --fixed-nuc=NUCLEOTIDE:INT
 @c                                Preset a nucleotide in a position
 @c  Use a fixed nucleotide in a position in the sequence during              
@@ -315,12 +337,16 @@ If you need the stability of the sequence folded into the input structure, use
 
 
 @node ER2DE,  , BROT, Rummaging around the CoRB
-@section @erde{}
+@section ER2DE
 @cindex @erde{ }
 @pindex er2de
 
 @c xxx Additional sections on energy models? Running time?
-
+@c xxx Possible NAMEs are `NN', `nussinov' and `simpleNN'. `nussinov' uses a
+@c xxx Nussinov model, only counting Hbonds. `NN' invokes the Nearest Neighbour
+@c xxx model. `simpleNN' uses a very coarse grained approximation of the
+@c xxx Nearest Neighbour model, scoring every base pair as a stack, averaging
+@c xxx mismatches in stacked pairs and without any loop parameters.
 
 @c xxx hints for the developer handbook
 @c section/ chapter Writing a manual for your tool

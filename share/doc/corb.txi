@@ -177,6 +177,43 @@ Bourne-again shell
 @sansserif{Git}
 @end macro
 
+@c git commands
+@macro clone{}
+@sansserif{clone}
+@end macro
+
+@macro branch{}
+@sansserif{branch}
+@end macro
+
+@macro checkout{}
+@sansserif{checkout}
+@end macro
+
+@macro commit{}
+@sansserif{commit}
+@end macro
+
+@macro rebase{}
+@sansserif{rebase}
+@end macro
+
+@macro merge{}
+@sansserif{merge}
+@end macro
+
+@macro pull{}
+@sansserif{pull}
+@end macro
+
+@macro push{}
+@sansserif{push}
+@end macro
+
+@macro status{}
+@sansserif{status}
+@end macro
+
 @c Make nameplate
 @macro make{}
 @sansserif{make}

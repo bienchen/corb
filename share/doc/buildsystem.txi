@@ -5,11 +5,10 @@
 @c Copyright (C) 2008 Stefan Bienert
 @c See the file fdl-1.3.txi for copying conditions.
 
-@c * Special @make{} Targets: Special Targets.
 
 @menu
-* Special @make{} Targets: Special Targets.    
+* Special make Targets::
 @end menu
 
-@node Special Targets,  , The Build system, The Build system
-@section Special @make{} Targets
+@node Special make Targets,  , The Build system, The Build system
+@section Special make Targets

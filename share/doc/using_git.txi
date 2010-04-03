@@ -121,23 +121,14 @@ before.
 @noindent
 deletes branch @file{documentation} without asking any questions.
 
-we do not develop in master
+The philosophy behind branches is to provide a way keeping your project
+repository ``clean'' during development. If you want to implement a new
+feature, you do not change code in the @file{master} branch but give it its
+own. Assuming everything turns out well, the feature's branch is finally merged
+with @file{master}. In case there are reasons against adopting the new feature
+into the project, you just delete the branch while @file{master} is still
+unchanged to the point the new branch was spawned.
 
-idea of branches
-
-@c - git branch tool enables you to create parallel development strains
-@c - e.g. if you just want to try something, create a new branch
-@c - make changes in the branch, if no good, just delete branch
-@c - master branch stays unattended (attended right phrase, here?)
-@c - since we never know if a change will be integratable into master branch,
-@c   we always develop in separate branches
-@c - if good, we merge into master, later
-
-@c - used to list branches
-@c - could be used to create new branches
-@c - branch: parallel devel. twig in a repo
-@c - you should not devel on master branch
-@c - master branch should always be a working copy of the master repo
 
 @node checkout, commit, branch, Usage of Git by CoRB
 @subsection checkout

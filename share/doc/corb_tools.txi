@@ -263,7 +263,7 @@ Schemes to choose from are
 @end itemize
 
 @noindent
-For more info refer to...
+@xref{2D Scoring Schemes}, for more information on selectable scoring functions.
 
 @c hier
 @c - for an idea of the differences/ what are these scoring schemes, refer to...

@@ -231,17 +231,26 @@ If you need the stability of the sequence folded into the input structure, use
 @c  If set, STRUCTURE has to be a path to a file carrying the                  
 @c  structure to be used.
 @node --scoring=NAME,  , Options, Options
-@unnumberedsubsubsec @option{-c}, @option{--scoring=NAME}
+@unnumberedsubsubsec @option{-c NAME}, @option{--scoring=NAME}
 @opindex @option{--scoring=NAME}
-@opindex @option{-c}
+@opindex @option{-c NAME}
 @cindex Scoring
 
+@example
+
+[~/@dots{}/] $ corb "brot --scoring=simpleNN (((...)))"
+
+[~/@dots{}/] $ corb "brot -c simpleNN (((...)))"
+
+@end example
+
+@noindent
 Chooses the quasi-energy function to be used during force-field computation.
 For positive design, it is used to score constrained interactions of partial
 nucleotides. In the negative design term, values from the scoring scheme are
 used with their sign changed.
 
-Schemes to choose from areAvailable models are
+Schemes to choose from are
 @itemize @bullet
 @item
 ``@t{NN}'': Chooses the Nearest Neighbour model (@b{default}).
@@ -257,7 +266,6 @@ Schemes to choose from areAvailable models are
 For more info refer to...
 
 @c hier
-@c - example how to be used
 @c - for an idea of the differences/ what are these scoring schemes, refer to...
 @c xxx -c, --scoring=NAME    Choose a different scoring scheme  (possible 
 @c xxx                       values="NN", "nussinov", "simpleNN" 

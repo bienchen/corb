@@ -82,6 +82,7 @@ share/doc/*.pgs
 share/doc/*.toc
 share/doc/*.tp
 share/doc/*.vr
+share/doc/*.ops
 share/doc/stamp-1
 share/doc/stamp-vti
 

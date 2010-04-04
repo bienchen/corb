@@ -100,9 +100,8 @@ following example, where the asterisk marks the current branch:
 
 @end example
 
-@xref{checkout, @git{}, @git{} @checkout{}}, for creating and switching
-branches. Deletion can be achieved by the @branch{} tool via the @option{-d} or
-@option{-D} switches:
+@xref{checkout}, for creating and switching branches. Deletion can be achieved
+by the @branch{} tool via the @option{-d} or @option{-D} switches:
 @example
 
 [~/@dots{}/corb.git] $ git branch -d documentation
@@ -134,6 +133,26 @@ unchanged to the point the new branch was spawned.
 @subsection checkout
 @cindex @git{} @checkout{}
 @cindex checkout
+
+For branch creation and switching, we use the @checkout{} command. After you
+have executed
+@example
+
+[~/@dots{}/corb.git] $ git checkout -b documentation
+
+@end example
+
+@noindent
+the repository finds a home in the newly created branch @file{documentation}.
+To switch back to @file{master}, use
+@example
+
+[~/@dots{}/corb.git] $ git checkout master
+
+@end example
+
+@noindent
+.
 
 
 @node commit, rebase, checkout, Usage of Git by CoRB

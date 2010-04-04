@@ -1,4 +1,4 @@
-@node and Everything, Concept Index, Rummaging around the CoRB, Top
+@node and Everything
 @chapter ..., and Everything
 
 @c This file is part of `CoRB --- A Developers Handbook`
@@ -11,10 +11,11 @@ information, which all the tools have in common.
 
 @menu
 * Vienna Format::               
+* 2D Scoring Schemes::          
 @end menu
 
 
-@node Vienna Format,  , and Everything, and Everything
+@node Vienna Format, 2D Scoring Schemes, and Everything, and Everything
 @section Vienna Format
 @cindex Vienna Format
 @cindex Vienna String
@@ -38,6 +39,8 @@ a concatenated collection of @samp{(}, @samp{)} and @samp{.}:
 
 @c file formats
 
+@node 2D Scoring Schemes,  , Vienna Format, and Everything
+@section 2D Scoring Schemes
 @c energy models/ scoring functions
 @c explain for nn: 
 @c             - (nun-term-explaination) Model incomplete, usually you have 

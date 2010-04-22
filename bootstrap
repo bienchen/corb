@@ -2,7 +2,7 @@
 # bootstrap - (re)create build scripts after changes in the build system
 
 
-scriptversion=2009-10-29.14
+scriptversion=2010-04-08.10
 scriptname=bootstrap
 maintainermail=bienert@zbh.uni-hamburg.de
 
@@ -382,7 +382,10 @@ EOF
 
     make -s -q -f $tmpfile;
     if test $? -eq 1; then
-        make -s -f $tmpfile ;
+        make -s -f $tmpfile;
+        if test $? -ne 0; then
+            exit 1;
+        fi
     else
         echo "$0: Build system up to date. Nothing to be done.";     
     fi

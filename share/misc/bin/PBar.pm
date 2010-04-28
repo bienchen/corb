@@ -1,4 +1,4 @@
-# Last modified: 2010-04-28.15
+# Last modified: 2010-04-28.17
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -96,9 +96,9 @@ BEGIN {
 # NON-EXPORTED GLOBALS - END
 
 # PRIVATE GLOBALS      - BEGIN
-my $private_func_start  = sub {};
-my $private_func_update = sub {};
-my $private_func_finish = sub {};
+my $private_func_start     = sub {};
+my $private_func_update    = sub {};
+my $private_func_finish    = sub {};
 # PRIVATE GLOBALS      - END
 
 =pod
@@ -137,6 +137,7 @@ sub enable
         $pbar_hashref->{count} = $count;
         $pbar_hashref->{bar} = "";
         $pbar_hashref->{port} = 0;
+        $pbar_hashref->{current} = 0;
         $pbar_hashref->{lw} = 47;
 
         if (defined($prefix)) { $pbar_hashref->{pfix} = $prefix }
@@ -165,8 +166,14 @@ sub enable
     };
 
     $private_func_update = sub {
-        my ($pbar_hashref, $current, ) = @_;
+        my ($pbar_hashref, $current) = @_;
         my $need_rewrite = 0;
+
+        if (!defined($current))
+        {
+            $current = $pbar_hashref->{current};
+            $pbar_hashref->{current}++;
+        }
 
         if ($current > $pbar_hashref->{nextport})
         {
@@ -241,8 +248,8 @@ sub pbar_enable
 
 This function disables the visual progress bar. After calling this function,
 calls to L<C<start()>|"start / pbar_start">.
-L<C<update()>|"update / pbar_update"> and
-L<C<finish()>|"finish / pbar_finish"> produce no output.
+L<C<update()>|"update / pbar_update"> and L<C<finish()>|"finish / pbar_finish">
+produce no output.
 
 =over 4
 
@@ -350,30 +357,32 @@ function. Has to be initialised by L<C<start()>|"start / pbar_start"> before.
 Has to be provided as reference while using
 L<C<pbar_update()>|"update / pbar_update">.
 
-=item current
+=item current (optional)
 
-No. of steps already processed in the loop.
+No. of steps already processed in the loop. If omitted, an internal counter is
+used. Be aware that you cannot switch between providing this parameter or not
+in the same loop. Before switching, L<C<pbar_start()>|"start / pbar_start"> has
+to be called.
 
 =back
 
 =item EXAMPLE
 
      my %pbar;
-     my $count = 100;
 
-     PBar::start(%pbar, $count);
+     PBar::start(%pbar, ($#array + 1));
 
-     for (my $i = 0; $i < $count; $i++)
+     foreach (@array)
      {
-        print $i;
-        PBar::update(%pbar, $i);
+        print $_;
+        PBar::update(%pbar);
      }
 
 =back
 
 =cut
 
-sub update(\% $)
+sub update(\%;$)
 {
     return &$private_func_update (@_);
 }

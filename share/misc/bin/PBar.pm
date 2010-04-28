@@ -296,6 +296,10 @@ L<C<pbar_start()>|"start / pbar_start">.
 
 Number of loop iterations. Used to calculate step size of the progressbar.
 
+=item prefix (optional)
+
+A prefix to be written out in front of the progress bar.
+
 =back
 
 =item EXAMPLE

@@ -1,4 +1,4 @@
-# Last modified: 2009-02-11.15
+# Last modified: 2010-04-28.15
 #
 #
 # Copyright (C) 2008 Stefan Bienert
@@ -78,11 +78,11 @@ BEGIN {
     
     @ISA         = qw(Exporter);
     @EXPORT      = ();
-    %EXPORT_TAGS = (pbarcontrol => [qw(&pbar_enable
-                                       &pbar_disable
-                                       &pbar_start
-                                       &pbar_update
-                                       &pbar_finish)]);
+    %EXPORT_TAGS = (pbarcontrol => [qw(pbar_enable
+                                       pbar_disable
+                                       pbar_start
+                                       pbar_update
+                                       pbar_finish)]);
 
     Exporter::export_ok_tags('pbarcontrol');
 }
@@ -133,11 +133,14 @@ none.
 sub enable
 {
     $private_func_start = sub {
-        my ($pbar_hashref, $count) = @_;
+        my ($pbar_hashref, $count, $prefix) = @_;
         $pbar_hashref->{count} = $count;
         $pbar_hashref->{bar} = "";
         $pbar_hashref->{port} = 0;
         $pbar_hashref->{lw} = 47;
+
+        if (defined($prefix)) { $pbar_hashref->{pfix} = $prefix }
+        else { $pbar_hashref->{pfix} = ' ' }
 
         # set up bar
         $pbar_hashref->{barrierbar} = ($count / ($pbar_hashref->{lw} - 1));
@@ -154,8 +157,10 @@ sub enable
         $pbar_hashref->{tdiff} = 0;
 
         $|++;
-        print(sprintf("\n %3.0f%% [%s%*s ETA --:--:-- YY-MM-DD",
-                      $pbar_hashref->{port}, $pbar_hashref->{bar},
+        print(sprintf("\n%s%3.0f%% [%s%*s ETA --:--:-- YY-MM-DD",
+                      $pbar_hashref->{pfix},
+                      $pbar_hashref->{port},
+                      $pbar_hashref->{bar},
                 ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1), "]"));
     };
 
@@ -189,7 +194,8 @@ sub enable
             my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)
                 = localtime(time + $eta);
 
-            print(sprintf("\r %3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
+           print(sprintf("\r%s%3.0f%% [%s%*s ETA %02d:%02d:%02d %02d-%02d-%02d",
+                          $pbar_hashref->{pfix},
                           $pbar_hashref->{port},
                           $pbar_hashref->{bar},
                        ($pbar_hashref->{lw} - length($pbar_hashref->{bar}) + 1),
@@ -218,7 +224,8 @@ sub enable
         $pbar_hashref->{bar} = sprintf("% *s", $pbar_hashref->{lw}, "");
         $pbar_hashref->{bar} =~ s/\s/=/g;
 
-        print(sprintf("\r 100%% [%s] Elapsed time %02d:%02d:%02d\n",
+        print(sprintf("\r%s100%% [%s] Elapsed time %02d:%02d:%02d\n",
+                      $pbar_hashref->{pfix},
                       $pbar_hashref->{bar},
                       $hou, $min, $sec));
         $|--;
@@ -307,7 +314,7 @@ Number of loop iterations. Used to calculate step size of the progressbar.
 
 =cut
 
-sub start(\% $)
+sub start(\%$;$)
 {
     return &$private_func_start (@_);
 }

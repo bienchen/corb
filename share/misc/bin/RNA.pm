@@ -1,4 +1,4 @@
-# Last modified: 2010-03-31.14
+# Last modified: 2010-04-28.13
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -41,15 +41,12 @@ Following tags are defined:
 =over 4
 
 =item * sigma - everything related to the RNA alphabet
-    (L<C<$A>|"$A, $C, $G, $U">,
-    L<C<$G>|"$A, $C, $G, $U">,
-    L<C<$C>|"$A, $C, $G, $U">,
-    L<C<$U>|"$A, $C, $G, $U">,
-    L<C<@ALPHA>|"@ALPHA">,
-    L<C<@BASEPAIRS>|"@BASEPAIRS">,
-    L<C<$N_BPAIRS>|"$N_BPAIRS">,
-    L<C<@BASES>|"@BASES">,
-    L<C<$N_BASES>|"$N_BASES">)
+    (L<C<$A>|"$A, $C, $G, $U">, L<C<$G>|"$A, $C, $G, $U">, L<C<$C>|"$A, $C, $G, $U">, L<C<$U>|"$A, $C, $G, $U">,
+     L<C<@ALPHA>|"@ALPHA">,
+     L<C<@BASEPAIRS>|"@BASEPAIRS">,
+     L<C<$N_BPAIRS>|"$N_BPAIRS">,
+     L<C<@BASES>|"@BASES">,
+     L<C<$N_BASES>|"$N_BASES">)
 
 =item * ViennaRNA - all the wrappers for functions from the Vienna RNA Package
     (L<C<RNAfold()>|"RNAfold">,
@@ -59,6 +56,9 @@ Following tags are defined:
 =item * DB - all functions dealing with DB functionality
     (L<C<set_db_name()>|"set_db_name">,
      L<C<disable_db_chache()>|"disable_db_cache">)
+
+=item * generators - everything creating data, presumably for evaluation/ tests
+    (L<C<function()>|"function">)
 
 =item * all - everything above
 
@@ -103,7 +103,7 @@ BEGIN {
     our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION     = 0.01;
+    $VERSION     = 1.3;
 
     @ISA         = qw(Exporter);
     @EXPORT      = ();
@@ -115,7 +115,8 @@ BEGIN {
                                      &RNAdistance
                                      &set_vienna_path)],
                     DB => [qw(&set_db_name
-                              &disable_db_cache)]
+                              &disable_db_cache)],
+                    generators => [qw(&create_random_sequence)],
                    );
 
     # add all the other tags to the ":all" tag, deleting duplicates
@@ -1054,6 +1055,94 @@ sub RNAdistance
     return &$Private_func_RNAdistance(@_);
 }
 
+=head2 create_random_sequence
+
+Create a random RNA sequence.
+- if no distribution is given, use nucleotides from @BASES
+- shares 1/$N_BASES
+- distribution:
+  - hash
+  - keys: alphabet (control upper and lower case)
+  - values: shares
+  - given as percent, 50 instead of 0.5
+- uses rand, hence seeding possible via srand()
+This function was inspired by ... of ...
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item arg1
+
+Explaination of arg1
+
+=item structure2arg2
+
+Explaination of arg2
+
+=back
+
+=item EXAMPLE
+
+my %comparison = RNAdistance('(((...)))', '(((......)))', '-DP');
+
+=back
+
+=cut
+
+sub create_random_sequence($;\%)
+{
+    my ($length, $freq_tab_href) = @_;
+    my $nn; # big string!
+    my $s = 100;
+
+    # create the distribution as a string from which we may randomly choose
+    if (!defined($freq_tab_href))
+    {
+        # use standard alphabet/ average freq.s
+        my $todo = int((100 / $N_BASES) * $s);
+        foreach (@BASES)
+        {
+            $nn .= sprintf "$_" x $todo;
+        }
+    }
+    else
+    {
+        # use private freq.s
+        my $todo;
+        foreach (keys %$freq_tab_href)
+        {
+            $todo = int ($freq_tab_href->{$_} * $s);
+            $nn .= sprintf "$_" x $todo;
+        }
+    }
+
+    my $seq = '';
+    my $r;
+    my $l = length($nn);
+
+    for (my $i = 0; $i < $length; $i++)
+    {
+        $r = int(rand($l));
+        $seq .= substr($nn, $r, 1);
+    }
+
+    undef($nn);
+
+    return $seq;
+}
+
+=pod
+sub do_seq (\$ $)
+{
+    for ( my $i = 0; $i < $length; $i++) {
+        my $r = int (rand ($l));
+        $$seq .= substr ($aa, $r, 1);
+    }
+}
+=cut
 1;
 
 # Local variables:

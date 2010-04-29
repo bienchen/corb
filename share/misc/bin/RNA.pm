@@ -1,4 +1,4 @@
-# Last modified: 2010-04-28.13
+# Last modified: 2010-04-29.15
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -57,8 +57,8 @@ Following tags are defined:
     (L<C<set_db_name()>|"set_db_name">,
      L<C<disable_db_chache()>|"disable_db_cache">)
 
-=item * generators - everything creating data, presumably for evaluation/ tests
-    (L<C<function()>|"function">)
+=item * misc - miscellaneous functions
+    (L<C<create_random_sequence()>|"create_random_sequence">)
 
 =item * all - everything above
 
@@ -116,7 +116,7 @@ BEGIN {
                                      &set_vienna_path)],
                     DB => [qw(&set_db_name
                               &disable_db_cache)],
-                    generators => [qw(&create_random_sequence)],
+                    misc => [qw(&create_random_sequence)],
                    );
 
     # add all the other tags to the ":all" tag, deleting duplicates
@@ -1057,16 +1057,13 @@ sub RNAdistance
 
 =head2 create_random_sequence
 
-Create a random RNA sequence.
-- if no distribution is given, use nucleotides from @BASES
-- shares 1/$N_BASES
-- distribution:
-  - hash
-  - keys: alphabet (control upper and lower case)
-  - values: shares
-  - given as percent, 50 instead of 0.5
-- uses rand, hence seeding possible via srand()
-This function was inspired by ... of ...
+Create a random RNA sequence of a certain length. If called without your own
+nucleotide frequency table, alphabet L<C<@BASES>|"@BASES"> is used with an
+averaged share of 1/L<C<$N_BASES>|"$N_BASES"> per nucleotide.
+
+Since we use C<rand()>, you may use C<srand()> for seeding.
+
+This function was inspired by C<rand_aa.pl> by Andrew Torda.
 
 =over 4
 
@@ -1074,19 +1071,22 @@ This function was inspired by ... of ...
 
 =over 4
 
-=item arg1
+=item length
 
-Explaination of arg1
+The length of the random sequence to be created. Has to be provided as scalar.
 
-=item structure2arg2
+=item frequency table (optional)
 
-Explaination of arg2
+A frequency table containing the alphabet and frequencies in a hash. The key/
+value pair has to be 'character/ frequency', hence the alphabet is resembled
+from the list of keys. All frequencies should be given as percentages, so it is
+50 instead of 0.5.
 
 =back
 
 =item EXAMPLE
 
-my %comparison = RNAdistance('(((...)))', '(((......)))', '-DP');
+my $seq = create_random_sequence(250);
 
 =back
 
@@ -1134,15 +1134,6 @@ sub create_random_sequence($;\%)
     return $seq;
 }
 
-=pod
-sub do_seq (\$ $)
-{
-    for ( my $i = 0; $i < $length; $i++) {
-        my $r = int (rand ($l));
-        $$seq .= substr ($aa, $r, 1);
-    }
-}
-=cut
 1;
 
 # Local variables:

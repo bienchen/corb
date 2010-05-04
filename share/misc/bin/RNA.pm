@@ -1,4 +1,4 @@
-# Last modified: 2010-04-29.15
+# Last modified: 2010-04-30.16
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -58,7 +58,8 @@ Following tags are defined:
      L<C<disable_db_chache()>|"disable_db_cache">)
 
 =item * misc - miscellaneous functions
-    (L<C<create_random_sequence()>|"create_random_sequence">)
+    (L<C<create_random_sequence()>|"create_random_sequence">,
+     L<C<hamming_distance()>|"hamming_distance">)
 
 =item * all - everything above
 
@@ -111,12 +112,13 @@ BEGIN {
                                  @ALPHA
                                  @BASEPAIRS $N_BPAIRS
                                  @BASES $N_BASES)],
-                    ViennaRNA => [qw(&RNAfold
-                                     &RNAdistance
-                                     &set_vienna_path)],
-                    DB => [qw(&set_db_name
-                              &disable_db_cache)],
-                    misc => [qw(&create_random_sequence)],
+                    ViennaRNA => [qw(RNAfold
+                                     RNAdistance
+                                     set_vienna_path)],
+                    DB => [qw(set_db_name
+                              disable_db_cache)],
+                    misc => [qw(create_random_sequence
+                                hamming_distance)],
                    );
 
     # add all the other tags to the ":all" tag, deleting duplicates
@@ -1132,6 +1134,57 @@ sub create_random_sequence($;\%)
     undef($nn);
 
     return $seq;
+}
+
+=head2 hamming_distance
+
+Calculate the hamming distance between two sequences. For sequences of
+different length, Perl literal 'inf' is returned, the number of different
+characters, else.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item sequence1
+
+The first sequence to be compared.
+
+=item sequence2
+
+The second sequence to be compared.
+
+=back
+
+=item EXAMPLE
+
+my $dist = hamming_distance($u, $v);
+
+=back
+
+=cut
+
+sub hamming_distance(\$ \$)
+{
+    my ($seq1, $seq2) = @_;
+    my $dist = 0;
+
+    if (length($$seq1) != length($$seq2))
+    {
+        return 'inf';
+    }
+
+    for (my $i = 0; $i < length($$seq1); $i++)
+    {
+        if (substr($$seq1, $i, 1) ne substr($$seq2, $i, 1))
+        {
+            $dist++;
+        }
+    }
+
+    return $dist;
 }
 
 1;

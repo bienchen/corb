@@ -1,4 +1,4 @@
-# Last modified: 2010-03-12.15
+# Last modified: 2010-05-18.13
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -86,6 +86,9 @@ Following tags are defined:
     L<C<file_2_array_or_die()>|"file_2_array_or_die">,
     L<C<read_single_fasta_or_die()>|"read_single_fasta_or_die">)
 
+=item * misc - Everything only weakly related to IO
+    (L<C<gnuplot_histogram()>|"gnuplot_histogram">)
+
 =item * all - all functions from the tags above
 
 =back
@@ -110,16 +113,20 @@ BEGIN {
     
     @ISA         = qw(Exporter);
     @EXPORT      = ();
-    %EXPORT_TAGS = (verbose => [qw(&enable_verbose
+    # we try to remove the '&' in front of the functions: Once they are in use,
+    # try to run without '&', if everything is O.K.: remove
+    # Reason: Documentation states, loading is faster wo '&'
+    %EXPORT_TAGS = (verbose => [qw(enable_verbose
                                    &disable_verbose
                                    &is_verbose
-                                   &msg_verbose)],
-                    msg     => [qw(&msg_warning
-                                   &msg_error_and_die
+                                   msg_verbose)],
+                    msg     => [qw(msg_warning
+                                   msg_error_and_die
                                    &disable_msg_caller)],
-                    file    => [qw(&open_or_die
+                    file    => [qw(open_or_die
                                    &file_2_array_or_die
-                                   &read_single_fasta_or_die)]
+                                   &read_single_fasta_or_die)],
+                    misc    => [qw(gnuplot_histogram)]
                    );
 
     # add all the other tags to the ":all" tag, deleting duplicates
@@ -133,14 +140,15 @@ BEGIN {
     # automatically add all tagged functions to the EXPORT_OK list
     Exporter::export_ok_tags('all');
 }
-#our @EXPORT_OK; # do we need this while it is already defined above?
 
 
 # EXPORTED GLOBALS     - BEGIN <- automatically exported
 # EXPORTED GLOBALS     - END
 
+
 # NON-EXPORTED GLOBALS - BEGIN <- not automatically but still exportABLE!
 # NON-EXPORTED GLOBALS - END
+
 
 # PRIVATE GLOBALS      - BEGIN <- no access from outside
 my $Private_func_msg_verbose  = sub {};
@@ -654,6 +662,268 @@ sub read_single_fasta_or_die
     }
 
     return ($header, $sequence);
+}
+
+=head2 gnuplot_histogram
+
+Simple interface to C<gnuplot> for creating histograms.
+
+Histograms can be produced just by providing the data, but can also be tuned
+using C<%settings> parameter. Everything is written to a file with the terminal
+(file type) determined from the extension of a filename provided.
+
+Since plotting with C<gnuplot> is not an easy business, this function does not
+cover all possible errors that might occur. Hence, we do not recommend using
+this function in a productive script but for data evaluation. If you stumble
+upon an uncovered problem, feel free to add a solution to this function.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item data
+
+A hash containing the data where the keys are the labels for the x-axis and the
+values are the data points. Since the hash is used as a reference, no anonymous
+hashes allowed, here. The keys will be used in sorted order.
+
+As value each entry has to carry an array of values belonging to its key. This
+will be presented as a group of bars in the plot.
+
+The members of an array may be named using the C<legend> setting.
+
+=item filename
+
+Name where to store the histogram. The extension determines the terminal used.
+Currently supported are:
+
+=over 4
+
+=item * pdf, triggered by '*.pdf'
+
+=item * postscript, triggered by '*.ps'
+
+=back
+
+=item settings
+
+A hash to fine tune the plot. Keys describe the item to tune. Currently
+supported are:
+
+=over 4
+
+=item * title, Heading of the plot
+
+=item * xlabel, Naming the x-axis
+
+=item * ylabel, Naming the y-axis
+
+=item * legend, Array of names for the data lines; Note that you have to name all lines or none.
+
+=item * termsettings, A string carrying options for the terminal, use as in C<gnuplot>
+
+=item * xtics, Optionstring for xtics, use as in C<gnuplot>
+
+=back
+
+=back
+
+=item EXAMPLE
+
+    my %data = (0.1 =>[10], 0.2 =>[20], 0.3 =>[30], 0.4 =>[40], 0.5 =>[50]);
+    gnuplot_histogram(%data, "data1.ps",(xlabel => 'Portion',
+                                         ylabel => 'Occurrences',
+                                         termsettings => 'color'));
+
+    %data = (0.1 => [10, 50, 5],
+             0.2 => [20, 40, 30],
+             0.3 => [30, 30, 55],
+             0.4 => [40, 20, 80],
+             0.5 => [50, 10, 105]);
+    gnuplot_histogram(%data, "data2.ps",(xlabel => 'Portion',
+                                         ylabel => 'Occurrences',
+                                         legend => ['rise', 'fall', 'misc'],
+                                         termsettings => 'color'));
+
+=back
+
+=cut
+
+sub gnuplot_histogram(\% $; %)
+{
+    my ($data_hashref, $filename, %settings) = @_;
+    my $run = 1;
+    my $mode = '';
+    my $msg = '';
+    my $trm = 'not set';
+    my $i;
+    my @xtic;
+    my $using;
+    my @legend;
+    my ($data1, $data2);
+    my $termopts = '';
+    my $add_xtics = '';
+    my $gplt_script = '';
+
+    if (keys(%{$data_hashref}) == 0)
+    {
+        return;
+    }
+
+    # determine gnuplot terminal
+    if ($filename =~ /\.pdf$/)
+    {
+        $trm = 'pdf';
+    }
+    elsif ($filename =~ /\.ps$/)
+    {
+        $trm = 'postscript';
+    }
+
+    #    eval %settings
+    if (%settings)
+    {
+        if (defined($settings{title}))
+        {
+            $gplt_script .= "set title \\\"$settings{title}\\\"\n";
+        }
+        if (defined($settings{xlabel}))
+        {
+            $gplt_script .= "set xlabel \\\"$settings{xlabel}\\\"\n";
+        }
+        if (defined($settings{ylabel}))
+        {
+            $gplt_script .= "set ylabel \\\"$settings{ylabel}\\\"\n";
+        }
+        if (defined($settings{legend}))
+        {
+            @legend = @{$settings{legend}};
+        }
+
+        # terminal settings
+        if (defined($settings{termsettings}))
+        {
+            $termopts = $settings{termsettings};
+        }
+
+        # xtics addons
+        if (defined($settings{xtics}))
+        {
+            $add_xtics = $settings{xtics};
+        }
+    }
+
+    # create script
+    #    set terminal & output file
+    $gplt_script .= "set term $trm $termopts\nset out '$filename'\n";
+
+    #    standard settings for histograms
+    $gplt_script .= "set style histogram clustered gap 1\n"
+                   ."set style data histograms\n"
+                   ."set style fill solid 1.00 border -1\n";
+
+    #    add xtics
+    @xtic = sort(keys(%{$data_hashref}));
+    $gplt_script .= "set xtics $add_xtics (\\\"$xtic[0]\\\" 0";
+    for($i = 1; $i <= $#xtic; $i++)
+    {
+        $gplt_script .= ", \\\"$xtic[$i]\\\" $i";
+    }
+    $gplt_script .= ")\n";
+
+    # create data
+    $data1 = '';
+    foreach(sort(keys(%{$data_hashref})))
+    {
+        unless (uc(ref($data_hashref->{$_})) eq 'ARRAY')
+        {
+            msg_error_and_die("Value for key \"$_\" in data hash is not an ",
+                              "array in ", (caller(0))[3], ".\n");
+        }
+
+        $data1 .= join(' ', @{$data_hashref->{$_}})."\n";
+    }
+    $data1 .= "e\n";
+
+    # create 'using' part of plot command
+    if (!@legend)
+    {
+        foreach (@{$data_hashref->{$xtic[0]}})
+        {
+            push(@legend, '');
+        }
+    }
+    else
+    {
+        $gplt_script .= "set key reverse Left left\n";
+    }
+
+    $using = '';
+    $data2 .= $data1;
+    for ($i = 1; $i <= $#legend; $i++)
+    {
+        $using .= ', \'-\' u '.($i + 1).' t \''.$legend[$i].'\'';
+        $data2 .= $data1;
+    }
+
+    $gplt_script .= "plot [:][0:] '-' using 1 t '".$legend[0]."'".$using."\n";
+
+    $gplt_script .= $data2;
+
+    # execute script
+    while ($run)
+    {
+        $run = 0;
+
+        unless(open(FH, "echo \"$gplt_script\" | gnuplot 2>&1 |"))
+        {
+            msg_error_and_die ('Failure at running gnuplot with script ',
+                               "\"$gplt_script\": $!\n");
+        }
+
+        # catch error messages
+        foreach (<FH>)
+        {
+            #print $_;
+            if ($_ =~ /line\s+\d+:\s+unknown\s+or\s+ambiguous\s+terminal\s+
+                      type;\s+type\s+just\s+'set\s+terminal'\s+for\s+a\s+list/x)
+            {
+                $gplt_script = 'set terminal';
+                $mode = 'termtypes';
+                $run = 1;
+                last;
+            }
+            elsif (    (($mode eq '') or ($mode eq 'uncatched'))
+                   and ($_ !~ /^\s*\^\s*$/)
+                   and ($_ !~ /^$/)
+                   and ($_ !~ /gnuplot\>\s+set\s+term\s+/))
+            {
+                $mode = 'uncatched';
+                $msg .= $_;
+            }
+            elsif ($mode eq 'termtypes')
+            {
+                $msg .= $_;
+            }
+        }
+        close(FH);
+    }
+
+    if ($mode eq 'termtypes')
+    {
+        msg_error_and_die ("Unsupported format of output file \"$filename\".",
+                           $msg);
+    }
+    elsif ($mode eq 'uncatched')
+    {
+        msg_error_and_die ("Uncatched error occured for script\n\n",
+                           $gplt_script,
+                           "\ngnuplot output:\n",
+                           $msg);
+    }
+    #print $gplt_script;
 }
 
 =pod

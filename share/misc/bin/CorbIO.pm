@@ -1,4 +1,4 @@
-# Last modified: 2010-05-18.13
+# Last modified: 2010-05-21.15
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -726,6 +726,8 @@ supported are:
 
 =item * xtics, Optionstring for xtics, use as in C<gnuplot>
 
+=item * yupperrange, Defines the upper y range in the C<plot> command
+
 =back
 
 =back
@@ -766,6 +768,7 @@ sub gnuplot_histogram(\% $; %)
     my $termopts = '';
     my $add_xtics = '';
     my $gplt_script = '';
+    my $yup = '';
 
     if (keys(%{$data_hashref}) == 0)
     {
@@ -812,6 +815,12 @@ sub gnuplot_histogram(\% $; %)
         if (defined($settings{xtics}))
         {
             $add_xtics = $settings{xtics};
+        }
+
+        # y-ranges
+        if (defined($settings{yupperrange}))
+        {
+            $yup = $settings{yupperrange};
         }
     }
 
@@ -868,7 +877,8 @@ sub gnuplot_histogram(\% $; %)
         $data2 .= $data1;
     }
 
-    $gplt_script .= "plot [:][0:] '-' using 1 t '".$legend[0]."'".$using."\n";
+    $gplt_script .= "plot [:][0:$yup] '-' using 1 t '".$legend[0]."'".$using
+        ."\n";
 
     $gplt_script .= $data2;
 

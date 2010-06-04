@@ -1,4 +1,4 @@
-# Last modified: 2010-05-21.15
+# Last modified: 2010-06-04.16
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -60,7 +60,7 @@ CorbIO - Simple input and output routines.
 
 This module provides simple message and file handling functions. The idea is to
 provide functionality which is needed everywhere, like error messages, warnings
-and file opening, as one-line-function. Of course this means, that on problems
+and file handling, as one-line-function. Of course this means, that on problems
 the calling script is stopped (via C<die()>). As a rule, functions which might
 exit a caller, tell so in their names.
 
@@ -84,7 +84,8 @@ Following tags are defined:
 =item * file - File handling
     (L<C<open_or_die()>|"open_or_die">,
     L<C<file_2_array_or_die()>|"file_2_array_or_die">,
-    L<C<read_single_fasta_or_die()>|"read_single_fasta_or_die">)
+    L<C<read_single_fasta_or_die()>|"read_single_fasta_or_die">,
+    L<C<write_2_file_or_die()>|"write_2_file_or_die">)
 
 =item * misc - Everything only weakly related to IO
     (L<C<gnuplot_histogram()>|"gnuplot_histogram">)
@@ -125,7 +126,8 @@ BEGIN {
                                    &disable_msg_caller)],
                     file    => [qw(open_or_die
                                    &file_2_array_or_die
-                                   &read_single_fasta_or_die)],
+                                   &read_single_fasta_or_die
+                                   &write_2_file_or_die)],
                     misc    => [qw(gnuplot_histogram)]
                    );
 
@@ -609,6 +611,49 @@ sub file_2_array_or_die
     return @lines;
 }
 
+=head2 write_2_file_or_die
+
+Write to a file. Ment to be used only once, hence everything to be written
+should go with one call. Since the file is opened in write NOT in append mode,
+trying to write more than once to the same file via this function will fail.
+
+=over 4
+
+=item ARGUMENTS
+
+=over 4
+
+=item filename
+
+The FASTA file. The file given is assumed to be in FASTA format, hence its
+extension is arbitrary. To print to STDOUT, use '-' as C<filename>.
+
+=item content
+
+List of items to be written to file.
+
+=back
+
+=item EXAMPLE
+
+    # write "Hello CoRB" to STDOUT
+    write_2_file_or_die('-', 'Hello', 'CoRB');
+
+=back
+
+=cut
+
+sub write_2_file_or_die ($ @)
+{
+    my ($file, @list) = @_;
+
+    my $fh = open_or_die($file, '>');
+
+    print $fh @list;
+
+    close($fh);
+}
+
 =head2 read_single_fasta_or_die
 
 Read a FASTA file carrying a single sequence and return the sequence with its
@@ -728,6 +773,12 @@ supported are:
 
 =item * yupperrange, Defines the upper y range in the C<plot> command
 
+=item * errorbars, Add errorbars to the histogram bars; Fillstyle of the bars
+will change from 'solid' to 'empty', data has to be presented as string 'y dy';
+the value to the key 'errorbars' only needs to be set to an arbitrary value
+
+=item * script, takes a filename ('-' for STDOUT) to write the script to
+
 =back
 
 =back
@@ -757,6 +808,7 @@ sub gnuplot_histogram(\% $; %)
 {
     my ($data_hashref, $filename, %settings) = @_;
     my $run = 1;
+    my $scriptstore;
     my $mode = '';
     my $msg = '';
     my $trm = 'not set';
@@ -765,10 +817,15 @@ sub gnuplot_histogram(\% $; %)
     my $using;
     my @legend;
     my ($data1, $data2);
+
+    # extra settings for the plot
     my $termopts = '';
     my $add_xtics = '';
     my $gplt_script = '';
     my $yup = '';
+    my $ebars = '';
+    my $fstyle = 'solid 1.00';
+    my $ucol = '1';
 
     if (keys(%{$data_hashref}) == 0)
     {
@@ -788,6 +845,7 @@ sub gnuplot_histogram(\% $; %)
     #    eval %settings
     if (%settings)
     {
+        # labels
         if (defined($settings{title}))
         {
             $gplt_script .= "set title \\\"$settings{title}\\\"\n";
@@ -822,6 +880,20 @@ sub gnuplot_histogram(\% $; %)
         {
             $yup = $settings{yupperrange};
         }
+
+        # should we print out the script?
+        if (defined($settings{script}))
+        {
+            $scriptstore = $settings{script};
+        }
+
+        # more plot settings
+        if (defined($settings{errorbars}))
+        {
+            $ebars = 'errorbars';
+            $fstyle = 'empty';
+            $ucol = '1:2'
+        }
     }
 
     # create script
@@ -829,9 +901,9 @@ sub gnuplot_histogram(\% $; %)
     $gplt_script .= "set term $trm $termopts\nset out '$filename'\n";
 
     #    standard settings for histograms
-    $gplt_script .= "set style histogram clustered gap 1\n"
+    $gplt_script .= "set style histogram clustered $ebars gap 1\n"
                    ."set style data histograms\n"
-                   ."set style fill solid 1.00 border -1\n";
+                   ."set style fill $fstyle border -1\n";
 
     #    add xtics
     @xtic = sort(keys(%{$data_hashref}));
@@ -877,10 +949,16 @@ sub gnuplot_histogram(\% $; %)
         $data2 .= $data1;
     }
 
-    $gplt_script .= "plot [:][0:$yup] '-' using 1 t '".$legend[0]."'".$using
+    $gplt_script .= "plot [:][0:$yup] '-' using $ucol t '".$legend[0]."'".$using
         ."\n";
 
     $gplt_script .= $data2;
+
+    # print script as required
+    if (defined($scriptstore))
+    {
+        write_2_file_or_die($scriptstore, $gplt_script);
+    }
 
     # execute script
     while ($run)
@@ -905,6 +983,12 @@ sub gnuplot_histogram(\% $; %)
                 $run = 1;
                 last;
             }
+            elsif ($_ =~ /line\s+\d+:\s+warning:\s+Skipping\s+data\s+file\s+with\s+no\s+valid\s+points/)
+            {
+                $mode = 'data';
+                $msg .= $_;
+                last;
+            }
             elsif (    (($mode eq '') or ($mode eq 'uncatched'))
                    and ($_ !~ /^\s*\^\s*$/)
                    and ($_ !~ /^$/)
@@ -924,6 +1008,14 @@ sub gnuplot_histogram(\% $; %)
     if ($mode eq 'termtypes')
     {
         msg_error_and_die ("Unsupported format of output file \"$filename\".",
+                           $msg);
+    }
+    elsif ($mode eq 'data')
+    {
+        msg_error_and_die ("Invalid data points found, probably forgotten ",
+                           "columns in script\n\n",
+                           $gplt_script,
+                           "\ngnuplot output:\n",
                            $msg);
     }
     elsif ($mode eq 'uncatched')

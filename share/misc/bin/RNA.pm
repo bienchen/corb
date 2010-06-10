@@ -1,4 +1,4 @@
-# Last modified: 2010-04-30.16
+# Last modified: 2010-06-10.09
 #
 #
 # Copyright (C) 2010 Stefan Bienert
@@ -232,7 +232,7 @@ sub s_start_db
         my $lock_handle;
 
         # locking the database file
-        $lock_handle = open_or_die($Private_db_file);
+        $lock_handle = open_or_die($Private_db_file, '>>');
         flock($lock_handle, LOCK_EX) or
             msg_error_and_die('Unable to acquire exclusive lock on database ',
                               "file \"$Private_db_file\": $!");

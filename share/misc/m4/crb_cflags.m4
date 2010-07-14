@@ -1,4 +1,4 @@
-# Last modified: 2009-10-29.23
+# Last modified: 2010-07-13.20
 
 dnl Copyright (C) 2007 Stefan Bienert
 dnl 
@@ -73,20 +73,6 @@ AC_DEFUN([_CRB_CFLAGS_SET_WARNINGS_SUNCC],
 ]dnl# macro-body
         )
 
-# _CRB_CFLAGS_INVOKE_POSIX
-# ---------------------------
-# Set the the macro _XOPEN_SOURCE to a value of 600. This invokes all POSIX
-# compliant functions (ISO C) plus the X/Open System Interfaces extensions
-# (XSI). The macro has to be defined at the compiler level since it is
-# required to be set before any header is included. See
-# http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
-# for further informations.
-AC_DEFUN([_CRB_CFLAGS_INVOKE_POSIX],
-[dnl# macro-body
- CFLAGS="${CFLAGS} -D_XOPEN_SOURCE=600"
-]dnl# macro-body
-        )
-
 ################################################################################
 #########        Public macros: Macros to set certain CFLAGS           #########
 ################################################################################
@@ -109,9 +95,17 @@ AC_DEFUN([CRB_CFLAGS_SET_WARNINGS],
          [_crb_ver="${CC} unknown, no automatic development flag setting"]
         )dnl# AS_CASE
 
- dnl# _XOPEN_SOURCE is not a compiler option but a macro to be defined for all
- dnl# compilers
- _CRB_CFLAGS_INVOKE_POSIX
+ dnl# trigger definition of "CRB_UNUSED" macro to work with paranoid compiler
+ dnl# flags
+ AC_DEFINE([CRB_DEF_UNUSED], [1],
+           [Define to 1 if UNUSED macro should void arguments.])
+ dnl# Set the the macro _XOPEN_SOURCE to a value of 600. This invokes all POSIX
+ dnl# compliant functions (ISO C) plus the X/Open System Interfaces extensions
+ dnl# (XSI). The macro has to be defined at the compiler level since it is
+ dnl# required to be set before any header is included. See
+ dnl# http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+ dnl# for further informations.
+ CFLAGS="${CFLAGS} -D_XOPEN_SOURCE=600"
  AC_MSG_RESULT([$_crb_ver])
 ]dnl# macro-body
         )

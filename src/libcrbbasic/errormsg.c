@@ -50,6 +50,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <assert.h>
+#include "crb_unused.h"
 #include "inc_bool.h"
 #include "inc_pthr.h"
 #include "inc_strg.h"
@@ -701,8 +702,8 @@ call_warn_msgr (const char* file, int line, const char* format, ...)
 static void
 throw_verbose_msg_dummy (const char* format, va_list ap)
 {
-   assert (format);
-   assert (ap);
+   CRB_UNUSED (format);
+   CRB_UNUSED (ap);
 }
 
 /** @brief This is the default function for verbose messages.

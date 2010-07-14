@@ -45,17 +45,18 @@
 #define CRBBASIC_H
 
 #include <config.h>
-#include "argvprsr.h" /* command line parser */
-#include "errormsg.h" /* messaging functions */
-#include "gcckywrd.h" /* handling of GCC keywords */
-#include "inc_bool.h" /* including stdbool.h in a portable way */
-#include "inc_pthr.h" /* cond. including posix threads headers */
-#include "inc_strg.h" /* including either string.h or strings.h */
-#include "memmgr.h"   /* memmory manager */
-#include "mprintf.h"  /* printf family replacements */
-#include "str.h"      /* string class */
-#include "undef.h"    /* undefined flags for basic datatypes */
-#include "genarray.h" /* generic array macros */
-#include "gfile.h"    /* generic file handling */
+#include "crb_unused.h" /* CRB_UNUSED macro */
+#include "argvprsr.h"   /* command line parser */
+#include "errormsg.h"   /* messaging functions */
+#include "gcckywrd.h"   /* handling of GCC keywords */
+#include "inc_bool.h"   /* including stdbool.h in a portable way */
+#include "inc_pthr.h"   /* cond. including posix threads headers */
+#include "inc_strg.h"   /* including either string.h or strings.h */
+#include "memmgr.h"     /* memmory manager */
+#include "mprintf.h"    /* printf family replacements */
+#include "str.h"        /* string class */
+#include "undef.h"      /* undefined flags for basic datatypes */
+#include "genarray.h"   /* generic array macros */
+#include "gfile.h"      /* generic file handling */
 
 #endif /* CRBBASIC_H */

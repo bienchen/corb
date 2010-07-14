@@ -46,6 +46,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <ctype.h>
+#include "crb_unused.h"
 #include "inc_strg.h"
 #include "errormsg.h"
 #include "memmgr.h"
@@ -88,8 +89,8 @@ gfile_delete (GFile* this)
 GFileType
 gfile_get_type (const char* file, unsigned long length)
 {
-   assert (file || ! file);
-   assert (length || ! length);
+   CRB_UNUSED (file);
+   CRB_UNUSED (length);
 
    return GFILE_UNCOMPRESSED;
 }

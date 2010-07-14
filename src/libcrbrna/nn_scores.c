@@ -14937,7 +14937,7 @@ nn_scores_add_thermal_noise (unsigned long alpha_size,
 unsigned long
 nn_scores_get_size_tetra_loop (const NN_scores* this)
 {
-   assert (this);
+   CRB_UNUSED (this);
 
    return D_TL - 2;             /* remove closing bp */
 }
@@ -14951,7 +14951,7 @@ nn_scores_get_size_tetra_loop (const NN_scores* this)
 unsigned long
 nn_scores_get_size_tetra_loop_full (const NN_scores* this)
 {
-   assert (this);
+   CRB_UNUSED (this);
 
    return D_TL;
 }

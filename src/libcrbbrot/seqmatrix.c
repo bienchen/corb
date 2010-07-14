@@ -330,8 +330,8 @@ seqmatrix_fix_col (const unsigned long row, const unsigned long col,
 static __inline__ int
 seqmatrix_pre_col_iter_hook (void* data, SeqMatrix* sm)
 {
-   assert (data);
-   assert (sm);
+   CRB_UNUSED (data);
+   CRB_UNUSED (sm);
 
    return 0;
 }
@@ -339,9 +339,9 @@ seqmatrix_pre_col_iter_hook (void* data, SeqMatrix* sm)
 static __inline__ int
 seqmatrix_fixed_site_hook (void* data, unsigned long i,SeqMatrix* sm)
 {
-   assert (data);
-   assert (sm);
-   assert (i < sm->cols);
+   CRB_UNUSED (data);
+   CRB_UNUSED (sm);
+   CRB_UNUSED (i);
 
    return 0;
 }
@@ -349,9 +349,9 @@ seqmatrix_fixed_site_hook (void* data, unsigned long i,SeqMatrix* sm)
 static __inline__ int 
 seqmatrix_fixing_site_hook (void* data, unsigned long i, SeqMatrix* sm)
 {
-   assert (data || !data);
-   assert (sm);
-   assert (i < sm->cols);
+   CRB_UNUSED (data);
+   CRB_UNUSED (sm);
+   CRB_UNUSED (i);
 
    return 0;
 }
@@ -359,7 +359,7 @@ seqmatrix_fixing_site_hook (void* data, unsigned long i, SeqMatrix* sm)
 static __inline__ char* 
 seqmatrix_get_seq_string (void* data)
 {
-   assert (data);
+   CRB_UNUSED (data);
 
    return NULL;
 }
@@ -741,7 +741,7 @@ seqmatrix_collate_is (const float fthresh,
    int retval = 0;
 
    assert (sm);
-   assert (fthresh <= 1.0f);
+   CRB_UNUSED (fthresh);//assert (fthresh <= 1.0f);
 
    /* Approach: find unambigouos sites and fixate 'em */
    /*           find the largest of the ambigouos sites */
@@ -750,7 +750,7 @@ seqmatrix_collate_is (const float fthresh,
    while ((largest_amb_col != sm->cols + 1) && (! retval))
    {
       /* for all columns */
-      /* SB: 16-10-09, fixing no happens during the simulation
+      /* SB: 16-10-09, fixing now happens during the simulation
          for (j = 0; j < sm->cols; j++)
       {
          if (!seqmatrix_is_col_fixed (j, sm))
@@ -899,13 +899,13 @@ int dummy_write_entropy (GFile* file, unsigned long step,
                          float s_long,
                          float k)
 {
-   assert ((file) || (!file));
-   assert ((step) || (!step));
-   assert ((t >= 0.0f) || (t < 0.0f));
-   assert ((s >= 0.0f) || (s < 0.0f));
-   assert ((s_short >= 0.0f) || (s_short < 0.0f));
-   assert ((s_long >= 0.0f) || (s_long < 0.0f));
-   assert ((k >= 0.0f) || (k < 0.0f));
+   CRB_UNUSED (file);
+   CRB_UNUSED (step);
+   CRB_UNUSED (t);
+   CRB_UNUSED (s);
+   CRB_UNUSED (s_short);
+   CRB_UNUSED (s_long);
+   CRB_UNUSED (k);
 
    return 0;
 }
@@ -968,9 +968,9 @@ int dummy_write_matrix (GFile* file,
                         void* data,
                         const SeqMatrix* sm)
 {
-   assert ((file) || (!file));
-   assert ((data) || (!data));
-   assert ((sm) || (!sm));
+   CRB_UNUSED (file);
+   CRB_UNUSED (data);
+   CRB_UNUSED (sm);
 
    return 0;
 }

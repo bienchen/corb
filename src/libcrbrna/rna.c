@@ -795,7 +795,7 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
    char* line_buffer = NULL;
    size_t lb_size = 0;
    unsigned long n;
-   unsigned long hi_pos[2] = {0, 0};
+   unsigned long hi_pos[3] = {0, 0, 0};
    unsigned long line_no = 0;       /* current line number */
    unsigned long ct_cols[N_ct_nos];
    unsigned long n_bases = 0;
@@ -900,6 +900,7 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
             {
                hi_pos[0] = ct_cols[partner];
                hi_pos[1] = ct_cols[Seq_pos];
+               hi_pos[2] = line_no;
             }
          }
       }
@@ -907,12 +908,12 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
 
    /* check for corrupted files: if the highest pairing partner exceeds the no.
       of bases read, we're busted */
-   if (hi_pos[0] > n_bases)
+   if (!error && (hi_pos[0] > n_bases))
    {
       THROW_ERROR_MSG (CT_FILE_ERR "Base %lu should pair with base %lu but "
                        "the file provided only contains %lu entries.",
                        str_get(gfile_get_path (gfile)),
-                       line_no,
+                       hi_pos[2],
                        hi_pos[1],
                        hi_pos[0],
                        n_bases);

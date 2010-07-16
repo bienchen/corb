@@ -485,7 +485,7 @@ print_fmt_msg (const char* type,
  * parameter list.\n
  * Returns the return value of @c print_fmt_msg().\n
  * If used via the macro @c THROW_ERROR_MSG, @c file and @c line are set
- * automatically when compiled without @c NDEBUG.
+ * automatically when compiled with @c CRB_DEF_UNUSED.
  * @param[in] file Calling file. Usually filled by the __FILE__ macro.
  * @param[in] line Called from line. Use __LINE__ here.
  * @param[in] format Format string.
@@ -561,8 +561,8 @@ set_error_msg_func (int (*error_msgr)(const char*, int, const char*, va_list))
  * else.\n
  * An other way to access the error message function is via the macro
  * @c THROW_ERROR_MSG. This handles the @c file and @c line parameter for you:
- * If compiled without NDEBUG, the calling file and line will be included in
- * the message.
+ * If compiled with CRB_DEF_UNUSED, the calling file and line will be included
+ * in the message.
  * @param[in] file Calling file. Usually filled by the __FILE__ macro.
  * @param[in] line Called from line. Use __LINE__ here.
  * @param[in] format Format string.
@@ -592,7 +592,7 @@ call_error_msgr (const char* file, int line, const char* format, ...)
  * parameter list.\n
  * Returns the return value of @c print_fmt_msg().\n
  * If used via the macro @c THROW_ERROR_MSG, @c file and @c line are set
- * automatically when compiled without @c NDEBUG.
+ * automatically when compiled with @c CRB_DEF_UNUSED.
  * @param[in] file Calling file. Usually filled by the __FILE__ macro.
  * @param[in] line Called from line. Use __LINE__ here.
  * @param[in] format Format string.
@@ -669,8 +669,8 @@ set_warn_msg_func (int (*warn_msgr)(const char*, int, const char*, va_list))
  * else.\n
  * An other way to access the warning message function is via the macro
  * @c THROW_WARN_MSG. This handles the @c file and @c line parameter for you:
- * If compiled without NDEBUG, the calling file and line will be included in
- * the message.
+ * If compiled with CRB_DEF_UNUSED, the calling file and line will be included
+ * in the message.
  * @param[in] file Calling file. Usually filled by the __FILE__ macro.
  * @param[in] line Called from line. Use __LINE__ here.
  * @param[in] format Format string.

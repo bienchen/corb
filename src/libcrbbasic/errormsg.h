@@ -104,16 +104,16 @@ __attribute__ ((format (printf, 3, 4)))
 ;
 
 /* macros to use call_error_msgr and call_warn_msgr */
-#ifdef NDEBUG
-#define THROW_ERROR_MSG(...)                \
-   call_error_msgr(NULL, 0, __VA_ARGS__)
-#define THROW_WARN_MSG(...)                  \
-   call_warn_msgr(NULL, 0, __VA_ARGS__)
-#else
+#ifdef CRB_DEF_UNUSED
 #define THROW_ERROR_MSG(...)                          \
    call_error_msgr(__FILE__, __LINE__, __VA_ARGS__)
 #define THROW_WARN_MSG(...)                          \
    call_warn_msgr(__FILE__, __LINE__, __VA_ARGS__)
+#else
+#define THROW_ERROR_MSG(...)                \
+   call_error_msgr(NULL, 0, __VA_ARGS__)
+#define THROW_WARN_MSG(...)                  \
+   call_warn_msgr(NULL, 0, __VA_ARGS__)
 #endif
 
 /* verbose messaging */

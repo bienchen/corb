@@ -1,4 +1,4 @@
-# Last modified: 2009-02-02.23
+# Last modified: 2010-07-16.16
 
 ## Copyright (C) 2008 Stefan Bienert
 ## 
@@ -46,6 +46,7 @@ libcrbbasic_a_SOURCES =                    \
 
 # libcrbbasic_a
 noinst_HEADERS =                           \
+	crb_unused.h                       \
 	memmgr.h                           \
 	mprintf.h  	                   \
 	mprintf_dummy.h                    \

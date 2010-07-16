@@ -795,6 +795,7 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
    char* line_buffer = NULL;
    size_t lb_size = 0;
    unsigned long n;
+   unsigned long hi_pos[2] = {0, 0};
    unsigned long line_no = 0;       /* current line number */
    unsigned long ct_cols[N_ct_nos];
    unsigned long n_bases = 0;
@@ -885,7 +886,7 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
             else
             {
                THROW_ERROR_MSG (CT_FILE_ERR "Base %lu should pair with base "
-                                "%lu but is already paired to base %lu.\n",
+                                "%lu but is already paired to base %lu.",
                                 str_get(gfile_get_path (gfile)),
                                 line_no,
                                 ct_cols[Seq_pos] - 1,
@@ -893,8 +894,29 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
                                 this->pairs[ct_cols[Seq_pos] - 1]);
                error = ERR_RNA_CT_SM;
             }
+
+            /* check for corrupted files */
+            if (hi_pos[0] < (ct_cols[partner] - 1))
+            {
+               hi_pos[0] = ct_cols[partner] - 1;
+               hi_pos[1] = ct_cols[Seq_pos] - 1;
+            }
          }
       }
+   }
+
+   /* check for corrupted files: if the highest pairing partner exceeds the no.
+      of bases read, we're busted */
+   if (hi_pos[0] > n_bases)
+   {
+      THROW_ERROR_MSG (CT_FILE_ERR "Base %lu should pair with base %lu but "
+                       "the file provided only contains %lu entries.",
+                       str_get(gfile_get_path (gfile)),
+                       line_no,
+                       hi_pos[1],
+                       hi_pos[0],
+                       n_bases);
+      error = ERR_RNA_CT_SM;
    }
 
    /* reallocate to true size */
@@ -925,7 +947,7 @@ rna_read_from_file (Rna* this, const char* path, const unsigned long length,
    unsigned long entry;
    GFile* gfile;
    unsigned long i;
-   int __attribute__((unused)) (*read_funcs[1])(Rna*, GFile*) = {
+   int (*read_funcs[1])(Rna*, GFile*) = {
       &rna_read_from_file_ct
    };
 

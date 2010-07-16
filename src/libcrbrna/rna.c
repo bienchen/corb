@@ -877,9 +877,9 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
                                    "which is already paired with base %lu.",
                                    str_get(gfile_get_path(gfile)),
                                    line_no,
-                                   ct_cols[Seq_pos] - 1,
-                                   ct_cols[partner] - 1,
-                                   this->pairs[ct_cols[partner] - 1]);
+                                   ct_cols[Seq_pos],
+                                   ct_cols[partner],
+                                   this->pairs[ct_cols[partner] - 1] + 1);
                   error = ERR_RNA_CT_SM;
                }
             }
@@ -889,17 +889,17 @@ rna_read_from_file_ct (Rna* this, GFile* gfile)
                                 "%lu but is already paired to base %lu.",
                                 str_get(gfile_get_path (gfile)),
                                 line_no,
-                                ct_cols[Seq_pos] - 1,
-                                ct_cols[partner] - 1,
-                                this->pairs[ct_cols[Seq_pos] - 1]);
+                                ct_cols[Seq_pos],
+                                ct_cols[partner],
+                                this->pairs[ct_cols[Seq_pos] - 1] + 1);
                error = ERR_RNA_CT_SM;
             }
 
             /* check for corrupted files */
-            if (hi_pos[0] < (ct_cols[partner] - 1))
+            if (hi_pos[0] < (ct_cols[partner]))
             {
-               hi_pos[0] = ct_cols[partner] - 1;
-               hi_pos[1] = ct_cols[Seq_pos] - 1;
+               hi_pos[0] = ct_cols[partner];
+               hi_pos[1] = ct_cols[Seq_pos];
             }
          }
       }
